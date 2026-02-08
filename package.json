@@ -1,0 +1,45 @@
+{
+  "name": "hashmark",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "eslint",
+    "type-check": "tsc --noEmit",
+    "db:push": "prisma db push",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "^2.11.1",
+    "@octokit/rest": "^22.0.1",
+    "@prisma/client": "^6.19.2",
+    "next": "16.1.6",
+    "next-auth": "5.0.0-beta.30",
+    "octokit": "^5.0.5",
+    "prisma": "^6.19.2",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "stripe": "^20.3.1",
+    "zod": "^4.3.6"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "prisma",
+      "@prisma/engines"
+    ]
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
