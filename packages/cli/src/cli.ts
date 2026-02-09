@@ -46,6 +46,7 @@ import { detectMonorepo, formatMonorepoOverview } from "./scanners/monorepo.js";
 import { scanGraphQL } from "./scanners/graphql.js";
 import { generateAgentsMd } from "./generator.js";
 import { generateAgentsIndex } from "./json-generator.js";
+import { generateAllFormats, generateFormat, FORMAT_REGISTRY, type FormatId } from "./formats/index.js";
 import { validateGitUrl, escapeShellPath } from "./utils/shell.js";
 import { estimateTokens, formatTokens, getContextUsage } from "./utils/tokens.js";
 import { detectSecrets } from "./utils/secrets.js";
@@ -119,7 +120,8 @@ cli
   .option("--monorepo", "Generate AGENTS.md for each package in monorepo")
   .option("--mcp", "Start as MCP server (for AI tool integration)")
   .option("--watch", "Watch for file changes and regenerate automatically")
-  .action(async (dir: string | undefined, options: { output: string; dryRun?: boolean; force?: boolean; compact?: boolean; json?: boolean; checkSecrets?: boolean; includeGitLog?: boolean; xml?: boolean; remote?: string; compress?: boolean; minimal?: boolean; tree?: boolean; copy?: boolean; includeDiffs?: boolean; splitOutput?: string; security?: boolean; monorepo?: boolean; mcp?: boolean; watch?: boolean }) => {
+  .option("--format <formats>", "Output format(s): all, claude-md, cursorrules, cursor-mdc, copilot-md, windsurf-rules, gemini-md, cline-rules")
+  .action(async (dir: string | undefined, options: { output: string; dryRun?: boolean; force?: boolean; compact?: boolean; json?: boolean; checkSecrets?: boolean; includeGitLog?: boolean; xml?: boolean; remote?: string; compress?: boolean; minimal?: boolean; tree?: boolean; copy?: boolean; includeDiffs?: boolean; splitOutput?: string; security?: boolean; monorepo?: boolean; mcp?: boolean; watch?: boolean; format?: string }) => {
     // Handle MCP server mode
     if (options.mcp) {
       const { startMcpServer } = await import("./mcp-server.js");
@@ -378,9 +380,102 @@ cli
         return;
       }
 
-      // Generate AGENTS.md content
+      // Build scan result object
+      const scanResult = { components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, typeExports, antiPatterns, testCoverage, securityAudit: securityAudit || undefined, aiRecommendations, graphqlSchemas };
+
+      // Multi-format generation (--format flag)
+      if (options.format) {
+        const writeDir = isRemote ? process.cwd() : targetDir;
+        const formatOpts = { generatorOptions: { compact: options.compact, compress: options.compress, minimal: options.minimal, includeTree: options.tree, xml: options.xml } };
+
+        if (options.format === "all") {
+          // Generate ALL formats
+          const files = generateAllFormats(scanResult, formatOpts);
+          console.log(pc.green(`\n  ✓ Generated ${files.length} format files:`));
+
+          if (!options.dryRun) {
+            for (const file of files) {
+              const filePath = join(writeDir, file.path);
+              // Create directory if needed (e.g., .cursor/rules/ or .github/)
+              const fileDir = dirname(filePath);
+              if (!existsSync(fileDir)) mkdirSync(fileDir, { recursive: true });
+              writeFileSync(filePath, file.content, "utf-8");
+              const tokens = estimateTokens(file.content);
+              console.log(pc.green(`    ✓ ${file.path} (~${formatTokens(tokens)} tokens) — ${file.tool}`));
+            }
+          } else {
+            for (const file of files) {
+              console.log(pc.yellow(`    Would generate: ${file.path} — ${file.tool}`));
+            }
+          }
+          console.log("");
+
+          writeLastRun({
+            status: "success",
+            durationMs: Date.now() - scanStart,
+            flags: activeFlags || "(none)",
+            format: "all",
+            formats: files.length,
+            components: components.length,
+            filesScanned: stats.totalFiles,
+          });
+
+          // Clean up temp directory if remote
+          if (isRemote && tempDir && existsSync(tempDir)) {
+            rmSync(tempDir, { recursive: true });
+          }
+          return;
+        } else {
+          // Generate specific format(s)
+          const requestedFormats = options.format.split(",").map(f => f.trim()) as FormatId[];
+          const validFormats = requestedFormats.filter(f => f in FORMAT_REGISTRY);
+
+          if (validFormats.length === 0) {
+            console.log(pc.red(`\n  ✗ Unknown format: ${options.format}`));
+            console.log(pc.dim(`    Available: all, ${Object.keys(FORMAT_REGISTRY).join(", ")}\n`));
+            process.exit(1);
+          }
+
+          console.log(pc.green(`\n  ✓ Generated ${validFormats.length} format file(s):`));
+
+          if (!options.dryRun) {
+            for (const fmt of validFormats) {
+              const file = generateFormat(fmt, scanResult, formatOpts);
+              const filePath = join(writeDir, file.path);
+              const fileDir = dirname(filePath);
+              if (!existsSync(fileDir)) mkdirSync(fileDir, { recursive: true });
+              writeFileSync(filePath, file.content, "utf-8");
+              const tokens = estimateTokens(file.content);
+              console.log(pc.green(`    ✓ ${file.path} (~${formatTokens(tokens)} tokens) — ${file.tool}`));
+            }
+          } else {
+            for (const fmt of validFormats) {
+              const meta = FORMAT_REGISTRY[fmt];
+              console.log(pc.yellow(`    Would generate: ${meta.path} — ${meta.tool}`));
+            }
+          }
+          console.log("");
+
+          writeLastRun({
+            status: "success",
+            durationMs: Date.now() - scanStart,
+            flags: activeFlags || "(none)",
+            format: options.format,
+            components: components.length,
+            filesScanned: stats.totalFiles,
+          });
+
+          // Clean up temp directory if remote
+          if (isRemote && tempDir && existsSync(tempDir)) {
+            rmSync(tempDir, { recursive: true });
+          }
+          return;
+        }
+      }
+
+      // Default: Generate AGENTS.md content (original behavior)
       let content = generateAgentsMd(
-        { components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, typeExports, antiPatterns, testCoverage, securityAudit: securityAudit || undefined, aiRecommendations, graphqlSchemas },
+        scanResult,
         { compact: options.compact, compress: options.compress, minimal: options.minimal, includeTree: options.tree, xml: options.xml }
       );
 
