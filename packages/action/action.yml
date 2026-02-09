@@ -1,0 +1,45 @@
+name: 'Hashmark — AI Context Sync'
+description: 'One scan. Every format. Always in sync. Auto-generate AI context files for every coding tool.'
+author: 'Jason Poindexter'
+
+branding:
+  icon: 'hash'
+  color: 'green'
+
+inputs:
+  formats:
+    description: 'Comma-separated list of formats to generate, or "all" for every format'
+    required: false
+    default: 'all'
+  commit-mode:
+    description: 'How to commit changes: "auto" (direct commit) or "pr" (pull request)'
+    required: false
+    default: 'auto'
+  commit-message:
+    description: 'Custom commit message (default: auto-generated)'
+    required: false
+    default: ''
+  branch:
+    description: 'Branch to commit to (default: current branch)'
+    required: false
+    default: ''
+  compact:
+    description: 'Generate compact output (fewer details, smaller token count)'
+    required: false
+    default: 'false'
+  custom-rules:
+    description: 'Newline-separated custom rules to inject into generated files'
+    required: false
+    default: ''
+
+outputs:
+  files-generated:
+    description: 'Number of files generated'
+  formats-generated:
+    description: 'Comma-separated list of formats that were generated'
+  files-changed:
+    description: 'Whether any files were actually changed (true/false)'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
