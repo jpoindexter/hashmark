@@ -28,7 +28,7 @@ export function RepoCard({
     latestScan?.status === "SCANNING" || latestScan?.status === "PENDING";
   const canAutoSync = plan !== "FREE";
 
-  useScanPolling(repo.id, latestScan?.status);
+  const progress = useScanPolling(repo.id, latestScan?.status);
 
   return (
     <div className="border border-border bg-card px-6 py-4">
@@ -59,12 +59,16 @@ export function RepoCard({
             {repo.description && (
               <span className="truncate">{repo.description}</span>
             )}
-            {latestScan && (
+            {isScanning && progress?.detail ? (
+              <span className="animate-pulse text-accent/70">
+                {progress.detail}
+              </span>
+            ) : latestScan ? (
               <span>
                 Scanned{" "}
                 {new Date(latestScan.createdAt).toLocaleDateString()}
               </span>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -91,7 +95,9 @@ export function RepoCard({
               size="sm"
               disabled={isScanning}
             >
-              {isScanning ? "SCANNING..." : "> SCAN"}
+              {isScanning
+                ? progress?.step || "SCANNING..."
+                : "> SCAN"}
             </Button>
           </form>
           <form action={disconnectRepo}>

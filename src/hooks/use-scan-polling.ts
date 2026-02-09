@@ -1,14 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const POLL_INTERVAL_MS = 3000;
 
+export interface ScanProgress {
+  step: string;
+  detail?: string;
+}
+
 /**
  * Polls /api/scan/[repoId]/latest when a scan is PENDING or SCANNING.
- * Calls router.refresh() when the scan transitions to COMPLETED or FAILED,
- * causing the server component to re-fetch fresh data.
+ * Returns live progress info from the scan worker.
+ * Calls router.refresh() when the scan transitions to COMPLETED or FAILED.
  */
 export function useScanPolling(
   repoId: string,
@@ -16,6 +21,7 @@ export function useScanPolling(
 ) {
   const router = useRouter();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [progress, setProgress] = useState<ScanProgress | null>(null);
   const isPolling = scanStatus === "PENDING" || scanStatus === "SCANNING";
 
   const stopPolling = useCallback(() => {
@@ -28,7 +34,13 @@ export function useScanPolling(
   useEffect(() => {
     if (!isPolling) {
       stopPolling();
+      setProgress(null);
       return;
+    }
+
+    // Set initial progress for PENDING
+    if (scanStatus === "PENDING") {
+      setProgress({ step: "QUEUED", detail: "Waiting to start..." });
     }
 
     const poll = async () => {
@@ -39,12 +51,22 @@ export function useScanPolling(
         if (!res.ok) return;
 
         const scan = await res.json();
+        if (!scan) return;
+
+        // Extract progress from scan results
         if (
-          scan &&
+          scan.status === "SCANNING" &&
+          scan.results?.progress
+        ) {
+          setProgress(scan.results.progress);
+        }
+
+        if (
           scan.status !== "PENDING" &&
           scan.status !== "SCANNING"
         ) {
           stopPolling();
+          setProgress(null);
           router.refresh();
         }
       } catch {
@@ -55,5 +77,7 @@ export function useScanPolling(
     intervalRef.current = setInterval(poll, POLL_INTERVAL_MS);
 
     return stopPolling;
-  }, [repoId, isPolling, router, stopPolling]);
+  }, [repoId, isPolling, scanStatus, router, stopPolling]);
+
+  return progress;
 }

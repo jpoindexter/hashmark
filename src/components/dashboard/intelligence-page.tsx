@@ -14,6 +14,49 @@ interface ScanResults {
   scanners?: Array<{ name: string; found: number }>;
 }
 
+const SCAN_STEPS = ["QUEUED", "CLONING", "SCANNING", "PARSING", "COLLECTING"] as const;
+
+function ScanProgressSteps({ currentStep }: { currentStep?: string }) {
+  const currentIndex = currentStep
+    ? SCAN_STEPS.indexOf(currentStep as (typeof SCAN_STEPS)[number])
+    : -1;
+
+  return (
+    <div className="flex items-center gap-1 pt-2">
+      {SCAN_STEPS.map((step, i) => {
+        const isActive = i === currentIndex;
+        const isDone = i < currentIndex;
+        return (
+          <div key={step} className="flex items-center gap-1">
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className={`h-1.5 w-8 ${
+                  isActive
+                    ? "bg-accent animate-pulse"
+                    : isDone
+                      ? "bg-accent/60"
+                      : "bg-muted"
+                }`}
+              />
+              <span
+                className={`text-[9px] uppercase tracking-wider ${
+                  isActive
+                    ? "text-accent font-bold"
+                    : isDone
+                      ? "text-accent/60"
+                      : "text-muted-foreground/50"
+                }`}
+              >
+                {step}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function IntelligencePage({
   repo,
   scan,
@@ -24,7 +67,7 @@ export function IntelligencePage({
   const results = (scan?.results as ScanResults) ?? null;
   const isScanning = scan?.status === "SCANNING" || scan?.status === "PENDING";
 
-  useScanPolling(repo.id, scan?.status);
+  const progress = useScanPolling(repo.id, scan?.status);
 
   return (
     <div className="space-y-6">
@@ -34,12 +77,18 @@ export function IntelligencePage({
           {scan ? (
             <>
               <StatusBadge status={scan.status} />
-              <span className="text-xs text-muted-foreground">
-                {scan.duration
-                  ? `${(scan.duration / 1000).toFixed(1)}s`
-                  : "—"}{" "}
-                &middot; {new Date(scan.createdAt).toLocaleString()}
-              </span>
+              {isScanning && progress ? (
+                <span className="text-xs text-muted-foreground animate-pulse">
+                  {progress.detail || progress.step}
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  {scan.duration
+                    ? `${(scan.duration / 1000).toFixed(1)}s`
+                    : "—"}{" "}
+                  &middot; {new Date(scan.createdAt).toLocaleString()}
+                </span>
+              )}
             </>
           ) : (
             <span className="text-xs text-muted-foreground">
@@ -54,6 +103,26 @@ export function IntelligencePage({
           </Button>
         </form>
       </div>
+
+      {/* Scan in progress */}
+      {isScanning && (
+        <div className="border border-accent/30 bg-accent/5 px-6 py-8">
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 animate-pulse rounded-full bg-accent" />
+              <p className="text-sm font-bold uppercase tracking-wider text-accent">
+                {progress?.step || "SCANNING"}
+              </p>
+            </div>
+            {progress?.detail && (
+              <p className="text-xs text-muted-foreground">
+                {progress.detail}
+              </p>
+            )}
+            <ScanProgressSteps currentStep={progress?.step} />
+          </div>
+        </div>
+      )}
 
       {/* Scan failed */}
       {scan?.status === "FAILED" && (

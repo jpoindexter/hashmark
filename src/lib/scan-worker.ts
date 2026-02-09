@@ -44,12 +44,22 @@ export async function runScan(
   const startTime = Date.now();
 
   try {
+    // Helper to write progress visible to the polling endpoint
+    const updateProgress = (step: string, detail?: string) =>
+      db.scan.update({
+        where: { id: scanId },
+        data: {
+          results: { progress: { step, detail, updatedAt: Date.now() } },
+        },
+      });
+
     await db.scan.update({
       where: { id: scanId },
       data: { status: "SCANNING" },
     });
 
     // 1. Clone repo (depth 1 for speed)
+    await updateProgress("CLONING", `Cloning ${fullName}...`);
     const cloneUrl = `https://x-access-token:${token}@github.com/${fullName}.git`;
     await execAsync(`git clone --depth 1 "${cloneUrl}" "${tmpDir}"`, {
       timeout: 60_000,
@@ -67,6 +77,7 @@ export async function runScan(
     }
 
     // 2. Run CLI scanner
+    await updateProgress("SCANNING", "Running 27 scanners...");
     const cliPath = resolve(process.cwd(), "packages/cli/dist/cli.js");
     await execAsync(
       `node "${cliPath}" "${tmpDir}" --format all --json --force`,
@@ -74,6 +85,7 @@ export async function runScan(
     );
 
     // 3. Parse AGENTS.index.json for structured stats
+    await updateProgress("PARSING", "Parsing scan results...");
     let scanStats = {
       files: 0,
       lines: 0,
@@ -143,6 +155,10 @@ export async function runScan(
     }
 
     // 4. Collect generated files
+    await updateProgress(
+      "COLLECTING",
+      `Found ${scanStats.files} files, ${scanStats.components} components`
+    );
     const generatedFiles: Array<{
       format: FileFormat;
       fileName: string;
