@@ -1,8 +1,9 @@
 "use client";
 
 import type { Repository, Scan } from "@prisma/client";
+import { StatsGrid, EmptyState, Button, Badge } from "@fabrk/components";
+import { Search } from "lucide-react";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { KpiGrid } from "./kpi-grid";
 import { triggerRepoScan } from "@/app/(dashboard)/dashboard/[repoId]/actions";
 
 interface ScanResults {
@@ -45,26 +46,34 @@ export function IntelligencePage({
         </div>
         <form action={triggerRepoScan}>
           <input type="hidden" name="repoId" value={repo.id} />
-          <button
-            type="submit"
-            disabled={isScanning}
-            className="border border-accent px-4 py-2 text-xs font-bold uppercase tracking-wider text-accent transition-colors hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
-          >
+          <Button type="submit" disabled={isScanning}>
             {isScanning ? "SCANNING..." : "> SCAN NOW"}
-          </button>
+          </Button>
         </form>
       </div>
 
       {/* KPI Grid */}
       {scan?.status === "COMPLETED" && (
-        <KpiGrid
-          fileCount={scan.fileCount ?? 0}
-          lineCount={scan.lineCount ?? 0}
-          componentCount={scan.componentCount ?? 0}
-          apiRouteCount={scan.apiRouteCount ?? 0}
-          modelCount={scan.modelCount ?? 0}
-          tokenEstimate={scan.tokenEstimate ?? 0}
-          duration={scan.duration ?? 0}
+        <StatsGrid
+          items={[
+            { label: "FILES", value: (scan.fileCount ?? 0).toLocaleString() },
+            { label: "LINES", value: (scan.lineCount ?? 0).toLocaleString() },
+            { label: "COMPONENTS", value: scan.componentCount ?? 0 },
+            { label: "API ROUTES", value: scan.apiRouteCount ?? 0 },
+            { label: "MODELS", value: scan.modelCount ?? 0 },
+            {
+              label: "EST. TOKENS",
+              value:
+                (scan.tokenEstimate ?? 0) >= 1000
+                  ? `${((scan.tokenEstimate ?? 0) / 1000).toFixed(1)}k`
+                  : String(scan.tokenEstimate ?? 0),
+            },
+            {
+              label: "SCAN TIME",
+              value: `${((scan.duration ?? 0) / 1000).toFixed(1)}s`,
+            },
+          ]}
+          columns={4}
         />
       )}
 
@@ -134,9 +143,7 @@ export function IntelligencePage({
                 {results.apiRoutes.map((route, i) => (
                   <tr key={i} className="border-b border-border last:border-0">
                     <td className="px-4 py-2">
-                      <span className="border border-border px-2 py-1 text-xs font-bold">
-                        {route.method}
-                      </span>
+                      <Badge variant="outline">{route.method}</Badge>
                     </td>
                     <td className="px-4 py-2 text-sm">{route.path}</td>
                     <td className="px-4 py-2 text-xs text-muted-foreground">
@@ -229,15 +236,11 @@ export function IntelligencePage({
 
       {/* Empty state */}
       {!scan && (
-        <div className="border border-dashed border-border p-12 text-center">
-          <p className="text-2xl font-bold text-accent">#</p>
-          <p className="mt-2 text-sm uppercase tracking-wider text-muted-foreground">
-            RUN YOUR FIRST SCAN
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Click &quot;SCAN NOW&quot; to analyze your codebase
-          </p>
-        </div>
+        <EmptyState
+          icon={Search}
+          title="RUN YOUR FIRST SCAN"
+          description='Click "SCAN NOW" to analyze your codebase'
+        />
       )}
     </div>
   );

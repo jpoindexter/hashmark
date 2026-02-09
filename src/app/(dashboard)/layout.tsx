@@ -1,8 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { Sidebar } from "@/components/dashboard/sidebar";
-import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardShellWrapper } from "@/components/dashboard/dashboard-shell-wrapper";
 
 export default async function DashboardLayout({
   children,
@@ -24,15 +23,5 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  return (
-    <div className="flex h-screen bg-background font-mono">
-      <Sidebar user={user} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <DashboardHeader plan={user.plan} />
-        <main className="flex-1 overflow-auto">
-          <div className="mx-auto max-w-7xl p-6">{children}</div>
-        </main>
-      </div>
-    </div>
-  );
+  return <DashboardShellWrapper user={user}>{children}</DashboardShellWrapper>;
 }

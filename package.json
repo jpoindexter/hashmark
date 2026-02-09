@@ -20,6 +20,7 @@
     "@fabrk/design-system": "file:../fabrk-framework/packages/design-system",
     "@octokit/rest": "^22.0.1",
     "@prisma/client": "^6.19.2",
+    "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "next-auth": "5.0.0-beta.30",
     "octokit": "^5.0.5",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Input, Button } from "@fabrk/components";
 import { createRule } from "@/app/(dashboard)/dashboard/settings/actions";
 
 export function RuleDialog({ onClose }: { onClose: () => void }) {
@@ -44,12 +45,11 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
             <label className="mb-1 block text-xs uppercase tracking-wider text-muted-foreground">
               [NAME]
             </label>
-            <input
+            <Input
               name="name"
               required
               autoFocus
               placeholder="e.g., Use TypeScript strict mode"
-              className="w-full border border-border bg-background px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
             />
           </div>
 
@@ -57,10 +57,9 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
             <label className="mb-1 block text-xs uppercase tracking-wider text-muted-foreground">
               [DESCRIPTION] (OPTIONAL)
             </label>
-            <input
+            <Input
               name="description"
               placeholder="Brief description of the rule"
-              className="w-full border border-border bg-background px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
             />
           </div>
 
@@ -92,20 +91,12 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted"
-            >
+            <Button type="button" variant="outline" onClick={onClose}>
               CANCEL
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="border border-accent bg-accent/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-accent transition-colors hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
-            >
-              {submitting ? "SAVING..." : "> CREATE RULE"}
-            </button>
+            </Button>
+            <Button type="submit" disabled={submitting} loading={submitting} loadingText="SAVING...">
+              {"> CREATE RULE"}
+            </Button>
           </div>
         </form>
       </div>

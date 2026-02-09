@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Input, Button } from "@fabrk/components";
 import { connectRepo } from "@/app/(dashboard)/dashboard/repos/actions";
 import { REPO_ENDPOINTS } from "@/config/api-endpoints";
 
@@ -87,13 +88,12 @@ export function ConnectRepoDialog({ onClose }: { onClose: () => void }) {
 
         {/* Search */}
         <div className="border-b border-border p-4">
-          <input
+          <Input
             type="text"
             placeholder="Search your GitHub repos..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             autoFocus
-            className="w-full border border-border bg-background px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
           />
         </div>
 
@@ -129,13 +129,16 @@ export function ConnectRepoDialog({ onClose }: { onClose: () => void }) {
                       {repo.private && <span>PRIVATE</span>}
                     </div>
                   </div>
-                  <button
+                  <Button
+                    size="sm"
+                    className="ml-4"
                     onClick={() => handleConnect(repo)}
                     disabled={connecting === repo.id}
-                    className="ml-4 border border-accent px-4 py-2 text-xs font-bold uppercase tracking-wider text-accent transition-colors hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+                    loading={connecting === repo.id}
+                    loadingText="..."
                   >
-                    {connecting === repo.id ? "..." : "> CONNECT"}
-                  </button>
+                    {"> CONNECT"}
+                  </Button>
                 </li>
               ))}
             </ul>

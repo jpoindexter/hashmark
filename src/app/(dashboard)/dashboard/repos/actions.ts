@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getGitHubToken } from "@/lib/github";
+import { runScan } from "@/lib/scan-worker";
 import { revalidatePath } from "next/cache";
 
 export async function connectRepo(formData: FormData) {
@@ -82,43 +83,9 @@ export async function triggerScan(formData: FormData) {
   });
 
   // Fire-and-forget: kick off background scan
-  // In production, this would call the scan worker
   const token = await getGitHubToken(session.user.id);
-  runScanInBackground(scan.id, repo.fullName, token).catch(console.error);
+  runScan(scan.id, repo.fullName, token).catch(console.error);
 
   revalidatePath("/dashboard/repos");
   revalidatePath(`/dashboard/${repoId}`);
-}
-
-async function runScanInBackground(
-  scanId: string,
-  _fullName: string,
-  _token: string
-) {
-  try {
-    await db.scan.update({
-      where: { id: scanId },
-      data: { status: "SCANNING" },
-    });
-
-    // TODO: Clone repo, run CLI scanner, store results
-    // For now, mark as completed after a delay to simulate
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
-    await db.scan.update({
-      where: { id: scanId },
-      data: {
-        status: "COMPLETED",
-        duration: 3000,
-      },
-    });
-  } catch (error) {
-    await db.scan.update({
-      where: { id: scanId },
-      data: {
-        status: "FAILED",
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-    });
-  }
 }

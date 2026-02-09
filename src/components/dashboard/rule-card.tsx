@@ -1,6 +1,7 @@
 "use client";
 
 import type { CustomRule } from "@prisma/client";
+import { Badge, Button } from "@fabrk/components";
 import {
   toggleRule,
   deleteRule,
@@ -12,16 +13,12 @@ export function RuleCard({ rule }: { rule: CustomRule }) {
       <div className="flex-1">
         <div className="flex items-center gap-2">
           <p className="text-sm font-bold">{rule.name}</p>
-          <span
-            className={`text-[10px] uppercase tracking-wider ${
-              rule.enabled ? "text-accent" : "text-muted-foreground"
-            }`}
-          >
+          <Badge variant={rule.enabled ? "accent" : "secondary"} size="sm">
             {rule.enabled ? "ENABLED" : "DISABLED"}
-          </span>
-          <span className="border border-border px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+          </Badge>
+          <Badge variant="outline" size="sm">
             {rule.scope}
-          </span>
+          </Badge>
         </div>
         {rule.description && (
           <p className="mt-1 text-xs text-muted-foreground">
@@ -38,21 +35,15 @@ export function RuleCard({ rule }: { rule: CustomRule }) {
       <div className="ml-4 flex gap-2">
         <form action={toggleRule}>
           <input type="hidden" name="ruleId" value={rule.id} />
-          <button
-            type="submit"
-            className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
+          <Button type="submit" variant="outline" size="sm">
             {rule.enabled ? "DISABLE" : "ENABLE"}
-          </button>
+          </Button>
         </form>
         <form action={deleteRule}>
           <input type="hidden" name="ruleId" value={rule.id} />
-          <button
-            type="submit"
-            className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-          >
+          <Button type="submit" variant="ghost" size="sm">
             DELETE
-          </button>
+          </Button>
         </form>
       </div>
     </div>

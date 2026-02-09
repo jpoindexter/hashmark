@@ -1,20 +1,18 @@
 "use client";
 
 import type { Scan } from "@prisma/client";
+import { EmptyState } from "@fabrk/components";
+import { Clock } from "lucide-react";
 import { StatusBadge } from "@/components/shared/status-badge";
 
 export function ScanHistoryPage({ scans }: { scans: Scan[] }) {
   if (scans.length === 0) {
     return (
-      <div className="border border-dashed border-border p-12 text-center">
-        <p className="text-2xl font-bold text-accent">#</p>
-        <p className="mt-2 text-sm uppercase tracking-wider text-muted-foreground">
-          NO SCAN HISTORY
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Run a scan to see results here
-        </p>
-      </div>
+      <EmptyState
+        icon={Clock}
+        title="NO SCAN HISTORY"
+        description="Run a scan to see results here"
+      />
     );
   }
 

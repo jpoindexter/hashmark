@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import type { CustomRule, User } from "@prisma/client";
-import { PlanBadge } from "@/components/shared/plan-badge";
+import { DashboardHeader, TierBadge, EmptyState, Button } from "@fabrk/components";
+import { ScrollText } from "lucide-react";
 import { RuleCard } from "./rule-card";
 import { RuleDialog } from "./rule-dialog";
 
@@ -18,7 +19,7 @@ export function SettingsPage({
 
   return (
     <div className="space-y-8">
-      <h1 className="text-lg font-bold uppercase tracking-wider">SETTINGS</h1>
+      <DashboardHeader title="SETTINGS" />
 
       {/* Profile section */}
       <section>
@@ -44,7 +45,7 @@ export function SettingsPage({
               <p className="font-bold">{user.name ?? "Developer"}</p>
               <p className="text-xs text-muted-foreground">{user.email}</p>
               <div className="mt-1">
-                <PlanBadge plan={user.plan} />
+                <TierBadge tier={user.plan.toLowerCase()} />
               </div>
             </div>
           </div>
@@ -57,23 +58,21 @@ export function SettingsPage({
           <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
             [ CUSTOM RULES ] ({rules.length})
           </h2>
-          <button
-            onClick={() => setShowAddRule(true)}
-            className="border border-accent bg-accent/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-accent transition-colors hover:bg-accent hover:text-accent-foreground"
-          >
+          <Button onClick={() => setShowAddRule(true)}>
             {"> ADD RULE"}
-          </button>
+          </Button>
         </div>
 
         {rules.length === 0 ? (
-          <div className="border border-dashed border-border p-8 text-center">
-            <p className="text-sm uppercase tracking-wider text-muted-foreground">
-              NO CUSTOM RULES
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Custom rules are injected into all generated context files
-            </p>
-          </div>
+          <EmptyState
+            icon={ScrollText}
+            title="NO CUSTOM RULES"
+            description="Custom rules are injected into all generated context files"
+            action={{
+              label: "> ADD RULE",
+              onClick: () => setShowAddRule(true),
+            }}
+          />
         ) : (
           <div className="space-y-2">
             {rules.map((rule) => (

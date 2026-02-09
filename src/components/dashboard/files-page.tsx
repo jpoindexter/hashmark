@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { GeneratedFile } from "@prisma/client";
+import { EmptyState, Button } from "@fabrk/components";
+import { FileCode } from "lucide-react";
 
 const FORMAT_LABELS: Record<string, string> = {
   AGENTS_MD: "AGENTS.md",
@@ -49,29 +51,21 @@ export function FilesPage({
 
   if (!hasScan) {
     return (
-      <div className="border border-dashed border-border p-12 text-center">
-        <p className="text-2xl font-bold text-accent">#</p>
-        <p className="mt-2 text-sm uppercase tracking-wider text-muted-foreground">
-          NO SCANS COMPLETED
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Run a scan first to generate context files
-        </p>
-      </div>
+      <EmptyState
+        icon={FileCode}
+        title="NO SCANS COMPLETED"
+        description="Run a scan first to generate context files"
+      />
     );
   }
 
   if (files.length === 0) {
     return (
-      <div className="border border-dashed border-border p-12 text-center">
-        <p className="text-2xl font-bold text-accent">#</p>
-        <p className="mt-2 text-sm uppercase tracking-wider text-muted-foreground">
-          NO FILES GENERATED
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          The scan completed but no files were generated
-        </p>
-      </div>
+      <EmptyState
+        icon={FileCode}
+        title="NO FILES GENERATED"
+        description="The scan completed but no files were generated"
+      />
     );
   }
 
@@ -118,18 +112,12 @@ export function FilesPage({
                 {selectedFile.fileName}
               </p>
               <div className="flex gap-2">
-                <button
-                  onClick={handleCopy}
-                  className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
+                <Button variant="outline" size="sm" onClick={handleCopy}>
                   {copied ? "COPIED" : "> COPY"}
-                </button>
-                <button
-                  onClick={handleDownload}
-                  className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleDownload}>
                   {"> DOWNLOAD"}
-                </button>
+                </Button>
               </div>
             </div>
             <pre className="max-h-[600px] overflow-auto p-4 text-xs leading-relaxed text-muted-foreground">

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import Link from "next/link";
+import { DashboardHeader, StatsGrid, EmptyState, Button } from "@fabrk/components";
 import { TrialBanner } from "@/components/dashboard/trial-banner";
 
 export const metadata = {
@@ -36,56 +37,41 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Trial banner for FREE plan */}
       {user?.plan === "FREE" && <TrialBanner />}
 
-      <div>
-        <h1 className="text-lg font-bold uppercase tracking-wider">
-          DASHBOARD
-        </h1>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Welcome back, {session.user.name ?? "developer"}.
-        </p>
-      </div>
+      <DashboardHeader
+        title="DASHBOARD"
+        subtitle={`Welcome back, ${session.user.name ?? "developer"}.`}
+      />
 
-      {/* Quick stats — 8-point grid: gap-4 */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="CONNECTED REPOS" value={repos.length} />
-        <StatCard label="TOTAL SCANS" value={totalScans} />
-        <StatCard label="PLAN" value={user?.plan ?? "FREE"} accent />
-        <StatCard label="FORMATS" value={8} />
-      </div>
+      <StatsGrid
+        items={[
+          { label: "CONNECTED REPOS", value: repos.length },
+          { label: "TOTAL SCANS", value: totalScans },
+          { label: "PLAN", value: user?.plan ?? "FREE" },
+          { label: "FORMATS", value: 8 },
+        ]}
+        columns={4}
+      />
 
-      {/* Quick actions */}
       <div className="flex gap-4">
-        <Link
-          href="/dashboard/repos"
-          className="border border-accent bg-accent/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-accent transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          {"> MANAGE REPOS"}
-        </Link>
-        <Link
-          href="/dashboard/settings"
-          className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          {"> SETTINGS"}
-        </Link>
+        <Button asChild>
+          <Link href="/dashboard/repos">{"> MANAGE REPOS"}</Link>
+        </Button>
+        <Button variant="outline" asChild>
+          <Link href="/dashboard/settings">{"> SETTINGS"}</Link>
+        </Button>
       </div>
 
-      {/* Recent activity */}
       <section>
         <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-muted-foreground">
           [ RECENT SCANS ]
         </h2>
         {recentScans.length === 0 ? (
-          <div className="border border-dashed border-border p-12 text-center">
-            <p className="text-sm uppercase tracking-wider text-muted-foreground">
-              NO SCANS YET
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Connect a repo and run your first scan
-            </p>
-          </div>
+          <EmptyState
+            title="NO SCANS YET"
+            description="Connect a repo and run your first scan"
+          />
         ) : (
           <div className="border border-border">
             {recentScans.map((scan, i) => (
@@ -120,27 +106,6 @@ export default async function DashboardPage() {
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  accent?: boolean;
-}) {
-  return (
-    <div className="border border-border bg-card p-4">
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-        [{label}]
-      </p>
-      <p className={`mt-1 text-2xl font-bold ${accent ? "text-accent" : ""}`}>
-        {value}
-      </p>
     </div>
   );
 }

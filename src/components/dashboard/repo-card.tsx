@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { Repository, Scan } from "@prisma/client";
+import { Badge, Button } from "@fabrk/components";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { disconnectRepo, triggerScan } from "@/app/(dashboard)/dashboard/repos/actions";
 
@@ -24,9 +25,7 @@ export function RepoCard({ repo }: { repo: RepoWithLatestScan }) {
             {repo.fullName}
           </Link>
           {repo.private && (
-            <span className="border border-border px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-              PRIVATE
-            </span>
+            <Badge variant="outline" size="sm">PRIVATE</Badge>
           )}
           {latestScan && <StatusBadge status={latestScan.status} />}
         </div>
@@ -47,22 +46,20 @@ export function RepoCard({ repo }: { repo: RepoWithLatestScan }) {
       <div className="ml-4 flex items-center gap-2">
         <form action={triggerScan}>
           <input type="hidden" name="repoId" value={repo.id} />
-          <button
+          <Button
             type="submit"
+            variant="outline"
+            size="sm"
             disabled={isScanning}
-            className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground transition-colors hover:bg-accent/10 hover:text-accent disabled:opacity-50"
           >
             {isScanning ? "SCANNING..." : "> SCAN"}
-          </button>
+          </Button>
         </form>
         <form action={disconnectRepo}>
           <input type="hidden" name="repoId" value={repo.id} />
-          <button
-            type="submit"
-            className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-          >
+          <Button type="submit" variant="ghost" size="sm">
             X
-          </button>
+          </Button>
         </form>
       </div>
     </div>

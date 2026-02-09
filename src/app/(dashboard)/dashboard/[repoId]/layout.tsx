@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { DashboardHeader } from "@fabrk/components";
 import { RepoSubNav } from "@/components/dashboard/repo-sub-nav";
 
 export default async function RepoLayout({
@@ -24,19 +25,17 @@ export default async function RepoLayout({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-lg font-bold uppercase tracking-wider">
-          {repo.fullName}
-        </h1>
-        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-          {repo.language && <span>[{repo.language}]</span>}
-          {repo.private && (
-            <span className="border border-border px-2 py-1 text-[10px]">
-              PRIVATE
-            </span>
-          )}
-        </div>
-      </div>
+      <DashboardHeader
+        title={repo.fullName}
+        subtitle={
+          [
+            repo.language ? `[${repo.language}]` : null,
+            repo.private ? "PRIVATE" : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || undefined
+        }
+      />
       <RepoSubNav repoId={repo.id} />
       <div className="mt-4">{children}</div>
     </div>
