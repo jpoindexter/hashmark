@@ -1,4 +1,22 @@
 import { Octokit } from "@octokit/rest";
+import { db } from "./db";
+
+/**
+ * Retrieve the GitHub OAuth access_token for a user from the Account table.
+ * NextAuth's PrismaAdapter stores this when the user signs in with GitHub.
+ */
+export async function getGitHubToken(userId: string): Promise<string> {
+  const account = await db.account.findFirst({
+    where: { userId, provider: "github" },
+    select: { access_token: true },
+  });
+
+  if (!account?.access_token) {
+    throw new Error("GitHub access token not found. Please re-authenticate.");
+  }
+
+  return account.access_token;
+}
 
 export function createOctokit(accessToken: string) {
   return new Octokit({ auth: accessToken });

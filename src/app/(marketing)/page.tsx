@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Hero } from "@/components/landing/hero";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { Formats } from "@/components/landing/formats";
@@ -10,10 +11,10 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground font-mono">
       <nav className="fixed top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
-          <a href="/" className="flex items-center gap-2 text-lg font-bold">
+          <Link href="/" className="flex items-center gap-2 text-lg font-bold">
             <span className="text-accent text-2xl">#</span>
             <span className="uppercase tracking-wider">Hashmark</span>
-          </a>
+          </Link>
           <div className="flex items-center gap-6">
             <a
               href="#pricing"

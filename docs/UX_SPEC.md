@@ -180,8 +180,13 @@ When FABRK packages are integrated, map to these components:
 
 | Hashmark Usage | FABRK Component | Package |
 |----------------|-----------------|---------|
+| Dashboard layout (sidebar + header + content) | `DashboardShell` | `@fabrk/components` |
+| Page header with title + actions | `DashboardHeader` | `@fabrk/components` |
+| Page header with tabs + search | `PageHeader` | `@fabrk/components` |
+| KPI grid (files, components, routes, complexity) | `StatsGrid` | `@fabrk/components` |
+| Plan badge ([FREE], [PRO], [TEAM]) | `TierBadge` | `@fabrk/components` |
 | Stat cards | `KPICard` | `@fabrk/components` |
-| Charts | `BarChart`, `LineChart` | `@fabrk/components` |
+| Charts | `BarChart`, `LineChart`, `DonutChart`, `Gauge` | `@fabrk/components` |
 | Data tables | `DataTable` | `@fabrk/components` |
 | Status badges | `Badge` | `@fabrk/components` |
 | Cards | `Card` | `@fabrk/components` |
@@ -194,7 +199,7 @@ When FABRK packages are integrated, map to these components:
 | `cn()` utility | `cn` | `@fabrk/core` |
 | Design tokens | `mode` | `@fabrk/design-system` |
 
-Until FABRK packages are wired up, build with Tailwind utility classes matching the design tokens above.
+**FABRK provides the full dashboard shell.** Use `DashboardShell` for the layout (sidebar + mobile responsive + user section), `DashboardHeader` for page titles, `PageHeader` for pages with tabs/search, `StatsGrid` for KPI grids, and `TierBadge` for plan indicators. No need to build these from scratch.
 
 ---
 
@@ -1302,52 +1307,41 @@ Mobile: Single column. File list at top as horizontal scroll tabs or accordion. 
 
 ## Shared Components
 
-Components used across multiple dashboard pages. Build these first.
+Most dashboard shell components come from FABRK. Build app-specific components only.
 
-### DashboardLayout
+### DashboardLayout (uses FABRK `DashboardShell`)
 
 ```typescript
 // src/app/(dashboard)/layout.tsx
 // Wraps all /dashboard/** routes
 
-interface DashboardLayoutProps {
-  children: React.ReactNode
-}
+import { DashboardShell, TierBadge } from '@fabrk/components'
+import { auth, signOut } from '@/lib/auth'
+import Link from 'next/link'
 
-// - Auth check: redirect to /login if not authenticated
-// - Sidebar (240px, collapsible on mobile)
-// - Header with breadcrumbs
-// - Main content area (flex-1, overflow-y-auto)
-// - Background: bg-background
+// Auth check: redirect to /login if not authenticated
+// Pass to DashboardShell:
+//   sidebarItems: OVERVIEW, REPOSITORIES, SETTINGS, BILLING
+//   user: { name, email, image, tier: user.plan }
+//   logo: <span className="text-accent text-xl">#</span>
+//   title: "HASHMARK"
+//   onSignOut: () => signOut()
+//   linkComponent: Link
+//   activeItemId: derived from pathname
 ```
 
-### Sidebar
+### Sidebar — Built into DashboardShell
 
-```typescript
-// src/components/dashboard/sidebar.tsx
-
-interface SidebarProps {
-  user: { name: string; email: string; image: string; plan: Plan }
-  currentPath: string
-}
-
-// Navigation items:
-// - OVERVIEW → /dashboard
-// - REPOSITORIES → /dashboard/repos
-// - Divider
-// - SETTINGS → /dashboard/settings
-// - BILLING → /dashboard/billing
-// - Divider
-// - User info + > SIGN OUT
-//
-// Active item: text-accent, border-l-2 border-accent, bg-muted
-// Inactive item: text-muted-foreground, hover:text-foreground
-```
+No custom sidebar needed. `DashboardShell` provides:
+- Collapsible sidebar (240px desktop, drawer on mobile)
+- Nav items with icons, badges, active state
+- User section with avatar, name, `TierBadge`, sign out button
 
 ### Breadcrumbs
 
 ```typescript
 // src/components/dashboard/breadcrumbs.tsx
+// Still custom — FABRK Breadcrumbs exist but Hashmark needs plan badge
 
 interface BreadcrumbsProps {
   segments: Array<{ label: string; href?: string }>
@@ -1355,10 +1349,7 @@ interface BreadcrumbsProps {
 }
 
 // Renders: DASHBOARD > REPOS > repo-name  [PRO]
-// Each segment is UPPERCASE
-// Separator: " > " in text-muted-foreground
-// Last segment: text-foreground (current page, not a link)
-// Plan badge: right-aligned
+// Plan badge: use <TierBadge tier={plan} size="sm" /> from @fabrk/components
 ```
 
 ### RepoSubNav
@@ -1376,21 +1367,24 @@ interface RepoSubNavProps {
 // Inactive: text-muted-foreground hover:text-foreground
 ```
 
-### KPICard
+### KPICard / StatsGrid (from FABRK)
 
 ```typescript
-// src/components/dashboard/kpi-card.tsx
-// (Or use @fabrk/components KPICard when available)
+import { KPICard, StatsGrid } from '@fabrk/components'
 
-interface KPICardProps {
-  title: string    // UPPERCASE label
-  value: string | number
-  subtitle?: string
-  trend?: { direction: 'up' | 'down' | 'flat'; value: string }  // "+3 from last scan"
-  loading?: boolean
-}
+// For individual stat cards with trends:
+<KPICard title="COMPONENTS" value={279} trend={{ direction: 'up', value: '+12' }} />
 
-// Skeleton state: pulsing bg-muted rectangles for value and title
+// For a row of stats (files, components, routes, complexity):
+<StatsGrid
+  items={[
+    { label: 'Files', value: 1572, icon: <FileIcon /> },
+    { label: 'Components', value: 279, change: '+12%', icon: <BoxIcon /> },
+    { label: 'API Routes', value: 46, icon: <RouteIcon /> },
+    { label: 'Complexity', value: 'B+', icon: <GaugeIcon /> },
+  ]}
+  columns={4}
+/>
 ```
 
 ### StatusBadge
@@ -1501,4 +1495,4 @@ Build pages in this order based on dependencies and user flow:
 | 8 | `/dashboard/[repoId]/history` | Multiple scans | Pro feature |
 | 9 | `/pricing` | Stripe price IDs | SEO + marketing |
 
-Shared components to build first (before any page): DashboardLayout, Sidebar, Breadcrumbs, KPICard, StatusBadge, PlanBadge, EmptyState, UpgradeGate.
+FABRK provides: `DashboardShell` (layout + sidebar), `DashboardHeader`, `PageHeader`, `StatsGrid`, `KPICard`, `TierBadge` (plan badge), `Badge` (status), `EmptyState`. Build only: Breadcrumbs (custom with plan badge), UpgradeGate (plan-gating wrapper).

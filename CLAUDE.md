@@ -96,7 +96,16 @@ CSS variables in `globals.css` are fully compatible with `@fabrk/design-system`.
 | `mode.radius` | `rounded-dynamic` | 0rem (sharp) |
 | `mode.font` | `font-body` | monospace |
 
-25+ CSS variables defined. All FABRK components (KPICard, BarChart, DataTable, Badge, etc.) will render correctly in Hashmark without modification.
+25+ CSS variables defined. All FABRK components render correctly in Hashmark without modification.
+
+**Dashboard components from FABRK** (use these, don't build from scratch):
+- `DashboardShell` — Full layout (sidebar + mobile responsive + user section + sign out)
+- `DashboardHeader` — Page title with optional code bracket format + actions slot
+- `PageHeader` — Swiss-style header with tabs, search, and actions
+- `StatsGrid` — Responsive KPI grid (2/3/4 columns, auto-formats large numbers)
+- `TierBadge` — Plan indicator (FREE/TRIAL/PRO/TEAM/ENTERPRISE with icons)
+- `KPICard` — Individual stat card with trends
+- Plus: `DataTable`, `BarChart`, `LineChart`, `DonutChart`, `Gauge`, `Badge`, `EmptyState`, etc.
 
 When using colors, prefer semantic tokens over hardcoded values:
 ```

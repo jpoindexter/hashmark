@@ -149,6 +149,7 @@ enum FileFormat {
   COPILOT_INSTRUCTIONS
   WINDSURFRULES
   GEMINI_MD
+  CLINE_RULES
 }
 
 enum RuleScope {
