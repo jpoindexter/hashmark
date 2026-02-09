@@ -25,11 +25,32 @@ const COMPONENT_PATTERNS = [
   "src/components/**/*.jsx",
   "components/**/*.tsx",
   "components/**/*.jsx",
+  // Broader: any .tsx/.jsx in src/ subdirectories (catches src/ui/, src/charts/, src/admin/, etc.)
+  "src/**/*.tsx",
+  "src/**/*.jsx",
+  // Top-level lib/ui patterns (some projects use lib/ or ui/ at root)
+  "lib/**/*.tsx",
+  "lib/**/*.jsx",
+  "ui/**/*.tsx",
+  "ui/**/*.jsx",
   // Exclusions
   "!**/node_modules/**",
   "!**/*.test.*",
   "!**/*.spec.*",
   "!**/*.stories.*",
+  // Exclude Next.js app/pages directories (routes, not reusable components)
+  "!src/app/**",
+  "!app/**",
+  "!src/pages/**",
+  "!pages/**",
+  // Exclude API/server directories
+  "!src/server/**",
+  "!src/api/**",
+  // Exclude config/utility files that aren't components
+  "!src/lib/utils.*",
+  "!src/lib/db.*",
+  "!src/lib/auth.*",
+  "!lib/utils.*",
 ];
 
 /** Next.js special files that should not be treated as reusable components */
@@ -52,6 +73,16 @@ const SKIP_FILES = [
   "route.js",
   "middleware.ts",
   "middleware.js",
+  // Common non-component files
+  "index.ts",
+  "types.ts",
+  "types.tsx",
+  "utils.ts",
+  "utils.tsx",
+  "constants.ts",
+  "constants.tsx",
+  "config.ts",
+  "config.tsx",
 ];
 
 /**
