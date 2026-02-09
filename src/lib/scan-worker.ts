@@ -240,12 +240,13 @@ export async function runScan(
       });
     }
   } catch (error) {
+    const message = formatScanError(error);
     await db.scan.update({
       where: { id: scanId },
       data: {
         status: "FAILED",
         duration: Date.now() - startTime,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: message,
       },
     });
   } finally {
@@ -256,4 +257,38 @@ export async function runScan(
       // Ignore cleanup errors
     }
   }
+}
+
+/** Map raw errors to user-friendly messages */
+function formatScanError(error: unknown): string {
+  const msg =
+    error instanceof Error ? error.message : String(error);
+
+  // Clone failures
+  if (msg.includes("Authentication failed") || msg.includes("could not read Username")) {
+    return "GitHub authentication failed. Your access token may have expired — try signing out and back in.";
+  }
+  if (msg.includes("not found") && msg.includes("repository")) {
+    return "Repository not found. It may have been deleted or made private without granting access.";
+  }
+  if (msg.includes("Permission denied") || msg.includes("403")) {
+    return "Permission denied. Ensure Hashmark has access to this repository in your GitHub settings.";
+  }
+
+  // Timeout
+  if (msg.includes("ETIMEDOUT") || msg.includes("timed out") || msg.includes("timeout")) {
+    return "Scan timed out. This can happen with very large repositories. Try again or contact support.";
+  }
+
+  // CLI failures
+  if (msg.includes("ENOMEM") || msg.includes("out of memory")) {
+    return "Scan ran out of memory. This repository may be too large for the current plan.";
+  }
+
+  // Generic but clean
+  if (msg.length > 200) {
+    return msg.slice(0, 200) + "...";
+  }
+
+  return msg || "An unexpected error occurred during the scan.";
 }

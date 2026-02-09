@@ -44,16 +44,15 @@ const PLANS = [
     name: "TEAM",
     price: "$29",
     period: "/seat/mo",
-    description: "For teams",
+    description: "For teams — coming soon",
     features: [
       "Everything in Pro",
-      "Org-wide rules across all repos",
-      "Team dashboard",
-      "Invite team members",
+      "Shared team billing",
       "Priority support",
+      "Early access to new features",
     ],
-    cta: "> CONTACT SALES",
-    href: "mailto:hello@theft.studio",
+    cta: "> JOIN WAITLIST",
+    href: "mailto:hello@theft.studio?subject=Hashmark%20Team%20Plan%20Waitlist",
     highlighted: false,
   },
 ];
@@ -67,10 +66,9 @@ const FEATURES = [
   { name: "Intelligence dashboard", free: "Basic", pro: "Full", team: "Full" },
   { name: "Custom rules", free: false, pro: true, team: true },
   { name: "Scan history + diffs", free: false, pro: true, team: true },
-  { name: "Org-wide rules", free: false, pro: false, team: true },
-  { name: "Team dashboard", free: false, pro: false, team: true },
-  { name: "Invite members", free: false, pro: false, team: true },
+  { name: "Shared team billing", free: false, pro: false, team: true },
   { name: "Priority support", free: false, pro: false, team: true },
+  { name: "Early access to new features", free: false, pro: false, team: true },
 ];
 
 const FAQ = [

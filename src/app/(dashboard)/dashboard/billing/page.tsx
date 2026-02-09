@@ -37,9 +37,9 @@ const PLANS = [
     priceId: process.env.STRIPE_TEAM_PRICE_ID ?? "",
     features: [
       "Everything in Pro",
-      "Org-wide rules",
-      "Team dashboard",
+      "Shared team billing",
       "Priority support",
+      "Early access to new features",
     ],
   },
 ];

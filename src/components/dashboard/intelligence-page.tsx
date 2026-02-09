@@ -2,7 +2,7 @@
 
 import type { Repository, Scan } from "@prisma/client";
 import { StatsGrid, EmptyState, Button, Badge } from "@fabrk/components";
-import { Search } from "lucide-react";
+import { Search, AlertTriangle } from "lucide-react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { triggerRepoScan } from "@/app/(dashboard)/dashboard/[repoId]/actions";
 import { useScanPolling } from "@/hooks/use-scan-polling";
@@ -54,6 +54,23 @@ export function IntelligencePage({
           </Button>
         </form>
       </div>
+
+      {/* Scan failed */}
+      {scan?.status === "FAILED" && (
+        <div className="flex flex-col items-center gap-4 border border-destructive/50 bg-card px-8 py-12">
+          <AlertTriangle className="h-8 w-8 text-destructive" />
+          <h3 className="text-sm font-bold uppercase tracking-wider">
+            [ERROR] SCAN FAILED
+          </h3>
+          <p className="max-w-md text-center text-xs text-muted-foreground">
+            {scan.error || "An unexpected error occurred during the scan."}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Common causes: repository access revoked, network timeout, or
+            unsupported project structure.
+          </p>
+        </div>
+      )}
 
       {/* KPI Grid */}
       {scan?.status === "COMPLETED" && (
