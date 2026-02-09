@@ -5,8 +5,10 @@
 ## TL;DR
 
 - **Stack**: Next.js 16.1.6 + TypeScript 5 + Tailwind 4
-- **Components**: 6 total — USE EXISTING, don't create new
+- **Components**: 24 total — USE EXISTING, don't create new
+- **High-impact files**: auth, db, github, status-badge (changes affect many files)
 - **Database**: prisma with 8 models
+- **API**: 8 routes (6 protected)
 
 **Rules**: Use design tokens (not hardcoded colors), use `cn()` for classes, check existing components first
 
@@ -34,15 +36,17 @@ npm run dev
 | **Framework** | Next.js 16.1.6 (App Router) |
 | **Language** | TypeScript |
 | **Styling** | Tailwind CSS |
-| **Components** | 6 |
-| **Codebase** | 85 files, 19,898 lines |
+| **Components** | 24 |
+| **Custom Hooks** | 1 |
+| **API Routes** | 8 |
+| **Codebase** | 145 files, 24,889 lines |
 
 ## Critical Rules
 
 **These rules are NON-NEGOTIABLE:**
 
 ### 1. USE EXISTING COMPONENTS
-This project has 6 components. Check the list below before creating anything new.
+This project has 24 components. Check the list below before creating anything new.
 
 ```tsx
 // WRONG
@@ -76,7 +80,24 @@ className="bg-primary text-primary-foreground"
 
 ## Components
 
-6 components across 1 categories.
+24 components across 3 categories.
+
+### Dashboard (14)
+
+- `UpgradeButton`, `ManageSubscriptionButton`, `PlanSelectButton` — `@/components/dashboard/billing-actions`
+- `ConnectRepoDialog` — `@/components/dashboard/connect-repo-dialog`
+- `DashboardBreadcrumbs` — `@/components/dashboard/dashboard-breadcrumbs`
+- `DashboardShellWrapper` — `@/components/dashboard/dashboard-shell-wrapper`
+- `FilesPage` — `@/components/dashboard/files-page`
+- `IntelligencePage` — `@/components/dashboard/intelligence-page`
+- `RepoCard` — `@/components/dashboard/repo-card`
+- `RepoSubNav` — `@/components/dashboard/repo-sub-nav`
+- `ReposPage` — `@/components/dashboard/repos-page`
+- `RuleCard` — `@/components/dashboard/rule-card`
+- `RuleDialog` — `@/components/dashboard/rule-dialog`
+- `ScanHistoryPage` — `@/components/dashboard/scan-history-page`
+- `SettingsPage` — `@/components/dashboard/settings-page`
+- `TrialBanner` — `@/components/dashboard/trial-banner`
 
 ### Landing (6)
 
@@ -87,16 +108,86 @@ className="bg-primary text-primary-foreground"
 - `HowItWorks` — `@/components/landing/how-it-works`
 - `PricingTable` — `@/components/landing/pricing-table`
 
+### Shared (4)
+
+- `LoginCard` — `@/components/shared/login-card`
+- `OAuthButtons` — `@/components/shared/oauth-buttons`
+- `StatusBadge` — `@/components/shared/status-badge`
+- `UpgradeGate` — `@/components/shared/upgrade-gate`
+  - Props: feature, description, requiredPlan
+  - Wraps a feature section with a plan gate.
+
+## Custom Hooks
+
+- `useScanPolling` — `@/hooks/use-scan-polling` *(client only)*
+
+## Most Imported Files
+
+These files are imported most frequently - changes here have wide impact:
+
+- `src/lib/auth.ts` — imported by 22 files
+- `src/lib/db.ts` — imported by 21 files
+- `src/lib/github.ts` — imported by 5 files
+- `src/components/shared/status-badge.tsx` — imported by 4 files
+- `src/lib/scan-worker.ts` — imported by 3 files
+- `src/lib/stripe.ts` — imported by 3 files
+
+## ⚠️ Potentially Unused Components
+
+These component files are never imported anywhere:
+
+- `src/components/dashboard/billing-actions.tsx`
+- `src/components/dashboard/connect-repo-dialog.tsx`
+- `src/components/dashboard/dashboard-breadcrumbs.tsx`
+- `src/components/dashboard/repo-card.tsx`
+- `src/components/dashboard/rule-card.tsx`
+- `src/components/dashboard/rule-dialog.tsx`
+- `src/components/shared/oauth-buttons.tsx`
+
+*Consider removing these or they may be entry points not detected.*
+
 ## Key Dependencies
 
 Most used external packages:
 
-- `next-auth` — 2 imports
-- `next` — 1 imports
+- `next` — 41 imports
+- `@fabrk/components` — 19 imports
+- `lucide-react` — 13 imports
+- `react` — 8 imports
+- `next-auth` — 4 imports
 - `@auth/prisma-adapter` — 1 imports
 - `@prisma/client` — 1 imports
 - `@octokit/rest` — 1 imports
+- `child_process` — 1 imports
+- `util` — 1 imports
+- `fs` — 1 imports
+- `path` — 1 imports
 - `stripe` — 1 imports
+- `crypto` — 1 imports
+
+## API Routes
+
+8 API endpoints (1 with schemas):
+
+### Billing
+
+- `POST` `/api/billing/checkout` 🔒
+- `POST` `/api/billing/portal` 🔒
+- `POST` `/api/billing/webhook`
+
+### Repos
+
+- `GET` `/api/repos` 🔒
+
+### Scan
+
+- `POST` `/api/scan/:repoId` 🔒
+- `GET` `/api/scan/:repoId/download` 🔒
+- `GET` `/api/scan/:repoId/latest` 🔒
+
+### Webhooks
+
+- `POST` `/api/webhooks/github`
 
 ## Database Models
 
@@ -133,6 +224,7 @@ STRIPE_WEBHOOK_SECRET
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 STRIPE_PRO_PRICE_ID
 STRIPE_TEAM_PRICE_ID
+GITHUB_WEBHOOK_SECRET
 ```
 
 ## Design Tokens
@@ -219,24 +311,24 @@ border-border, border-primary, border-destructive
 
 **Recommended Settings Based on Codebase Complexity:**
 
-- **For simple tasks** (formatting, typing): standard effort (balanced cost/capability)
+- **For simple tasks** (formatting, typing): minimal effort (fast, low-cost models)
 - **For complex tasks** (refactoring, architecture): standard effort (balanced cost/capability)
 
 **Complexity by Area:**
 
-- 🔴 **Database** (1 files, complexity: 51/100)
-  - Recommended: Maximum effort (most capable model)
-  - Characteristics: high cognitive complexity, complex regex patterns
-- 🟡 **Source Files** (15 files, complexity: 43/100)
-  - Recommended: Standard effort (balanced model)
-  - Characteristics: complex regex patterns, high cognitive complexity, large file (>500 lines)
 - 🟡 **Scanners/Parsers** (24 files, complexity: 40/100)
+  - Recommended: Standard effort (balanced model)
+  - Characteristics: complex regex patterns, high cognitive complexity, moderate cognitive complexity
+- 🟡 **Source Files** (20 files, complexity: 38/100)
   - Recommended: Standard effort (balanced model)
   - Characteristics: complex regex patterns, high cognitive complexity, moderate cognitive complexity
 - 🟡 **Type Definitions** (2 files, complexity: 33/100)
   - Recommended: Standard effort (balanced model)
   - Characteristics: complex regex patterns, large file (>500 lines), moderate cognitive complexity
-- 🟢 **Utilities** (9 files, complexity: 14/100)
+- 🟢 **Database** (2 files, complexity: 28/100)
+  - Recommended: Minimal effort (fast, low-cost model)
+  - Characteristics: high cognitive complexity, complex regex patterns
+- 🟢 **Utilities** (10 files, complexity: 18/100)
   - Recommended: Minimal effort (fast, low-cost model)
   - Characteristics: complex regex patterns, moderate cognitive complexity
 

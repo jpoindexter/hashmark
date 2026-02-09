@@ -9,7 +9,7 @@ Also read `AGENTS.md` — auto-generated codebase context (components, models, t
 Hashmark (hashmark.md) — SaaS that scans codebases and generates AI context files for every coding tool. One scan, every format, always in sync.
 
 Three deliverables in one monorepo:
-- **Web App** (root `src/`): Next.js 16 App Router — landing page live, dashboard in progress
+- **Web App** (root `src/`): Next.js 16 App Router — landing page + full dashboard (auth, billing, scan engine)
 - **CLI** (`packages/cli/`): `hashmark-cli` scanner engine — 27 scanners, 8 output formats
 - **GitHub Action** (`packages/action/`): auto-sync context files on push
 
@@ -26,7 +26,7 @@ pnpm type-check       # TypeScript check (tsc --noEmit)
 pnpm db:push          # Push Prisma schema to Postgres
 pnpm db:generate      # Generate Prisma client
 pnpm db:studio        # Open Prisma Studio
-pnpm db:seed          # Seed database
+pnpm db:seed          # Seed database (demo user, repo, scan, files)
 
 # CLI (separate workspace package)
 cd packages/cli && pnpm build     # Build with tsup (ESM + DTS)
@@ -43,23 +43,37 @@ cd packages/action && pnpm build  # Build with tsup
 pnpm install
 cp .env.example .env.local   # Then fill in values
 pnpm db:push                 # Create database tables
+pnpm db:seed                 # Optional: seed demo data
 pnpm dev
 ```
 
-Required env vars: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
+Required env vars: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `GITHUB_WEBHOOK_SECRET`.
 
 ## Stack
 
 - **Next.js 16.1.6** (App Router) + TypeScript 5.9 + Tailwind v4
 - **Prisma 6** + Postgres (Supabase/Neon)
 - **NextAuth v5 beta** (GitHub OAuth, PrismaAdapter) — `src/lib/auth.ts`
-- **Stripe** (subscriptions, API v2026-01-28) — `src/lib/stripe.ts`
+- **Stripe** (subscriptions, webhooks) — `src/lib/stripe.ts`
 - **Octokit** (GitHub API) — `src/lib/github.ts`
+- **FABRK** (`@fabrk/components`, `@fabrk/design-system`) — dashboard UI primitives
 - **pnpm workspace** — packages are independent, built with tsup
 
 ## Architecture
 
 **Web App** (`src/`): Path alias `@/*` → `./src/*`. Prisma singleton at `src/lib/db.ts`. Root layout uses Geist Mono font. ESLint config at `eslint.config.mjs` (flat config). Root tsconfig excludes `packages/` — each package has its own.
+
+**Pages** (10 routes):
+- `(marketing)`: `/` (landing), `/pricing`, `/login`
+- `(dashboard)`: `/dashboard` (overview), `/dashboard/repos`, `/dashboard/billing`, `/dashboard/settings`
+- `(dashboard)`: `/dashboard/[repoId]` (intelligence), `/dashboard/[repoId]/files`, `/dashboard/[repoId]/history`
+
+**API Routes** (9 endpoints):
+- Auth: `/api/auth/[...nextauth]`
+- Billing: `/api/billing/checkout`, `/api/billing/portal`, `/api/billing/webhook`
+- Repos: `/api/repos` (list GitHub repos)
+- Scans: `/api/scan/[repoId]` (trigger), `/api/scan/[repoId]/latest` (poll), `/api/scan/[repoId]/download` (ZIP)
+- Webhooks: `/api/webhooks/github` (auto-sync on push)
 
 **CLI engine** (`packages/cli/`): Entry is `src/cli.ts` (uses `cac` for arg parsing). Scanners in `src/scanners/` each export a scan function. `src/generator.ts` produces AGENTS.md. `src/formats/` has per-tool generators that all consume a `ScanResult` type. The format factory in `src/formats/index.ts` has `generateFormat()` for one format and `generateAllFormats()` for all. Config loaded from `hashmark.config.json` / `.hashmarkrc` / legacy `agentsmith.config.*`.
 
@@ -69,8 +83,13 @@ Required env vars: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB
 
 - **Route Groups**: `(marketing)` for public pages, `(dashboard)` for authenticated
 - **Server Components by default**: Only add `"use client"` when needed
-- **Server Actions**: For mutations (connect repo, trigger scan)
-- **API Routes**: For webhooks (Stripe, GitHub)
+- **Server Actions**: For mutations (connect repo, trigger scan, install GitHub Action)
+- **API Routes**: For webhooks (Stripe, GitHub), polling, file downloads
+- **Scan polling**: `useScanPolling` hook polls `/api/scan/[repoId]/latest` every 3s, calls `router.refresh()` on completion
+- **Plan gating**: Server-side in actions + client-side `UpgradeGate` component. FREE = 1 repo, no custom rules, no scan history, no auto-sync
+- **Parallel data fetching**: `Promise.all` in server components for concurrent DB queries
+- **Loading/error states**: Every dashboard route has `loading.tsx` (skeleton UIs) + `error.tsx` (error boundaries with retry)
+- **Breadcrumbs**: Auto-generated from pathname via `DashboardBreadcrumbs` in shell wrapper
 
 ## Design Rules
 
@@ -80,40 +99,26 @@ Required env vars: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB
 - Buttons: UPPERCASE with `>` prefix (e.g., `> CONNECT REPO`)
 - The `#` symbol is the brand motif
 - Radius: 0 (sharp corners, terminal style)
+- Use semantic tokens over hardcoded values: `bg-background` not `bg-zinc-950`, `text-accent` not `text-emerald-500`
 
-### FABRK Integration (Complete)
+### FABRK Components (use these, don't build from scratch)
 
-CSS variables in `globals.css` are fully compatible with `@fabrk/design-system`. The `mode` object from FABRK works seamlessly — all Tailwind classes resolve correctly:
-
-| FABRK Token | Tailwind Class | Resolves To |
-|-------------|---------------|-------------|
-| `mode.color.bg.base` | `bg-background` | #09090b (zinc-950) |
-| `mode.color.bg.surface` | `bg-card` | #18181b (zinc-900) |
-| `mode.color.text.accent` | `text-accent` | #10b981 (emerald-500) |
-| `mode.color.bg.warning` | `bg-warning` | #f59e0b (amber-500) |
-| `mode.color.bg.danger` | `bg-destructive` | #ef4444 (red-500) |
-| `mode.color.text.muted` | `text-muted-foreground` | #a1a1aa (zinc-400) |
-| `mode.radius` | `rounded-dynamic` | 0rem (sharp) |
-| `mode.font` | `font-body` | monospace |
-
-25+ CSS variables defined. All FABRK components render correctly in Hashmark without modification.
-
-**Dashboard components from FABRK** (use these, don't build from scratch):
 - `DashboardShell` — Full layout (sidebar + mobile responsive + user section + sign out)
-- `DashboardHeader` — Page title with optional code bracket format + actions slot
+- `DashboardHeader` — Page title with optional subtitle + actions slot
 - `PageHeader` — Swiss-style header with tabs, search, and actions
-- `StatsGrid` — Responsive KPI grid (2/3/4 columns, auto-formats large numbers)
-- `TierBadge` — Plan indicator (FREE/TRIAL/PRO/TEAM/ENTERPRISE with icons)
-- `KPICard` — Individual stat card with trends
-- Plus: `DataTable`, `BarChart`, `LineChart`, `DonutChart`, `Gauge`, `Badge`, `EmptyState`, etc.
+- `StatsGrid` — Responsive KPI grid (2/3/4 columns)
+- `TierBadge` — Plan indicator (FREE/PRO/TEAM with icons)
+- `EmptyState` — Empty state with icon, title, description, action
+- `Badge` — Status/label badges with variants
+- `Button` — Primary/outline/ghost/destructive, loading state, `asChild`
+- `Input` — Form inputs
+- `Breadcrumb*` — Breadcrumb primitives (Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator)
 
-When using colors, prefer semantic tokens over hardcoded values:
-```
-bg-background NOT bg-zinc-950
-text-accent NOT text-emerald-500
-bg-destructive NOT bg-red-500
-border-border NOT border-zinc-800
-```
+### Dashboard Components (24 total in `src/components/`)
+
+- **Dashboard**: `dashboard-shell-wrapper`, `dashboard-breadcrumbs`, `billing-actions`, `connect-repo-dialog`, `files-page`, `intelligence-page`, `repo-card`, `repo-sub-nav`, `repos-page`, `rule-card`, `rule-dialog`, `scan-history-page`, `settings-page`, `trial-banner`
+- **Landing**: `cli-section`, `footer`, `formats`, `hero`, `how-it-works`, `pricing-table`
+- **Shared**: `login-card`, `oauth-buttons`, `status-badge`, `upgrade-gate`
 
 ## Output Formats (8 total)
 
