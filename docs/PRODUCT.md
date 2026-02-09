@@ -146,29 +146,74 @@ Zero friction. No PRs to review. No manual updates. Every AI tool always has fre
 
 ### Direct Competitors
 
-| Competitor | GitHub Stars | npm Downloads/mo | Pricing | What They Do | Hashmark Advantage |
-|-----------|------------|-----------------|---------|-------------|-------------------|
-| **Repomix** | 21,700 | 188,836 | Free (OSS) | Packs code into single XML for LLM context | One format, no generation, no auto-sync |
-| **Context7** | 44,200 | — (MCP) | Free (1K req/mo) / $10/mo | Library docs via MCP server | Library docs only, not project-specific |
-| **SpecStory** | — | — (VS Code ext) | Free (local) | Saves AI chat history, derives rules | Cursor-only, reactive, no multi-format |
-| **agent-smith CLI** | — | 652 (3 days) | Free (OSS) | Generates AGENTS.md | AGENTS.md only, manual, our own CLI |
+| Competitor | GitHub Stars | Pricing | What They Do | Hashmark Advantage |
+|-----------|------------|---------|-------------|-------------------|
+| **Repomix** | 20,600 | Free (MIT) | Packs entire repo into single XML/MD for LLM context | One-shot dump, no tool-specific formats, no sync |
+| **Context7** (Upstash) | 44,200 | Free (500 req/mo) / $7/seat/mo | Library docs via MCP server | Library docs only, not your codebase |
+| **SpecStory** | — | Free (VS Code ext) | Saves AI chat history, derives Cursor rules | Chat-derived (reactive), Cursor-only output |
+| **cursorrules.org** | — | Free | Template-based .cursorrules generator | Template-based, not code-aware, single format |
+| **Cursor Directory** | — | Free | Generates rules from package.json | Only reads package.json, Cursor-only |
+| **CTX** | — | Free (MIT) | Collects codebase info into markdown for AI | Manual config, no tool-specific formats, no sync |
+| **agent-smith CLI** | — | Free (our CLI) | Generates AGENTS.md from 27 scanners | AGENTS.md only, manual, feeds Hashmark funnel |
+
+#### Repomix (20.6K stars, 188K monthly npm downloads)
+One-shot codebase dump tool by Kazuki Yamada ([@yamadashy](https://github.com/yamadashy)). Packs your entire repo into a single XML/Markdown file you paste into ChatGPT/Claude. Originally "Repopack" — renamed Dec 2024 due to legal considerations. Has MCP server. **Key difference**: Repomix creates a blob of raw code. Hashmark creates structured, tool-specific context files with architecture analysis, anti-patterns, and component inventories. Repomix is adjacent (context input), not directly competitive (context file generation/management).
+
+#### Context7 (44.2K stars, by Upstash)
+MCP server that injects *third-party library documentation* into your AI editor's context. When you type "use context7" in Cursor, it resolves the library and injects relevant docs from a vector database. **Pricing controversy**: On January 13, 2026, Context7 [quietly slashed its free tier by 92%](https://blog.devgenius.io/context7-quietly-slashed-its-free-tier-by-92-16fa05ddce03) — from ~6,000 req/month to 500 req/month — sparking significant backlash. **Key difference**: Context7 provides library docs; Hashmark provides your own codebase's architecture and patterns. Complementary, not competitive. The pricing controversy creates an opening — developers are wary of cloud pricing bait-and-switch.
+
+#### SpecStory (Boston, 4-6 employees, backed by NP-Hard Ventures)
+Captures every AI coding conversation from Cursor, Copilot, Claude Code, and Codex. Scans conversations for rule-like statements ("always use Riverpod", "never use Bloc") and derives rules automatically. Local-first (`.specstory/history/`), with cloud search. **Key difference**: SpecStory learns from what you *said* to AI; Hashmark learns from what your code *actually is*. SpecStory requires ongoing AI usage to build rules; Hashmark works from day one. Could be complementary (chat memory + codebase context).
+
+#### Cursor v0.49 Built-in Rule Generation
+Cursor itself now has `/Generate Cursor Rules` as a built-in command. Generates rules from active conversation context. **Key limitation**: Only works within Cursor. Only generates Cursor rules. Requires conversation context. Does not proactively scan your codebase. **Risk level**: Medium — could expand to be more codebase-aware in future versions.
 
 ### Adjacent Competitors
 
 | Competitor | What They Do | Why Not Competitive |
 |-----------|-------------|-------------------|
-| **SonarQube** ($5B) | AI Code Assurance — tags AI-generated code, applies stricter quality gates | Code quality, not context. Can autodetect Copilot code only. |
-| **Sourcegraph Cody** | Vector embeddings of entire codebase for AI context | Real-time indexing, not file generation. Different approach. |
-| **Cursor AI** | Built-in semantic indexing + codebase search | Internal to Cursor only. Doesn't help Claude Code, Copilot, etc. |
+| **SonarQube** ($5B, Enterprise pricing) | AI Code Assurance — tags AI-generated code, applies stricter quality gates | Post-generation validation, not pre-generation context. Enterprise plan only. |
+| **Greptile** (YC W24, ~$180M valuation) | AI code review with full codebase context | Different workflow stage (PR review, not context files). $20/user/mo. |
+| **Qodo** (formerly Codium, $40M Series A) | AI code review, test generation, PR automation | Different problem (testing, not context). $19-30/user/mo. |
+| **Factory** ($50M raised) | Autonomous coding agents ("Droids") | Potential customer — their agents use AGENTS.md. Co-creator of AGENTS.md standard. |
+| **Sourcegraph Cody** | Vector embeddings of entire codebase for AI context | Real-time indexing, not file generation. Different architecture. |
+
+### Pricing Benchmarks (Developer Tools, 2026)
+
+| Tool | Free | Individual | Team/Business |
+|------|------|-----------|---------------|
+| **GitHub Copilot** | Limited | $10/mo (Pro), $39/mo (Pro+) | $19/user/mo |
+| **Cursor** | Limited | $20/mo | $40/user/mo |
+| **Windsurf** | 25 credits/mo | $15/mo | $35/mo |
+| **Claude Pro** | Limited | $20/mo | $30/seat/mo |
+| **Greptile** | 14-day trial | $20/user/mo | Custom |
+| **Context7** | 500 req/mo | $7/seat/mo | Custom |
+| **SonarQube Cloud** | 50K LoC | EUR 30/mo | Custom |
+| **Hashmark** | **1 repo** | **$19/mo** | **$29/seat/mo** |
+
+Industry trends (2026): Individual tier sweet spot is $10-20/mo. Team tier sweet spot is $19-39/seat/mo. 78% of dev tools now use consumption-based pricing. Hashmark's $19/mo is right in the sweet spot.
+
+**Sources**: [GitHub Copilot plans](https://github.com/features/copilot/plans), [Cursor pricing](https://cursor.com/pricing), [Claude pricing](https://claude.com/pricing), [Greptile](https://greptile.com/pricing), [Context7](https://context7.com/docs/plans-pricing), [SonarQube](https://sonarsource.com/plans-and-pricing/)
 
 ### Competitive Moat
 
 **Hashmark's unique position**: All formats, auto-synced, zero friction.
 
 No competitor does all three:
-1. **All formats**: Repomix = one format. Context7 = library docs. SpecStory = Cursor only.
+1. **All formats**: Repomix = raw dump. Context7 = library docs. SpecStory = Cursor only. cursorrules.org = template-based. Cursor v0.49 = Cursor only.
 2. **Auto-synced**: Nobody auto-commits context files on every push via GitHub Action.
-3. **Zero friction**: No PRs to review. No manual steps. Install once, forget forever.
+3. **Code-aware**: 27 scanners extract real architecture, not templates or chat history.
+4. **Zero friction**: No PRs to review. No manual steps. Install once, forget forever.
+
+### Threat Assessment
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|-----------|--------|------------|
+| Cursor expands built-in rule generation to be codebase-aware | Medium | High | Hashmark covers 7 other tools Cursor can't reach |
+| GitHub auto-generates copilot-instructions.md natively | Low | Very High | Would validate the space; likely acquires us first |
+| SpecStory adds codebase scanning | Medium | Medium | Hashmark has 27 scanners, SpecStory would be starting from zero |
+| Repomix adds format-specific output | Low | Medium | Different architecture (dump vs. structured analysis) |
+| Context7 expands to codebase context | Low | Medium | Different core competency (library docs vs. codebase analysis) |
 
 ## How Auto-Sync Works
 
@@ -238,8 +283,10 @@ See [SCANNERS.md](./SCANNERS.md) for detailed documentation of all 27 scanners.
 | GitHub Copilot Individual | $10/mo | Hashmark is complementary, makes Copilot work better |
 | GitHub Copilot Business | $19/mo | Same price point, different value |
 | Cursor Pro | $20/mo | Same buyer, additive value |
-| Context7 Pro | $10/mo | More features, higher price justified |
-| SonarQube Cloud | $14+/mo base | Different category, similar buyer |
+| Windsurf Pro | $15/mo | Lower price, different feature set |
+| Context7 Pro | $7/seat/mo | More features (27 scanners vs library docs), higher price justified |
+| Greptile | $20/user/mo | Different stage (review vs context), same price range |
+| SonarQube Cloud | EUR 30/mo | Different category (quality vs context), similar buyer |
 
 Free tier is generous enough to demonstrate value (all formats, download), restricted enough to drive upgrades (1 repo, no auto-sync).
 
