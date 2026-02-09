@@ -2,23 +2,23 @@
 
 ## Overview
 
-Hashmark is the cloud product for agent-smith. The CLI is free and generates AGENTS.md locally. Hashmark is the paid SaaS that generates ALL AI context file formats, keeps them in sync via GitHub Actions, and provides a codebase intelligence dashboard.
+Hashmark is the cloud product for hashmark-cli (formerly agent-smith). The CLI is free and generates context files locally. Hashmark SaaS generates ALL AI context file formats, keeps them in sync via GitHub Actions, and provides a codebase intelligence dashboard.
 
 **Domain**: hashmark.md
-**CLI**: npx @jpoindexter/agent-smith (652 downloads in 3 days, 47% blog post conversion)
+**CLI**: `npx hashmark-cli` (652 downloads in 3 days, 47% blog post conversion)
 **Value prop**: "One scan. Every format. Always in sync."
 
 ---
 
-## Phase 1: Foundation (Current)
+## Phase 1: Foundation [DONE]
 
 ### 1.1 Project Setup [DONE]
 - [x] Create GitHub repo (jpoindexter/hashmark)
 - [x] Initialize Next.js 16 + TypeScript + Tailwind v4
 - [x] Install dependencies (Prisma, NextAuth, Octokit, Stripe, Zod)
 - [x] Create documentation (README, CLAUDE.md, .env.example)
-- [x] Create Prisma schema
-- [x] Set up directory structure
+- [x] Create Prisma schema (8 models, 4 enums)
+- [x] Set up directory structure (pnpm workspace monorepo)
 
 ### 1.2 Landing Page [DONE]
 - [x] Hero section with terminal aesthetic
@@ -30,134 +30,134 @@ Hashmark is the cloud product for agent-smith. The CLI is free and generates AGE
 - [ ] OG image
 - [ ] Mobile responsive polish
 
-### 1.3 Auth + Database
+### 1.3 Auth + Database [PARTIAL]
 - [x] GitHub OAuth via NextAuth v5 (config + route handler)
-- [x] Prisma schema (User, Repository, Scan, GeneratedFile, CustomRule models)
+- [x] Prisma schema (User, Repository, Scan, GeneratedFile, CustomRule)
 - [x] User model with plan field (FREE/PRO/TEAM enum)
-- [ ] Prisma schema migration (push to Supabase/Neon)
+- [ ] Prisma migration (push to Supabase/Neon)
 - [ ] Protected route middleware
-- [ ] Sign in / sign out flow (UI pages)
+- [ ] Sign in / sign out UI pages
 
-## Phase 2: Core Product
+### 1.4 Scanner Engine [DONE]
+- [x] Move agent-smith into packages/cli/ as hashmark-cli
+- [x] 27 scanners fully operational
+- [x] Rename all branding from agentsmith → hashmark
+- [x] Backwards-compatible config loading
 
-### 2.1 GitHub Integration
-- [ ] List user's repos from GitHub API (Octokit)
-- [ ] Select/connect repos to Hashmark
-- [ ] Store connected repos in database
-- [ ] Show repo status (connected, last scan, etc.)
+### 1.5 Multi-Format Generators [DONE]
+- [x] AGENTS.md (existing generator.ts)
+- [x] CLAUDE.md format adapter
+- [x] .cursorrules format adapter
+- [x] .cursor/rules/*.mdc format adapter (split by domain)
+- [x] .github/copilot-instructions.md format adapter
+- [x] .windsurfrules format adapter
+- [x] GEMINI.md format adapter
+- [x] .clinerules format adapter
+- [x] CLI `--format all` flag (generates 10 files)
+- [x] CLI `--format claude-md,cursorrules` (comma-separated)
 
-### 2.2 Scanning Engine
-- [ ] Run agent-smith as subprocess on cloned repo
-- [ ] Parse scan results (JSON output)
-- [ ] Store scan results in Postgres
-- [ ] Scan status tracking (pending → scanning → completed/failed)
-- [ ] Background job processing (scan takes 10-30s)
+### 1.6 GitHub Action [DONE]
+- [x] packages/action/ with action.yml
+- [x] Auto-sync: scan → generate all formats → commit
+- [x] PR mode (`commit-mode: pr`)
+- [x] Custom rules injection
+- [x] Format selection
+- [x] README with usage examples
 
-### 2.3 Output Generation
-- [ ] Generate AGENTS.md from scan results
-- [ ] Generate CLAUDE.md format
-- [ ] Generate .cursorrules format
-- [ ] Generate .cursor/rules/*.mdc format
-- [ ] Generate .github/copilot-instructions.md format
-- [ ] Generate .windsurfrules format
-- [ ] Generate gemini.md format
-- [ ] Preview each format in web UI
-- [ ] Download individual or all formats (ZIP)
+---
 
-## Phase 3: Dashboard
+## Phase 2: Web Dashboard (~1 week)
 
-### 3.1 Repo Overview
-- [ ] All connected repos in one view
-- [ ] Status badges (last scan, file counts, health)
-- [ ] Quick actions (rescan, view files, disconnect)
+Build with FABRK framework packages for speed.
 
-### 3.2 Repo Intelligence
-- [ ] KPI cards (files, lines, components, API routes, complexity)
-- [ ] Components inventory (searchable, filterable)
-- [ ] API routes with request/response schemas
-- [ ] Complexity hotspots (which files are hardest for AI)
-- [ ] Anti-patterns with WRONG/RIGHT code examples
-- [ ] Design tokens inventory
-- [ ] Unused components detection
-- [ ] Test coverage mapping
-- [ ] Import graph (hub files, circular deps)
+### 2.1 Dashboard Shell
+- [ ] Install FABRK packages (design-system, components, auth, payments, security, core)
+- [ ] Dashboard layout (sidebar, header, breadcrumbs)
+- [ ] Protected routes (require auth)
+- [ ] Navigation between pages
 
-### 3.3 Scan History
-- [ ] Timeline of all scans for a repo
-- [ ] Diff between scans (what changed)
-- [ ] Trend charts (component count, complexity over time)
+### 2.2 Repo Management
+- [ ] `/dashboard/repos` — List user's GitHub repos (Octokit)
+- [ ] Connect/disconnect repos
+- [ ] Repo status indicators (connected, last scan)
+- [ ] One-click scan trigger
 
-## Phase 4: Auto-Sync
+### 2.3 Scan Results
+- [ ] `/dashboard/[repoId]` — Scan results visualization
+- [ ] KPI cards (files, components, routes, complexity)
+- [ ] Components inventory table
+- [ ] API routes table
+- [ ] Complexity chart
 
-### 4.1 GitHub Action
-- [ ] Create `hashmark-action` GitHub Action
-- [ ] Action runs agent-smith scanners in repo CI
-- [ ] Generates all 7 file formats
-- [ ] Auto-commits changed files to default branch
-- [ ] Configurable: `mode: pr` for teams that want review
-- [ ] Publish to GitHub Marketplace
+### 2.4 Format Preview + Download
+- [ ] `/dashboard/[repoId]/files` — Preview all 8 formats
+- [ ] Syntax-highlighted preview
+- [ ] Download individual format
+- [ ] Download all as ZIP
+- [ ] Copy to clipboard
 
-### 4.2 Action Installation Flow
-- [ ] "Install Action" button in web UI
-- [ ] Generate .github/workflows/hashmark.yml content
-- [ ] Create workflow file via GitHub API (Contents API)
-- [ ] Show installation status
-- [ ] Trigger initial scan after install
+### 2.5 API Routes
+- [ ] `POST /api/scan/[repoId]` — Trigger scan
+- [ ] `GET /api/scan/[repoId]/latest` — Latest results
+- [ ] `GET /api/repos` — List repos
+- [ ] `POST /api/repos/connect` — Connect repo
+- [ ] `GET /api/files/[repoId]/[format]` — Get format content
+- [ ] `POST /api/action/install` — Install GitHub Action
 
-### 4.3 Webhook Integration
-- [ ] GitHub webhook receiver (push events)
-- [ ] Trigger re-scan on push to default branch
-- [ ] Update dashboard with latest scan results
-- [ ] Notification on scan completion
+---
 
-## Phase 5: Payments
+## Phase 3: Payments (~3 days)
 
-### 5.1 Stripe Integration
+### 3.1 Stripe Integration
 - [ ] Create Stripe products (Pro, Team)
-- [ ] Checkout flow (select plan → Stripe Checkout)
-- [ ] Subscription management (upgrade, downgrade, cancel)
-- [ ] Billing portal link
-- [ ] Stripe webhook handler (invoice.paid, subscription.updated, etc.)
+- [ ] `/pricing` page with checkout CTAs
+- [ ] Checkout session creation
+- [ ] Webhook handler (invoice.paid, subscription events)
+- [ ] `/dashboard/billing` — Plan management, portal link
 
-### 5.2 Feature Gating
-- [ ] Free tier: 1 repo, manual scan, download only
-- [ ] Pro tier: unlimited repos, auto-sync, full dashboard, custom rules, scan history
-- [ ] Team tier: org-wide rules, team dashboard, invite members
-- [ ] Middleware to check plan on protected features
+### 3.2 Feature Gating
+- [ ] Free: 1 repo, manual scan, download only
+- [ ] Pro: unlimited repos, auto-sync, custom rules, scan history
+- [ ] Team: org-wide rules, team dashboard
+- [ ] Middleware plan check on protected features
 
-## Phase 6: Polish
+---
 
-### 6.1 UX
+## Phase 4: Polish + Launch (~3 days)
+
+### 4.1 UX
 - [ ] Loading states (skeleton screens)
 - [ ] Empty states (no repos, no scans)
 - [ ] Error handling (scan failures, API errors)
 - [ ] Toast notifications
-- [ ] Keyboard shortcuts
+- [ ] Mobile responsive
 
-### 6.2 SEO + Marketing
-- [ ] Meta tags on all pages
-- [ ] OG images (dynamic)
-- [ ] Blog section (optional, for SEO)
-- [ ] Changelog page
-
-### 6.3 Deployment
+### 4.2 Deploy
 - [ ] Deploy to Vercel
 - [ ] Connect hashmark.md domain
-- [ ] Set up environment variables
-- [ ] Test full flow end-to-end
+- [ ] Set up env vars
+- [ ] E2E test full flow
+
+### 4.3 Launch
+- [ ] Product Hunt submission
+- [ ] Hacker News "Show HN"
+- [ ] Reddit (r/programming, r/webdev, r/cursor, r/ClaudeAI)
+- [ ] dev.to tutorial article
+- [ ] GitHub Action on Marketplace
 
 ---
 
 ## Future Ideas (Post-Launch)
 
-- **Custom rules**: "Always use design tokens", "No inline styles", "Use existing components"
-- **AI-readiness score**: Grade repos on how well AI tools can work with them
-- **Org dashboard**: See all team repos in one view with aggregate stats
-- **Slack notifications**: Alert when scans complete or anti-patterns detected
-- **VS Code extension**: View Hashmark dashboard inline
-- **Public profiles**: Share your repo's AI-readiness score (badge for README)
-- **API access**: Let other tools consume your scan data
-- **Self-hosted**: Enterprise version that runs on-prem
+- Custom rules engine (inject rules into all formats)
+- AI-readiness score (grade repos for AI tool compatibility)
+- Org dashboard (team-wide view)
+- Scan history with diffs
+- VSCode extension
+- Public profiles / README badge
+- Self-hosted enterprise version
+- Slack notifications
+- API access for third-party tools
 
 ---
 
@@ -166,11 +166,13 @@ Hashmark is the cloud product for agent-smith. The CLI is free and generates AGE
 - **Activation**: User connects first repo and sees scan results
 - **Conversion**: Free user upgrades to Pro
 - **Retention**: User keeps repos connected and scanning
-- **North star**: Number of repos with active auto-sync
+- **North star**: Number of repos with active auto-sync (GitHub Action)
 
 ## Revenue Targets
 
-- **Month 1**: Launch, 50 free users, 5 Pro ($95 MRR)
-- **Month 3**: 200 free users, 20 Pro ($380 MRR)
-- **Month 6**: 500 free users, 50 Pro, 2 Teams ($1,108 MRR)
-- **Month 12**: 2000 free users, 200 Pro, 10 Teams ($6,700 MRR)
+| Month | Free Users | Pro ($19/mo) | Team ($29/seat) | MRR |
+|-------|-----------|--------------|-----------------|-----|
+| 1 | 50 | 5 | 0 | $95 |
+| 3 | 200 | 20 | 0 | $380 |
+| 6 | 500 | 50 | 2 teams (10 seats) | $1,240 |
+| 12 | 2,000 | 200 | 10 teams (50 seats) | $5,250 |
