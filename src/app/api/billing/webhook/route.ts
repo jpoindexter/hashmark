@@ -26,25 +26,37 @@ export async function POST(request: Request) {
       const checkoutSession = event.data.object;
       const customerId = checkoutSession.customer as string;
 
-      // Look up user by Stripe customer ID and upgrade plan
       const user = await db.user.findUnique({
         where: { stripeCustomerId: customerId },
       });
 
       if (user) {
-        // Determine plan from the price
         const lineItems = await stripe.checkout.sessions.listLineItems(
           checkoutSession.id
         );
         const priceId = lineItems.data[0]?.price?.id;
 
-        let plan: "FREE" | "PRO" | "TEAM" = "PRO";
-        if (priceId === process.env.STRIPE_TEAM_PRICE_ID) {
-          plan = "TEAM";
-        }
+        const plan = resolvePlan(priceId);
 
         await db.user.update({
           where: { id: user.id },
+          data: { plan },
+        });
+      }
+      break;
+    }
+
+    case "customer.subscription.updated": {
+      const subscription = event.data.object;
+      const customerId = subscription.customer as string;
+
+      // Subscription changed (upgrade/downgrade mid-cycle)
+      if (subscription.status === "active") {
+        const priceId = subscription.items.data[0]?.price?.id;
+        const plan = resolvePlan(priceId);
+
+        await db.user.updateMany({
+          where: { stripeCustomerId: customerId },
           data: { plan },
         });
       }
@@ -61,7 +73,30 @@ export async function POST(request: Request) {
       });
       break;
     }
+
+    case "invoice.payment_failed": {
+      const invoice = event.data.object;
+      const customerId = invoice.customer as string;
+
+      // Payment failed — if this is the final attempt, downgrade to FREE
+      // Stripe sends this on every retry; check attempt_count to act on final failure
+      if (invoice.attempt_count >= 3) {
+        await db.user.updateMany({
+          where: { stripeCustomerId: customerId },
+          data: { plan: "FREE" },
+        });
+      }
+      break;
+    }
   }
 
   return NextResponse.json({ received: true });
+}
+
+/** Map a Stripe price ID to a Hashmark plan. */
+function resolvePlan(priceId: string | undefined): "FREE" | "PRO" | "TEAM" {
+  if (priceId === process.env.STRIPE_TEAM_PRICE_ID) return "TEAM";
+  if (priceId === process.env.STRIPE_PRO_PRICE_ID) return "PRO";
+  // Default to PRO for any paid price that doesn't match TEAM
+  return "PRO";
 }
