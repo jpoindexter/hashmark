@@ -86,19 +86,19 @@ export default async function BillingPage() {
   const limits = PLAN_LIMITS[user.plan];
 
   return (
-    <div className="space-y-6">
+    <div className="mono-stack-lg">
       <DashboardHeader title="BILLING" />
 
       {/* Current plan + manage */}
-      <div className="border border-border bg-card px-6 py-6">
+      <div className="mono-box bg-card">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+            <p className="type-label text-muted-foreground">
               [CURRENT PLAN]
             </p>
             <div className="mt-2 flex items-center gap-3">
               <TierBadge tier={user.plan.toLowerCase()} size="lg" />
-              <span className="text-xs text-muted-foreground">
+              <span className="type-caption text-muted-foreground">
                 Member since{" "}
                 {user.createdAt.toLocaleDateString("en-US", {
                   month: "short",
@@ -143,10 +143,10 @@ export default async function BillingPage() {
 
       {/* Plan comparison */}
       <div>
-        <p className="mb-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <p className="mb-4 type-label text-muted-foreground">
           [AVAILABLE PLANS]
         </p>
-        <div id="pricing" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div id="pricing" className="mono-grid-3 gap-4">
           {PLANS.map((plan) => (
             <div
               key={plan.name}
@@ -157,7 +157,7 @@ export default async function BillingPage() {
               }`}
             >
               <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider">
+                <p className="type-label">
                   [{plan.name}]
                 </p>
                 {user.plan === plan.name && (
@@ -169,7 +169,7 @@ export default async function BillingPage() {
               <p className="mt-1 text-xl font-bold">{plan.price}</p>
               <ul className="mt-4 space-y-1">
                 {plan.features.map((f) => (
-                  <li key={f} className="text-xs text-muted-foreground">
+                  <li key={f} className="type-caption text-muted-foreground">
                     {`> ${f}`}
                   </li>
                 ))}
@@ -202,7 +202,7 @@ function UsageStat({
   const isAtLimit = typeof limit === "number" && typeof value === "number" && value >= limit;
 
   return (
-    <div className="border border-border bg-card px-4 py-4">
+    <div className="mono-box bg-card">
       <div className="flex items-center gap-2 text-muted-foreground">
         {icon}
         <p className="text-[10px] font-bold uppercase tracking-wider">

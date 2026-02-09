@@ -19,15 +19,15 @@ export function SettingsPage({
   const [showAddRule, setShowAddRule] = useState(false);
 
   return (
-    <div className="space-y-8">
+    <div className="mono-stack-lg">
       <DashboardHeader title="SETTINGS" />
 
       {/* Profile section */}
       <section>
-        <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-          [ PROFILE ]
+        <h2 className="mono-section-title text-muted-foreground">
+          PROFILE
         </h2>
-        <div className="border border-border bg-card px-6 py-4">
+        <div className="mono-box bg-card">
           <div className="flex items-center gap-4">
             {user.image ? (
               <Image
@@ -43,8 +43,8 @@ export function SettingsPage({
               </div>
             )}
             <div>
-              <p className="font-bold">{user.name ?? "Developer"}</p>
-              <p className="text-xs text-muted-foreground">{user.email}</p>
+              <p className="type-body font-bold">{user.name ?? "Developer"}</p>
+              <p className="type-caption text-muted-foreground">{user.email}</p>
               <div className="mt-1">
                 <TierBadge tier={user.plan.toLowerCase()} />
               </div>
@@ -56,8 +56,8 @@ export function SettingsPage({
       {/* Custom rules section */}
       <section>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-            [ CUSTOM RULES ] ({rules.length})
+          <h2 className="mono-section-title text-muted-foreground">
+            CUSTOM RULES ({rules.length})
           </h2>
           {user.plan !== "FREE" && (
             <Button onClick={() => setShowAddRule(true)}>

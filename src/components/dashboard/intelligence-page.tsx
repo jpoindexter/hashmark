@@ -70,19 +70,19 @@ export function IntelligencePage({
   const progress = useScanPolling(repo.id, scan?.status);
 
   return (
-    <div className="space-y-6">
+    <div className="mono-stack-lg">
       {/* Scan info bar */}
-      <div className="flex items-center justify-between border border-border bg-card px-6 py-4">
+      <div className="flex items-center justify-between mono-box bg-card">
         <div className="flex items-center gap-4">
           {scan ? (
             <>
               <StatusBadge status={scan.status} />
               {isScanning && progress ? (
-                <span className="text-xs text-muted-foreground animate-pulse">
+                <span className="type-caption text-muted-foreground animate-pulse">
                   {progress.detail || progress.step}
                 </span>
               ) : (
-                <span className="text-xs text-muted-foreground">
+                <span className="type-caption text-muted-foreground">
                   {scan.duration
                     ? `${(scan.duration / 1000).toFixed(1)}s`
                     : "—"}{" "}
@@ -91,7 +91,7 @@ export function IntelligencePage({
               )}
             </>
           ) : (
-            <span className="text-xs text-muted-foreground">
+            <span className="type-caption text-muted-foreground">
               NO SCANS YET
             </span>
           )}
@@ -106,16 +106,16 @@ export function IntelligencePage({
 
       {/* Scan in progress */}
       {isScanning && (
-        <div className="border border-accent/30 bg-accent/5 px-6 py-8">
+        <div className="mono-box border-accent/30 bg-accent/5">
           <div className="flex flex-col items-center gap-3">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 animate-pulse rounded-full bg-accent" />
-              <p className="text-sm font-bold uppercase tracking-wider text-accent">
+              <p className="type-h3 text-accent">
                 {progress?.step || "SCANNING"}
               </p>
             </div>
             {progress?.detail && (
-              <p className="text-xs text-muted-foreground">
+              <p className="type-caption text-muted-foreground">
                 {progress.detail}
               </p>
             )}
@@ -126,15 +126,15 @@ export function IntelligencePage({
 
       {/* Scan failed */}
       {scan?.status === "FAILED" && (
-        <div className="flex flex-col items-center gap-4 border border-destructive/50 bg-card px-8 py-12">
+        <div className="flex flex-col items-center gap-4 mono-box border-destructive/50 bg-card">
           <AlertTriangle className="h-8 w-8 text-destructive" />
-          <h3 className="text-sm font-bold uppercase tracking-wider">
+          <h3 className="type-h3">
             [ERROR] SCAN FAILED
           </h3>
-          <p className="max-w-md text-center text-xs text-muted-foreground">
+          <p className="max-w-md text-center type-caption text-muted-foreground">
             {scan.error || "An unexpected error occurred during the scan."}
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="type-caption text-muted-foreground">
             Common causes: repository access revoked, network timeout, or
             unsupported project structure.
           </p>
@@ -169,20 +169,20 @@ export function IntelligencePage({
       {/* Components table */}
       {results?.components && results.components.length > 0 && (
         <section>
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-wider">
-            [ COMPONENTS ]
+          <h2 className="mono-section-title">
+            COMPONENTS
           </h2>
           <div className="border border-border">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted">
-                  <th className="px-4 py-2 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-4 py-2 text-left type-label text-muted-foreground">
                     NAME
                   </th>
-                  <th className="px-4 py-2 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-4 py-2 text-left type-label text-muted-foreground">
                     PATH
                   </th>
-                  <th className="px-4 py-2 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-4 py-2 text-left type-label text-muted-foreground">
                     CATEGORY
                   </th>
                 </tr>
@@ -190,13 +190,13 @@ export function IntelligencePage({
               <tbody>
                 {results.components.map((comp, i) => (
                   <tr key={i} className="border-b border-border last:border-0">
-                    <td className="px-4 py-2 text-sm font-medium">
+                    <td className="px-4 py-2 type-body font-medium">
                       {comp.name}
                     </td>
-                    <td className="px-4 py-2 text-xs text-muted-foreground">
+                    <td className="px-4 py-2 type-caption text-muted-foreground">
                       {comp.path}
                     </td>
-                    <td className="px-4 py-2 text-xs text-muted-foreground">
+                    <td className="px-4 py-2 type-caption text-muted-foreground">
                       {comp.category ?? "—"}
                     </td>
                   </tr>
@@ -210,20 +210,20 @@ export function IntelligencePage({
       {/* API Routes table */}
       {results?.apiRoutes && results.apiRoutes.length > 0 && (
         <section>
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-wider">
-            [ API ROUTES ]
+          <h2 className="mono-section-title">
+            API ROUTES
           </h2>
           <div className="border border-border">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted">
-                  <th className="px-4 py-2 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-4 py-2 text-left type-label text-muted-foreground">
                     METHOD
                   </th>
-                  <th className="px-4 py-2 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-4 py-2 text-left type-label text-muted-foreground">
                     PATH
                   </th>
-                  <th className="px-4 py-2 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-4 py-2 text-left type-label text-muted-foreground">
                     AUTH
                   </th>
                 </tr>
@@ -234,8 +234,8 @@ export function IntelligencePage({
                     <td className="px-4 py-2">
                       <Badge variant="outline">{route.method}</Badge>
                     </td>
-                    <td className="px-4 py-2 text-sm">{route.path}</td>
-                    <td className="px-4 py-2 text-xs text-muted-foreground">
+                    <td className="px-4 py-2 type-body">{route.path}</td>
+                    <td className="px-4 py-2 type-caption text-muted-foreground">
                       {route.auth ? "YES" : "NO"}
                     </td>
                   </tr>
@@ -249,20 +249,20 @@ export function IntelligencePage({
       {/* Complexity hotspots */}
       {results?.complexity && results.complexity.length > 0 && (
         <section>
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-wider">
-            [ COMPLEXITY HOTSPOTS ]
+          <h2 className="mono-section-title">
+            COMPLEXITY HOTSPOTS
           </h2>
           <div className="border border-border">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted">
-                  <th className="px-4 py-2 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-4 py-2 text-left type-label text-muted-foreground">
                     FILE
                   </th>
-                  <th className="px-4 py-2 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-4 py-2 text-right type-label text-muted-foreground">
                     LINES
                   </th>
-                  <th className="px-4 py-2 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-4 py-2 text-right type-label text-muted-foreground">
                     SCORE
                   </th>
                 </tr>
@@ -270,8 +270,8 @@ export function IntelligencePage({
               <tbody>
                 {results.complexity.map((file, i) => (
                   <tr key={i} className="border-b border-border last:border-0">
-                    <td className="px-4 py-2 text-sm">{file.path}</td>
-                    <td className="px-4 py-2 text-right text-xs text-muted-foreground">
+                    <td className="px-4 py-2 type-body">{file.path}</td>
+                    <td className="px-4 py-2 text-right type-caption text-muted-foreground">
                       {file.lines.toLocaleString()}
                     </td>
                     <td className="px-4 py-2 text-right">
@@ -298,8 +298,8 @@ export function IntelligencePage({
       {/* Scanner coverage */}
       {results?.scanners && results.scanners.length > 0 && (
         <section>
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-wider">
-            [ SCANNER COVERAGE ]
+          <h2 className="mono-section-title">
+            SCANNER COVERAGE
           </h2>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {results.scanners.map((scanner) => (
@@ -307,7 +307,7 @@ export function IntelligencePage({
                 key={scanner.name}
                 className="flex items-center justify-between border border-border px-4 py-2"
               >
-                <span className="text-xs text-muted-foreground">
+                <span className="type-caption text-muted-foreground">
                   {scanner.name}
                 </span>
                 <span

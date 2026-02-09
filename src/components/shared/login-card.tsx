@@ -4,14 +4,14 @@ import { OAuthButtons } from "./oauth-buttons";
 
 export function LoginCard() {
   return (
-    <div className="w-full max-w-md border border-border bg-card p-8">
+    <div className="w-full max-w-md mono-box bg-card">
       {/* Brand header */}
       <div className="mb-8 text-center">
         <div className="mb-4 text-4xl font-bold text-accent">#</div>
-        <h1 className="text-xl font-bold uppercase tracking-wider">
+        <h1 className="type-h2">
           HASHMARK
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-2 type-body text-muted-foreground">
           One scan. Every format. Always in sync.
         </p>
       </div>
@@ -20,7 +20,7 @@ export function LoginCard() {
 
       {/* Auth section */}
       <div className="space-y-4">
-        <p className="text-center text-xs uppercase tracking-wider text-muted-foreground">
+        <p className="text-center type-label text-muted-foreground">
           [AUTH]: SIGN IN TO CONTINUE
         </p>
         <OAuthButtons />
@@ -28,7 +28,7 @@ export function LoginCard() {
 
       {/* Footer note */}
       <div className="mt-6 text-center">
-        <p className="text-xs text-muted-foreground">
+        <p className="type-caption text-muted-foreground">
           We&apos;ll request access to your repositories to scan and generate
           context files.
         </p>

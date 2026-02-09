@@ -26,29 +26,29 @@ export function HowItWorks() {
   return (
     <section id="how-it-works" className="border-t border-border px-6 py-24">
       <div className="mx-auto max-w-5xl">
-        <h2 className="mb-4 text-center text-3xl font-bold uppercase tracking-tight">
+        <h2 className="mb-4 text-center type-h2">
           HOW IT WORKS
         </h2>
         <p className="mb-16 text-center text-muted-foreground">
           Three steps. Then never think about it again.
         </p>
 
-        <div className="grid gap-8 md:grid-cols-3">
+        <div className="mono-grid-3 gap-8">
           {steps.map((step) => (
             <div
               key={step.number}
-              className="border border-border p-6 transition-colors hover:border-accent/50"
+              className="border border-border p-6 transition-colors hover:border-foreground hover:bg-muted"
             >
               <div className="mb-4 flex items-center gap-3">
-                <span className="text-3xl text-accent">{step.icon}</span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-3xl text-foreground">{step.icon}</span>
+                <span className="type-label text-muted-foreground">
                   [{step.number}]
                 </span>
               </div>
-              <h3 className="mb-2 text-lg font-bold uppercase tracking-wider">
+              <h3 className="mb-2 type-h3">
                 {step.title}
               </h3>
-              <p className="text-sm leading-relaxed text-muted-foreground">
+              <p className="type-body text-muted-foreground">
                 {step.description}
               </p>
             </div>

@@ -66,7 +66,7 @@ export function ConnectRepoDialog({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-background/90"
         onClick={onClose}
       />
 
@@ -74,7 +74,7 @@ export function ConnectRepoDialog({ onClose }: { onClose: () => void }) {
       <div className="relative z-10 w-full max-w-lg border border-border bg-card">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border p-4">
-          <h2 className="text-sm font-bold uppercase tracking-wider">
+          <h2 className="type-h3">
             CONNECT REPOSITORY
           </h2>
           <button
@@ -100,15 +100,15 @@ export function ConnectRepoDialog({ onClose }: { onClose: () => void }) {
         {/* Repo list */}
         <div className="max-h-80 overflow-y-auto">
           {loading ? (
-            <div className="p-8 text-center text-xs uppercase tracking-wider text-muted-foreground">
+            <div className="p-8 text-center type-label text-muted-foreground">
               LOADING REPOSITORIES...
             </div>
           ) : error ? (
-            <div className="p-8 text-center text-xs text-destructive">
+            <div className="p-8 text-center type-caption text-destructive">
               {error}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="p-8 text-center text-xs text-muted-foreground">
+            <div className="p-8 text-center type-caption text-muted-foreground">
               {search
                 ? "NO MATCHING REPOSITORIES"
                 : "ALL REPOSITORIES CONNECTED"}
@@ -121,10 +121,10 @@ export function ConnectRepoDialog({ onClose }: { onClose: () => void }) {
                   className="flex items-center justify-between border-b border-border px-4 py-2 last:border-0"
                 >
                   <div className="flex-1 overflow-hidden">
-                    <p className="truncate text-sm font-medium">
+                    <p className="truncate type-body font-medium">
                       {repo.fullName}
                     </p>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="mt-0.5 flex items-center gap-2 type-caption text-muted-foreground">
                       {repo.language && <span>{repo.language}</span>}
                       {repo.private && <span>PRIVATE</span>}
                     </div>

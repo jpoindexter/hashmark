@@ -9,10 +9,10 @@ import {
 
 export function RuleCard({ rule }: { rule: CustomRule }) {
   return (
-    <div className="flex items-start justify-between border border-border bg-card px-6 py-4">
+    <div className="flex items-start justify-between mono-box bg-card">
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-bold">{rule.name}</p>
+          <p className="type-body font-bold">{rule.name}</p>
           <Badge variant={rule.enabled ? "accent" : "secondary"} size="sm">
             {rule.enabled ? "ENABLED" : "DISABLED"}
           </Badge>
@@ -21,11 +21,11 @@ export function RuleCard({ rule }: { rule: CustomRule }) {
           </Badge>
         </div>
         {rule.description && (
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 type-caption text-muted-foreground">
             {rule.description}
           </p>
         )}
-        <pre className="mt-2 border border-border bg-background p-4 text-xs text-muted-foreground">
+        <pre className="mt-2 border border-border bg-background p-4 type-caption text-muted-foreground">
           {rule.rule.length > 200
             ? `${rule.rule.slice(0, 200)}...`
             : rule.rule}

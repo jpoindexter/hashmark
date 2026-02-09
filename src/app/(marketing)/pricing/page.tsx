@@ -106,37 +106,37 @@ const FAQ = [
 
 function FeatureCell({ value }: { value: boolean | string }) {
   if (typeof value === "string") {
-    return <span className="text-sm">{value}</span>;
+    return <span className="type-body">{value}</span>;
   }
   if (value) {
-    return <span className="text-sm text-accent">#</span>;
+    return <span className="type-body text-foreground">#</span>;
   }
-  return <span className="text-sm text-muted-foreground">—</span>;
+  return <span className="type-body text-muted-foreground">—</span>;
 }
 
 export default function PricingPage() {
   return (
     <div className="min-h-screen bg-background font-mono text-foreground">
       {/* Nav */}
-      <nav className="fixed top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-sm">
+      <nav className="fixed top-0 z-50 w-full border-b border-border bg-background">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
           <Link
             href="/"
-            className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider"
+            className="flex items-center gap-2 type-button"
           >
-            <span className="text-xl text-accent">#</span>
+            <span className="text-xl text-foreground">#</span>
             <span>Hashmark</span>
           </Link>
           <div className="flex items-center gap-6">
             <Link
               href="/#pricing"
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className="type-nav text-muted-foreground transition-colors hover:text-foreground"
             >
               PRICING
             </Link>
             <Link
               href="/login"
-              className="border border-border px-4 py-1.5 text-sm uppercase tracking-wider transition-colors hover:bg-muted"
+              className="border border-border px-4 py-1.5 type-button transition-colors hover:bg-muted hover:border-foreground"
             >
               {"> SIGN IN"}
             </Link>
@@ -147,7 +147,7 @@ export default function PricingPage() {
       <main className="mx-auto max-w-5xl px-6 pb-24 pt-28">
         {/* Header */}
         <div className="mb-16 text-center">
-          <h1 className="text-4xl font-bold uppercase tracking-tight">
+          <h1 className="type-h1 text-4xl">
             SIMPLE PRICING
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
@@ -156,27 +156,27 @@ export default function PricingPage() {
         </div>
 
         {/* Plan Cards */}
-        <div className="mb-24 grid gap-6 md:grid-cols-3">
+        <div className="mb-24 mono-grid-3 gap-6">
           {PLANS.map((plan) => (
             <div
               key={plan.name}
               className={`flex flex-col border p-6 ${
                 plan.highlighted
-                  ? "border-accent bg-accent/5"
+                  ? "border-foreground bg-card"
                   : "border-border"
               }`}
             >
               <div className="mb-6">
-                <span className="text-xs text-muted-foreground">
+                <span className="type-label text-muted-foreground">
                   [{plan.name}]
                 </span>
                 <div className="mt-2 flex items-baseline gap-1">
                   <span className="text-3xl font-bold">{plan.price}</span>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="type-caption text-muted-foreground">
                     {plan.period}
                   </span>
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-1 type-body text-muted-foreground">
                   {plan.description}
                 </p>
               </div>
@@ -185,9 +185,9 @@ export default function PricingPage() {
                 {plan.features.map((feature) => (
                   <li
                     key={feature}
-                    className="flex items-start gap-2 text-sm"
+                    className="flex items-start gap-2 type-body"
                   >
-                    <span className="mt-0.5 text-accent">#</span>
+                    <span className="mt-0.5 text-foreground">#</span>
                     <span>{feature}</span>
                   </li>
                 ))}
@@ -195,10 +195,10 @@ export default function PricingPage() {
 
               <a
                 href={plan.href}
-                className={`block w-full py-2.5 text-center text-sm font-bold uppercase tracking-wider transition-colors ${
+                className={`block w-full py-2.5 text-center type-button transition-colors ${
                   plan.highlighted
-                    ? "bg-accent text-background hover:bg-accent/90"
-                    : "border border-border hover:bg-muted"
+                    ? "bg-foreground text-background hover:bg-foreground/90"
+                    : "border border-border hover:border-foreground hover:bg-muted"
                 }`}
               >
                 {plan.cta}
@@ -209,23 +209,23 @@ export default function PricingPage() {
 
         {/* Feature Comparison Table */}
         <section className="mb-24">
-          <h2 className="mb-8 text-center text-sm font-bold uppercase tracking-wider text-muted-foreground">
+          <h2 className="mb-8 text-center type-label text-muted-foreground">
             FEATURE COMPARISON
           </h2>
           <div className="overflow-x-auto border border-border">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted">
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-6 py-4 text-left type-label text-muted-foreground">
                     FEATURE
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-6 py-4 text-center type-label text-muted-foreground">
                     FREE
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-accent">
+                  <th className="px-6 py-4 text-center type-label text-foreground">
                     PRO
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-6 py-4 text-center type-label text-muted-foreground">
                     TEAM
                   </th>
                 </tr>
@@ -236,7 +236,7 @@ export default function PricingPage() {
                     key={feature.name}
                     className="border-b border-border last:border-0"
                   >
-                    <td className="px-6 py-3 text-sm">{feature.name}</td>
+                    <td className="px-6 py-3 type-body">{feature.name}</td>
                     <td className="px-6 py-3 text-center">
                       <FeatureCell value={feature.free} />
                     </td>
@@ -255,22 +255,19 @@ export default function PricingPage() {
 
         {/* FAQ */}
         <section>
-          <h2 className="mb-8 text-center text-sm font-bold uppercase tracking-wider text-muted-foreground">
+          <h2 className="mb-8 text-center type-label text-muted-foreground">
             FREQUENTLY ASKED QUESTIONS
           </h2>
-          <div className="space-y-0 border border-border">
+          <div className="mono-stack-sm">
             {FAQ.map((item) => (
               <details
                 key={item.question}
-                className="group border-b border-border last:border-0"
+                className="mono-details"
               >
-                <summary className="flex cursor-pointer items-center justify-between px-6 py-4 text-sm font-bold uppercase tracking-wider transition-colors hover:bg-muted">
+                <summary className="type-button">
                   {item.question}
-                  <span className="ml-4 text-muted-foreground transition-transform group-open:rotate-45">
-                    +
-                  </span>
                 </summary>
-                <div className="px-6 pb-4 text-sm leading-relaxed text-muted-foreground">
+                <div className="type-body text-muted-foreground">
                   {item.answer}
                 </div>
               </details>

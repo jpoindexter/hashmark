@@ -75,7 +75,7 @@ export function ReposPage({
           }
         />
       ) : (
-        <div className="mt-6 space-y-4">
+        <div className="mt-6 mono-stack">
           {filtered.map((repo) => (
             <RepoCard key={repo.id} repo={repo} plan={plan} />
           ))}

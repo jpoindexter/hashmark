@@ -8,7 +8,7 @@ import {
   EmptyState,
   Button,
 } from "@fabrk/components";
-import { GitBranch, Scan, ArrowRight } from "lucide-react";
+import { GitBranch, ArrowRight } from "lucide-react";
 import { TrialBanner } from "@/components/dashboard/trial-banner";
 import { StatusBadge } from "@/components/shared/status-badge";
 
@@ -65,15 +65,15 @@ export default async function DashboardPage({
   const repoLimit = plan === "FREE" ? 1 : null;
 
   return (
-    <div className="space-y-6">
+    <div className="mono-stack-lg">
       {plan === "FREE" && <TrialBanner />}
 
       {upgraded && (
         <div className="border border-accent bg-accent/10 px-6 py-4">
-          <p className="text-sm font-bold uppercase tracking-wider text-accent">
+          <p className="type-h3 text-accent">
             UPGRADE SUCCESSFUL
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 type-caption text-muted-foreground">
             Your plan has been upgraded. All features are now unlocked.
           </p>
         </div>
@@ -97,8 +97,8 @@ export default async function DashboardPage({
 
       {/* Quick Actions */}
       <section>
-        <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-          [ QUICK ACTIONS ]
+        <h2 className="mono-section-title text-muted-foreground">
+          QUICK ACTIONS
         </h2>
         <div className="flex gap-4">
           <Button asChild>
@@ -118,15 +118,15 @@ export default async function DashboardPage({
       {/* Plan Usage (FREE tier only) */}
       {plan === "FREE" && repoLimit && (
         <section>
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-            [ PLAN USAGE ]
+          <h2 className="mono-section-title text-muted-foreground">
+            PLAN USAGE
           </h2>
-          <div className="border border-border bg-card px-6 py-4">
+          <div className="mono-box bg-card">
             <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground">
+              <span className="type-label text-muted-foreground">
                 Repos: {repos.length}/{repoLimit}
               </span>
-              <span className="text-xs text-muted-foreground">
+              <span className="type-caption text-muted-foreground">
                 {Math.round((repos.length / repoLimit) * 100)}%
               </span>
             </div>
@@ -141,7 +141,7 @@ export default async function DashboardPage({
               />
             </div>
             {repos.length >= repoLimit && (
-              <p className="mt-3 text-xs text-muted-foreground">
+              <p className="mt-3 type-caption text-muted-foreground">
                 <Link
                   href="/dashboard/billing"
                   className="text-accent transition-colors hover:underline"
@@ -157,12 +157,11 @@ export default async function DashboardPage({
 
       {/* Recent Activity */}
       <section>
-        <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-          [ RECENT ACTIVITY ]
+        <h2 className="mono-section-title text-muted-foreground">
+          RECENT ACTIVITY
         </h2>
         {recentScans.length === 0 ? (
           <EmptyState
-            icon={Scan}
             title="NO SCANS YET"
             description="Connect a repo and run your first scan to see activity here"
           />
@@ -179,10 +178,10 @@ export default async function DashboardPage({
                 <div className="flex items-center gap-4">
                   <StatusBadge status={scan.status} />
                   <div>
-                    <p className="text-sm font-medium">
+                    <p className="type-body font-medium">
                       {scan.repository.fullName}
                     </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
+                    <p className="mt-0.5 type-caption text-muted-foreground">
                       {scan.status === "COMPLETED" && scan.fileCount
                         ? `${scan.fileCount.toLocaleString()} files, ${(scan.lineCount ?? 0).toLocaleString()} lines`
                         : scan.status === "FAILED" && scan.error
@@ -197,7 +196,7 @@ export default async function DashboardPage({
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground">
+                  <span className="type-caption text-muted-foreground">
                     {timeAgo(new Date(scan.createdAt))}
                   </span>
                   <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
@@ -212,8 +211,8 @@ export default async function DashboardPage({
       {repos.length > 0 && (
         <section>
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-              [ REPOSITORIES ]
+            <h2 className="mono-section-title text-muted-foreground">
+              REPOSITORIES
             </h2>
             <Link
               href="/dashboard/repos"
@@ -231,11 +230,11 @@ export default async function DashboardPage({
               >
                 <GitBranch className="h-4 w-4 text-muted-foreground" />
                 <div className="flex-1 overflow-hidden">
-                  <p className="truncate text-sm font-medium">
+                  <p className="truncate type-body font-medium">
                     {repo.fullName}
                   </p>
                   {repo.language && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="type-caption text-muted-foreground">
                       [{repo.language}]
                     </p>
                   )}

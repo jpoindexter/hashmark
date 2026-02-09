@@ -34,15 +34,15 @@ export function UpgradeGate({
       )}
 
       <div
-        className={`${children ? "absolute inset-0" : ""} flex flex-col items-center justify-center gap-4 border border-border bg-card/95 px-8 py-12`}
+        className={`${children ? "absolute inset-0" : ""} flex flex-col items-center justify-center gap-4 mono-box bg-card/95`}
       >
         <div className="flex h-12 w-12 items-center justify-center border border-border bg-muted">
           <Lock className="h-5 w-5 text-muted-foreground" />
         </div>
-        <h3 className="text-sm font-bold uppercase tracking-wider">
+        <h3 className="type-h3">
           {feature}
         </h3>
-        <p className="max-w-sm text-center text-xs text-muted-foreground">
+        <p className="max-w-sm text-center type-caption text-muted-foreground">
           {description}
         </p>
         <Button asChild>

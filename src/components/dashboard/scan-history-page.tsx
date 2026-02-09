@@ -35,26 +35,26 @@ export function ScanHistoryPage({
 
   return (
     <section>
-      <h2 className="mb-4 text-sm font-bold uppercase tracking-wider">
-        [ SCAN HISTORY ]
+      <h2 className="mono-section-title">
+        SCAN HISTORY
       </h2>
       <div className="border border-border">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border bg-muted">
-              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <th className="px-6 py-4 text-left type-label text-muted-foreground">
                 STATUS
               </th>
-              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <th className="px-6 py-4 text-left type-label text-muted-foreground">
                 DATE
               </th>
-              <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <th className="px-6 py-4 text-right type-label text-muted-foreground">
                 FILES
               </th>
-              <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <th className="px-6 py-4 text-right type-label text-muted-foreground">
                 LINES
               </th>
-              <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <th className="px-6 py-4 text-right type-label text-muted-foreground">
                 DURATION
               </th>
             </tr>
@@ -65,16 +65,16 @@ export function ScanHistoryPage({
                 <td className="px-6 py-4">
                   <StatusBadge status={scan.status} />
                 </td>
-                <td className="px-6 py-4 text-xs text-muted-foreground">
+                <td className="px-6 py-4 type-caption text-muted-foreground">
                   {new Date(scan.createdAt).toLocaleString()}
                 </td>
-                <td className="px-6 py-4 text-right text-sm font-medium">
+                <td className="px-6 py-4 text-right type-body font-medium">
                   {scan.fileCount?.toLocaleString() ?? "—"}
                 </td>
-                <td className="px-6 py-4 text-right text-sm font-medium">
+                <td className="px-6 py-4 text-right type-body font-medium">
                   {scan.lineCount?.toLocaleString() ?? "—"}
                 </td>
-                <td className="px-6 py-4 text-right text-xs text-muted-foreground">
+                <td className="px-6 py-4 text-right type-caption text-muted-foreground">
                   {scan.duration
                     ? `${(scan.duration / 1000).toFixed(1)}s`
                     : "—"}

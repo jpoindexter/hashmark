@@ -58,7 +58,7 @@ export function UpgradeButton({ priceId }: { priceId: string }) {
         {"> UPGRADE"}
       </Button>
       {error && (
-        <p className="mt-2 text-xs text-destructive">{error}</p>
+        <p className="mt-2 type-caption text-destructive">{error}</p>
       )}
     </div>
   );
@@ -96,7 +96,7 @@ export function ManageSubscriptionButton() {
         {"> MANAGE SUBSCRIPTION"}
       </Button>
       {error && (
-        <p className="mt-2 text-xs text-destructive">{error}</p>
+        <p className="mt-2 type-caption text-destructive">{error}</p>
       )}
     </div>
   );
@@ -151,7 +151,7 @@ export function PlanSelectButton({
         {"> SELECT PLAN"}
       </Button>
       {error && (
-        <p className="mt-2 text-xs text-destructive">{error}</p>
+        <p className="mt-2 type-caption text-destructive">{error}</p>
       )}
     </div>
   );

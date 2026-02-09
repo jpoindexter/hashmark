@@ -78,7 +78,7 @@ export function FilesPage({
     <div className="space-y-4">
       {/* Top action bar */}
       <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
+        <p className="type-caption text-muted-foreground">
           {files.length} format{files.length !== 1 ? "s" : ""} generated
         </p>
         <Button variant="outline" size="sm" onClick={handleDownloadAll}>
@@ -91,7 +91,7 @@ export function FilesPage({
         {/* File list (left panel) */}
         <div className="w-64 shrink-0 border border-border">
           <div className="border-b border-border px-4 py-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <p className="type-label text-muted-foreground">
               [FORMATS] ({files.length})
             </p>
           </div>
@@ -125,7 +125,7 @@ export function FilesPage({
           {selectedFile ? (
             <>
               <div className="flex items-center justify-between border-b border-border px-4 py-4">
-                <p className="text-xs font-bold uppercase tracking-wider">
+                <p className="type-label">
                   {selectedFile.fileName}
                 </p>
                 <div className="flex gap-2">
@@ -143,7 +143,7 @@ export function FilesPage({
               </pre>
             </>
           ) : (
-            <div className="p-8 text-center text-xs text-muted-foreground">
+            <div className="p-8 text-center type-caption text-muted-foreground">
               SELECT A FILE TO PREVIEW
             </div>
           )}

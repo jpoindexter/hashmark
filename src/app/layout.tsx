@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "./typography.css";
+import "./monospace-web.css";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -33,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${geistMono.variable} antialiased`}>{children}</body>
+      <body className={`${geistMono.variable} font-mono antialiased`}>{children}</body>
     </html>
   );
 }

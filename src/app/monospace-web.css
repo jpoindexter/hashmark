@@ -1,0 +1,370 @@
+/**
+ * Monospace Web Layout Primitives
+ * Adapted from https://github.com/owickstrom/the-monospace-web (MIT)
+ * via indx.sh design system
+ *
+ * Grid-locked layout system: all spacing is a multiple of --mono-line-height (16px).
+ * Use alongside globals.css tokens and typography.css type utilities.
+ */
+
+/* ============================================
+   Page Container
+   ============================================ */
+.mono-page {
+  width: 100%;
+  max-width: 80ch;
+  margin: 0 auto;
+  padding: calc(var(--mono-line-height) * 2) 2ch;
+  line-height: var(--mono-line-height);
+}
+
+@media screen and (max-width: 480px) {
+  .mono-page {
+    padding: var(--mono-line-height) 1ch;
+  }
+}
+
+/* ============================================
+   Vertical Rhythm — Grid-Locked Stacks
+   ============================================ */
+.mono-page > * + * {
+  margin-top: var(--mono-line-height);
+}
+
+.mono-stack > * + * {
+  margin-top: var(--mono-line-height);
+}
+
+.mono-stack-sm > * + * {
+  margin-top: calc(var(--mono-line-height) / 2);
+}
+
+.mono-stack-lg > * + * {
+  margin-top: calc(var(--mono-line-height) * 2);
+}
+
+/* ============================================
+   Grid Layouts
+   ============================================ */
+.mono-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1ch;
+  margin: var(--mono-line-height) 0;
+}
+
+.mono-grid > * {
+  flex: 1 1 auto;
+  min-width: 10ch;
+}
+
+.mono-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1ch;
+  margin: var(--mono-line-height) 0;
+}
+
+.mono-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1ch;
+  margin: var(--mono-line-height) 0;
+}
+
+.mono-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1ch;
+  margin: var(--mono-line-height) 0;
+}
+
+@media (max-width: 640px) {
+  .mono-grid-2,
+  .mono-grid-3,
+  .mono-grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   Section Title with Lines
+   ============================================ */
+.mono-section-title {
+  display: flex;
+  align-items: center;
+  gap: 2ch;
+  margin: calc(var(--mono-line-height) * 2) 0 var(--mono-line-height);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.mono-section-title::before,
+.mono-section-title::after {
+  content: "";
+  flex: 1;
+  border-top: var(--mono-border) solid oklch(var(--border));
+}
+
+/* ============================================
+   Horizontal Rule — Double Line
+   ============================================ */
+.mono-hr {
+  position: relative;
+  display: block;
+  height: var(--mono-line-height);
+  margin: calc(var(--mono-line-height) * 1.5) 0;
+  border: none;
+}
+
+.mono-hr::after {
+  content: "";
+  position: absolute;
+  top: calc(var(--mono-line-height) / 2 - var(--mono-border));
+  left: 0;
+  width: 100%;
+  border-top: calc(var(--mono-border) * 3) double oklch(var(--border));
+}
+
+/* ============================================
+   Tables
+   ============================================ */
+.mono-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--mono-line-height) 0 calc(var(--mono-line-height) * 2);
+}
+
+.mono-table th,
+.mono-table td {
+  border: var(--mono-border) solid oklch(var(--border));
+  padding: calc(var(--mono-line-height) / 2) 1ch;
+  text-align: left;
+  vertical-align: top;
+}
+
+.mono-table th {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mono-table .col-min {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.mono-table .col-auto {
+  width: 100%;
+}
+
+/* ============================================
+   Box / Panel
+   ============================================ */
+.mono-box {
+  border: var(--mono-border) solid oklch(var(--border));
+  padding: var(--mono-line-height) 2ch;
+  margin: var(--mono-line-height) 0;
+}
+
+.mono-box-title {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--mono-line-height);
+  padding-bottom: calc(var(--mono-line-height) / 2);
+  border-bottom: var(--mono-border) solid oklch(var(--border));
+}
+
+/* ============================================
+   Details / Collapsible
+   ============================================ */
+.mono-details {
+  border: var(--mono-border) solid oklch(var(--border));
+  padding: calc(var(--mono-line-height) - var(--mono-border)) 2ch;
+  margin: var(--mono-line-height) 0;
+}
+
+.mono-details summary {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  list-style: none;
+}
+
+.mono-details summary::before {
+  content: "▶ ";
+}
+
+.mono-details[open] summary::before {
+  content: "▼ ";
+}
+
+.mono-details[open] summary {
+  margin-bottom: var(--mono-line-height);
+}
+
+.mono-details summary::-webkit-details-marker {
+  display: none;
+}
+
+/* ============================================
+   Code Block
+   ============================================ */
+.mono-pre {
+  border: var(--mono-border) solid oklch(var(--border));
+  padding: var(--mono-line-height) 2ch;
+  margin: var(--mono-line-height) 0;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* ============================================
+   Blockquote
+   ============================================ */
+.mono-blockquote {
+  margin: var(--mono-line-height) 0;
+  padding-left: 2ch;
+  border-left: calc(var(--mono-border) * 2) solid oklch(var(--border));
+  font-style: italic;
+}
+
+/* ============================================
+   Navigation Pills
+   ============================================ */
+.mono-nav {
+  display: flex;
+  gap: 1ch;
+  margin: var(--mono-line-height) 0;
+}
+
+.mono-nav-item {
+  border: var(--mono-border) solid oklch(var(--border));
+  padding: calc(var(--mono-line-height) / 2 - var(--mono-border)) 2ch;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  text-decoration: none;
+  color: inherit;
+}
+
+.mono-nav-item:hover {
+  border-color: oklch(var(--foreground));
+  background: oklch(var(--muted));
+}
+
+.mono-nav-item.active {
+  background: oklch(var(--foreground));
+  color: oklch(var(--background));
+  border-color: oklch(var(--foreground));
+}
+
+/* ============================================
+   Tree Structure
+   ============================================ */
+.mono-tree,
+.mono-tree ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  line-height: var(--mono-line-height);
+}
+
+.mono-tree ul {
+  margin-left: 2ch;
+}
+
+.mono-tree li {
+  position: relative;
+  padding-left: 2ch;
+}
+
+.mono-tree li::before {
+  content: "├─ ";
+  position: absolute;
+  left: 0;
+}
+
+.mono-tree li:last-child::before {
+  content: "└─ ";
+}
+
+/* ============================================
+   Figure
+   ============================================ */
+.mono-figure {
+  margin: calc(var(--mono-line-height) * 2) 0;
+}
+
+.mono-figcaption {
+  margin-top: var(--mono-line-height);
+  font-style: italic;
+  opacity: 0.7;
+}
+
+/* ============================================
+   Inline Utilities
+   ============================================ */
+.mono-muted {
+  opacity: 0.6;
+}
+
+.mono-bold {
+  font-weight: 700;
+}
+
+.mono-caps {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.mono-code {
+  font-weight: 600;
+}
+
+.mono-right {
+  text-align: right;
+}
+
+.mono-center {
+  text-align: center;
+}
+
+/* ============================================
+   Header Table (key-value metadata)
+   ============================================ */
+.mono-header-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: calc(var(--mono-line-height) * 2);
+}
+
+.mono-header-table td {
+  padding: calc(var(--mono-line-height) / 2) 0;
+  vertical-align: top;
+}
+
+.mono-header-table td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ============================================
+   Debug Grid Overlay (toggle with JS)
+   ============================================ */
+.mono-debug-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent calc(var(--mono-line-height) - 1px),
+      oklch(var(--foreground) / 0.08) calc(var(--mono-line-height) - 1px),
+      oklch(var(--foreground) / 0.08) var(--mono-line-height)
+    );
+}

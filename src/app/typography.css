@@ -1,0 +1,98 @@
+/* ============================================
+   GRID-LOCKED TYPE SYSTEM (indx: 16px base unit)
+   All line-heights are multiples of 16px.
+   Monospace-web styling: weight + case hierarchy,
+   applied on the indx grid.
+   ============================================ */
+
+/* Semantic Heading Classes */
+@utility type-h1 {
+  font-size: 32px;
+  line-height: 32px;
+  font-weight: var(--mono-font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+@utility type-h2 {
+  font-size: 20px;
+  line-height: 32px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+@utility type-h3 {
+  font-size: 16px;
+  line-height: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+@utility type-body {
+  font-size: var(--type-base-size);
+  line-height: 24px;
+  font-weight: var(--type-base-weight);
+}
+
+@utility type-label {
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+  font-weight: var(--type-label-weight);
+  letter-spacing: var(--type-label-tracking);
+  text-transform: uppercase;
+}
+
+/* Component Type Classes */
+@utility type-button {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: var(--mono-font-weight-medium);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+@utility type-nav {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: var(--mono-font-weight-normal);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+@utility type-caption {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: var(--type-base-weight);
+  opacity: 0.7;
+}
+
+/* Legacy aliases (indx type scale tokens) */
+@utility type-small {
+  font-size: var(--type-small-size);
+  line-height: var(--type-small-line);
+  font-weight: var(--type-small-weight);
+}
+
+@utility type-base {
+  font-size: var(--type-base-size);
+  line-height: var(--type-base-line);
+  font-weight: var(--type-base-weight);
+}
+
+@utility type-header {
+  font-size: var(--type-header-size);
+  line-height: var(--type-header-line);
+  font-weight: var(--type-header-weight);
+}
+
+@utility type-hero {
+  font-size: var(--type-hero-size);
+  line-height: var(--type-hero-line);
+  font-weight: var(--type-hero-weight);
+}
+
+/* Tracking utility */
+@utility tracking-caps {
+  letter-spacing: 0.05em;
+}

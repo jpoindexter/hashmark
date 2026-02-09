@@ -3,13 +3,13 @@ export function Footer() {
     <footer className="border-t border-border px-6 py-12">
       <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-6 sm:flex-row">
         <div className="flex items-center gap-2">
-          <span className="text-accent text-xl">#</span>
-          <span className="text-sm font-bold uppercase tracking-wider">
+          <span className="text-foreground text-xl">#</span>
+          <span className="type-button">
             Hashmark
           </span>
         </div>
 
-        <div className="flex items-center gap-6 text-sm text-muted-foreground">
+        <div className="flex items-center gap-6 type-body text-muted-foreground">
           <a
             href="https://github.com/jpoindexter/hashmark"
             target="_blank"
@@ -36,7 +36,7 @@ export function Footer() {
           </a>
         </div>
 
-        <p className="text-xs text-muted-foreground">
+        <p className="type-caption text-muted-foreground">
           {new Date().getFullYear()} theft.studio
         </p>
       </div>

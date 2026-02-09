@@ -12,12 +12,12 @@ export default function RepoError({
   reset: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-4 border border-destructive/50 bg-card px-8 py-16">
+    <div className="flex flex-col items-center justify-center gap-4 mono-box border-destructive/50 bg-card">
       <AlertTriangle className="h-8 w-8 text-destructive" />
-      <h2 className="text-sm font-bold uppercase tracking-wider">
+      <h2 className="type-h3">
         [ERROR] FAILED TO LOAD REPOSITORY
       </h2>
-      <p className="max-w-md text-center text-xs text-muted-foreground">
+      <p className="max-w-md text-center type-caption text-muted-foreground">
         {error.message || "Could not load repository data. Please try again."}
       </p>
       <div className="flex gap-4">

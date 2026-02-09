@@ -31,13 +31,13 @@ export function RepoCard({
   const progress = useScanPolling(repo.id, latestScan?.status);
 
   return (
-    <div className="border border-border bg-card px-6 py-4">
+    <div className="mono-box bg-card">
       <div className="flex items-center justify-between">
         <div className="flex-1 overflow-hidden">
           <div className="flex items-center gap-4">
             <Link
               href={`/dashboard/${repo.id}`}
-              className="text-sm font-bold text-foreground transition-colors hover:text-accent"
+              className="type-body font-bold text-foreground transition-colors hover:text-accent"
             >
               {repo.fullName}
             </Link>
@@ -54,7 +54,7 @@ export function RepoCard({
             )}
             {latestScan && <StatusBadge status={latestScan.status} />}
           </div>
-          <div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
+          <div className="mt-1 flex items-center gap-4 type-caption text-muted-foreground">
             {repo.language && <span>[{repo.language}]</span>}
             {repo.description && (
               <span className="truncate">{repo.description}</span>

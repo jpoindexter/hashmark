@@ -22,13 +22,13 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-background/90"
         onClick={onClose}
       />
 
       <div className="relative z-10 w-full max-w-lg border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border p-4">
-          <h2 className="text-sm font-bold uppercase tracking-wider">
+          <h2 className="type-h3">
             ADD CUSTOM RULE
           </h2>
           <button
@@ -42,7 +42,7 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
 
         <form onSubmit={handleSubmit} className="space-y-4 p-4">
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wider text-muted-foreground">
+            <label className="mb-1 block type-label text-muted-foreground">
               [NAME]
             </label>
             <Input
@@ -54,7 +54,7 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wider text-muted-foreground">
+            <label className="mb-1 block type-label text-muted-foreground">
               [DESCRIPTION] (OPTIONAL)
             </label>
             <Input
@@ -64,7 +64,7 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wider text-muted-foreground">
+            <label className="mb-1 block type-label text-muted-foreground">
               [RULE CONTENT]
             </label>
             <textarea
@@ -72,18 +72,18 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
               required
               rows={6}
               placeholder="Write the rule that will be injected into generated context files..."
-              className="w-full resize-none border border-border bg-background px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
+              className="w-full resize-none border border-border bg-background px-4 py-2 type-body text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wider text-muted-foreground">
+            <label className="mb-1 block type-label text-muted-foreground">
               [SCOPE]
             </label>
             <select
               name="scope"
               defaultValue="REPO"
-              className="w-full border border-border bg-background px-4 py-2 text-sm text-foreground focus:border-accent focus:outline-none"
+              className="w-full border border-border bg-background px-4 py-2 type-body text-foreground focus:border-accent focus:outline-none"
             >
               <option value="REPO">REPO</option>
               <option value="ORG">ORG</option>

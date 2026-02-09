@@ -1,8 +1,17 @@
-import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default auth((req) => {
-  const isLoggedIn = !!req.auth;
+/**
+ * Lightweight middleware that checks for the session cookie
+ * without calling the Prisma-backed auth() (which fails on edge runtime).
+ * Actual session validation happens in server components/actions.
+ */
+export function middleware(req: NextRequest) {
+  const sessionToken =
+    req.cookies.get("authjs.session-token") ??
+    req.cookies.get("__Secure-authjs.session-token");
+
+  const isLoggedIn = !!sessionToken;
   const isOnDashboard = req.nextUrl.pathname.startsWith("/dashboard");
   const isOnLogin = req.nextUrl.pathname === "/login";
 
@@ -15,7 +24,7 @@ export default auth((req) => {
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: ["/dashboard/:path*", "/login"],
