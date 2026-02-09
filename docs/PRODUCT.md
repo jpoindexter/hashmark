@@ -12,20 +12,22 @@ Hashmark scans your codebase and auto-generates AI context files for every codin
 
 ### Context File Fragmentation
 
-Every AI coding tool has its own context file format. Between 2023-2026, the ecosystem exploded into 8+ competing formats:
+Every AI coding tool has its own context file format. Between 2024-2026, the ecosystem exploded into 10+ competing formats:
 
-| Format | Tool | Introduced | By |
-|--------|------|------------|-----|
-| `.cursorrules` | Cursor (legacy) | April 2024 | Anysphere |
-| `.github/copilot-instructions.md` | GitHub Copilot | October 2024 | GitHub/Microsoft |
-| `.windsurfrules` | Windsurf | November 2024 | Codeium |
-| `CLAUDE.md` | Claude Code | February 2025 | Anthropic |
-| `.clinerules` | Cline | 2025 | Saoud Rizwan |
-| `GEMINI.md` | Gemini CLI | June 2025 | Google |
-| `AGENTS.md` | Universal (20+ tools) | August 2025 | OpenAI → Linux Foundation |
-| `.cursor/rules/*.mdc` | Cursor (new MDC) | 2025 | Anysphere |
+| Format | Tool | Introduced | By | Notes |
+|--------|------|------------|-----|-------|
+| `.cursorrules` | Cursor (legacy) | April 2024 | Anysphere | Deprecated in v2.2, still functional |
+| `llms.txt` | Website-level LLM context | September 2024 | Jeremy Howard (Answer.AI) | Proposed standard, not repo-level |
+| `.github/copilot-instructions.md` | GitHub Copilot | October 29, 2024 | GitHub/Microsoft | Announced at GitHub Universe '24; also supports `.github/instructions/*.instructions.md` for path-specific rules |
+| `.windsurfrules` | Windsurf (legacy) | November 2024 | Codeium | Modern: `.windsurf/rules/*.md` (Wave 8+) |
+| `CLAUDE.md` | Claude Code | February 2025 | Anthropic | Hierarchical: Enterprise > Org > Project > .claude/rules/ > Subdir > User global. Supports `@path` imports. GA with Claude 4 (May 2025) |
+| `CONVENTIONS.md` | Aider | 2025 | Paul Gauthier | Via `--conventions-file` flag in `.aider.conf.yml` |
+| `.clinerules` | Cline | 2025 | Saoud Rizwan | Also supports `.clinerules/` directory with multiple `.md` files. 5M+ installs, 57K stars |
+| `GEMINI.md` | Gemini CLI | June 25, 2025 | Google | Hierarchical loading like CLAUDE.md. All found files concatenated per prompt |
+| `AGENTS.md` | Universal (22+ tools) | August 2025 | OpenAI → Linux Foundation (AAIF, Dec 2025) | 60K+ repos, supports nested/hierarchical files |
+| `.cursor/rules/*.mdc` | Cursor (new MDC) | 2025 | Anysphere | YAML frontmatter, glob-based rules, 879 community-contributed rule files |
 
-**Sources**: [agents.md](https://agents.md), [Cursor docs](https://cursor.com/docs/context/rules), [GitHub Copilot docs](https://docs.github.com/copilot/customizing-copilot/adding-custom-instructions-for-github-copilot), [Gemini CLI docs](https://geminicli.com/docs/cli/gemini-md/)
+**Sources**: [agents.md](https://agents.md), [Cursor docs](https://cursor.com/docs/context/rules), [GitHub Copilot docs](https://docs.github.com/copilot/customizing-copilot/adding-custom-instructions-for-github-copilot), [Gemini CLI docs](https://geminicli.com/docs/cli/gemini-md/), [Claude Code memory docs](https://code.claude.com/docs/en/memory), [Aider conventions](https://aider.chat/docs/usage/conventions.html), [Cline rules docs](https://docs.cline.bot/features/cline-rules), [llmstxt.org](https://llmstxt.org/)
 
 ### Pain Points
 
@@ -38,14 +40,17 @@ Every AI coding tool has its own context file format. Between 2023-2026, the eco
 ### Academic Research Confirms the Problem
 
 Multiple peer-reviewed papers have studied context file fragmentation:
-- **"Agent READMEs"** (arXiv:2511.12884) — Analyzed 2,303 context files from 1,925 repos. Found build/run commands in 62.3%, implementation details in 69.9%, but security in only 14.5%.
+- **"Agent READMEs"** (arXiv:2511.12884) — Analyzed 2,303 context files from 1,925 repos. Found build/run commands in 62.3%, implementation details in 69.9%, architecture in 67.7%, but security in only 14.5%.
 - **"Impact of AGENTS.md"** (arXiv:2601.20404) — Empirical study showing AGENTS.md measurably improves agent execution time and token consumption.
 - **"Agentic Coding Manifests"** (arXiv:2509.14744) — Analyzed 253 CLAUDE.md files from 242 repos.
+- **"Context Engineering for AI Agents in Open-Source Software"** (arXiv:2510.21413) — First holistic empirical study analyzing context files across different AI agents in OSS projects.
 
 Blog coverage of the fragmentation problem:
-- [EveryDev.ai: "AI Agent Rule Files Chaos"](https://www.everydev.ai/p/blog-ai-coding-agent-rules-files-fragmentation-formats-and-the-push-to-standardize)
-- [Layer5: "AGENTS.md: One File to Guide Them All"](https://layer5.io/blog/ai/agentsmd-one-file-to-guide-them-all/)
+- [EveryDev.ai: "AI Agent Rule Files Chaos"](https://www.everydev.ai/p/blog-ai-coding-agent-rules-files-fragmentation-formats-and-the-push-to-standardize) — "the ecosystem of rule files is totally fragmented... none of them talk to each other"
+- [Layer5: "AGENTS.md: One File to Guide Them All"](https://layer5.io/blog/ai/agentsmd-one-file-to-guide-them-all/) — Describes the fragmentation as a "digital Tower of Babel"
 - [EclipseSource: "Mastering Project Context Files for AI Coding Agents"](https://eclipsesource.com/blogs/2025/11/20/mastering-project-context-files-for-ai-coding-agents/)
+- [Kaushik Gopal: "Keep your AGENTS.md in sync"](https://kau.sh/blog/agents-md/) — Proposes solutions for single source of truth
+- [GitHub Blog: "How to Write a Great agents.md"](https://github.blog/ai-and-ml/github-copilot/how-to-write-a-great-agents-md-lessons-from-over-2500-repositories/) — Analyzed 2,500+ AGENTS.md files for best practices
 
 ## The Solution
 
@@ -108,14 +113,17 @@ Zero friction. No PRs to review. No manual updates. Every AI tool always has fre
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Repos using AGENTS.md | **60,000+** | [agents.md](https://agents.md/) |
-| GitHub stars (agentsmd/agents.md) | **16,000** | [GitHub](https://github.com/agentsmd/agents.md) |
-| GitHub stars (openai/agents.md) | **8,800** | [GitHub](https://github.com/openai/agents.md) |
+| Repos using AGENTS.md | **60,000+** (20K+ in Aug 2025, 60K+ by Dec 2025) | [agents.md](https://agents.md/), [AlteredCraft analysis](https://alteredcraft.com/p/mapping-ai-agent-adoption-across) |
+| GitHub stars (agentsmd/agents.md) | **16,000** (1,100 forks) | [GitHub](https://github.com/agentsmd/agents.md) |
+| GitHub stars (openai/agents.md) | **8,800** (693 forks) | [GitHub](https://github.com/openai/agents.md) |
 | Tools supporting AGENTS.md | **22+** | [agents.md](https://agents.md/) |
-| Managed by | Linux Foundation (Agentic AI Foundation) | [LF Announcement](https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation) |
+| Managed by | Linux Foundation (Agentic AI Foundation, formed Dec 9, 2025) | [LF Announcement](https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation) |
 | AAIF Platinum Members | AWS, Anthropic, Block, Bloomberg, Cloudflare, Google, Microsoft, OpenAI | [LF](https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation) |
+| AAIF Founding contributions | Anthropic's MCP, Block's goose, OpenAI's AGENTS.md | [OpenAI](https://openai.com/index/agentic-ai-foundation/), [TechCrunch](https://techcrunch.com/2025/12/09/openai-anthropic-and-block-join-new-linux-foundation-effort-to-standardize-the-ai-agent-era/) |
 
-**Key gap**: Claude Code does NOT natively support AGENTS.md ([Issue #6235](https://github.com/anthropics/claude-code/issues/6235)). This is why CLAUDE.md remains a separate format — and why generating both is necessary.
+**Tools supporting AGENTS.md (full list):** Codex (OpenAI), Cursor, GitHub Copilot, Gemini CLI, Jules (Google), VS Code, Devin (Cognition), Amp, Factory, Aider, goose, OpenCode, Zed, Warp, RooCode, Kilo Code, Phoenix, Semgrep, Windsurf, UiPath, Android Studio.
+
+**Key gap**: Claude Code does NOT natively support AGENTS.md ([Issue #6235](https://github.com/anthropics/claude-code/issues/6235)). This is why CLAUDE.md remains a separate format — and why generating both is necessary. Even Anthropic is a Platinum AAIF member, yet their own tool doesn't support the standard they helped fund.
 
 ## User Personas
 
@@ -326,3 +334,22 @@ See [MARKETING.md](./MARKETING.md) for full go-to-market plan.
 - [ ] 5+ paying customers
 - [ ] First blog post published
 - [ ] agent-smith CLI shows Hashmark upsell
+
+## Timeline: The Context File Explosion
+
+| Date | Event | Source |
+|------|-------|--------|
+| April 2024 | `.cursorrules` introduced by Cursor | [Cursor docs](https://cursor.com/docs/context/rules) |
+| September 2024 | `llms.txt` proposed by Jeremy Howard | [llmstxt.org](https://llmstxt.org/) |
+| October 29, 2024 | `.github/copilot-instructions.md` announced at GitHub Universe '24 | [GitHub Changelog](https://github.blog/changelog/2024-10-29-multi-file-editing-code-review-custom-instructions-and-more-for-github-copilot-in-vs-code-october-release-v0-22/) |
+| November 2024 | Windsurf Editor launched with `.windsurfrules` | [Windsurf blog](https://windsurf.com/blog/windsurf-launch) |
+| February 2025 | Claude Code research preview with `CLAUDE.md` | [Anthropic](https://claude.com/blog/using-claude-md-files) |
+| May 2025 | Claude Code GA with Claude 4 | [Anthropic](https://anthropic.com) |
+| June 25, 2025 | Gemini CLI launched with `GEMINI.md` | [Gemini CLI docs](https://geminicli.com/docs/cli/gemini-md/) |
+| August 2025 | **AGENTS.md released by OpenAI** — adopted by 20,000+ repos | [agents.md](https://agents.md/) |
+| August 28, 2025 | GitHub Copilot adds AGENTS.md support | [GitHub Changelog](https://github.blog/changelog/2025-08-28-copilot-coding-agent-now-supports-agents-md-custom-instructions/) |
+| October 2025 | Claude Code web launched | [Anthropic](https://anthropic.com) |
+| December 9, 2025 | **Agentic AI Foundation formed** under Linux Foundation; AGENTS.md donated; 60,000+ repos | [LF Announcement](https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation) |
+| January 13, 2026 | Context7 slashes free tier by 92%, sparking backlash | [Dev Genius](https://blog.devgenius.io/context7-quietly-slashed-its-free-tier-by-92-16fa05ddce03) |
+| February 2026 | Claude Code still does not natively support AGENTS.md | [Issue #6235](https://github.com/anthropics/claude-code/issues/6235) |
+| February 2026 | **Hashmark** enters the market | — |
