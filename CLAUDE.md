@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Also read `AGENTS.md` — auto-generated codebase context (components, models, tokens, complexity scores).
+
 ## Project
 
 Hashmark (hashmark.md) — SaaS that scans codebases and generates AI context files for every coding tool. One scan, every format, always in sync.
