@@ -10,8 +10,14 @@ export async function POST(request: Request) {
   }
 
   const { priceId } = await request.json();
-  if (!priceId) {
-    return NextResponse.json({ error: "Missing priceId" }, { status: 400 });
+
+  // Allowlist: only accept known price IDs to prevent arbitrary plan grants
+  const ALLOWED_PRICES = new Set([
+    process.env.STRIPE_PRO_PRICE_ID,
+    process.env.STRIPE_TEAM_PRICE_ID,
+  ]);
+  if (!priceId || !ALLOWED_PRICES.has(priceId)) {
+    return NextResponse.json({ error: "Invalid priceId" }, { status: 400 });
   }
 
   const user = await db.user.findUnique({

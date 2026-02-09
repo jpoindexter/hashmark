@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getGitHubToken } from "@/lib/github";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { runScan } from "@/lib/scan-worker";
 import { revalidatePath } from "next/cache";
 
@@ -20,6 +21,20 @@ export async function connectRepo(formData: FormData) {
 
   if (!githubRepoId || !name || !fullName) {
     throw new Error("Missing required fields");
+  }
+
+  // Validate fullName format to prevent injection downstream
+  if (!/^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/.test(fullName)) {
+    throw new Error("Invalid repository name format");
+  }
+
+  // Prevent repo takeover: check if another user already owns this githubRepoId
+  const existing = await db.repository.findUnique({
+    where: { githubRepoId },
+    select: { userId: true },
+  });
+  if (existing && existing.userId !== session.user.id) {
+    throw new Error("This repository is already connected by another user");
   }
 
   // Plan gating: FREE tier limited to 1 connected repo
@@ -52,7 +67,6 @@ export async function connectRepo(formData: FormData) {
       description,
     },
     update: {
-      userId: session.user.id,
       name,
       fullName,
       defaultBranch,
@@ -86,12 +100,21 @@ export async function triggerScan(formData: FormData) {
   const repoId = formData.get("repoId") as string;
   if (!repoId) throw new Error("Missing repoId");
 
+  // Rate limit scan triggers
+  const rateCheck = checkRateLimit(session.user.id, "scan-trigger", { max: 10, windowSeconds: 600 });
+  if (!rateCheck.allowed) throw new Error("Too many scan requests. Please wait before trying again.");
+
   const repo = await db.repository.findUnique({
     where: { id: repoId, userId: session.user.id },
   });
   if (!repo) throw new Error("Repository not found");
 
-  // Create a pending scan
+  // Prevent duplicate scans
+  const activeScan = await db.scan.findFirst({
+    where: { repositoryId: repoId, status: { in: ["PENDING", "SCANNING"] } },
+  });
+  if (activeScan) throw new Error("A scan is already in progress for this repository.");
+
   const scan = await db.scan.create({
     data: {
       repositoryId: repoId,

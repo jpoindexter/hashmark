@@ -10,13 +10,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing signature" }, { status: 400 });
   }
 
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error("STRIPE_WEBHOOK_SECRET not configured");
+    return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
+  }
+
   let event;
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
@@ -97,6 +99,6 @@ export async function POST(request: Request) {
 function resolvePlan(priceId: string | undefined): "FREE" | "PRO" | "TEAM" {
   if (priceId === process.env.STRIPE_TEAM_PRICE_ID) return "TEAM";
   if (priceId === process.env.STRIPE_PRO_PRICE_ID) return "PRO";
-  // Default to PRO for any paid price that doesn't match TEAM
-  return "PRO";
+  // Unknown price ID — safe default, don't grant paid plan
+  return "FREE";
 }

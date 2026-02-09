@@ -34,6 +34,8 @@ export function useScanPolling(
   useEffect(() => {
     if (!isPolling) {
       stopPolling();
+      // Reset progress when polling stops — intentional state sync on dependency change
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProgress(null);
       return;
     }
@@ -53,18 +55,11 @@ export function useScanPolling(
         const scan = await res.json();
         if (!scan) return;
 
-        // Extract progress from scan results
-        if (
-          scan.status === "SCANNING" &&
-          scan.results?.progress
-        ) {
+        if (scan.status === "SCANNING" && scan.results?.progress) {
           setProgress(scan.results.progress);
         }
 
-        if (
-          scan.status !== "PENDING" &&
-          scan.status !== "SCANNING"
-        ) {
+        if (scan.status !== "PENDING" && scan.status !== "SCANNING") {
           stopPolling();
           setProgress(null);
           router.refresh();
