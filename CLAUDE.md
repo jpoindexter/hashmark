@@ -22,7 +22,7 @@ pnpm build            # Production build (runs prisma generate first)
 pnpm lint             # ESLint (Next.js core-web-vitals + typescript)
 pnpm type-check       # TypeScript check (tsc --noEmit)
 
-# Database
+# Database (uses dotenv-cli to load .env.local)
 pnpm db:push          # Push Prisma schema to Postgres
 pnpm db:generate      # Generate Prisma client
 pnpm db:studio        # Open Prisma Studio
@@ -74,13 +74,37 @@ Required env vars: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB
 
 ## Design Rules
 
-- Dark terminal aesthetic: `bg-zinc-950`, `text-zinc-100`, `border-zinc-800`
+- Dark terminal aesthetic: zinc-950 background, zinc-50 foreground, zinc-800 borders
 - Monospace font: `font-mono` everywhere
 - Headings: UPPERCASE
 - Buttons: UPPERCASE with `>` prefix (e.g., `> CONNECT REPO`)
-- Accent colors: `text-emerald-400` (success), `text-amber-400` (warnings)
-- Code/terminal blocks: `bg-zinc-900 border border-zinc-800 rounded-lg`
 - The `#` symbol is the brand motif
+- Radius: 0 (sharp corners, terminal style)
+
+### FABRK Integration (Complete)
+
+CSS variables in `globals.css` are fully compatible with `@fabrk/design-system`. The `mode` object from FABRK works seamlessly — all Tailwind classes resolve correctly:
+
+| FABRK Token | Tailwind Class | Resolves To |
+|-------------|---------------|-------------|
+| `mode.color.bg.base` | `bg-background` | #09090b (zinc-950) |
+| `mode.color.bg.surface` | `bg-card` | #18181b (zinc-900) |
+| `mode.color.text.accent` | `text-accent` | #10b981 (emerald-500) |
+| `mode.color.bg.warning` | `bg-warning` | #f59e0b (amber-500) |
+| `mode.color.bg.danger` | `bg-destructive` | #ef4444 (red-500) |
+| `mode.color.text.muted` | `text-muted-foreground` | #a1a1aa (zinc-400) |
+| `mode.radius` | `rounded-dynamic` | 0rem (sharp) |
+| `mode.font` | `font-body` | monospace |
+
+25+ CSS variables defined. All FABRK components (KPICard, BarChart, DataTable, Badge, etc.) will render correctly in Hashmark without modification.
+
+When using colors, prefer semantic tokens over hardcoded values:
+```
+bg-background NOT bg-zinc-950
+text-accent NOT text-emerald-500
+bg-destructive NOT bg-red-500
+border-border NOT border-zinc-800
+```
 
 ## Output Formats (8 total)
 

@@ -137,6 +137,20 @@ Break-even at **3 Pro subscribers** ($57/mo revenue vs $50/mo costs).
 - **API platform**: Other tools consume Hashmark scan data
 - **Acquisition target**: GitHub, Anthropic, Cursor, Vercel would all benefit from owning this
 
+### Codebase Intelligence Layer
+
+The 27 scanners don't just generate context files — they produce a complete codebase intelligence picture (components, complexity, dependencies, patterns, routes, schemas). This creates a dual-purpose product:
+
+1. **For AI tools**: Context files that make AI assistants understand your codebase
+2. **For developers**: A visual dashboard showing what the AI sees ("See what your AI sees")
+
+This dual output strengthens the business model:
+- **Free tier**: CLI generates files (commodity, drives adoption)
+- **Pro tier**: Dashboard visualizes scan results + auto-sync (insight + automation)
+- **Team tier**: Shared intelligence across repos, org-wide rules
+
+**Reference model**: SonarSource ($4.7B) built a business on scanning codebases and showing results in a dashboard. Hashmark does the same — but instead of showing bugs, we show what AI needs to know about your architecture. SonarSource is now rushing into the AI space (MCP Server, SonarSweep) which validates our positioning.
+
 ## Exit Scenarios
 
 | Scenario | Timeline | Valuation | Acquirer |
@@ -158,6 +172,7 @@ Break-even at **3 Pro subscribers** ($57/mo revenue vs $50/mo costs).
 | GitHub builds this natively into Copilot | Low | Very High | Would validate the space; likely acquires us first |
 | Low conversion from free to paid | Medium | Medium | Adjust free tier limits; add more Pro-only features |
 | Agent-smith CLI gets cloned | High | Low | CLI is open source anyway; cloud product is the moat |
+| Vibe-coded clones (AST Visualizer-style) | High | Low | Single-language, visualization-only — no multi-format output, no auto-sync, no dashboard. Easy to build a toy, hard to build the full platform. |
 
 ## Strategic Advantages
 

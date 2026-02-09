@@ -63,6 +63,25 @@ Hashmark automates the entire workflow:
 
 Zero friction. No PRs to review. No manual updates. Every AI tool always has fresh context.
 
+### Dual-Purpose Dashboard: "See What Your AI Sees"
+
+The 27 scanners produce rich structured data about every codebase. This data powers two outputs:
+
+| Output | Audience | Purpose |
+|--------|----------|---------|
+| **Context files** (8 formats) | AI coding tools | Give AI assistants architectural understanding |
+| **Codebase intelligence dashboard** | Human developers | Visualize components, complexity, dependencies, patterns |
+
+The dashboard shows developers the SAME data that gets encoded into context files:
+- Component inventory → becomes component list in AGENTS.md
+- Complexity heatmap → becomes "avoid modifying complex areas" in rules
+- Dependency graph → becomes import pattern guidance
+- Route map → becomes API structure in context
+
+**Why this matters**: If the scan misses something or gets it wrong, the developer can SEE it and add custom rules. This creates a feedback loop: scan → visualize → customize → better context files → better AI output.
+
+**Pricing alignment**: The visualization layer is what justifies the Pro tier. The CLI generates files for free (commodity). The dashboard shows you what was found + keeps files auto-synced (insight + automation). The team tier adds shared rules and org-wide views.
+
 ### Output Files (All Formats, One Scan)
 
 | File | AI Tool | Notes |
@@ -180,11 +199,35 @@ Cursor itself now has `/Generate Cursor Rules` as a built-in command. Generates 
 
 | Competitor | What They Do | Why Not Competitive |
 |-----------|-------------|-------------------|
-| **SonarQube** ($5B, Enterprise pricing) | AI Code Assurance — tags AI-generated code, applies stricter quality gates | Post-generation validation, not pre-generation context. Enterprise plan only. |
+| **SonarSource** ($4.7B valuation, Enterprise pricing) | Code quality + security — SAST, code smells, tech debt. **New**: MCP Server (AI workflow integration), SonarSweep (improving LLM code). 35+ languages. | Post-generation validation, not pre-generation context. Enterprise pricing. Their new AI products show they see AI coding assistants eating their lunch — the exact space Hashmark is native to. |
 | **Greptile** (YC W24, ~$180M valuation) | AI code review with full codebase context | Different workflow stage (PR review, not context files). $20/user/mo. |
 | **Qodo** (formerly Codium, $40M Series A) | AI code review, test generation, PR automation | Different problem (testing, not context). $19-30/user/mo. |
 | **Factory** ($50M raised) | Autonomous coding agents ("Droids") | Potential customer — their agents use AGENTS.md. Co-creator of AGENTS.md standard. |
 | **Sourcegraph Cody** | Vector embeddings of entire codebase for AI context | Real-time indexing, not file generation. Different architecture. |
+| **AST Visualizer** (ast-visualizer.com, vibe-coded) | AST tree visualization, complexity analysis, dependency graphs for Python | Python-only, single language, no AI context output, no auto-sync. Weekend project proving the space is attractive. |
+
+### Reference Model: SonarSource
+
+SonarSource ($4.7B valuation, est. 2008) is the closest business model reference — not as a competitor but as a blueprint:
+
+**What we share:**
+- Scanner engine that analyzes codebases (their 35+ languages, our 27 scanners)
+- CLI → CI/CD pipeline (GitHub Action) → Dashboard funnel
+- Freemium model (free CLI → paid cloud/server)
+- Developer-first go-to-market
+- The same scan data can power multiple outputs
+
+**What we steal from them:**
+- **Dashboard as "show your work"**: Display scan results (complexity, components, dependencies) as proof of intelligence before delivering context files. Users trust the output more when they can see the analysis.
+- **CI/CD flywheel**: GitHub Action runs on every push, keeps files in sync. Already built.
+- **Freemium funnel**: Free CLI (unlimited) → paid dashboard + GitHub Action + team features.
+
+**What we don't do:**
+- We don't compete on code quality (SonarSource's domain, 15+ year head start)
+- We don't chase enterprise compliance (their bread and butter)
+- We don't try to find bugs — we make AI assistants understand architecture
+
+**Key insight**: SonarSource just launched an **MCP Server** and **SonarSweep** (improving LLM code) — they're pivoting toward the AI coding space where Hashmark is native. The incumbents are playing catch-up in our lane.
 
 ### Pricing Benchmarks (Developer Tools, 2026)
 

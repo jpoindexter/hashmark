@@ -66,9 +66,11 @@ Hashmark is the cloud product for hashmark-cli (formerly agent-smith). The CLI i
 
 ---
 
-## Phase 2: Web Dashboard (~1 week)
+## Phase 2: Codebase Intelligence Dashboard (~1 week)
 
-Build with FABRK framework packages for speed.
+Build with FABRK framework packages. Dual-purpose: show developers what the AI sees + manage context file generation. Reference model: SonarSource's dashboard for code quality, adapted for AI context.
+
+**Design system**: FABRK integration complete — globals.css has all 25+ CSS variables, mode object works seamlessly. Terminal aesthetic: zinc grays, emerald accent, amber warnings, sharp corners, monospace.
 
 ### 2.1 Dashboard Shell
 - [ ] Install FABRK packages (design-system, components, auth, payments, security, core)
@@ -82,12 +84,14 @@ Build with FABRK framework packages for speed.
 - [ ] Repo status indicators (connected, last scan)
 - [ ] One-click scan trigger
 
-### 2.3 Scan Results
-- [ ] `/dashboard/[repoId]` — Scan results visualization
-- [ ] KPI cards (files, components, routes, complexity)
-- [ ] Components inventory table
-- [ ] API routes table
-- [ ] Complexity chart
+### 2.3 Codebase Intelligence (Scan Visualization)
+- [ ] `/dashboard/[repoId]` — "See what your AI sees" — scan results visualization
+- [ ] KPI cards (total files, components found, API routes, complexity score)
+- [ ] Component inventory table (name, variants, dependencies, file path)
+- [ ] API routes table (path, method, auth status, request/response schema)
+- [ ] Complexity heatmap by directory (BarChart)
+- [ ] Dependency graph (which files import what)
+- [ ] Scanner coverage summary (which of 27 scanners found results)
 
 ### 2.4 Format Preview + Download
 - [ ] `/dashboard/[repoId]/files` — Preview all 8 formats
