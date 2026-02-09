@@ -11,17 +11,25 @@ export default async function ReposRoute() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const repos = await db.repository.findMany({
-    where: { userId: session.user.id },
-    include: {
-      scans: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: { id: true, status: true, createdAt: true },
+  const [repos, user] = await Promise.all([
+    db.repository.findMany({
+      where: { userId: session.user.id },
+      include: {
+        scans: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { id: true, status: true, createdAt: true },
+        },
       },
-    },
-    orderBy: { updatedAt: "desc" },
-  });
+      orderBy: { updatedAt: "desc" },
+    }),
+    db.user.findUnique({
+      where: { id: session.user.id },
+      select: { plan: true },
+    }),
+  ]);
 
-  return <ReposPage repos={repos} />;
+  const plan = user?.plan ?? "FREE";
+
+  return <ReposPage repos={repos} plan={plan} />;
 }

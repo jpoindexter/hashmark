@@ -2,12 +2,31 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import Link from "next/link";
-import { DashboardHeader, StatsGrid, EmptyState, Button } from "@fabrk/components";
+import {
+  DashboardHeader,
+  StatsGrid,
+  EmptyState,
+  Button,
+} from "@fabrk/components";
+import { GitBranch, Scan, ArrowRight } from "lucide-react";
 import { TrialBanner } from "@/components/dashboard/trial-banner";
+import { StatusBadge } from "@/components/shared/status-badge";
 
 export const metadata = {
   title: "Dashboard — Hashmark",
 };
+
+function timeAgo(date: Date): string {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "yesterday";
+  return `${days}d ago`;
+}
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -25,7 +44,7 @@ export default async function DashboardPage() {
     db.scan.findMany({
       where: { repository: { userId: session.user.id } },
       orderBy: { createdAt: "desc" },
-      take: 6,
+      take: 5,
       include: {
         repository: { select: { fullName: true, id: true } },
       },
@@ -35,42 +54,99 @@ export default async function DashboardPage() {
     }),
   ]);
 
+  const plan = user?.plan ?? "FREE";
+  const repoLimit = plan === "FREE" ? 1 : null;
+
   return (
     <div className="space-y-6">
-      {user?.plan === "FREE" && <TrialBanner />}
+      {plan === "FREE" && <TrialBanner />}
 
       <DashboardHeader
         title="DASHBOARD"
         subtitle={`Welcome back, ${session.user.name ?? "developer"}.`}
       />
 
+      {/* KPI Stats */}
       <StatsGrid
         items={[
           { label: "CONNECTED REPOS", value: repos.length },
           { label: "TOTAL SCANS", value: totalScans },
-          { label: "PLAN", value: user?.plan ?? "FREE" },
+          { label: "PLAN", value: plan },
           { label: "FORMATS", value: 8 },
         ]}
         columns={4}
       />
 
-      <div className="flex gap-4">
-        <Button asChild>
-          <Link href="/dashboard/repos">{"> MANAGE REPOS"}</Link>
-        </Button>
-        <Button variant="outline" asChild>
-          <Link href="/dashboard/settings">{"> SETTINGS"}</Link>
-        </Button>
-      </div>
-
+      {/* Quick Actions */}
       <section>
         <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-          [ RECENT SCANS ]
+          [ QUICK ACTIONS ]
+        </h2>
+        <div className="flex gap-4">
+          <Button asChild>
+            <Link href="/dashboard/repos?connect=true">
+              {"> CONNECT REPO"}
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/dashboard/repos">{"> MANAGE REPOS"}</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/dashboard/settings">{"> SETTINGS"}</Link>
+          </Button>
+        </div>
+      </section>
+
+      {/* Plan Usage (FREE tier only) */}
+      {plan === "FREE" && repoLimit && (
+        <section>
+          <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-muted-foreground">
+            [ PLAN USAGE ]
+          </h2>
+          <div className="border border-border bg-card px-6 py-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                Repos: {repos.length}/{repoLimit}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {Math.round((repos.length / repoLimit) * 100)}%
+              </span>
+            </div>
+            <div className="mt-2 h-2 w-full bg-muted">
+              <div
+                className={`h-full transition-all ${
+                  repos.length >= repoLimit ? "bg-destructive" : "bg-accent"
+                }`}
+                style={{
+                  width: `${Math.min((repos.length / repoLimit) * 100, 100)}%`,
+                }}
+              />
+            </div>
+            {repos.length >= repoLimit && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                <Link
+                  href="/dashboard/billing"
+                  className="text-accent transition-colors hover:underline"
+                >
+                  {"> UPGRADE TO PRO"}
+                </Link>{" "}
+                for unlimited repositories
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Recent Activity */}
+      <section>
+        <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-muted-foreground">
+          [ RECENT ACTIVITY ]
         </h2>
         {recentScans.length === 0 ? (
           <EmptyState
+            icon={Scan}
             title="NO SCANS YET"
-            description="Connect a repo and run your first scan"
+            description="Connect a repo and run your first scan to see activity here"
           />
         ) : (
           <div className="border border-border">
@@ -78,34 +154,79 @@ export default async function DashboardPage() {
               <Link
                 key={scan.id}
                 href={`/dashboard/${scan.repository.id}`}
-                className={`flex items-center justify-between px-4 py-4 transition-colors hover:bg-muted ${
+                className={`flex items-center justify-between px-6 py-4 transition-colors hover:bg-muted ${
                   i < recentScans.length - 1 ? "border-b border-border" : ""
                 }`}
               >
-                <div>
-                  <p className="text-sm font-medium">
-                    {scan.repository.fullName}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(scan.createdAt).toLocaleString()}
-                  </p>
+                <div className="flex items-center gap-4">
+                  <StatusBadge status={scan.status} />
+                  <div>
+                    <p className="text-sm font-medium">
+                      {scan.repository.fullName}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {scan.status === "COMPLETED" && scan.fileCount
+                        ? `${scan.fileCount.toLocaleString()} files, ${(scan.lineCount ?? 0).toLocaleString()} lines`
+                        : scan.status === "FAILED" && scan.error
+                          ? `Error: ${scan.error}`
+                          : scan.status === "SCANNING"
+                            ? "Analyzing repository..."
+                            : "Queued"}
+                      {scan.duration
+                        ? ` · ${(scan.duration / 1000).toFixed(1)}s`
+                        : ""}
+                    </p>
+                  </div>
                 </div>
-                <span
-                  className={`text-xs font-bold uppercase ${
-                    scan.status === "COMPLETED"
-                      ? "text-accent"
-                      : scan.status === "FAILED"
-                        ? "text-destructive"
-                        : "text-muted-foreground"
-                  }`}
-                >
-                  [{scan.status}]
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">
+                    {timeAgo(new Date(scan.createdAt))}
+                  </span>
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
               </Link>
             ))}
           </div>
         )}
       </section>
+
+      {/* Connected Repos Quick View */}
+      {repos.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+              [ REPOSITORIES ]
+            </h2>
+            <Link
+              href="/dashboard/repos"
+              className="text-xs text-accent transition-colors hover:underline"
+            >
+              {"> VIEW ALL"}
+            </Link>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {repos.slice(0, 6).map((repo) => (
+              <Link
+                key={repo.id}
+                href={`/dashboard/${repo.id}`}
+                className="flex items-center gap-3 border border-border px-4 py-3 transition-colors hover:bg-muted"
+              >
+                <GitBranch className="h-4 w-4 text-muted-foreground" />
+                <div className="flex-1 overflow-hidden">
+                  <p className="truncate text-sm font-medium">
+                    {repo.fullName}
+                  </p>
+                  {repo.language && (
+                    <p className="text-xs text-muted-foreground">
+                      [{repo.language}]
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

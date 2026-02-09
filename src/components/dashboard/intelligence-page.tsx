@@ -5,6 +5,7 @@ import { StatsGrid, EmptyState, Button, Badge } from "@fabrk/components";
 import { Search } from "lucide-react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { triggerRepoScan } from "@/app/(dashboard)/dashboard/[repoId]/actions";
+import { useScanPolling } from "@/hooks/use-scan-polling";
 
 interface ScanResults {
   components?: Array<{ name: string; path: string; category?: string }>;
@@ -22,6 +23,8 @@ export function IntelligencePage({
 }) {
   const results = (scan?.results as ScanResults) ?? null;
   const isScanning = scan?.status === "SCANNING" || scan?.status === "PENDING";
+
+  useScanPolling(repo.id, scan?.status);
 
   return (
     <div className="space-y-6">

@@ -7,6 +7,7 @@ import { DashboardHeader, TierBadge, EmptyState, Button } from "@fabrk/component
 import { ScrollText } from "lucide-react";
 import { RuleCard } from "./rule-card";
 import { RuleDialog } from "./rule-dialog";
+import { UpgradeGate } from "@/components/shared/upgrade-gate";
 
 export function SettingsPage({
   user,
@@ -58,12 +59,20 @@ export function SettingsPage({
           <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
             [ CUSTOM RULES ] ({rules.length})
           </h2>
-          <Button onClick={() => setShowAddRule(true)}>
-            {"> ADD RULE"}
-          </Button>
+          {user.plan !== "FREE" && (
+            <Button onClick={() => setShowAddRule(true)}>
+              {"> ADD RULE"}
+            </Button>
+          )}
         </div>
 
-        {rules.length === 0 ? (
+        {user.plan === "FREE" ? (
+          <UpgradeGate
+            feature="CUSTOM RULES"
+            description="Custom rules are a Pro feature. Add rules that get injected into every generated context file — enforce team conventions, design system usage, and coding patterns."
+            requiredPlan="PRO"
+          />
+        ) : rules.length === 0 ? (
           <EmptyState
             icon={ScrollText}
             title="NO CUSTOM RULES"

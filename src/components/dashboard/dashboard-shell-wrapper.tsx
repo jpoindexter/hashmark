@@ -5,6 +5,7 @@ import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { DashboardShell } from "@fabrk/components";
 import { LayoutDashboard, GitBranch, Settings, CreditCard } from "lucide-react";
+import { DashboardBreadcrumbs } from "./dashboard-breadcrumbs";
 
 const SIDEBAR_ITEMS = [
   {
@@ -80,7 +81,10 @@ export function DashboardShellWrapper({
       onSignOut={() => signOut({ callbackUrl: "/login" })}
       linkComponent={Link}
     >
-      <div className="mx-auto max-w-7xl p-6">{children}</div>
+      <div className="mx-auto max-w-7xl p-6">
+        <DashboardBreadcrumbs />
+        {children}
+      </div>
     </DashboardShell>
   );
 }

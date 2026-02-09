@@ -4,8 +4,25 @@ import type { Scan } from "@prisma/client";
 import { EmptyState } from "@fabrk/components";
 import { Clock } from "lucide-react";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { UpgradeGate } from "@/components/shared/upgrade-gate";
 
-export function ScanHistoryPage({ scans }: { scans: Scan[] }) {
+export function ScanHistoryPage({
+  scans,
+  plan,
+}: {
+  scans: Scan[];
+  plan: string;
+}) {
+  if (plan === "FREE") {
+    return (
+      <UpgradeGate
+        feature="SCAN HISTORY"
+        description="Upgrade to Pro to see your codebase's evolution over time. Track file counts, component growth, and scan trends across every push."
+        requiredPlan="PRO"
+      />
+    );
+  }
+
   if (scans.length === 0) {
     return (
       <EmptyState

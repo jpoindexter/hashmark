@@ -11,9 +11,17 @@ type RepoWithLatestScan = Repository & {
   scans: Pick<Scan, "id" | "status" | "createdAt">[];
 };
 
-export function ReposPage({ repos }: { repos: RepoWithLatestScan[] }) {
+export function ReposPage({
+  repos,
+  plan,
+}: {
+  repos: RepoWithLatestScan[];
+  plan: string;
+}) {
   const [search, setSearch] = useState("");
   const [showConnect, setShowConnect] = useState(false);
+
+  const atFreeLimit = plan === "FREE" && repos.length >= 1;
 
   const filtered = repos.filter(
     (r) =>
@@ -30,8 +38,16 @@ export function ReposPage({ repos }: { repos: RepoWithLatestScan[] }) {
         onSearchChange={setSearch}
         searchPlaceholder="Search repositories..."
         actions={
-          <Button onClick={() => setShowConnect(true)}>
-            {"> CONNECT REPO"}
+          <Button
+            onClick={() => setShowConnect(true)}
+            disabled={atFreeLimit}
+            title={
+              atFreeLimit
+                ? "Free plan: 1 repo max. Upgrade to Pro for unlimited."
+                : undefined
+            }
+          >
+            {atFreeLimit ? "REPO LIMIT REACHED" : "> CONNECT REPO"}
           </Button>
         }
       />
@@ -61,7 +77,7 @@ export function ReposPage({ repos }: { repos: RepoWithLatestScan[] }) {
       ) : (
         <div className="mt-6 space-y-4">
           {filtered.map((repo) => (
-            <RepoCard key={repo.id} repo={repo} />
+            <RepoCard key={repo.id} repo={repo} plan={plan} />
           ))}
         </div>
       )}

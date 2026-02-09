@@ -1,0 +1,48 @@
+export default function RepoLoading() {
+  return (
+    <div className="space-y-6">
+      {/* Scan info bar skeleton */}
+      <div className="flex items-center justify-between border border-border bg-card px-6 py-4">
+        <div className="flex items-center gap-4">
+          <div className="h-5 w-24 animate-pulse bg-muted" />
+          <div className="h-3 w-32 animate-pulse bg-muted" />
+        </div>
+        <div className="h-10 w-28 animate-pulse bg-muted" />
+      </div>
+
+      {/* KPI Grid skeleton */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} className="border border-border px-6 py-4">
+            <div className="h-3 w-20 animate-pulse bg-muted" />
+            <div className="mt-2 h-8 w-16 animate-pulse bg-muted" />
+          </div>
+        ))}
+      </div>
+
+      {/* Table skeleton */}
+      <div className="space-y-4">
+        <div className="h-3 w-32 animate-pulse bg-muted" />
+        <div className="border border-border">
+          <div className="border-b border-border bg-muted px-4 py-3">
+            <div className="flex gap-16">
+              <div className="h-3 w-16 animate-pulse bg-muted/50" />
+              <div className="h-3 w-16 animate-pulse bg-muted/50" />
+              <div className="h-3 w-16 animate-pulse bg-muted/50" />
+            </div>
+          </div>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex gap-16 border-b border-border px-4 py-3 last:border-0"
+            >
+              <div className="h-4 w-24 animate-pulse bg-muted" />
+              <div className="h-4 w-48 animate-pulse bg-muted" />
+              <div className="h-4 w-16 animate-pulse bg-muted" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

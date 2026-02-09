@@ -22,6 +22,23 @@ export async function connectRepo(formData: FormData) {
     throw new Error("Missing required fields");
   }
 
+  // Plan gating: FREE tier limited to 1 connected repo
+  const user = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { plan: true },
+  });
+
+  if (user?.plan === "FREE") {
+    const repoCount = await db.repository.count({
+      where: { userId: session.user.id },
+    });
+    if (repoCount >= 1) {
+      throw new Error(
+        "Free plan allows 1 connected repository. Upgrade to Pro for unlimited repos."
+      );
+    }
+  }
+
   await db.repository.upsert({
     where: { githubRepoId },
     create: {
