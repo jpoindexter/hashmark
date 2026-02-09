@@ -10,6 +10,12 @@ const execFileAsync = promisify(execFile);
 /** Strict regex for GitHub repository full names (owner/repo) */
 const REPO_NAME_RE = /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/;
 
+/** CLI path — configurable via env var for production deployments */
+const CLI_PATH = process.env.HASHMARK_CLI_PATH || resolve(process.cwd(), "packages/cli/dist/cli.js");
+
+/** Max age (ms) before an active scan is considered orphaned */
+const ORPHAN_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
+
 /** Map well-known file names to Prisma FileFormat enum values */
 export const FORMAT_MAP: Record<string, FileFormat> = {
   "AGENTS.md": "AGENTS_MD",
@@ -187,8 +193,7 @@ export async function runScan(scanId: string, fullName: string, token: string) {
 
     // 2. Run CLI scanner (execFile — no shell)
     await updateProgress("SCANNING", "Running 27 scanners...");
-    const cliPath = resolve(process.cwd(), "packages/cli/dist/cli.js");
-    await execFileAsync("node", [cliPath, tmpDir, "--format", "all", "--json", "--force"], {
+    await execFileAsync("node", [CLI_PATH, tmpDir, "--format", "all", "--json", "--force"], {
       timeout: 120_000, maxBuffer: 10 * 1024 * 1024,
     });
 
@@ -264,4 +269,23 @@ export function formatScanError(error: unknown, token?: string): string {
   }
 
   return msg || "An unexpected error occurred during the scan.";
+}
+
+/**
+ * Recover orphaned scans that have been stuck in PENDING/SCANNING
+ * for longer than ORPHAN_THRESHOLD_MS. Called from the polling endpoint
+ * to self-heal without a separate cron job.
+ */
+export async function recoverOrphanedScans() {
+  const cutoff = new Date(Date.now() - ORPHAN_THRESHOLD_MS);
+  await db.scan.updateMany({
+    where: {
+      status: { in: ["PENDING", "SCANNING"] },
+      createdAt: { lt: cutoff },
+    },
+    data: {
+      status: "FAILED",
+      error: "Scan timed out — the server may have restarted during this scan. Please try again.",
+    },
+  });
 }

@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getGitHubToken } from "@/lib/github";
 import { rateLimitResponse } from "@/lib/rate-limit";
+import { runScan } from "@/lib/scan-worker";
 import { NextResponse } from "next/server";
 
 // 10 scans per user per 10 minutes
@@ -28,12 +30,24 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  // Prevent duplicate scans
+  const activeScan = await db.scan.findFirst({
+    where: { repositoryId: repoId, status: { in: ["PENDING", "SCANNING"] } },
+  });
+  if (activeScan) {
+    return NextResponse.json({ error: "Scan already in progress" }, { status: 409 });
+  }
+
   const scan = await db.scan.create({
     data: {
       repositoryId: repoId,
       status: "PENDING",
     },
   });
+
+  // Fire-and-forget: kick off background scan
+  const token = await getGitHubToken(session.user.id);
+  runScan(scan.id, repo.fullName, token).catch(console.error);
 
   return NextResponse.json({ scanId: scan.id }, { status: 202 });
 }

@@ -23,7 +23,7 @@ export default function Home() {
               PRICING
             </a>
             <a
-              href="https://www.npmjs.com/package/@jpoindexter/agent-smith"
+              href="https://github.com/jpoindexter/hashmark#cli"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"

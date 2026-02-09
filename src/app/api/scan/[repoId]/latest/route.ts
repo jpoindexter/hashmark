@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { recoverOrphanedScans } from "@/lib/scan-worker";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -21,6 +22,9 @@ export async function GET(
   if (!repo) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+
+  // Recover any scans stuck longer than 10 minutes (server restart, etc.)
+  await recoverOrphanedScans();
 
   const scan = await db.scan.findFirst({
     where: { repositoryId: repoId },

@@ -11,8 +11,7 @@
 import * as core from "@actions/core";
 import * as exec from "@actions/exec";
 import * as github from "@actions/github";
-import { existsSync, writeFileSync, readFileSync, mkdirSync } from "fs";
-import { join, dirname } from "path";
+import { join } from "path";
 
 async function run(): Promise<void> {
   try {
@@ -29,20 +28,27 @@ async function run(): Promise<void> {
     core.info("# hashmark — AI Context Sync");
     core.info("");
 
-    // Step 1: Install hashmark CLI
-    core.info("Installing hashmark CLI...");
-    await exec.exec("npm", ["install", "-g", "hashmark-cli"], { silent: true });
+    // Step 1: Resolve CLI — bundled alongside the action dist, no npm install needed
+    const cliPath = join(__dirname, "cli.js");
 
-    // Step 2: Build format flags
-    const args: string[] = [workspace, "--format", formats, "--force"];
+    // Step 2: Build args
+    const args: string[] = [cliPath, workspace, "--format", formats, "--force"];
     if (compact) args.push("--compact");
+
+    // Pass custom rules via --rules flag if provided
+    if (customRules) {
+      const rules = customRules.split("\n").filter(Boolean);
+      for (const rule of rules) {
+        args.push("--rule", rule);
+      }
+    }
 
     core.info(`Running hashmark scan (formats: ${formats})...`);
     core.info("");
 
-    // Step 3: Run hashmark
+    // Step 3: Run hashmark CLI via node (no global install required)
     let output = "";
-    await exec.exec("hashmark", args, {
+    await exec.exec("node", args, {
       listeners: {
         stdout: (data: Buffer) => {
           output += data.toString();
@@ -67,7 +73,6 @@ async function run(): Promise<void> {
     core.info(`Generated ${filesGenerated} format files`);
 
     // Step 4: Check for changes
-    let hasChanges = false;
     let diffOutput = "";
     await exec.exec("git", ["status", "--porcelain"], {
       cwd: workspace,
@@ -78,7 +83,7 @@ async function run(): Promise<void> {
       },
     });
 
-    hasChanges = diffOutput.trim().length > 0;
+    const hasChanges = diffOutput.trim().length > 0;
 
     if (!hasChanges) {
       core.info("No changes detected — context files are up to date.");

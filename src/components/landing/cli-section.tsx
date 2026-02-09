@@ -12,7 +12,7 @@ export function CliSection() {
         <div className="mx-auto max-w-md border border-border bg-muted/50 px-6 py-4 text-left">
           <code className="text-sm">
             <span className="text-muted-foreground">$</span>{" "}
-            <span className="text-accent">npx</span> @jpoindexter/agent-smith
+            <span className="text-accent">npx</span> hashmark
           </code>
         </div>
 

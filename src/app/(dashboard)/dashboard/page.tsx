@@ -28,9 +28,16 @@ function timeAgo(date: Date): string {
   return `${days}d ago`;
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
+
+  const params = await searchParams;
+  const upgraded = params.upgraded === "true";
 
   const [user, repos, recentScans, totalScans] = await Promise.all([
     db.user.findUnique({
@@ -60,6 +67,17 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       {plan === "FREE" && <TrialBanner />}
+
+      {upgraded && (
+        <div className="border border-accent bg-accent/10 px-6 py-4">
+          <p className="text-sm font-bold uppercase tracking-wider text-accent">
+            UPGRADE SUCCESSFUL
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Your plan has been upgraded. All features are now unlocked.
+          </p>
+        </div>
+      )}
 
       <DashboardHeader
         title="DASHBOARD"

@@ -5,7 +5,7 @@
   "description": "GitHub Action: One scan. Every format. Always in sync.",
   "type": "module",
   "scripts": {
-    "build": "tsup src/index.ts --format esm --target node20 --no-splitting",
+    "build": "tsup src/index.ts --format esm --target node20 --no-splitting && cp ../cli/dist/cli.js dist/cli.js",
     "dev": "tsup src/index.ts --format esm --target node20 --watch"
   },
   "devDependencies": {
