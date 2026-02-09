@@ -5,7 +5,7 @@
 Hashmark is the cloud product for agent-smith. The CLI is free and generates AGENTS.md locally. Hashmark is the paid SaaS that generates ALL AI context file formats, keeps them in sync via GitHub Actions, and provides a codebase intelligence dashboard.
 
 **Domain**: hashmark.md
-**CLI**: npx @jpoindexter/agent-smith (500+ downloads in first week, 47% blog post conversion)
+**CLI**: npx @jpoindexter/agent-smith (652 downloads in 3 days, 47% blog post conversion)
 **Value prop**: "One scan. Every format. Always in sync."
 
 ---
@@ -20,21 +20,23 @@ Hashmark is the cloud product for agent-smith. The CLI is free and generates AGE
 - [x] Create Prisma schema
 - [x] Set up directory structure
 
-### 1.2 Landing Page
-- [ ] Hero section with terminal aesthetic
-- [ ] "How it works" 3-step section (Connect, Scan, Sync)
-- [ ] Pricing table (Free / Pro $19/mo / Team $29/seat/mo)
-- [ ] "Try the CLI free" section with npx command
-- [ ] Footer with links
-- [ ] Mobile responsive
-- [ ] SEO meta tags + OG image
+### 1.2 Landing Page [DONE]
+- [x] Hero section with terminal aesthetic
+- [x] "How it works" 3-step section (Connect, Scan, Sync)
+- [x] Pricing table (Free / Pro $19/mo / Team $29/seat/mo)
+- [x] "Try the CLI free" section with npx command
+- [x] Footer with links
+- [x] SEO meta tags
+- [ ] OG image
+- [ ] Mobile responsive polish
 
 ### 1.3 Auth + Database
-- [ ] GitHub OAuth via NextAuth v5
+- [x] GitHub OAuth via NextAuth v5 (config + route handler)
+- [x] Prisma schema (User, Repository, Scan, GeneratedFile, CustomRule models)
+- [x] User model with plan field (FREE/PRO/TEAM enum)
 - [ ] Prisma schema migration (push to Supabase/Neon)
-- [ ] User model with plan field
 - [ ] Protected route middleware
-- [ ] Sign in / sign out flow
+- [ ] Sign in / sign out flow (UI pages)
 
 ## Phase 2: Core Product
 
