@@ -812,10 +812,34 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
       lines.push("**High Complexity Files** (use most capable model with extended thinking):");
       lines.push("");
       for (const file of topComplex) {
-        lines.push(`- \`${file.path}\` (${file.lines} lines, score: ${file.score}/100)`);
+        const miTag = file.maintainabilityIndex != null
+          ? `, MI: ${file.maintainabilityIndex}`
+          : "";
+        lines.push(`- \`${file.path}\` (${file.lines} lines, score: ${file.score}/100${miTag})`);
         if (file.reasons.length > 0) {
           lines.push(`  - ${file.reasons.join(", ")}`);
         }
+      }
+      lines.push("");
+    }
+
+    // Function hotspots table — top 10 functions by cognitive complexity
+    const allFunctions = aiRecommendations.complexFiles
+      .flatMap((f) =>
+        (f.functions ?? []).map((fn) => ({ ...fn, file: f.path }))
+      )
+      .sort((a, b) => b.cognitive - a.cognitive)
+      .slice(0, 10);
+
+    if (allFunctions.length > 0 && !compact && !compress) {
+      lines.push("**Function Hotspots** (highest cognitive complexity):");
+      lines.push("");
+      lines.push("| Function | File | Cyclomatic | Cognitive | MI |");
+      lines.push("|---|---|---|---|---|");
+      for (const fn of allFunctions) {
+        lines.push(
+          `| ${fn.name} | ${fn.file}:${fn.startLine} | ${fn.cyclomatic} | ${fn.cognitive} | ${fn.maintainabilityIndex} |`
+        );
       }
       lines.push("");
     }

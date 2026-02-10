@@ -12,6 +12,7 @@
     "build": "tsup src/cli.ts --format esm --dts",
     "dev": "tsup src/cli.ts --format esm --watch",
     "start": "node dist/cli.js",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "sync-version": "./scripts/sync-version.sh",
     "prebuild": "./scripts/sync-version.sh"
@@ -50,7 +51,8 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",

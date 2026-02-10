@@ -78,8 +78,9 @@ model Repository {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  scans Scan[]
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scans        Scan[]
+  searchChunks SearchChunk[]
 }
 
 model Scan {
@@ -102,6 +103,7 @@ model Scan {
 
   repository     Repository     @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
   generatedFiles GeneratedFile[]
+  searchChunks   SearchChunk[]
 }
 
 model GeneratedFile {
@@ -128,6 +130,25 @@ model CustomRule {
   updatedAt   DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SearchChunk {
+  id             String                  @id @default(cuid())
+  repositoryId   String
+  scanId         String
+  sectionHeading String
+  sectionType    String
+  content        String
+  chunkIndex     Int
+  tokenCount     Int
+  searchVector   Unsupported("tsvector")?
+  createdAt      DateTime                @default(now())
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  scan       Scan       @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([repositoryId])
+  @@index([scanId])
 }
 
 enum Plan {

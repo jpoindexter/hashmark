@@ -9,7 +9,7 @@
  * @module json-generator
  */
 
-import type { ScanResult, ExistingContext } from "./types.js";
+import type { ScanResult, ExistingContext, AIRecommendations } from "./types.js";
 import { estimateTokens } from "./utils/tokens.js";
 import { extractRulesFromContent } from "./scanners/existing-context.js";
 
@@ -79,6 +79,24 @@ export interface AgentsIndex {
     source: string;
     rules: string[];
   }>;
+  /** AST-based complexity analysis */
+  complexity?: {
+    topFunctions: Array<{
+      name: string;
+      file: string;
+      line: number;
+      cyclomatic: number;
+      cognitive: number;
+      halstead: { volume: number; effort: number; estimatedBugs: number };
+      maintainabilityIndex: number;
+    }>;
+    fileScores: Array<{
+      path: string;
+      score: number;
+      level: string;
+      maintainabilityIndex?: number;
+    }>;
+  };
 }
 
 /**
@@ -89,7 +107,7 @@ export interface AgentsIndex {
  * @returns JSON string of the index
  */
 export function generateAgentsIndex(result: ScanResult, markdownContent: string): string {
-  const { components, framework, hooks, apiRoutes, database, stats, barrels, existingContext } = result;
+  const { components, framework, hooks, apiRoutes, database, stats, barrels, existingContext, aiRecommendations } = result;
 
   const index: AgentsIndex = {
     version: "1.0",
@@ -138,6 +156,9 @@ export function generateAgentsIndex(result: ScanResult, markdownContent: string)
     ...(existingContext.allRules.length > 0 && {
       existingRules: buildExistingRulesSources(existingContext),
     }),
+    ...(aiRecommendations && {
+      complexity: buildComplexityData(aiRecommendations),
+    }),
   };
 
   return JSON.stringify(index, null, 2);
@@ -173,4 +194,35 @@ function buildExistingRulesSources(ctx: ExistingContext): Array<{ source: string
   }
 
   return sources;
+}
+
+/** Build complexity data for the JSON index from AI recommendations */
+function buildComplexityData(ai: AIRecommendations): AgentsIndex["complexity"] {
+  const allFunctions = ai.complexFiles
+    .flatMap((f) =>
+      (f.functions ?? []).map((fn) => ({
+        name: fn.name,
+        file: f.path,
+        line: fn.startLine,
+        cyclomatic: fn.cyclomatic,
+        cognitive: fn.cognitive,
+        halstead: {
+          volume: fn.halstead.volume,
+          effort: fn.halstead.effort,
+          estimatedBugs: fn.halstead.estimatedBugs,
+        },
+        maintainabilityIndex: fn.maintainabilityIndex,
+      }))
+    )
+    .sort((a, b) => b.cognitive - a.cognitive)
+    .slice(0, 20);
+
+  const fileScores = ai.complexFiles.map((f) => ({
+    path: f.path,
+    score: f.score,
+    level: f.level,
+    maintainabilityIndex: f.maintainabilityIndex,
+  }));
+
+  return { topFunctions: allFunctions, fileScores };
 }

@@ -124,6 +124,14 @@ export async function runScan(scanId: string, fullName: string, token: string, s
     const scan = await db.scan.findUnique({ where: { id: scanId }, select: { repositoryId: true } });
     if (scan) {
       await db.repository.update({ where: { id: scan.repositoryId }, data: { lastScanAt: new Date() } });
+
+      // Index for full-text search (non-critical — log errors but don't fail the scan)
+      try {
+        const { indexScanForSearch } = await import("./search-indexer");
+        await indexScanForSearch(scanId, scan.repositoryId);
+      } catch (indexErr) {
+        console.error(`[scan-worker] Search indexing failed for scan ${scanId}:`, indexErr);
+      }
     }
   } catch (error) {
     const execErr = error as { stderr?: string; stdout?: string; code?: number; killed?: boolean; signal?: string };

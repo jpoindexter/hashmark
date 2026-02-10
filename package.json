@@ -12,6 +12,7 @@
     "db:generate": "dotenv -e .env.local -- prisma generate",
     "db:studio": "dotenv -e .env.local -- prisma studio",
     "db:seed": "dotenv -e .env.local -- tsx prisma/seed.ts",
+    "db:search-setup": "dotenv -e .env.local -- psql $DATABASE_URL -f prisma/search-setup.sql",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

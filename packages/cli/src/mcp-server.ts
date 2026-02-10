@@ -376,6 +376,30 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["filePath"],
         },
       },
+      {
+        name: "search_codebase",
+        description:
+          "Search across AGENTS.md content using BM25 keyword search. Returns relevant sections matching the query, ranked by relevance.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            directory: {
+              type: "string",
+              description: "The directory containing AGENTS.md",
+            },
+            query: {
+              type: "string",
+              description:
+                "Natural language search query (e.g., 'how does authentication work', 'database models')",
+            },
+            limit: {
+              type: "number",
+              description: "Maximum number of results (default: 5)",
+            },
+          },
+          required: ["directory", "query"],
+        },
+      },
     ],
   };
 });
@@ -1161,6 +1185,54 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{
             type: "text",
             text: `Found ${schemas.size} schema(s):\n\n${output.join("\n\n---\n\n")}`,
+          }],
+        };
+      }
+
+      case "search_codebase": {
+        const dir = resolve(args?.directory as string);
+        const query = args?.query as string;
+        const limit = (args?.limit as number) || 5;
+
+        const agentsPath = join(dir, "AGENTS.md");
+        if (!existsSync(agentsPath)) {
+          return {
+            content: [{ type: "text", text: `No AGENTS.md found in ${dir}. Run 'hashmark' first to generate it.` }],
+            isError: true,
+          };
+        }
+
+        let index = getCached<import("./utils/bm25.js").BM25Index>("bm25-index", dir);
+        if (!index) {
+          const { BM25Index } = await import("./utils/bm25.js");
+          const { chunkMarkdown } = await import("./utils/chunk-markdown.js");
+          const content = readFileSync(agentsPath, "utf-8");
+          const sections = chunkMarkdown(content);
+          index = new BM25Index();
+          for (const section of sections) {
+            index.addDocument(section);
+          }
+          setCache("bm25-index", dir, index);
+        }
+
+        const results = index.search(query, limit);
+
+        if (results.length === 0) {
+          return {
+            content: [{ type: "text", text: `No results found for "${query}"` }],
+          };
+        }
+
+        const output = results.map((r, i) => {
+          const score = r.score.toFixed(2);
+          const preview = r.document.content.slice(0, 500) + (r.document.content.length > 500 ? "..." : "");
+          return `### ${i + 1}. ${r.document.heading} (${r.document.sectionType}, score: ${score})\n\n${preview}`;
+        });
+
+        return {
+          content: [{
+            type: "text",
+            text: `Found ${results.length} result(s) for "${query}":\n\n${output.join("\n\n---\n\n")}`,
           }],
         };
       }
