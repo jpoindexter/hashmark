@@ -1,10 +1,13 @@
 /* ============================================
-   DESIGN TOKENS (OKLCH Color Space)
-   Monospace web principles: 1.20rem grid, 2px borders,
-   borders in foreground color. OKLCH palette from indx.sh.
+   DESIGN TOKENS
+   Monospace Web palette — high-contrast grayscale.
+   Light: black on white (monospace-web :root)
+   Dark:  white on black (monospace-web dark mode)
+
+   Chromatic accents only for status indicators.
    ============================================ */
 :root {
-  /* Grid & spacing (indx: 16px base unit) — shared across themes */
+  /* Grid & spacing — shared across themes */
   --mono-line-height: 1rem;
   --mono-border: 2px;
   --mono-font-weight-normal: 500;
@@ -19,7 +22,7 @@
   --grid-12: 3rem;
   --grid-16: 4rem;
 
-  /* Grid-locked type scale (indx) */
+  /* Grid-locked type scale */
   --type-hero-size: 26px;
   --type-hero-line: 32px;
   --type-hero-weight: 800;
@@ -39,79 +42,83 @@
 
   --radius: 0px;
 
-  /* Core palette — light mode */
-  --background: 97% 0 0;
-  --foreground: 15% 0 0;
-  --card: 100% 0 0;
-  --card-foreground: 15% 0 0;
-  --popover: 100% 0 0;
-  --popover-foreground: 15% 0 0;
-  --secondary: 92% 0 0;
-  --secondary-foreground: 15% 0 0;
-  --muted: 92% 0 0;
-  --muted-foreground: 45% 0 0;
-  --primary: 15% 0 0;
-  --primary-foreground: 97% 0 0;
-  --accent: 15% 0 0;
-  --accent-foreground: 97% 0 0;
-  --destructive: 55% 0.08 25;
-  --destructive-foreground: 97% 0 0;
-  --border: 82% 0 0;
-  --input: 92% 0 0;
-  --ring: 45% 0 0;
+  /* ── Light palette ──
+     monospace-web: #000 text, #666 alt, #fff bg, #eee alt-bg
+     Borders = foreground color (monospace-web convention) */
+  --background: 100% 0 0;           /* #fff — pure white */
+  --foreground: 0% 0 0;             /* #000 — pure black */
+  --card: 100% 0 0;                 /* #fff */
+  --card-foreground: 0% 0 0;        /* #000 */
+  --popover: 100% 0 0;              /* #fff */
+  --popover-foreground: 0% 0 0;     /* #000 */
+  --primary: 0% 0 0;                /* #000 */
+  --primary-foreground: 100% 0 0;   /* #fff */
+  --secondary: 94% 0 0;             /* #eee */
+  --secondary-foreground: 0% 0 0;   /* #000 */
+  --muted: 94% 0 0;                 /* #eee */
+  --muted-foreground: 44% 0 0;      /* #666 */
+  --accent: 0% 0 0;                 /* #000 */
+  --accent-foreground: 100% 0 0;    /* #fff */
+  --destructive: 55% 0.22 25;
+  --destructive-foreground: 100% 0 0;
+  --border: 0% 0 0;                 /* #000 — borders = text-color */
+  --input: 94% 0 0;                 /* #eee */
+  --ring: 0% 0 0;                   /* #000 */
 
-  /* Status colors — light */
-  --success: 50% 0.06 145;
-  --success-foreground: 97% 0 0;
-  --warning: 70% 0.08 85;
-  --warning-foreground: 20% 0 0;
-  --info: 50% 0.06 250;
-  --info-foreground: 97% 0 0;
+  /* Status colors */
+  --success: 52% 0.17 145;
+  --success-foreground: 100% 0 0;
+  --warning: 75% 0.15 85;
+  --warning-foreground: 0% 0 0;
+  --info: 55% 0.15 250;
+  --info-foreground: 100% 0 0;
 
   /* Charts */
-  --chart-1: 50% 0.08 25;
-  --chart-2: 50% 0.07 145;
-  --chart-3: 70% 0.08 85;
-  --chart-4: 50% 0.07 250;
-  --chart-5: 60% 0.08 55;
+  --chart-1: 55% 0.22 25;
+  --chart-2: 52% 0.17 145;
+  --chart-3: 75% 0.15 85;
+  --chart-4: 55% 0.15 250;
+  --chart-5: 65% 0.15 55;
 }
 
 .dark {
-  /* Core palette — dark mode */
-  --background: 10% 0 0;
-  --foreground: 82% 0 0;
-  --card: 14% 0 0;
-  --card-foreground: 82% 0 0;
-  --popover: 18% 0 0;
-  --popover-foreground: 82% 0 0;
-  --secondary: 16% 0 0;
-  --secondary-foreground: 82% 0 0;
-  --muted: 16% 0 0;
-  --muted-foreground: 55% 0 0;
-  --primary: 82% 0 0;
-  --primary-foreground: 10% 0 0;
-  --accent: 82% 0 0;
-  --accent-foreground: 10% 0 0;
-  --destructive: 60% 0.06 25;
-  --destructive-foreground: 92% 0 0;
-  --border: 25% 0 0;
-  --input: 12% 0 0;
-  --ring: 55% 0 0;
+  /* ── Dark palette ──
+     monospace-web: #fff text, #aaa alt, #000 bg, #111 alt-bg
+     Borders = foreground color (monospace-web convention) */
+  --background: 0% 0 0;             /* #000 — pure black */
+  --foreground: 100% 0 0;           /* #fff — pure white */
+  --card: 10% 0 0;                  /* #111 */
+  --card-foreground: 100% 0 0;      /* #fff */
+  --popover: 10% 0 0;               /* #111 */
+  --popover-foreground: 100% 0 0;   /* #fff */
+  --primary: 100% 0 0;              /* #fff */
+  --primary-foreground: 0% 0 0;     /* #000 */
+  --secondary: 10% 0 0;             /* #111 */
+  --secondary-foreground: 100% 0 0; /* #fff */
+  --muted: 10% 0 0;                 /* #111 */
+  --muted-foreground: 70% 0 0;      /* #aaa */
+  --accent: 100% 0 0;               /* #fff */
+  --accent-foreground: 0% 0 0;      /* #000 */
+  --destructive: 60% 0.22 25;
+  --destructive-foreground: 100% 0 0;
+  --border: 100% 0 0;               /* #fff — borders = text-color */
+  --input: 10% 0 0;                 /* #111 */
+  --ring: 100% 0 0;                 /* #fff */
 
   /* Status colors — dark */
-  --success: 60% 0.05 145;
-  --success-foreground: 15% 0 0;
-  --warning: 80% 0.06 85;
-  --warning-foreground: 20% 0 0;
-  --info: 60% 0.05 250;
-  --info-foreground: 15% 0 0;
+  --success: 65% 0.17 145;
+  --success-foreground: 0% 0 0;
+  --warning: 80% 0.15 85;
+  --warning-foreground: 0% 0 0;
+  --info: 65% 0.15 250;
+  --info-foreground: 0% 0 0;
 
   /* Charts — dark */
-  --chart-1: 50% 0.08 25;
-  --chart-2: 50% 0.07 145;
-  --chart-3: 70% 0.08 85;
-  --chart-4: 50% 0.07 250;
-  --chart-5: 60% 0.08 55;
+  --chart-1: 60% 0.22 25;
+  --chart-2: 65% 0.17 145;
+  --chart-3: 80% 0.15 85;
+  --chart-4: 65% 0.15 250;
+  --chart-5: 70% 0.15 55;
 }
 
 /* ============================================
