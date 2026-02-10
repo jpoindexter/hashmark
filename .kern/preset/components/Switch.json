@@ -1,0 +1,20 @@
+{
+  "name": "Switch",
+  "import": "import { Switch } from '@/components/ui/switch'",
+  "category": "form",
+  "description": "Toggle switch for on/off states. Built on Radix. Use for instant-apply boolean settings.",
+  "tags": ["form", "toggle", "switch", "boolean"],
+  "variants": [],
+  "props": {
+    "checked": { "type": "boolean", "required": false },
+    "onCheckedChange": { "type": "(checked: boolean) => void", "required": false },
+    "disabled": { "type": "boolean", "required": false, "default": "false" },
+    "id": { "type": "string", "required": false }
+  },
+  "example": "<div className=\"flex items-center justify-between\">\n  <label htmlFor=\"notifications\" className=\"text-[10px] font-bold uppercase tracking-wider\">NOTIFICATIONS</label>\n  <Switch id=\"notifications\" />\n</div>",
+  "never": [
+    "Never use Checkbox for instant-apply toggles — use Switch",
+    "Never hardcode toggle colors — use semantic tokens"
+  ],
+  "dependencies": ["@radix-ui/react-switch"]
+}

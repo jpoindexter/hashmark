@@ -121,7 +121,7 @@ export function ScanResultsTables({ results }: ScanResultsTablesProps) {
             {results.scanners.map((scanner) => (
               <div
                 key={scanner.name}
-                className="flex items-center justify-between border border-border px-4 py-2"
+                className="flex items-center justify-between border border-border px-[var(--grid-4)] py-[var(--grid-2)]"
               >
                 <span className="type-caption text-muted-foreground">
                   {scanner.name}

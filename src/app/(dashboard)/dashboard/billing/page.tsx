@@ -96,7 +96,7 @@ export default async function BillingPage() {
             <p className="type-label text-muted-foreground">
               [CURRENT PLAN]
             </p>
-            <div className="mt-2 flex items-center gap-3">
+            <div className="mt-[var(--grid-2)] flex items-center gap-[var(--grid-3)]">
               <TierBadge tier={user.plan.toLowerCase()} size="lg" />
               <span className="type-caption text-muted-foreground">
                 Member since{" "}
@@ -143,14 +143,14 @@ export default async function BillingPage() {
 
       {/* Plan comparison */}
       <div>
-        <p className="mb-4 type-label text-muted-foreground">
+        <p className="mb-[var(--grid-4)] type-label text-muted-foreground">
           [AVAILABLE PLANS]
         </p>
-        <div id="pricing" className="mono-grid-3 gap-4">
+        <div id="pricing" className="mono-grid-3 gap-[var(--grid-4)]">
           {PLANS.map((plan) => (
             <div
               key={plan.name}
-              className={`border px-6 py-4 ${
+              className={`border px-[var(--grid-6)] py-[var(--grid-4)] ${
                 user.plan === plan.name
                   ? "border-accent bg-accent/5"
                   : "border-border bg-card"
@@ -166,8 +166,8 @@ export default async function BillingPage() {
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-xl font-bold">{plan.price}</p>
-              <ul className="mt-4 space-y-1">
+              <p className="mt-[var(--grid-1)] text-xl font-bold">{plan.price}</p>
+              <ul className="mt-[var(--grid-4)] space-y-1">
                 {plan.features.map((f) => (
                   <li key={f} className="type-caption text-muted-foreground">
                     {`> ${f}`}
@@ -203,13 +203,13 @@ function UsageStat({
 
   return (
     <div className="mono-box bg-card">
-      <div className="flex items-center gap-2 text-muted-foreground">
+      <div className="flex items-center gap-[var(--grid-2)] text-muted-foreground">
         {icon}
         <p className="text-[10px] font-bold uppercase tracking-wider">
           {label}
         </p>
       </div>
-      <div className="mt-2 flex items-baseline gap-1">
+      <div className="mt-[var(--grid-2)] flex items-baseline gap-[var(--grid-1)]">
         <p className="text-xl font-bold">{value}</p>
         {typeof limit === "number" && (
           <span
@@ -220,7 +220,7 @@ function UsageStat({
         )}
       </div>
       {isAtLimit && (
-        <p className="mt-1 text-[10px] uppercase text-destructive">
+        <p className="mt-[var(--grid-1)] text-[10px] uppercase text-destructive">
           LIMIT REACHED
         </p>
       )}

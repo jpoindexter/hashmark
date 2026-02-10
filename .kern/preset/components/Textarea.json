@@ -1,0 +1,20 @@
+{
+  "name": "Textarea",
+  "import": "import { Textarea } from '@/components/ui/textarea'",
+  "category": "form",
+  "description": "Multi-line text input. Always use Textarea component, never raw <textarea>.",
+  "tags": ["form", "text", "multiline", "input"],
+  "variants": [],
+  "props": {
+    "placeholder": { "type": "string", "required": false },
+    "rows": { "type": "number", "required": false, "default": "3" },
+    "disabled": { "type": "boolean", "required": false, "default": "false" },
+    "className": { "type": "string", "required": false }
+  },
+  "example": "<Textarea placeholder=\"Enter description\" rows={4} />",
+  "never": [
+    "Never use raw <textarea> — always use <Textarea>",
+    "Never hardcode border-radius — handled by component"
+  ],
+  "dependencies": []
+}

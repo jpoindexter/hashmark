@@ -34,7 +34,7 @@ export function RepoCard({
     <div className="mono-box bg-card">
       <div className="flex items-center justify-between">
         <div className="flex-1 overflow-hidden">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-[var(--grid-4)]">
             <Link
               href={`/dashboard/${repo.id}`}
               className="type-body font-bold text-foreground transition-colors hover:text-accent"
@@ -54,7 +54,7 @@ export function RepoCard({
             )}
             {latestScan && <StatusBadge status={latestScan.status} />}
           </div>
-          <div className="mt-1 flex items-center gap-4 type-caption text-muted-foreground">
+          <div className="mt-[var(--grid-1)] flex items-center gap-[var(--grid-4)] type-caption text-muted-foreground">
             {repo.language && <span>[{repo.language}]</span>}
             {repo.description && (
               <span className="truncate">{repo.description}</span>
@@ -72,7 +72,7 @@ export function RepoCard({
           </div>
         </div>
 
-        <div className="ml-4 flex items-center gap-2">
+        <div className="ml-4 flex items-center gap-[var(--grid-2)]">
           {canAutoSync && (
             <form
               action={

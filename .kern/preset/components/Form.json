@@ -1,0 +1,27 @@
+{
+  "name": "Form",
+  "import": "import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'",
+  "category": "form",
+  "description": "Form wrapper with react-hook-form integration. Use FormField for each input, FormLabel for labels, FormMessage for errors.",
+  "tags": ["form", "validation", "fields", "submit"],
+  "variants": [],
+  "props": {
+    "form": {
+      "type": "UseFormReturn",
+      "required": true,
+      "description": "React Hook Form instance from useForm()"
+    },
+    "onSubmit": {
+      "type": "(values: T) => void",
+      "required": true,
+      "description": "Form submission handler"
+    }
+  },
+  "example": "<Form {...form}>\n  <form onSubmit={form.handleSubmit(onSubmit)} className=\"space-y-4\">\n    <FormField\n      control={form.control}\n      name=\"email\"\n      render={({ field }) => (\n        <FormItem>\n          <FormLabel>EMAIL</FormLabel>\n          <FormControl>\n            <Input placeholder=\"user@example.com\" {...field} />\n          </FormControl>\n          <FormMessage />\n        </FormItem>\n      )}\n    />\n    <Button type=\"submit\">> SUBMIT</Button>\n  </form>\n</Form>",
+  "never": [
+    "Never build forms without react-hook-form — use Form wrapper",
+    "Never use raw <label> — use FormLabel (auto-UPPERCASE in Swiss-Industrial)",
+    "Never show errors without FormMessage — it handles validation display"
+  ],
+  "dependencies": ["react-hook-form", "@hookform/resolvers", "zod"]
+}

@@ -25,13 +25,13 @@ function ScanProgressSteps({ currentStep }: { currentStep?: string }) {
     : -1;
 
   return (
-    <div className="flex items-center gap-1 pt-2">
+    <div className="flex items-center gap-[var(--grid-1)] pt-2">
       {SCAN_STEPS.map((step, i) => {
         const isActive = i === currentIndex;
         const isDone = i < currentIndex;
         return (
-          <div key={step} className="flex items-center gap-1">
-            <div className="flex flex-col items-center gap-1">
+          <div key={step} className="flex items-center gap-[var(--grid-1)]">
+            <div className="flex flex-col items-center gap-[var(--grid-1)]">
               <div
                 className={`h-1.5 w-8 ${
                   isActive
@@ -76,7 +76,7 @@ export function IntelligencePage({
     <div className="mono-stack-lg">
       {/* Scan info bar */}
       <div className="flex items-center justify-between mono-box bg-card">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-[var(--grid-4)]">
           {scan ? (
             <>
               <StatusBadge status={scan.status} />
@@ -110,8 +110,8 @@ export function IntelligencePage({
       {/* Scan in progress */}
       {isScanning && (
         <div className="mono-box border-accent/30 bg-accent/5">
-          <div className="flex flex-col items-center gap-3">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col items-center gap-[var(--grid-3)]">
+            <div className="flex items-center gap-[var(--grid-2)]">
               <div className="h-2 w-2 animate-pulse rounded-full bg-accent" />
               <p className="type-h3 text-accent">
                 {progress?.step || "SCANNING"}
@@ -129,7 +129,7 @@ export function IntelligencePage({
 
       {/* Scan failed */}
       {scan?.status === "FAILED" && (
-        <div className="flex flex-col items-center gap-4 mono-box border-destructive/50 bg-card">
+        <div className="flex flex-col items-center gap-[var(--grid-4)] mono-box border-destructive/50 bg-card">
           <AlertTriangle className="h-8 w-8 text-destructive" />
           <h3 className="type-h3">[ERROR] SCAN FAILED</h3>
           <p className="max-w-md text-center type-caption text-muted-foreground">

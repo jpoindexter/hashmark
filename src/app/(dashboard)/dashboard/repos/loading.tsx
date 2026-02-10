@@ -18,19 +18,19 @@ export default function ReposLoading() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="flex items-center justify-between border border-border px-6 py-4"
+            className="flex items-center justify-between border border-border px-[var(--grid-6)] py-[var(--grid-4)]"
           >
             <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-[var(--grid-4)]">
                 <div className="h-4 w-48 animate-pulse bg-muted" />
                 <div className="h-5 w-16 animate-pulse bg-muted" />
               </div>
-              <div className="flex gap-4">
+              <div className="flex gap-[var(--grid-4)]">
                 <div className="h-3 w-24 animate-pulse bg-muted" />
                 <div className="h-3 w-32 animate-pulse bg-muted" />
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-[var(--grid-2)]">
               <div className="h-8 w-20 animate-pulse bg-muted" />
               <div className="h-8 w-8 animate-pulse bg-muted" />
             </div>

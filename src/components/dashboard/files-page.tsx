@@ -87,10 +87,10 @@ export function FilesPage({
         </Button>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex gap-[var(--grid-4)]">
         {/* File list (left panel) */}
         <div className="w-64 shrink-0 border border-border">
-          <div className="border-b border-border px-4 py-4">
+          <div className="border-b border-border px-[var(--grid-4)] py-[var(--grid-4)]">
             <p className="type-label text-muted-foreground">
               [FORMATS] ({files.length})
             </p>
@@ -100,7 +100,7 @@ export function FilesPage({
               <li key={file.id}>
                 <button
                   onClick={() => setSelected(file.id)}
-                  className={`w-full px-4 py-2 text-left text-xs transition-colors ${
+                  className={`w-full px-[var(--grid-4)] py-[var(--grid-2)] text-left text-xs transition-colors ${
                     selected === file.id
                       ? "bg-accent/10 text-accent"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -110,7 +110,7 @@ export function FilesPage({
                     {FORMAT_LABELS[file.format] ?? file.fileName}
                   </p>
                   {file.tokenCount && (
-                    <p className="mt-1 text-[10px]">
+                    <p className="mt-[var(--grid-1)] text-[10px]">
                       {file.tokenCount.toLocaleString()} tokens
                     </p>
                   )}
@@ -124,11 +124,11 @@ export function FilesPage({
         <div className="flex-1 border border-border">
           {selectedFile ? (
             <>
-              <div className="flex items-center justify-between border-b border-border px-4 py-4">
+              <div className="flex items-center justify-between border-b border-border px-[var(--grid-4)] py-[var(--grid-4)]">
                 <p className="type-label">
                   {selectedFile.fileName}
                 </p>
-                <div className="flex gap-2">
+                <div className="flex gap-[var(--grid-2)]">
                   <Button variant="outline" size="sm" onClick={handleCopy}>
                     {copied ? "COPIED" : "> COPY"}
                   </Button>
@@ -138,12 +138,12 @@ export function FilesPage({
                   </Button>
                 </div>
               </div>
-              <pre className="max-h-[600px] overflow-auto p-4 text-xs leading-relaxed text-muted-foreground">
+              <pre className="max-h-[600px] overflow-auto p-[var(--grid-4)] text-xs leading-relaxed text-muted-foreground">
                 {selectedFile.content}
               </pre>
             </>
           ) : (
-            <div className="p-8 text-center type-caption text-muted-foreground">
+            <div className="p-[var(--grid-8)] text-center type-caption text-muted-foreground">
               SELECT A FILE TO PREVIEW
             </div>
           )}

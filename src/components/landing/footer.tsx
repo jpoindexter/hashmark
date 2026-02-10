@@ -1,15 +1,15 @@
 export function Footer() {
   return (
-    <footer className="border-t border-border px-6 py-12">
-      <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-6 sm:flex-row">
-        <div className="flex items-center gap-2">
+    <footer className="border-t border-border px-[var(--grid-6)] py-12">
+      <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-[var(--grid-6)] sm:flex-row">
+        <div className="flex items-center gap-[var(--grid-2)]">
           <span className="text-foreground text-xl">#</span>
           <span className="type-button">
             Hashmark
           </span>
         </div>
 
-        <div className="flex items-center gap-6 type-body text-muted-foreground">
+        <div className="flex items-center gap-[var(--grid-6)] type-body text-muted-foreground">
           <a
             href="https://github.com/jpoindexter/hashmark"
             target="_blank"

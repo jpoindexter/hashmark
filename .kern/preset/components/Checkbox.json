@@ -1,0 +1,20 @@
+{
+  "name": "Checkbox",
+  "import": "import { Checkbox } from '@/components/ui/checkbox'",
+  "category": "form",
+  "description": "Binary toggle input built on Radix. Always use Checkbox component, never raw <input type=\"checkbox\">.",
+  "tags": ["form", "toggle", "check", "boolean"],
+  "variants": [],
+  "props": {
+    "checked": { "type": "boolean", "required": false },
+    "onCheckedChange": { "type": "(checked: boolean) => void", "required": false },
+    "disabled": { "type": "boolean", "required": false, "default": "false" },
+    "id": { "type": "string", "required": false }
+  },
+  "example": "<div className=\"flex items-center gap-2\">\n  <Checkbox id=\"terms\" />\n  <label htmlFor=\"terms\" className=\"text-[13px] leading-4\">ACCEPT TERMS</label>\n</div>",
+  "never": [
+    "Never use raw <input type=\"checkbox\"> — always use <Checkbox>",
+    "Never style checkbox directly — use semantic tokens"
+  ],
+  "dependencies": ["@radix-ui/react-checkbox"]
+}

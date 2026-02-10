@@ -1,0 +1,20 @@
+{
+  "name": "Input",
+  "import": "import { Input } from '@/components/ui/input'",
+  "category": "form",
+  "description": "Text input field. Always use Input component, never raw <input>.",
+  "tags": ["form", "text", "field", "input"],
+  "variants": [],
+  "props": {
+    "type": { "type": "string", "required": false, "default": "text" },
+    "placeholder": { "type": "string", "required": false },
+    "disabled": { "type": "boolean", "required": false, "default": "false" },
+    "className": { "type": "string", "required": false }
+  },
+  "example": "<Input type=\"text\" placeholder=\"Enter value\" />",
+  "never": [
+    "Never use raw <input> — always use <Input>",
+    "Never hardcode border-radius — handled by component"
+  ],
+  "dependencies": []
+}

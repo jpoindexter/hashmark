@@ -16,7 +16,7 @@ export function OAuthButtons() {
       <button
         onClick={handleGitHubSignIn}
         disabled={loading}
-        className="flex w-full items-center justify-center gap-2 border border-border bg-secondary px-4 py-4 type-button text-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-[var(--grid-2)] border border-border bg-secondary px-[var(--grid-4)] py-[var(--grid-4)] type-button text-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
       >
         <GitHubIcon />
         {loading ? "CONNECTING..." : "> SIGN IN WITH GITHUB"}

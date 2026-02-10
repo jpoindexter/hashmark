@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@fabrk/components";
 import { Lock } from "lucide-react";
+import { cn } from "@/lib/cn";
 
 interface UpgradeGateProps {
   feature: string;
@@ -34,7 +35,7 @@ export function UpgradeGate({
       )}
 
       <div
-        className={`${children ? "absolute inset-0" : ""} flex flex-col items-center justify-center gap-4 mono-box bg-card/95`}
+        className={cn(children && "absolute inset-0", "flex flex-col items-center justify-center gap-[var(--grid-4)] mono-box bg-card/95")}
       >
         <div className="flex h-12 w-12 items-center justify-center border border-border bg-muted">
           <Lock className="h-5 w-5 text-muted-foreground" />

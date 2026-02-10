@@ -1,0 +1,20 @@
+{
+  "name": "RadioGroup",
+  "import": "import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'",
+  "category": "form",
+  "description": "Single-select option group built on Radix. Use for mutually exclusive choices.",
+  "tags": ["form", "radio", "select", "option", "group"],
+  "variants": [],
+  "props": {
+    "value": { "type": "string", "required": false },
+    "onValueChange": { "type": "(value: string) => void", "required": false },
+    "defaultValue": { "type": "string", "required": false },
+    "disabled": { "type": "boolean", "required": false, "default": "false" }
+  },
+  "example": "<RadioGroup defaultValue=\"option-a\">\n  <div className=\"flex items-center gap-2\">\n    <RadioGroupItem value=\"option-a\" id=\"option-a\" />\n    <label htmlFor=\"option-a\" className=\"text-[13px] leading-4\">OPTION A</label>\n  </div>\n  <div className=\"flex items-center gap-2\">\n    <RadioGroupItem value=\"option-b\" id=\"option-b\" />\n    <label htmlFor=\"option-b\" className=\"text-[13px] leading-4\">OPTION B</label>\n  </div>\n</RadioGroup>",
+  "never": [
+    "Never use raw <input type=\"radio\"> — always use RadioGroup",
+    "Never use Select for fewer than 5 options — use RadioGroup instead"
+  ],
+  "dependencies": ["@radix-ui/react-radio-group"]
+}

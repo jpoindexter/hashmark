@@ -8,7 +8,7 @@ export function TrialBanner() {
         <p className="type-label text-accent">
           [FREE PLAN]
         </p>
-        <p className="mt-1 type-caption text-muted-foreground">
+        <p className="mt-[var(--grid-1)] type-caption text-muted-foreground">
           Upgrade to Pro for unlimited repos, auto-sync, and custom rules.
         </p>
       </div>

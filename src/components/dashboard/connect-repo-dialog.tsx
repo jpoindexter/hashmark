@@ -73,7 +73,7 @@ export function ConnectRepoDialog({ onClose }: { onClose: () => void }) {
       {/* Dialog */}
       <div className="relative z-10 w-full max-w-lg border border-border bg-card">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border p-4">
+        <div className="flex items-center justify-between border-b border-border p-[var(--grid-4)]">
           <h2 className="type-h3">
             CONNECT REPOSITORY
           </h2>
@@ -88,7 +88,7 @@ export function ConnectRepoDialog({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Search */}
-        <div className="border-b border-border p-4">
+        <div className="border-b border-border p-[var(--grid-4)]">
           <Input
             type="text"
             placeholder="Search your GitHub repos..."
@@ -101,15 +101,15 @@ export function ConnectRepoDialog({ onClose }: { onClose: () => void }) {
         {/* Repo list */}
         <div className="max-h-80 overflow-y-auto">
           {loading ? (
-            <div className="p-8 text-center type-label text-muted-foreground">
+            <div className="p-[var(--grid-8)] text-center type-label text-muted-foreground">
               LOADING REPOSITORIES...
             </div>
           ) : error ? (
-            <div className="p-8 text-center type-caption text-destructive">
+            <div className="p-[var(--grid-8)] text-center type-caption text-destructive">
               {error}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="p-8 text-center type-caption text-muted-foreground">
+            <div className="p-[var(--grid-8)] text-center type-caption text-muted-foreground">
               {search
                 ? "NO MATCHING REPOSITORIES"
                 : "ALL REPOSITORIES CONNECTED"}
@@ -119,13 +119,13 @@ export function ConnectRepoDialog({ onClose }: { onClose: () => void }) {
               {filtered.map((repo) => (
                 <li
                   key={repo.id}
-                  className="flex items-center justify-between border-b border-border px-4 py-2 last:border-0"
+                  className="flex items-center justify-between border-b border-border px-[var(--grid-4)] py-[var(--grid-2)] last:border-0"
                 >
                   <div className="flex-1 overflow-hidden">
                     <p className="truncate type-body font-medium">
                       {repo.fullName}
                     </p>
-                    <div className="mt-0.5 flex items-center gap-2 type-caption text-muted-foreground">
+                    <div className="mt-0.5 flex items-center gap-[var(--grid-2)] type-caption text-muted-foreground">
                       {repo.language && <span>{repo.language}</span>}
                       {repo.private && <span>PRIVATE</span>}
                     </div>

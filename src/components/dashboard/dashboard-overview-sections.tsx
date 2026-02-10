@@ -37,7 +37,7 @@ export function PlanUsageSection({
             {Math.round((repoCount / repoLimit) * 100)}%
           </span>
         </div>
-        <div className="mt-2 h-2 w-full bg-muted">
+        <div className="mt-[var(--grid-2)] h-2 w-full bg-muted">
           <div
             className={`h-full transition-all ${
               repoCount >= repoLimit ? "bg-destructive" : "bg-accent"
@@ -48,7 +48,7 @@ export function PlanUsageSection({
           />
         </div>
         {repoCount >= repoLimit && (
-          <p className="mt-3 type-caption text-muted-foreground">
+          <p className="mt-[var(--grid-3)] type-caption text-muted-foreground">
             <Link
               href="/dashboard/billing"
               className="text-accent transition-colors hover:underline"
@@ -97,11 +97,11 @@ export function RecentActivitySection({
             <Link
               key={scan.id}
               href={`/dashboard/${scan.repository.id}`}
-              className={`flex items-center justify-between px-6 py-4 transition-colors hover:bg-muted ${
+              className={`flex items-center justify-between px-[var(--grid-6)] py-[var(--grid-4)] transition-colors hover:bg-muted ${
                 i < recentScans.length - 1 ? "border-b border-border" : ""
               }`}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-[var(--grid-4)]">
                 <StatusBadge status={scan.status} />
                 <div>
                   <p className="type-body font-medium">
@@ -121,7 +121,7 @@ export function RecentActivitySection({
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-[var(--grid-3)]">
                 <span className="type-caption text-muted-foreground">
                   {timeAgo(new Date(scan.createdAt))}
                 </span>
@@ -164,7 +164,7 @@ export function ReposQuickView({ repos }: ReposQuickViewProps) {
           <Link
             key={repo.id}
             href={`/dashboard/${repo.id}`}
-            className="flex items-center gap-3 border border-border px-4 py-3 transition-colors hover:bg-muted"
+            className="flex items-center gap-[var(--grid-3)] border border-border px-[var(--grid-4)] py-[var(--grid-3)] transition-colors hover:bg-muted"
           >
             <GitBranch className="h-4 w-4 text-muted-foreground" />
             <div className="flex-1 overflow-hidden">

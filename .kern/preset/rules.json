@@ -1,0 +1,154 @@
+[
+  {
+    "id": "no-hardcoded-colors",
+    "severity": "error",
+    "forbidden": [
+      "bg-gray-*",
+      "bg-white",
+      "bg-black",
+      "text-gray-*",
+      "text-white",
+      "text-black",
+      "text-slate-*",
+      "border-gray-*",
+      "text-[#hex]",
+      "bg-[#hex]",
+      "style={{ color: }}"
+    ],
+    "required": [
+      "bg-background",
+      "bg-muted",
+      "text-foreground",
+      "text-muted-foreground",
+      "border-border"
+    ],
+    "fix_map": {
+      "bg-gray-*": "bg-muted",
+      "bg-white": "bg-background",
+      "bg-black": "bg-foreground",
+      "text-gray-*": "text-muted-foreground",
+      "text-white": "text-primary-foreground",
+      "text-black": "text-foreground",
+      "text-slate-*": "text-muted-foreground",
+      "border-gray-*": "border-border"
+    },
+    "message": "Use semantic color tokens. Never hardcode colors."
+  },
+  {
+    "id": "no-raw-elements",
+    "severity": "error",
+    "forbidden": ["<button", "<input", "<select", "<textarea"],
+    "required": ["<Button", "<Input", "<Select", "<Textarea"],
+    "fix_map": {
+      "<button": "<Button",
+      "<input": "<Input",
+      "<select": "<Select",
+      "<textarea": "<Textarea"
+    },
+    "message": "Use components from @/components/ui/. Never use raw HTML elements for interactive controls."
+  },
+  {
+    "id": "no-arbitrary-spacing",
+    "severity": "error",
+    "forbidden": [
+      "p-1",
+      "p-2",
+      "p-3",
+      "p-4",
+      "p-5",
+      "p-6",
+      "p-8",
+      "p-10",
+      "p-12",
+      "px-1",
+      "px-2",
+      "px-3",
+      "px-4",
+      "px-5",
+      "px-6",
+      "px-8",
+      "py-1",
+      "py-2",
+      "py-3",
+      "py-4",
+      "py-5",
+      "py-6",
+      "py-8",
+      "m-1",
+      "m-2",
+      "m-3",
+      "m-4",
+      "m-5",
+      "m-6",
+      "m-8",
+      "mt-1",
+      "mt-2",
+      "mt-3",
+      "mt-4",
+      "mt-5",
+      "mt-6",
+      "mt-8",
+      "mb-1",
+      "mb-2",
+      "mb-3",
+      "mb-4",
+      "mb-5",
+      "mb-6",
+      "mb-8",
+      "gap-1",
+      "gap-2",
+      "gap-3",
+      "gap-4",
+      "gap-5",
+      "gap-6",
+      "gap-8"
+    ],
+    "required": ["p-[var(--grid-*)]", "m-[var(--grid-*)]", "gap-[var(--grid-*)]"],
+    "fix_map": {
+      "p-*": "p-[var(--grid-$*)]",
+      "px-*": "px-[var(--grid-$*)]",
+      "py-*": "py-[var(--grid-$*)]",
+      "m-*": "m-[var(--grid-$*)]",
+      "mt-*": "mt-[var(--grid-$*)]",
+      "mb-*": "mb-[var(--grid-$*)]",
+      "gap-*": "gap-[var(--grid-$*)]"
+    },
+    "message": "All spacing must use grid CSS variables. No Tailwind spacing utilities."
+  },
+  {
+    "id": "use-cn-utility",
+    "severity": "error",
+    "forbidden": ["className={`${", "className={condition ?", "className=\"base \" +"],
+    "required": ["cn()", "import { cn } from '@/lib/utils'"],
+    "message": "Use cn() for conditional classes. Never use string concatenation or template literals."
+  },
+  {
+    "id": "mode-radius",
+    "severity": "error",
+    "forbidden": [
+      "rounded-lg",
+      "rounded-md",
+      "rounded-xl",
+      "rounded-sm",
+      "rounded-2xl",
+      "rounded-3xl"
+    ],
+    "required": ["mode.radius"],
+    "fix_map": {
+      "rounded-lg": "rounded-none",
+      "rounded-md": "rounded-none",
+      "rounded-xl": "rounded-none",
+      "rounded-sm": "rounded-none",
+      "rounded-2xl": "rounded-none",
+      "rounded-3xl": "rounded-none"
+    },
+    "exceptions": ["rounded-full on Switch", "no radius on partial borders (border-b, border-t)"],
+    "message": "Use mode.radius for border radius. Never hardcode rounded-* values."
+  },
+  {
+    "id": "uppercase-labels",
+    "severity": "warning",
+    "applies_to": ["badges", "labels", "button-text", "card-headers", "h1", "h2"],
+    "message": "Swiss preset: labels, badges, button text, and headings are UPPERCASE."
+  }
+]

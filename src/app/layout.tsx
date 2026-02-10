@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { cn } from "@/lib/cn";
 import "./globals.css";
 import "./typography.css";
 import "./monospace-web.css";
@@ -36,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistMono.variable} font-mono antialiased`}>
+      <body className={cn(geistMono.variable, "font-mono antialiased")}>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

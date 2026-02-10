@@ -10,9 +10,9 @@ export default function DashboardLoading() {
       {/* Stats grid skeleton */}
       <div className="mono-grid-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="border border-border px-6 py-4">
+          <div key={i} className="border border-border px-[var(--grid-6)] py-[var(--grid-4)]">
             <div className="h-3 w-24 animate-pulse bg-muted" />
-            <div className="mt-2 h-8 w-16 animate-pulse bg-muted" />
+            <div className="mt-[var(--grid-2)] h-8 w-16 animate-pulse bg-muted" />
           </div>
         ))}
       </div>
@@ -20,7 +20,7 @@ export default function DashboardLoading() {
       {/* Quick actions skeleton */}
       <div className="space-y-4">
         <div className="h-3 w-32 animate-pulse bg-muted" />
-        <div className="flex gap-4">
+        <div className="flex gap-[var(--grid-4)]">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="h-10 w-36 animate-pulse bg-muted" />
           ))}
@@ -34,9 +34,9 @@ export default function DashboardLoading() {
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="flex items-center justify-between border-b border-border px-6 py-4 last:border-0"
+              className="flex items-center justify-between border-b border-border px-[var(--grid-6)] py-[var(--grid-4)] last:border-0"
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-[var(--grid-4)]">
                 <div className="h-5 w-20 animate-pulse bg-muted" />
                 <div className="space-y-1.5">
                   <div className="h-4 w-40 animate-pulse bg-muted" />

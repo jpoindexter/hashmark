@@ -1,0 +1,21 @@
+{
+  "name": "Select",
+  "import": "import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'",
+  "category": "form",
+  "description": "Dropdown select input built on Radix. Always use Select component, never raw <select>.",
+  "tags": ["form", "dropdown", "select", "picker"],
+  "variants": [],
+  "props": {
+    "value": { "type": "string", "required": false },
+    "onValueChange": { "type": "(value: string) => void", "required": false },
+    "defaultValue": { "type": "string", "required": false },
+    "disabled": { "type": "boolean", "required": false, "default": "false" }
+  },
+  "example": "<Select>\n  <SelectTrigger>\n    <SelectValue placeholder=\"Select option\" />\n  </SelectTrigger>\n  <SelectContent>\n    <SelectItem value=\"a\">OPTION A</SelectItem>\n    <SelectItem value=\"b\">OPTION B</SelectItem>\n  </SelectContent>\n</Select>",
+  "never": [
+    "Never use raw <select> — always use Select from Radix",
+    "Never hardcode border-radius — handled by component",
+    "Never hardcode dropdown colors — use semantic tokens"
+  ],
+  "dependencies": ["@radix-ui/react-select"]
+}

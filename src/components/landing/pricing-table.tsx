@@ -50,45 +50,45 @@ const plans = [
 
 export function PricingTable() {
   return (
-    <section id="pricing" className="border-t border-border px-6 py-24">
+    <section id="pricing" className="border-t border-border px-[var(--grid-6)] py-24">
       <div className="mx-auto max-w-5xl">
-        <h2 className="mb-4 text-center type-h2">
+        <h2 className="mb-[var(--grid-4)] text-center type-h2">
           PRICING
         </h2>
         <p className="mb-16 text-center text-muted-foreground">
           Free to start. Pay when you need auto-sync.
         </p>
 
-        <div className="mono-grid-3 gap-6">
+        <div className="mono-grid-3 gap-[var(--grid-6)]">
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`flex flex-col border p-6 ${
+              className={`flex flex-col border p-[var(--grid-6)] ${
                 plan.highlighted
                   ? "border-foreground bg-card"
                   : "border-border"
               }`}
             >
-              <div className="mb-6">
-                <div className="flex items-baseline gap-1">
+              <div className="mb-[var(--grid-6)]">
+                <div className="flex items-baseline gap-[var(--grid-1)]">
                   <span className="type-label text-muted-foreground">
                     [{plan.name}]
                   </span>
                 </div>
-                <div className="mt-2 flex items-baseline gap-1">
+                <div className="mt-[var(--grid-2)] flex items-baseline gap-[var(--grid-1)]">
                   <span className="text-3xl font-bold">{plan.price}</span>
                   <span className="type-caption text-muted-foreground">
                     {plan.period}
                   </span>
                 </div>
-                <p className="mt-1 type-body text-muted-foreground">
+                <p className="mt-[var(--grid-1)] type-body text-muted-foreground">
                   {plan.description}
                 </p>
               </div>
 
-              <ul className="mb-8 flex-1 space-y-3">
+              <ul className="mb-[var(--grid-8)] flex-1 space-y-3">
                 {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 type-body">
+                  <li key={feature} className="flex items-start gap-[var(--grid-2)] type-body">
                     <span className="mt-0.5">{"#"}</span>
                     <span>{feature}</span>
                   </li>
@@ -97,7 +97,7 @@ export function PricingTable() {
 
               <a
                 href={plan.href}
-                className={`block w-full py-2.5 text-center type-button transition-colors ${
+                className={`block w-full py-[var(--grid-2)].5 text-center type-button transition-colors ${
                   plan.highlighted
                     ? "bg-foreground text-background hover:bg-foreground/90"
                     : "border border-border hover:border-foreground hover:bg-muted"

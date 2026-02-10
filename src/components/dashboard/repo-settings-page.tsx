@@ -62,12 +62,12 @@ export function RepoSettingsPage({
               >
                 SCAN ROOT
               </label>
-              <p className="type-caption text-muted-foreground mt-1">
+              <p className="type-caption text-muted-foreground mt-[var(--grid-1)]">
                 Subdirectory to scan within{" "}
                 <span className="text-foreground font-bold">{repoName}</span>.
                 Leave empty to auto-detect.
               </p>
-              <div className="mt-2 flex items-center gap-3">
+              <div className="mt-[var(--grid-2)] flex items-center gap-[var(--grid-3)]">
                 <input
                   id="scanRoot"
                   name="scanRoot"
@@ -75,18 +75,18 @@ export function RepoSettingsPage({
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
                   placeholder="e.g., web, apps/frontend, packages/api"
-                  className="flex-1 border border-border bg-background px-3 py-2 type-body text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
+                  className="flex-1 border border-border bg-background px-[var(--grid-3)] py-[var(--grid-2)] type-body text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
                   aria-describedby="scanRoot-help"
                 />
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="border border-border bg-background px-4 py-2 type-nav text-foreground transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
+                  className="border border-border bg-background px-[var(--grid-4)] py-[var(--grid-2)] type-nav text-foreground transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
                 >
                   {isPending ? "SAVING..." : "> SAVE"}
                 </button>
               </div>
-              <p id="scanRoot-help" className="mt-1 type-caption text-muted-foreground">
+              <p id="scanRoot-help" className="mt-[var(--grid-1)] type-caption text-muted-foreground">
                 {value.trim() === "" ? (
                   <span className="text-accent">AUTO-DETECT</span>
                 ) : (

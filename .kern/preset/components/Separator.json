@@ -1,0 +1,22 @@
+{
+  "name": "Separator",
+  "import": "import { Separator } from '@/components/ui/separator'",
+  "category": "layout",
+  "description": "Visual divider between content sections. Built on Radix.",
+  "tags": ["divider", "line", "separator", "layout"],
+  "variants": [],
+  "props": {
+    "orientation": {
+      "type": "\"horizontal\" | \"vertical\"",
+      "required": false,
+      "default": "horizontal"
+    },
+    "className": { "type": "string", "required": false }
+  },
+  "example": "<Separator className=\"my-4\" />",
+  "never": [
+    "Never use <hr> — always use <Separator>",
+    "Never hardcode border-color — uses border token automatically"
+  ],
+  "dependencies": ["@radix-ui/react-separator"]
+}

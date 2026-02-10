@@ -1,0 +1,24 @@
+{
+  "name": "Tabs",
+  "import": "import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'",
+  "category": "navigation",
+  "description": "Tabbed navigation built on Radix. Use for switching between related content panels.",
+  "tags": ["tabs", "navigation", "panel", "switch"],
+  "variants": [],
+  "props": {
+    "defaultValue": {
+      "type": "string",
+      "required": true,
+      "description": "Initial active tab value"
+    },
+    "value": { "type": "string", "required": false },
+    "onValueChange": { "type": "(value: string) => void", "required": false }
+  },
+  "example": "<Tabs defaultValue=\"general\">\n  <TabsList>\n    <TabsTrigger value=\"general\">GENERAL</TabsTrigger>\n    <TabsTrigger value=\"security\">SECURITY</TabsTrigger>\n    <TabsTrigger value=\"billing\">BILLING</TabsTrigger>\n  </TabsList>\n  <TabsContent value=\"general\">General settings content</TabsContent>\n  <TabsContent value=\"security\">Security settings content</TabsContent>\n  <TabsContent value=\"billing\">Billing settings content</TabsContent>\n</Tabs>",
+  "never": [
+    "Never build custom tab systems — use Tabs from Radix",
+    "Never hardcode tab indicator colors — use semantic tokens",
+    "Tab labels should be UPPERCASE in Swiss-Industrial"
+  ],
+  "dependencies": ["@radix-ui/react-tabs"]
+}

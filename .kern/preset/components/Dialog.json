@@ -1,0 +1,19 @@
+{
+  "name": "Dialog",
+  "import": "import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'",
+  "category": "overlay",
+  "description": "Modal dialog built on Radix. Use for confirmations, forms, and focused interactions.",
+  "tags": ["modal", "dialog", "overlay", "popup", "confirm"],
+  "variants": [],
+  "props": {
+    "open": { "type": "boolean", "required": false },
+    "onOpenChange": { "type": "(open: boolean) => void", "required": false }
+  },
+  "example": "<Dialog>\n  <DialogTrigger asChild>\n    <Button variant=\"outline\">> OPEN DIALOG</Button>\n  </DialogTrigger>\n  <DialogContent>\n    <DialogHeader>\n      <DialogTitle>CONFIRM ACTION</DialogTitle>\n      <DialogDescription>This action cannot be undone.</DialogDescription>\n    </DialogHeader>\n    <div className=\"flex justify-end gap-2 pt-4\">\n      <Button variant=\"ghost\">> CANCEL</Button>\n      <Button variant=\"destructive\">> DELETE</Button>\n    </div>\n  </DialogContent>\n</Dialog>",
+  "never": [
+    "Never build custom modals — use Dialog from Radix",
+    "Never forget DialogTitle — required for accessibility",
+    "Dialog titles should be UPPERCASE in Swiss-Industrial"
+  ],
+  "dependencies": ["@radix-ui/react-dialog"]
+}
