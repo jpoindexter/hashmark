@@ -1,6 +1,6 @@
 export default function DashboardLoading() {
   return (
-    <div className="space-y-6">
+    <div className="mono-stack-lg">
       {/* Header skeleton */}
       <div className="space-y-2">
         <div className="h-8 w-48 animate-pulse bg-muted" />
@@ -8,7 +8,7 @@ export default function DashboardLoading() {
       </div>
 
       {/* Stats grid skeleton */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="mono-grid-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="border border-border px-6 py-4">
             <div className="h-3 w-24 animate-pulse bg-muted" />

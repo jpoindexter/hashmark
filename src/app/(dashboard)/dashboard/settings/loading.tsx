@@ -1,6 +1,6 @@
 export default function SettingsLoading() {
   return (
-    <div className="space-y-8">
+    <div className="mono-stack-lg">
       {/* Header skeleton */}
       <div className="h-8 w-32 animate-pulse bg-muted" />
 

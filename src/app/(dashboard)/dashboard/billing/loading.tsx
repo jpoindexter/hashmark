@@ -1,6 +1,6 @@
 export default function BillingLoading() {
   return (
-    <div className="space-y-6">
+    <div className="mono-stack-lg">
       {/* Header skeleton */}
       <div className="h-8 w-24 animate-pulse bg-muted" />
 
@@ -16,7 +16,7 @@ export default function BillingLoading() {
       </div>
 
       {/* Plan cards skeleton */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="mono-grid-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="border border-border px-6 py-4">
             <div className="h-3 w-16 animate-pulse bg-muted" />

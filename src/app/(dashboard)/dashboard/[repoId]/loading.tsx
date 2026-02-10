@@ -1,8 +1,8 @@
 export default function RepoLoading() {
   return (
-    <div className="space-y-6">
+    <div className="mono-stack-lg">
       {/* Scan info bar skeleton */}
-      <div className="flex items-center justify-between border border-border bg-card px-6 py-4">
+      <div className="flex items-center justify-between mono-box bg-card">
         <div className="flex items-center gap-4">
           <div className="h-5 w-24 animate-pulse bg-muted" />
           <div className="h-3 w-32 animate-pulse bg-muted" />
@@ -11,7 +11,7 @@ export default function RepoLoading() {
       </div>
 
       {/* KPI Grid skeleton */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="mono-grid-4">
         {Array.from({ length: 7 }).map((_, i) => (
           <div key={i} className="border border-border px-6 py-4">
             <div className="h-3 w-20 animate-pulse bg-muted" />
@@ -21,7 +21,7 @@ export default function RepoLoading() {
       </div>
 
       {/* Table skeleton */}
-      <div className="space-y-4">
+      <div className="mono-stack">
         <div className="h-3 w-32 animate-pulse bg-muted" />
         <div className="border border-border">
           <div className="border-b border-border bg-muted px-4 py-3">

@@ -1,6 +1,6 @@
 export default function ReposLoading() {
   return (
-    <div className="space-y-6">
+    <div className="mono-stack-lg">
       {/* Header skeleton */}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
@@ -14,7 +14,7 @@ export default function ReposLoading() {
       <div className="h-10 w-full animate-pulse bg-muted" />
 
       {/* Repo cards skeleton */}
-      <div className="space-y-4">
+      <div className="mono-stack">
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
