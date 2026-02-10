@@ -507,7 +507,8 @@ export interface SecurityAudit {
 // AI Configuration & Complexity
 // ============================================================================
 
-export type { AreaComplexity, FileComplexity, ComplexityLevel } from "./scanners/complexity.js";
+export type { AreaComplexity, FileComplexity, ComplexityLevel, AIRecommendations } from "./scanners/complexity.js";
+export type { FunctionComplexity, HalsteadMetrics, FileASTComplexity } from "./scanners/ast-complexity.js";
 import type { AIRecommendations } from "./scanners/complexity.js";
 
 // ============================================================================

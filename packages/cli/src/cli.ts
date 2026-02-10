@@ -607,7 +607,7 @@ cli
         // Generate JSON index if requested (not with --xml)
         if (options.json && !options.xml) {
           const jsonContent = generateAgentsIndex(
-            { components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, typeExports, antiPatterns, testCoverage, graphqlSchemas },
+            { components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, typeExports, antiPatterns, testCoverage, aiRecommendations, graphqlSchemas },
             content
           );
           const jsonPath = join(writeDir, outputFile.replace(".md", ".index.json"));
