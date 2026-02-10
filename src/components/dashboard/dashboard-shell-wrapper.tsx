@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { DashboardShell } from "@fabrk/components";
 import { LayoutDashboard, GitBranch, Settings, CreditCard } from "lucide-react";
 import { DashboardBreadcrumbs } from "./dashboard-breadcrumbs";
+import { SearchDialog, SearchTrigger } from "./search-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const SIDEBAR_ITEMS = [
@@ -38,8 +40,6 @@ const SIDEBAR_ITEMS = [
 function getActiveItemId(pathname: string): string {
   if (pathname === "/dashboard") return "overview";
   if (pathname.startsWith("/dashboard/repos") || pathname.match(/^\/dashboard\/[^/]+/)) {
-    // Repo detail pages (e.g. /dashboard/{repoId}) are under "repos"
-    // But not /dashboard/settings or /dashboard/billing
     if (
       !pathname.startsWith("/dashboard/settings") &&
       !pathname.startsWith("/dashboard/billing")
@@ -66,6 +66,7 @@ export function DashboardShellWrapper({
 }) {
   const pathname = usePathname();
   const activeItemId = getActiveItemId(pathname);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <DashboardShell
@@ -85,10 +86,14 @@ export function DashboardShellWrapper({
       <div className="mx-auto max-w-7xl p-6">
         <div className="mb-4 flex items-center justify-between">
           <DashboardBreadcrumbs />
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <SearchTrigger onOpen={() => setSearchOpen(true)} />
+            <ThemeToggle />
+          </div>
         </div>
         {children}
       </div>
+      <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
     </DashboardShell>
   );
 }
