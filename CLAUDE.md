@@ -66,7 +66,7 @@ Required env vars: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB
 **Pages** (10 routes):
 - `(marketing)`: `/` (landing), `/pricing`, `/login`
 - `(dashboard)`: `/dashboard` (overview), `/dashboard/repos`, `/dashboard/billing`, `/dashboard/settings`
-- `(dashboard)`: `/dashboard/[repoId]` (intelligence), `/dashboard/[repoId]/files`, `/dashboard/[repoId]/history`
+- `(dashboard)`: `/dashboard/[repoId]` (intelligence), `/dashboard/[repoId]/complexity`, `/dashboard/[repoId]/files`, `/dashboard/[repoId]/history`
 
 **API Routes** (9 endpoints):
 - Auth: `/api/auth/[...nextauth]`
@@ -76,6 +76,8 @@ Required env vars: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB
 - Webhooks: `/api/webhooks/github` (auto-sync on push)
 
 **CLI engine** (`packages/cli/`): Entry is `src/cli.ts` (uses `cac` for arg parsing). Scanners in `src/scanners/` each export a scan function. `src/generator.ts` produces AGENTS.md. `src/formats/` has per-tool generators that all consume a `ScanResult` type. The format factory in `src/formats/index.ts` has `generateFormat()` for one format and `generateAllFormats()` for all. Config loaded from `hashmark.config.json` / `.hashmarkrc` / legacy `agentsmith.config.*`.
+
+**AST Complexity** (`packages/cli/src/scanners/ast-complexity.ts`): Function-level analysis using `@typescript-eslint/typescript-estree`. Computes 4 metrics: Cyclomatic (McCabe), Cognitive (SonarQube spec), Halstead, and Maintainability Index. Output appears in AGENTS.md "Function Hotspots" table and `AGENTS.index.json` `complexity` field. `complexity.ts` orchestrates file-level scoring and delegates to AST module.
 
 **Database**: 8 Prisma models — User, Repository, Scan, GeneratedFile, CustomRule + 3 NextAuth models. Enums: Plan (FREE/PRO/TEAM), ScanStatus, FileFormat, RuleScope. Schema at `prisma/schema.prisma`.
 
@@ -114,9 +116,9 @@ Required env vars: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB
 - `Input` — Form inputs
 - `Breadcrumb*` — Breadcrumb primitives (Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator)
 
-### Dashboard Components (24 total in `src/components/`)
+### Dashboard Components (25 total in `src/components/`)
 
-- **Dashboard**: `dashboard-shell-wrapper`, `dashboard-breadcrumbs`, `billing-actions`, `connect-repo-dialog`, `files-page`, `intelligence-page`, `repo-card`, `repo-sub-nav`, `repos-page`, `rule-card`, `rule-dialog`, `scan-history-page`, `settings-page`, `trial-banner`
+- **Dashboard**: `dashboard-shell-wrapper`, `dashboard-breadcrumbs`, `billing-actions`, `complexity-page`, `connect-repo-dialog`, `files-page`, `intelligence-page`, `repo-card`, `repo-sub-nav`, `repos-page`, `rule-card`, `rule-dialog`, `scan-history-page`, `settings-page`, `trial-banner`
 - **Landing**: `cli-section`, `footer`, `formats`, `hero`, `how-it-works`, `pricing-table`
 - **Shared**: `login-card`, `oauth-buttons`, `status-badge`, `upgrade-gate`
 
