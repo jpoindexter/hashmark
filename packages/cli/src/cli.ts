@@ -106,7 +106,7 @@ cli
   .option("--force", "Overwrite existing AGENTS.md even if it has custom content")
   .option("--compact", "Generate compact output (fewer details, smaller token count)")
   .option("--json", "Also generate AGENTS.index.json for programmatic access")
-  .option("--check-secrets", "Scan for potential secrets and warn before output")
+  .option("--no-secrets-check", "Skip scanning generated output for potential secrets")
   .option("--include-git-log", "Include recent git commits in output")
   .option("--xml", "Output in XML format (industry standard)")
   .option("--remote <url>", "Clone and analyze a remote GitHub repository")
@@ -121,7 +121,7 @@ cli
   .option("--mcp", "Start as MCP server (for AI tool integration)")
   .option("--watch", "Watch for file changes and regenerate automatically")
   .option("--format <formats>", "Output format(s): all, claude-md, cursorrules, cursor-mdc, copilot-md, windsurf-rules, gemini-md, cline-rules")
-  .action(async (dir: string | undefined, options: { output: string; dryRun?: boolean; force?: boolean; compact?: boolean; json?: boolean; checkSecrets?: boolean; includeGitLog?: boolean; xml?: boolean; remote?: string; compress?: boolean; minimal?: boolean; tree?: boolean; copy?: boolean; includeDiffs?: boolean; splitOutput?: string; security?: boolean; monorepo?: boolean; mcp?: boolean; watch?: boolean; format?: string }) => {
+  .action(async (dir: string | undefined, options: { output: string; dryRun?: boolean; force?: boolean; compact?: boolean; json?: boolean; noSecretsCheck?: boolean; includeGitLog?: boolean; xml?: boolean; remote?: string; compress?: boolean; minimal?: boolean; tree?: boolean; copy?: boolean; includeDiffs?: boolean; splitOutput?: string; security?: boolean; monorepo?: boolean; mcp?: boolean; watch?: boolean; format?: string }) => {
     // Handle MCP server mode
     if (options.mcp) {
       const { startMcpServer } = await import("./mcp-server.js");
@@ -527,8 +527,8 @@ cli
         content += "\n" + formatSecurityAudit(securityAudit);
       }
 
-      // Check for secrets if requested
-      if (options.checkSecrets) {
+      // Check for secrets (on by default, skip with --no-secrets-check)
+      if (!options.noSecretsCheck) {
         const secrets = detectSecrets(content);
         if (secrets.length > 0) {
           console.log(pc.yellow(`\n  ⚠ Found ${secrets.length} potential secrets:`));
