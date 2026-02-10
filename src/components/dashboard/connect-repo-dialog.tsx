@@ -77,13 +77,14 @@ export function ConnectRepoDialog({ onClose }: { onClose: () => void }) {
           <h2 className="type-h3">
             CONNECT REPOSITORY
           </h2>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
             aria-label="Close dialog"
           >
             X
-          </button>
+          </Button>
         </div>
 
         {/* Search */}

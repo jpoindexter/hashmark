@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Input, Button } from "@fabrk/components";
+import {
+  Input,
+  Button,
+  Textarea,
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@fabrk/components";
 import { createRule } from "@/app/(dashboard)/dashboard/settings/actions";
 
 export function RuleDialog({ onClose }: { onClose: () => void }) {
@@ -31,13 +40,14 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
           <h2 className="type-h3">
             ADD CUSTOM RULE
           </h2>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
             aria-label="Close dialog"
           >
             X
-          </button>
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 p-4">
@@ -67,12 +77,12 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
             <label className="mb-1 block type-label text-muted-foreground">
               [RULE CONTENT]
             </label>
-            <textarea
+            <Textarea
               name="rule"
               required
               rows={6}
               placeholder="Write the rule that will be injected into generated context files..."
-              className="w-full resize-none border border-border bg-background px-4 py-2 type-body text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
+              className="resize-none"
             />
           </div>
 
@@ -80,14 +90,15 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
             <label className="mb-1 block type-label text-muted-foreground">
               [SCOPE]
             </label>
-            <select
-              name="scope"
-              defaultValue="REPO"
-              className="w-full border border-border bg-background px-4 py-2 type-body text-foreground focus:border-accent focus:outline-none"
-            >
-              <option value="REPO">REPO</option>
-              <option value="ORG">ORG</option>
-            </select>
+            <Select name="scope" defaultValue="REPO">
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="REPO">REPO</SelectItem>
+                <SelectItem value="ORG">ORG</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
