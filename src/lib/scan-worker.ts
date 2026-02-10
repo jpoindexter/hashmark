@@ -4,6 +4,7 @@ import { readFile, readdir, rm, stat } from "fs/promises";
 import { join, resolve } from "path";
 import { db } from "./db";
 import type { FileFormat } from "@prisma/client";
+import { formatScanError } from "./scan-error";
 
 const execFileAsync = promisify(execFile);
 
@@ -12,9 +13,6 @@ const REPO_NAME_RE = /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/;
 
 /** CLI path — configurable via env var for production deployments */
 const CLI_PATH = process.env.HASHMARK_CLI_PATH || resolve(process.cwd(), "packages/cli/dist/cli.js");
-
-/** Max age (ms) before an active scan is considered orphaned */
-const ORPHAN_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
 
 /** Map well-known file names to Prisma FileFormat enum values */
 export const FORMAT_MAP: Record<string, FileFormat> = {
@@ -40,16 +38,8 @@ async function tryReadFile(path: string): Promise<string | null> {
   }
 }
 
-/** Redact sensitive values from error messages before storing */
-function sanitizeErrorMessage(msg: string, token: string): string {
-  return msg
-    .replaceAll(token, "[REDACTED]")
-    .replace(/\/tmp\/hashmark-scan-\w+/g, "[SCAN_DIR]");
-}
-
 /** Clone a repo using execFile (no shell) with token passed via env header */
 async function cloneRepo(fullName: string, token: string, tmpDir: string) {
-  // Pass token via GIT_CONFIG env vars to avoid embedding in URLs / process args
   await execFileAsync("git", ["clone", "--depth", "1", `https://github.com/${fullName}.git`, tmpDir], {
     timeout: 60_000,
     env: {
@@ -160,7 +150,6 @@ async function collectFiles(tmpDir: string) {
  * Called fire-and-forget from server actions.
  */
 export async function runScan(scanId: string, fullName: string, token: string) {
-  // Validate repo name format to prevent injection
   if (!REPO_NAME_RE.test(fullName)) {
     await db.scan.update({
       where: { id: scanId },
@@ -194,7 +183,7 @@ export async function runScan(scanId: string, fullName: string, token: string) {
     // 2. Run CLI scanner (execFile — no shell)
     await updateProgress("SCANNING", "Running 27 scanners...");
     await execFileAsync("node", [CLI_PATH, tmpDir, "--format", "all", "--json", "--force"], {
-      timeout: 120_000, maxBuffer: 10 * 1024 * 1024,
+      timeout: 300_000, maxBuffer: 10 * 1024 * 1024,
     });
 
     // 3. Parse results
@@ -232,6 +221,15 @@ export async function runScan(scanId: string, fullName: string, token: string) {
       await db.repository.update({ where: { id: scan.repositoryId }, data: { lastScanAt: new Date() } });
     }
   } catch (error) {
+    const execErr = error as { stderr?: string; stdout?: string; code?: number; killed?: boolean; signal?: string };
+    console.error(`[scan-worker] Scan ${scanId} failed:`, {
+      message: error instanceof Error ? error.message : String(error),
+      stderr: execErr.stderr?.slice(0, 1000),
+      stdout: execErr.stdout?.slice(0, 1000),
+      exitCode: execErr.code,
+      killed: execErr.killed,
+      signal: execErr.signal,
+    });
     const message = formatScanError(error, token);
     await db.scan.update({
       where: { id: scanId },
@@ -240,52 +238,4 @@ export async function runScan(scanId: string, fullName: string, token: string) {
   } finally {
     try { await rm(tmpDir, { recursive: true, force: true }); } catch { /* Ignore cleanup errors */ }
   }
-}
-
-/** Map raw errors to user-friendly messages, stripping sensitive data */
-export function formatScanError(error: unknown, token?: string): string {
-  let msg = error instanceof Error ? error.message : String(error);
-
-  // Strip token and internal paths from any error before further processing
-  if (token) msg = sanitizeErrorMessage(msg, token);
-
-  if (msg.includes("Authentication failed") || msg.includes("could not read Username")) {
-    return "GitHub authentication failed. Your access token may have expired — try signing out and back in.";
-  }
-  if (msg.includes("not found") && msg.includes("repository")) {
-    return "Repository not found. It may have been deleted or made private without granting access.";
-  }
-  if (msg.includes("Permission denied") || msg.includes("403")) {
-    return "Permission denied. Ensure Hashmark has access to this repository in your GitHub settings.";
-  }
-  if (msg.includes("ETIMEDOUT") || msg.includes("timed out") || msg.includes("timeout")) {
-    return "Scan timed out. This can happen with very large repositories. Try again or contact support.";
-  }
-  if (msg.includes("ENOMEM") || msg.includes("out of memory")) {
-    return "Scan ran out of memory. This repository may be too large for the current plan.";
-  }
-  if (msg.length > 200) {
-    return msg.slice(0, 200) + "...";
-  }
-
-  return msg || "An unexpected error occurred during the scan.";
-}
-
-/**
- * Recover orphaned scans that have been stuck in PENDING/SCANNING
- * for longer than ORPHAN_THRESHOLD_MS. Called from the polling endpoint
- * to self-heal without a separate cron job.
- */
-export async function recoverOrphanedScans() {
-  const cutoff = new Date(Date.now() - ORPHAN_THRESHOLD_MS);
-  await db.scan.updateMany({
-    where: {
-      status: { in: ["PENDING", "SCANNING"] },
-      createdAt: { lt: cutoff },
-    },
-    data: {
-      status: "FAILED",
-      error: "Scan timed out — the server may have restarted during this scan. Please try again.",
-    },
-  });
 }

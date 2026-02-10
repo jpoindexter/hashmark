@@ -410,6 +410,14 @@ cli
           }
           console.log("");
 
+          // Generate JSON index alongside format files when --json is passed
+          if (options.json && !options.dryRun) {
+            const agentsMdFile = files.find(f => f.path === "AGENTS.md");
+            const jsonContent = generateAgentsIndex(scanResult, agentsMdFile?.content ?? "");
+            writeFileSync(join(writeDir, "AGENTS.index.json"), jsonContent, "utf-8");
+            console.log(pc.green(`  ✓ Generated AGENTS.index.json\n`));
+          }
+
           writeLastRun({
             status: "success",
             durationMs: Date.now() - scanStart,

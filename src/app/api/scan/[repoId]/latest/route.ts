@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { recoverOrphanedScans } from "@/lib/scan-worker";
+import { recoverOrphanedScans } from "@/lib/scan-error";
 import { NextResponse } from "next/server";
 
 export async function GET(

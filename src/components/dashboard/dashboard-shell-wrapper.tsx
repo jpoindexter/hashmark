@@ -6,6 +6,7 @@ import Link from "next/link";
 import { DashboardShell } from "@fabrk/components";
 import { LayoutDashboard, GitBranch, Settings, CreditCard } from "lucide-react";
 import { DashboardBreadcrumbs } from "./dashboard-breadcrumbs";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const SIDEBAR_ITEMS = [
   {
@@ -82,7 +83,10 @@ export function DashboardShellWrapper({
       linkComponent={Link}
     >
       <div className="mx-auto max-w-7xl p-6">
-        <DashboardBreadcrumbs />
+        <div className="mb-4 flex items-center justify-between">
+          <DashboardBreadcrumbs />
+          <ThemeToggle />
+        </div>
         {children}
       </div>
     </DashboardShell>

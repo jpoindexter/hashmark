@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { formatScanError, estimateTokens, FORMAT_MAP } from "../scan-worker";
+import { estimateTokens, FORMAT_MAP } from "../scan-worker";
+import { formatScanError } from "../scan-error";
 
 describe("estimateTokens", () => {
   it("estimates ~4 chars per token", () => {
@@ -40,9 +41,9 @@ describe("formatScanError", () => {
   });
 
   it("truncates long messages", () => {
-    const longMsg = "x".repeat(300);
+    const longMsg = "x".repeat(600);
     const msg = formatScanError(new Error(longMsg));
-    expect(msg.length).toBeLessThanOrEqual(203); // 200 + "..."
+    expect(msg.length).toBeLessThanOrEqual(503); // 500 + "..."
     expect(msg.endsWith("...")).toBe(true);
   });
 

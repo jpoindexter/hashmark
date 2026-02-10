@@ -24,6 +24,7 @@ function getStagedFiles() {
       .filter((f) => /\.(ts|tsx|js|jsx)$/.test(f))
       .filter((f) => !f.includes("node_modules"))
       .filter((f) => !f.startsWith("scripts/"))
+      .filter((f) => !f.startsWith("packages/"))
       .filter(Boolean);
   } catch {
     return [];

@@ -1,126 +1,6 @@
 @import "tailwindcss";
+@import "./theme.css";
 @source "../../node_modules/@fabrk/components/dist/**/*.{js,mjs}";
-
-/* ============================================
-   DESIGN TOKENS (OKLCH Color Space)
-   Monospace web principles: 1.20rem grid, 2px borders,
-   borders in foreground color. OKLCH palette from indx.sh.
-   ============================================ */
-:root {
-  /* Core palette — dark mode as default */
-  --background: 10% 0 0;
-  --foreground: 82% 0 0;
-  --card: 14% 0 0;
-  --card-foreground: 82% 0 0;
-  --popover: 18% 0 0;
-  --popover-foreground: 82% 0 0;
-  --secondary: 16% 0 0;
-  --secondary-foreground: 82% 0 0;
-  --muted: 16% 0 0;
-  --muted-foreground: 55% 0 0;
-  --primary: 82% 0 0;
-  --primary-foreground: 10% 0 0;
-  --accent: 82% 0 0;
-  --accent-foreground: 10% 0 0;
-  --destructive: 60% 0.06 25;
-  --destructive-foreground: 92% 0 0;
-  --border: 25% 0 0;
-  --input: 12% 0 0;
-  --ring: 55% 0 0;
-  --radius: 0px;
-
-  /* Status colors */
-  --success: 60% 0.05 145;
-  --success-foreground: 15% 0 0;
-  --warning: 80% 0.06 85;
-  --warning-foreground: 20% 0 0;
-  --info: 60% 0.05 250;
-  --info-foreground: 15% 0 0;
-
-  /* Charts */
-  --chart-1: 50% 0.08 25;
-  --chart-2: 50% 0.07 145;
-  --chart-3: 70% 0.08 85;
-  --chart-4: 50% 0.07 250;
-  --chart-5: 60% 0.08 55;
-
-  /* Grid & spacing (indx: 16px base unit) */
-  --mono-line-height: 1rem;
-  --mono-border: 2px;
-  --mono-font-weight-normal: 500;
-  --mono-font-weight-medium: 600;
-  --mono-font-weight-bold: 800;
-  --grid-1: 4px;
-  --grid-2: 0.5rem;
-  --grid-3: 0.75rem;
-  --grid-4: 1rem;
-  --grid-6: 1.5rem;
-  --grid-8: 2rem;
-  --grid-12: 3rem;
-  --grid-16: 4rem;
-
-  /* Grid-locked type scale (indx) */
-  --type-hero-size: 26px;
-  --type-hero-line: 32px;
-  --type-hero-weight: 800;
-  --type-header-size: 16px;
-  --type-header-line: 16px;
-  --type-header-weight: 700;
-  --type-base-size: 13px;
-  --type-base-line: 16px;
-  --type-base-weight: 400;
-  --type-small-size: 12px;
-  --type-small-line: 16px;
-  --type-small-weight: 600;
-  --type-label-size: 10px;
-  --type-label-line: 16px;
-  --type-label-weight: 700;
-  --type-label-tracking: 0.1em;
-}
-
-/* ============================================
-   TAILWIND THEME MAPPING (OKLCH)
-   ============================================ */
-@theme inline {
-  --color-background: oklch(var(--background));
-  --color-foreground: oklch(var(--foreground));
-  --color-card: oklch(var(--card));
-  --color-card-foreground: oklch(var(--card-foreground));
-  --color-popover: oklch(var(--popover));
-  --color-popover-foreground: oklch(var(--popover-foreground));
-  --color-primary: oklch(var(--primary));
-  --color-primary-foreground: oklch(var(--primary-foreground));
-  --color-secondary: oklch(var(--secondary));
-  --color-secondary-foreground: oklch(var(--secondary-foreground));
-  --color-muted: oklch(var(--muted));
-  --color-muted-foreground: oklch(var(--muted-foreground));
-  --color-accent: oklch(var(--accent));
-  --color-accent-foreground: oklch(var(--accent-foreground));
-  --color-destructive: oklch(var(--destructive));
-  --color-destructive-foreground: oklch(var(--destructive-foreground));
-  --color-border: oklch(var(--border));
-  --color-input: oklch(var(--input));
-  --color-ring: oklch(var(--ring));
-  --color-success: oklch(var(--success));
-  --color-success-foreground: oklch(var(--success-foreground));
-  --color-warning: oklch(var(--warning));
-  --color-warning-foreground: oklch(var(--warning-foreground));
-  --color-info: oklch(var(--info));
-  --color-info-foreground: oklch(var(--info-foreground));
-  --color-chart-1: oklch(var(--chart-1));
-  --color-chart-2: oklch(var(--chart-2));
-  --color-chart-3: oklch(var(--chart-3));
-  --color-chart-4: oklch(var(--chart-4));
-  --color-chart-5: oklch(var(--chart-5));
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-body: var(--font-mono);
-  --radius-sm: calc(var(--radius) + 2px);
-  --radius-md: calc(var(--radius) + 4px);
-  --radius-lg: calc(var(--radius) + 6px);
-  --radius-xl: calc(var(--radius) + 8px);
-  --radius-dynamic: var(--radius);
-}
 
 /* ============================================
    BASE STYLES
@@ -216,7 +96,7 @@
 }
 
 /* ============================================
-   INPUTS (monospace-web: 2×line-height tall, 2px borders,
+   INPUTS (monospace-web: 2x line-height tall, 2px borders,
    character-snapped widths)
    ============================================ */
 input,
@@ -233,13 +113,8 @@ select {
   width: calc(round(down, 100%, 1ch));
   -webkit-appearance: none;
 }
-textarea {
-  height: auto;
-}
-::placeholder {
-  color: oklch(var(--muted-foreground));
-  opacity: 1;
-}
+textarea { height: auto; }
+::placeholder { color: oklch(var(--muted-foreground)); opacity: 1; }
 
 /* ============================================
    BUTTONS (monospace-web: uppercase, medium weight,
@@ -285,20 +160,11 @@ aside {
   background: oklch(var(--card)) !important;
   border-right: var(--mono-border) solid oklch(var(--border)) !important;
 }
-aside img[alt] {
-  width: 2rem;
-  height: 2rem;
-  min-width: 2rem;
-  min-height: 2rem;
-  object-fit: cover;
-}
-aside nav a:hover,
-aside nav button:hover {
-  background: oklch(var(--muted)) !important;
-}
+aside img[alt] { width: 2rem; height: 2rem; min-width: 2rem; min-height: 2rem; object-fit: cover; }
+aside nav a:hover, aside nav button:hover { background: oklch(var(--muted)) !important; }
 
 /* ============================================
-   DIALOG OVERLAY — dark, no blur
+   DIALOG OVERLAY
    ============================================ */
 [class*="backdrop-blur"] {
   backdrop-filter: none !important;
@@ -321,14 +187,11 @@ aside nav button:hover {
   80% { transform: translate(2%, 1%) }
   90% { transform: translate(-2%, -2%) }
 }
-
 body::before {
   content: '';
   position: fixed;
-  top: -100%;
-  left: -100%;
-  width: 300%;
-  height: 300%;
+  top: -100%; left: -100%;
+  width: 300%; height: 300%;
   z-index: 9999;
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -341,24 +204,7 @@ body::before {
 /* ============================================
    ANIMATIONS
    ============================================ */
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-@keyframes cursor-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-.terminal-cursor::after {
-  content: '_';
-  animation: cursor-blink 1s step-end infinite;
-  margin-left: 2px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, ::before, ::after {
-    animation: none !important;
-  }
-}
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+.terminal-cursor::after { content: '_'; animation: cursor-blink 1s step-end infinite; margin-left: 2px; }
+@media (prefers-reduced-motion: reduce) { *, ::before, ::after { animation: none !important; } }

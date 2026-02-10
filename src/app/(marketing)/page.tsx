@@ -5,6 +5,7 @@ import { Formats } from "@/components/landing/formats";
 import { PricingTable } from "@/components/landing/pricing-table";
 import { CliSection } from "@/components/landing/cli-section";
 import { Footer } from "@/components/landing/footer";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function Home() {
   return (
@@ -30,6 +31,7 @@ export default function Home() {
             >
               CLI
             </a>
+            <ThemeToggle />
             <a
               href="/login"
               className="border border-border px-4 py-1.5 type-button hover:bg-muted hover:border-foreground transition-colors"
