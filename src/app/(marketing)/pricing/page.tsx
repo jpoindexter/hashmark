@@ -212,40 +212,23 @@ export default function PricingPage() {
           <h2 className="mb-8 text-center type-label text-muted-foreground">
             FEATURE COMPARISON
           </h2>
-          <div className="overflow-x-auto border border-border">
-            <table className="w-full">
+          <div className="overflow-x-auto">
+            <table className="mono-table">
               <thead>
-                <tr className="border-b border-border bg-muted">
-                  <th className="px-6 py-4 text-left type-label text-muted-foreground">
-                    FEATURE
-                  </th>
-                  <th className="px-6 py-4 text-center type-label text-muted-foreground">
-                    FREE
-                  </th>
-                  <th className="px-6 py-4 text-center type-label text-foreground">
-                    PRO
-                  </th>
-                  <th className="px-6 py-4 text-center type-label text-muted-foreground">
-                    TEAM
-                  </th>
+                <tr className="bg-muted">
+                  <th className="type-label text-muted-foreground">FEATURE</th>
+                  <th className="text-center type-label text-muted-foreground">FREE</th>
+                  <th className="text-center type-label text-foreground">PRO</th>
+                  <th className="text-center type-label text-muted-foreground">TEAM</th>
                 </tr>
               </thead>
               <tbody>
                 {FEATURES.map((feature) => (
-                  <tr
-                    key={feature.name}
-                    className="border-b border-border last:border-0"
-                  >
-                    <td className="px-6 py-3 type-body">{feature.name}</td>
-                    <td className="px-6 py-3 text-center">
-                      <FeatureCell value={feature.free} />
-                    </td>
-                    <td className="px-6 py-3 text-center">
-                      <FeatureCell value={feature.pro} />
-                    </td>
-                    <td className="px-6 py-3 text-center">
-                      <FeatureCell value={feature.team} />
-                    </td>
+                  <tr key={feature.name}>
+                    <td className="type-body">{feature.name}</td>
+                    <td className="text-center"><FeatureCell value={feature.free} /></td>
+                    <td className="text-center"><FeatureCell value={feature.pro} /></td>
+                    <td className="text-center"><FeatureCell value={feature.team} /></td>
                   </tr>
                 ))}
               </tbody>

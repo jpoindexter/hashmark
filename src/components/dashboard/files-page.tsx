@@ -75,7 +75,7 @@ export function FilesPage({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="mono-stack">
       {/* Top action bar */}
       <div className="flex items-center justify-between">
         <p className="type-caption text-muted-foreground">

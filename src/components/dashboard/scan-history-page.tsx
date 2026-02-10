@@ -38,52 +38,38 @@ export function ScanHistoryPage({
       <h2 className="mono-section-title">
         SCAN HISTORY
       </h2>
-      <div className="border border-border">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-border bg-muted">
-              <th className="px-6 py-4 text-left type-label text-muted-foreground">
-                STATUS
-              </th>
-              <th className="px-6 py-4 text-left type-label text-muted-foreground">
-                DATE
-              </th>
-              <th className="px-6 py-4 text-right type-label text-muted-foreground">
-                FILES
-              </th>
-              <th className="px-6 py-4 text-right type-label text-muted-foreground">
-                LINES
-              </th>
-              <th className="px-6 py-4 text-right type-label text-muted-foreground">
-                DURATION
-              </th>
+      <table className="mono-table">
+        <thead>
+          <tr className="bg-muted">
+            <th className="type-label text-muted-foreground">STATUS</th>
+            <th className="type-label text-muted-foreground">DATE</th>
+            <th className="text-right type-label text-muted-foreground">FILES</th>
+            <th className="text-right type-label text-muted-foreground">LINES</th>
+            <th className="text-right type-label text-muted-foreground">DURATION</th>
+          </tr>
+        </thead>
+        <tbody>
+          {scans.map((scan) => (
+            <tr key={scan.id}>
+              <td><StatusBadge status={scan.status} /></td>
+              <td className="type-caption text-muted-foreground">
+                {new Date(scan.createdAt).toLocaleString()}
+              </td>
+              <td className="text-right type-body font-medium">
+                {scan.fileCount?.toLocaleString() ?? "—"}
+              </td>
+              <td className="text-right type-body font-medium">
+                {scan.lineCount?.toLocaleString() ?? "—"}
+              </td>
+              <td className="text-right type-caption text-muted-foreground">
+                {scan.duration
+                  ? `${(scan.duration / 1000).toFixed(1)}s`
+                  : "—"}
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {scans.map((scan) => (
-              <tr key={scan.id} className="border-b border-border last:border-0">
-                <td className="px-6 py-4">
-                  <StatusBadge status={scan.status} />
-                </td>
-                <td className="px-6 py-4 type-caption text-muted-foreground">
-                  {new Date(scan.createdAt).toLocaleString()}
-                </td>
-                <td className="px-6 py-4 text-right type-body font-medium">
-                  {scan.fileCount?.toLocaleString() ?? "—"}
-                </td>
-                <td className="px-6 py-4 text-right type-body font-medium">
-                  {scan.lineCount?.toLocaleString() ?? "—"}
-                </td>
-                <td className="px-6 py-4 text-right type-caption text-muted-foreground">
-                  {scan.duration
-                    ? `${(scan.duration / 1000).toFixed(1)}s`
-                    : "—"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </section>
   );
 }

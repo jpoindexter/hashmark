@@ -117,7 +117,7 @@ export default async function BillingPage() {
       </div>
 
       {/* Usage stats */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="mono-grid-4">
         <UsageStat
           icon={<GitBranch className="h-4 w-4" />}
           label="REPOSITORIES"

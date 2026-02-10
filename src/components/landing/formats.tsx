@@ -19,39 +19,31 @@ export function Formats() {
           One scan generates context files for every AI coding tool.
         </p>
 
-        <div className="border border-border">
-          {/* Header */}
-          <div className="grid grid-cols-2 border-b border-border px-6 py-3">
-            <span className="type-label text-muted-foreground">
-              FILE
-            </span>
-            <span className="type-label text-muted-foreground">
-              AI TOOL
-            </span>
-          </div>
-
-          {/* Rows */}
-          {formats.map((format, i) => (
-            <div
-              key={format.file}
-              className={`grid grid-cols-2 px-6 py-3 ${
-                i < formats.length - 1 ? "border-b border-border" : ""
-              } hover:bg-muted transition-colors`}
-            >
-              <span className="type-body">
-                <code className="font-bold">{format.file}</code>
-              </span>
-              <span className="type-body text-muted-foreground">
-                {format.tool}
-                {format.universal && (
-                  <span className="ml-2 border border-foreground px-1.5 py-0.5 type-label text-foreground">
-                    UNIVERSAL
-                  </span>
-                )}
-              </span>
-            </div>
-          ))}
-        </div>
+        <table className="mono-table">
+          <thead>
+            <tr>
+              <th className="type-label text-muted-foreground">FILE</th>
+              <th className="type-label text-muted-foreground">AI TOOL</th>
+            </tr>
+          </thead>
+          <tbody>
+            {formats.map((format) => (
+              <tr key={format.file} className="transition-colors hover:bg-muted">
+                <td className="type-body">
+                  <code className="font-bold">{format.file}</code>
+                </td>
+                <td className="type-body text-muted-foreground">
+                  {format.tool}
+                  {format.universal && (
+                    <span className="ml-2 border border-foreground px-1.5 py-0.5 type-label text-foreground">
+                      UNIVERSAL
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
         <p className="mt-6 text-center type-caption text-muted-foreground">
           All generated from a single scan. All kept in sync automatically.

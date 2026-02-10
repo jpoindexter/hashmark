@@ -221,7 +221,7 @@ export default async function DashboardPage({
               {"> VIEW ALL"}
             </Link>
           </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mono-grid-3">
             {repos.slice(0, 6).map((repo) => (
               <Link
                 key={repo.id}

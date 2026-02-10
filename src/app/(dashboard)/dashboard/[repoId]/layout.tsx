@@ -24,7 +24,7 @@ export default async function RepoLayout({
   if (!repo) redirect("/dashboard/repos");
 
   return (
-    <div>
+    <div className="mono-stack">
       <DashboardHeader
         title={repo.fullName}
         subtitle={
@@ -37,7 +37,7 @@ export default async function RepoLayout({
         }
       />
       <RepoSubNav repoId={repo.id} />
-      <div className="mt-4">{children}</div>
+      {children}
     </div>
   );
 }

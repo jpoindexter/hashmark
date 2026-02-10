@@ -9,7 +9,7 @@ export function CliSection() {
           Generate AGENTS.md locally with one command. No account needed.
         </p>
 
-        <div className="mx-auto max-w-md border border-border px-6 py-4 text-left">
+        <div className="mx-auto max-w-md mono-pre text-left">
           <code className="type-body">
             <span className="text-muted-foreground">$</span>{" "}
             npx hashmark

@@ -172,38 +172,24 @@ export function IntelligencePage({
           <h2 className="mono-section-title">
             COMPONENTS
           </h2>
-          <div className="border border-border">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted">
-                  <th className="px-4 py-2 text-left type-label text-muted-foreground">
-                    NAME
-                  </th>
-                  <th className="px-4 py-2 text-left type-label text-muted-foreground">
-                    PATH
-                  </th>
-                  <th className="px-4 py-2 text-left type-label text-muted-foreground">
-                    CATEGORY
-                  </th>
+          <table className="mono-table">
+            <thead>
+              <tr className="bg-muted">
+                <th className="type-label text-muted-foreground">NAME</th>
+                <th className="type-label text-muted-foreground">PATH</th>
+                <th className="type-label text-muted-foreground">CATEGORY</th>
+              </tr>
+            </thead>
+            <tbody>
+              {results.components.map((comp, i) => (
+                <tr key={i}>
+                  <td className="type-body font-medium">{comp.name}</td>
+                  <td className="type-caption text-muted-foreground">{comp.path}</td>
+                  <td className="type-caption text-muted-foreground">{comp.category ?? "—"}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {results.components.map((comp, i) => (
-                  <tr key={i} className="border-b border-border last:border-0">
-                    <td className="px-4 py-2 type-body font-medium">
-                      {comp.name}
-                    </td>
-                    <td className="px-4 py-2 type-caption text-muted-foreground">
-                      {comp.path}
-                    </td>
-                    <td className="px-4 py-2 type-caption text-muted-foreground">
-                      {comp.category ?? "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </section>
       )}
 
@@ -213,36 +199,26 @@ export function IntelligencePage({
           <h2 className="mono-section-title">
             API ROUTES
           </h2>
-          <div className="border border-border">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted">
-                  <th className="px-4 py-2 text-left type-label text-muted-foreground">
-                    METHOD
-                  </th>
-                  <th className="px-4 py-2 text-left type-label text-muted-foreground">
-                    PATH
-                  </th>
-                  <th className="px-4 py-2 text-left type-label text-muted-foreground">
-                    AUTH
-                  </th>
+          <table className="mono-table">
+            <thead>
+              <tr className="bg-muted">
+                <th className="type-label text-muted-foreground">METHOD</th>
+                <th className="type-label text-muted-foreground">PATH</th>
+                <th className="type-label text-muted-foreground">AUTH</th>
+              </tr>
+            </thead>
+            <tbody>
+              {results.apiRoutes.map((route, i) => (
+                <tr key={i}>
+                  <td><Badge variant="outline">{route.method}</Badge></td>
+                  <td className="type-body">{route.path}</td>
+                  <td className="type-caption text-muted-foreground">
+                    {route.auth ? "YES" : "NO"}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {results.apiRoutes.map((route, i) => (
-                  <tr key={i} className="border-b border-border last:border-0">
-                    <td className="px-4 py-2">
-                      <Badge variant="outline">{route.method}</Badge>
-                    </td>
-                    <td className="px-4 py-2 type-body">{route.path}</td>
-                    <td className="px-4 py-2 type-caption text-muted-foreground">
-                      {route.auth ? "YES" : "NO"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </section>
       )}
 
@@ -252,46 +228,38 @@ export function IntelligencePage({
           <h2 className="mono-section-title">
             COMPLEXITY HOTSPOTS
           </h2>
-          <div className="border border-border">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted">
-                  <th className="px-4 py-2 text-left type-label text-muted-foreground">
-                    FILE
-                  </th>
-                  <th className="px-4 py-2 text-right type-label text-muted-foreground">
-                    LINES
-                  </th>
-                  <th className="px-4 py-2 text-right type-label text-muted-foreground">
-                    SCORE
-                  </th>
+          <table className="mono-table">
+            <thead>
+              <tr className="bg-muted">
+                <th className="type-label text-muted-foreground">FILE</th>
+                <th className="text-right type-label text-muted-foreground">LINES</th>
+                <th className="text-right type-label text-muted-foreground">SCORE</th>
+              </tr>
+            </thead>
+            <tbody>
+              {results.complexity.map((file, i) => (
+                <tr key={i}>
+                  <td className="type-body">{file.path}</td>
+                  <td className="text-right type-caption text-muted-foreground">
+                    {file.lines.toLocaleString()}
+                  </td>
+                  <td className="text-right">
+                    <span
+                      className={`text-xs font-bold ${
+                        file.score >= 70
+                          ? "text-destructive"
+                          : file.score >= 40
+                            ? "text-warning"
+                            : "text-accent"
+                      }`}
+                    >
+                      {file.score}/100
+                    </span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {results.complexity.map((file, i) => (
-                  <tr key={i} className="border-b border-border last:border-0">
-                    <td className="px-4 py-2 type-body">{file.path}</td>
-                    <td className="px-4 py-2 text-right type-caption text-muted-foreground">
-                      {file.lines.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      <span
-                        className={`text-xs font-bold ${
-                          file.score >= 70
-                            ? "text-destructive"
-                            : file.score >= 40
-                              ? "text-warning"
-                              : "text-accent"
-                        }`}
-                      >
-                        {file.score}/100
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </section>
       )}
 
@@ -301,7 +269,7 @@ export function IntelligencePage({
           <h2 className="mono-section-title">
             SCANNER COVERAGE
           </h2>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="mono-grid-4">
             {results.scanners.map((scanner) => (
               <div
                 key={scanner.name}
