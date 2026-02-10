@@ -36,6 +36,23 @@ export async function parseScanIndex(scanDir: string) {
     apiRoutes: Array<{ path: string; method: string; auth?: boolean }>;
     complexity: Array<{ path: string; score: number; lines: number }>;
     scanners: Array<{ name: string; found: number }>;
+    astComplexity?: {
+      topFunctions: Array<{
+        name: string;
+        file: string;
+        line: number;
+        cyclomatic: number;
+        cognitive: number;
+        halstead: { volume: number; effort: number; estimatedBugs: number };
+        maintainabilityIndex: number;
+      }>;
+      fileScores: Array<{
+        path: string;
+        score: number;
+        level: string;
+        maintainabilityIndex?: number;
+      }>;
+    };
   } = { components: [], apiRoutes: [], complexity: [], scanners: [] };
 
   const indexContent = await tryReadFile(join(scanDir, "AGENTS.index.json"));
@@ -67,6 +84,13 @@ export async function parseScanIndex(scanDir: string) {
       { name: "API Routes", found: scanStats.routes },
       { name: "Models", found: scanStats.models },
     ];
+
+    if (index.complexity?.topFunctions || index.complexity?.fileScores) {
+      results.astComplexity = {
+        topFunctions: index.complexity.topFunctions ?? [],
+        fileScores: index.complexity.fileScores ?? [],
+      };
+    }
   } catch {
     // JSON parse error — non-critical
   }
