@@ -117,13 +117,13 @@ export interface Utilities {
 
 /** Detected framework information */
 export interface Framework {
-  /** Framework name (e.g., "Next.js", "Remix", "Vite") */
+  /** Framework name (e.g., "Next.js", "Remix", "Vite", "Django", "Gin", "Axum") */
   name: string;
   /** Framework version */
   version?: string;
   /** Router type for Next.js ("App Router" or "Pages Router") */
   router?: string;
-  /** Primary language ("TypeScript" or "JavaScript") */
+  /** Primary language ("TypeScript" | "JavaScript" | "Python" | "Go" | "Rust" | "Ruby" | "Java" | "Kotlin" | "PHP" | "C#" | "Swift") */
   language: string;
   /** Styling solution (e.g., "Tailwind CSS") */
   styling?: string;
@@ -134,6 +134,12 @@ export interface Framework {
     tailwindcss?: string;
     prisma?: string;
     node?: string;
+    go?: string;
+    python?: string;
+    ruby?: string;
+    java?: string;
+    php?: string;
+    rust?: string;
   };
 }
 
@@ -175,6 +181,32 @@ export interface ExistingContext {
   aiFiles: string[];
   /** Whether .cursorrules exists */
   hasCursorRules: boolean;
+  /** Content of .cursorrules if found */
+  cursorRulesContent?: string;
+  /** Whether .windsurfrules exists */
+  hasWindsurfRules: boolean;
+  /** Content of .windsurfrules if found */
+  windsurfRulesContent?: string;
+  /** Whether .clinerules exists */
+  hasClineRules: boolean;
+  /** Content of .clinerules if found */
+  clineRulesContent?: string;
+  /** Whether GEMINI.md exists */
+  hasGeminiMd: boolean;
+  /** Content of GEMINI.md if found */
+  geminiMdContent?: string;
+  /** Whether .github/copilot-instructions.md exists */
+  hasCopilotInstructions: boolean;
+  /** Content of copilot-instructions.md if found */
+  copilotInstructionsContent?: string;
+  /** Whether .cursor/rules/*.mdc files exist */
+  hasCursorMdc: boolean;
+  /** List of .cursor/rules/*.mdc file names */
+  cursorMdcFiles: string[];
+  /** Content of .cursor/rules/*.mdc files keyed by filename */
+  cursorMdcContent?: Record<string, string>;
+  /** Merged rules extracted from all existing rule files */
+  allRules: string[];
 }
 
 /** Environment variable definition */

@@ -30,7 +30,7 @@ export interface MonorepoInfo {
   /** Whether a monorepo was detected */
   isMonorepo: boolean;
   /** Monorepo tool type */
-  type: "npm" | "pnpm" | "yarn" | "lerna" | "unknown";
+  type: "npm" | "pnpm" | "yarn" | "lerna" | "go-workspace" | "cargo-workspace" | "unknown";
   /** List of discovered packages */
   packages: MonorepoPackage[];
   /** Root package name if available */
@@ -112,6 +112,148 @@ export async function detectMonorepo(dir: string): Promise<MonorepoInfo> {
       }
     } catch {
       // Invalid lerna.json
+    }
+  }
+
+  // Check for Go workspaces (go.work)
+  const goWorkPath = join(dir, "go.work");
+  if (!result.isMonorepo && existsSync(goWorkPath)) {
+    try {
+      const content = readFileSync(goWorkPath, "utf-8");
+      // Parse "use" directives from go.work
+      const useMatches = content.matchAll(/^\s*use\s+(?:\(\s*)?([\s\S]*?)(?:\s*\))?$/gm);
+      const useDirectives: string[] = [];
+
+      for (const match of useMatches) {
+        const block = match[1];
+        // Could be single-line "use ./dir" or multi-line "use (\n  ./dir1\n  ./dir2\n)"
+        const dirs = block.split("\n")
+          .map(line => line.trim().replace(/^\.\//, ""))
+          .filter(line => line && !line.startsWith("//") && line !== "(" && line !== ")");
+        useDirectives.push(...dirs);
+      }
+
+      // Also handle parenthesized "use" blocks
+      const useBlockMatch = content.match(/use\s*\(([\s\S]*?)\)/);
+      if (useBlockMatch) {
+        const dirs = useBlockMatch[1].split("\n")
+          .map(line => line.trim().replace(/^\.\//, ""))
+          .filter(line => line && !line.startsWith("//"));
+        useDirectives.push(...dirs);
+      }
+
+      if (useDirectives.length > 0) {
+        result.isMonorepo = true;
+        result.type = "go-workspace";
+
+        // Deduplicate
+        const uniqueDirs = [...new Set(useDirectives)];
+        result.packages = uniqueDirs.map(d => {
+          const fullPath = join(dir, d);
+          // Try to read go.mod for module name
+          let name = d;
+          const goModPath = join(fullPath, "go.mod");
+          if (existsSync(goModPath)) {
+            const goMod = readFileSync(goModPath, "utf-8");
+            const moduleMatch = goMod.match(/^module\s+(\S+)/m);
+            if (moduleMatch) name = moduleMatch[1];
+          }
+          return {
+            name,
+            path: fullPath,
+            relativePath: d,
+            hasPackageJson: false,
+          };
+        });
+      }
+    } catch {
+      // Invalid go.work
+    }
+  }
+
+  // Check for Rust workspaces (Cargo.toml with [workspace])
+  const cargoPath = join(dir, "Cargo.toml");
+  if (!result.isMonorepo && existsSync(cargoPath)) {
+    try {
+      const content = readFileSync(cargoPath, "utf-8");
+      if (content.includes("[workspace]")) {
+        // Extract members array
+        const membersMatch = content.match(/members\s*=\s*\[([\s\S]*?)\]/);
+        if (membersMatch) {
+          const members = membersMatch[1]
+            .split(",")
+            .map(m => m.trim().replace(/["']/g, ""))
+            .filter(Boolean);
+
+          if (members.length > 0) {
+            result.isMonorepo = true;
+            result.type = "cargo-workspace";
+
+            // Expand glob patterns in members
+            const allDirs: string[] = [];
+            for (const member of members) {
+              if (member.includes("*")) {
+                const expanded = await fg([member], { cwd: dir, onlyDirectories: true });
+                allDirs.push(...expanded);
+              } else {
+                allDirs.push(member);
+              }
+            }
+
+            result.packages = allDirs.map(d => {
+              const fullPath = join(dir, d);
+              let name = d;
+              // Try to read Cargo.toml for package name
+              const memberCargoPath = join(fullPath, "Cargo.toml");
+              if (existsSync(memberCargoPath)) {
+                const memberCargo = readFileSync(memberCargoPath, "utf-8");
+                const nameMatch = memberCargo.match(/name\s*=\s*"([^"]+)"/);
+                if (nameMatch) name = nameMatch[1];
+              }
+              return {
+                name,
+                path: fullPath,
+                relativePath: d,
+                hasPackageJson: false,
+              };
+            });
+
+            // Extract root name from [package]
+            const rootNameMatch = content.match(/\[package\][\s\S]*?name\s*=\s*"([^"]+)"/);
+            if (rootNameMatch) result.rootName = rootNameMatch[1];
+          }
+        }
+      }
+    } catch {
+      // Invalid Cargo.toml
+    }
+  }
+
+  // Check for Python monorepo (multiple pyproject.toml files at different depths)
+  if (!result.isMonorepo) {
+    const pyprojectFiles = await fg(["*/pyproject.toml", "packages/*/pyproject.toml", "apps/*/pyproject.toml"], {
+      cwd: dir,
+      ignore: ["**/node_modules/**", "**/.venv/**", "**/venv/**"],
+    });
+    if (pyprojectFiles.length > 1) {
+      result.isMonorepo = true;
+      result.type = "unknown"; // Python doesn't have a standardized monorepo tool name
+      result.packages = pyprojectFiles.map(f => {
+        const relativePath = f.replace("/pyproject.toml", "");
+        const fullPath = join(dir, relativePath);
+        let name = relativePath;
+        try {
+          const content = readFileSync(join(dir, f), "utf-8");
+          const nameMatch = content.match(/name\s*=\s*"([^"]+)"/);
+          if (nameMatch) name = nameMatch[1];
+        } catch { /* skip */ }
+        return {
+          name,
+          path: fullPath,
+          relativePath,
+          hasPackageJson: false,
+        };
+      });
     }
   }
 

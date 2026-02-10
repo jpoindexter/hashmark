@@ -26,11 +26,21 @@ export interface HashmarkConfig {
   exclude?: string[];
   /** Paths to scan for components */
   componentPaths?: string[];
+  /** Paths to scan for custom hooks */
+  hookPaths?: string[];
+  /** Paths to scan for API routes */
+  apiRoutePaths?: string[];
+  /** Subdirectory to scan (e.g., "web", "apps/frontend") for monorepos */
+  scanRoot?: string;
+  /** Custom rules to include in output */
+  rules?: string[];
+  /** Preserve user-edited sections on regeneration (default: true) */
+  preserveUserSections?: boolean;
   /** Include prop information in output */
   showProps?: boolean;
   /** Include JSDoc descriptions in output */
   showDescriptions?: boolean;
-  /** Maximum components to include (default: 500) */
+  /** Maximum components to include (0 = unlimited, default: 0) */
   maxComponents?: number;
 }
 
@@ -43,9 +53,13 @@ const DEFAULT_CONFIG: HashmarkConfig = {
   include: ["components", "hooks", "routes", "tokens", "patterns", "variants", "env"],
   exclude: [],
   componentPaths: ["src/components", "components"],
+  hookPaths: ["src/hooks", "hooks"],
+  apiRoutePaths: [],
+  rules: [],
+  preserveUserSections: true,
   showProps: true,
   showDescriptions: true,
-  maxComponents: 500,
+  maxComponents: 0,
 };
 
 /**

@@ -33,24 +33,57 @@ const COMPONENT_PATTERNS = [
   "lib/**/*.jsx",
   "ui/**/*.tsx",
   "ui/**/*.jsx",
+  // Recursive: monorepo support — match nested project directories
+  "**/src/components/**/*.tsx",
+  "**/src/components/**/*.jsx",
+  "**/components/**/*.tsx",
+  "**/components/**/*.jsx",
+  "**/src/**/*.tsx",
+  "**/src/**/*.jsx",
+  "**/lib/**/*.tsx",
+  "**/lib/**/*.jsx",
+  "**/ui/**/*.tsx",
+  "**/ui/**/*.jsx",
+  // Vue/Svelte single-file components
+  "**/src/components/**/*.vue",
+  "**/components/**/*.vue",
+  "**/src/components/**/*.svelte",
+  "**/components/**/*.svelte",
   // Exclusions
   "!**/node_modules/**",
+  "!**/dist/**",
+  "!**/build/**",
+  "!**/.next/**",
+  "!**/.nuxt/**",
+  "!**/.svelte-kit/**",
+  "!**/target/**",
+  "!**/vendor/**",
   "!**/*.test.*",
   "!**/*.spec.*",
   "!**/*.stories.*",
   // Exclude Next.js app/pages directories (routes, not reusable components)
-  "!src/app/**",
-  "!app/**",
-  "!src/pages/**",
-  "!pages/**",
+  "!**/app/**/page.tsx",
+  "!**/app/**/page.jsx",
+  "!**/app/**/layout.tsx",
+  "!**/app/**/layout.jsx",
+  "!**/app/**/loading.tsx",
+  "!**/app/**/loading.jsx",
+  "!**/app/**/error.tsx",
+  "!**/app/**/error.jsx",
+  "!**/app/**/not-found.tsx",
+  "!**/app/**/not-found.jsx",
+  "!**/app/**/template.tsx",
+  "!**/app/**/template.jsx",
+  "!**/app/**/route.ts",
+  "!**/app/**/route.js",
+  "!**/pages/api/**",
   // Exclude API/server directories
-  "!src/server/**",
-  "!src/api/**",
+  "!**/server/**",
+  "!**/api/**",
   // Exclude config/utility files that aren't components
-  "!src/lib/utils.*",
-  "!src/lib/db.*",
-  "!src/lib/auth.*",
-  "!lib/utils.*",
+  "!**/lib/utils.*",
+  "!**/lib/db.*",
+  "!**/lib/auth.*",
 ];
 
 /** Next.js special files that should not be treated as reusable components */
@@ -205,13 +238,17 @@ function toPascalCase(str: string): string {
 
 /**
  * Converts a file path to an import path
+ * Handles monorepo paths by finding the last occurrence of src/
  * @example "src/components/ui/button.tsx" → "@/components/ui/button"
+ * @example "web/src/components/ui/button.tsx" → "@/components/ui/button"
  */
 function toImportPath(file: string): string {
-  const withoutExt = file.replace(/\.(tsx|jsx)$/, "");
+  const withoutExt = file.replace(/\.(tsx|jsx|vue|svelte)$/, "");
 
-  if (withoutExt.startsWith("src/")) {
-    return "@/" + withoutExt.slice(4);
+  // Find the last occurrence of src/ for monorepo support
+  const srcIndex = withoutExt.lastIndexOf("src/");
+  if (srcIndex !== -1) {
+    return "@/" + withoutExt.slice(srcIndex + 4);
   }
 
   return "@/" + withoutExt;

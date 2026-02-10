@@ -6,6 +6,11 @@
  * - AGENTS.md (existing context files)
  * - .ai/ folder (AI context directory)
  * - .cursorrules (Cursor AI rules)
+ * - .windsurfrules (Windsurf rules)
+ * - .clinerules (Cline/Roo Code rules)
+ * - GEMINI.md (Google Gemini CLI)
+ * - .github/copilot-instructions.md (GitHub Copilot)
+ * - .cursor/rules/*.mdc (Cursor MDC rules)
  *
  * @module scanners/existing-context
  */
@@ -13,26 +18,7 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import fg from "fast-glob";
-
-/** Existing AI documentation files in the project */
-export interface ExistingContext {
-  /** Whether CLAUDE.md exists */
-  hasClaudeMd: boolean;
-  /** Path to CLAUDE.md if found */
-  claudeMdPath?: string;
-  /** Content of CLAUDE.md */
-  claudeMdContent?: string;
-  /** Whether a non-hashmark AGENTS.md exists */
-  hasAgentsMd: boolean;
-  /** Path to existing AGENTS.md */
-  agentsMdPath?: string;
-  /** Whether .ai/ folder exists */
-  hasAiFolder: boolean;
-  /** Files in .ai/ folder */
-  aiFiles: string[];
-  /** Whether .cursorrules exists */
-  hasCursorRules: boolean;
-}
+import type { ExistingContext } from "../types.js";
 
 /**
  * Scans for existing AI documentation files
@@ -47,6 +33,13 @@ export async function scanExistingContext(dir: string): Promise<ExistingContext>
     hasAiFolder: false,
     aiFiles: [],
     hasCursorRules: false,
+    hasWindsurfRules: false,
+    hasClineRules: false,
+    hasGeminiMd: false,
+    hasCopilotInstructions: false,
+    hasCursorMdc: false,
+    cursorMdcFiles: [],
+    allRules: [],
   };
 
   // Check for CLAUDE.md
@@ -91,33 +84,105 @@ export async function scanExistingContext(dir: string): Promise<ExistingContext>
   }
 
   // Check for .cursorrules
-  if (existsSync(join(dir, ".cursorrules"))) {
+  const cursorRulesPath = join(dir, ".cursorrules");
+  if (existsSync(cursorRulesPath)) {
     context.hasCursorRules = true;
+    context.cursorRulesContent = safeReadFile(cursorRulesPath);
   }
+
+  // Check for .windsurfrules
+  const windsurfPath = join(dir, ".windsurfrules");
+  if (existsSync(windsurfPath)) {
+    context.hasWindsurfRules = true;
+    context.windsurfRulesContent = safeReadFile(windsurfPath);
+  }
+
+  // Check for .clinerules
+  const clinePath = join(dir, ".clinerules");
+  if (existsSync(clinePath)) {
+    context.hasClineRules = true;
+    context.clineRulesContent = safeReadFile(clinePath);
+  }
+
+  // Check for GEMINI.md
+  const geminiPaths = ["GEMINI.md", "gemini.md"];
+  for (const p of geminiPaths) {
+    const fullPath = join(dir, p);
+    if (existsSync(fullPath)) {
+      context.hasGeminiMd = true;
+      context.geminiMdContent = safeReadFile(fullPath);
+      break;
+    }
+  }
+
+  // Check for .github/copilot-instructions.md
+  const copilotPaths = [
+    ".github/copilot-instructions.md",
+    "copilot-instructions.md",
+  ];
+  for (const p of copilotPaths) {
+    const fullPath = join(dir, p);
+    if (existsSync(fullPath)) {
+      context.hasCopilotInstructions = true;
+      context.copilotInstructionsContent = safeReadFile(fullPath);
+      break;
+    }
+  }
+
+  // Check for .cursor/rules/*.mdc files
+  const cursorMdcDir = join(dir, ".cursor", "rules");
+  if (existsSync(cursorMdcDir)) {
+    const mdcFiles = await fg([".cursor/rules/*.mdc"], { cwd: dir });
+    if (mdcFiles.length > 0) {
+      context.hasCursorMdc = true;
+      context.cursorMdcFiles = mdcFiles;
+      context.cursorMdcContent = {};
+      for (const mdcFile of mdcFiles) {
+        const content = safeReadFile(join(dir, mdcFile));
+        if (content) {
+          context.cursorMdcContent[mdcFile] = content;
+        }
+      }
+    }
+  }
+
+  // Extract and merge rules from all detected files
+  context.allRules = mergeAllRules(context);
 
   return context;
 }
 
-export function extractRulesFromClaudeMd(content: string): string[] {
-  const rules: string[] = [];
+/** Safely read a file, returning undefined on error */
+function safeReadFile(path: string): string | undefined {
+  try {
+    return readFileSync(path, "utf-8");
+  } catch {
+    return undefined;
+  }
+}
 
-  // Look for rules in various formats
+/**
+ * Extracts rules from any markdown or plain text content
+ * Looks for rules/guidelines sections and inline directives (NEVER/ALWAYS/MUST)
+ */
+export function extractRulesFromContent(content: string): string[] {
+  const rules: string[] = [];
   const lines = content.split("\n");
   let inRulesSection = false;
 
   for (const line of lines) {
     // Detect rules section headers
-    if (line.match(/^#+\s*(Rules|Critical|Important|Guidelines)/i)) {
+    if (line.match(/^#+\s*(Rules|Critical|Important|Guidelines|Conventions|Standards|Instructions|Preferences)/i)) {
       inRulesSection = true;
       continue;
     }
 
-    // End of section
+    // End of section on next heading
     if (inRulesSection && line.match(/^#+\s/)) {
       inRulesSection = false;
     }
 
-    // Extract numbered rules or bullet points
+    // Extract numbered rules or bullet points from rules sections
     if (inRulesSection) {
       const ruleMatch = line.match(/^[\d\-\*]+\.?\s*\*?\*?(.+)\*?\*?/);
       if (ruleMatch && ruleMatch[1].trim().length > 10) {
@@ -125,7 +190,7 @@ export function extractRulesFromClaudeMd(content: string): string[] {
       }
     }
 
-    // Also look for inline critical rules
+    // Also look for inline critical rules anywhere
     if (line.includes("NEVER") || line.includes("ALWAYS") || line.includes("MUST")) {
       const cleanLine = line.replace(/^[\s\-\*\d\.]+/, "").trim();
       if (cleanLine.length > 20 && !rules.includes(cleanLine)) {
@@ -134,5 +199,66 @@ export function extractRulesFromClaudeMd(content: string): string[] {
     }
   }
 
-  return rules.slice(0, 15); // Limit to 15 most important rules
+  return rules;
+}
+
+/**
+ * Extracts rules from MDC format content (.cursor/rules/*.mdc)
+ * MDC format has frontmatter followed by markdown content
+ */
+function extractRulesFromMdc(content: string): string[] {
+  // Strip MDC frontmatter (between --- delimiters)
+  const mdcBody = content.replace(/^---[\s\S]*?---\s*\n?/, "");
+  return extractRulesFromContent(mdcBody);
+}
+
+/** Legacy alias for backward compatibility */
+export function extractRulesFromClaudeMd(content: string): string[] {
+  return extractRulesFromContent(content);
+}
+
+/**
+ * Merges rules from all detected existing context files
+ * Deduplicates and returns a unified rules list
+ */
+function mergeAllRules(context: ExistingContext): string[] {
+  const allRules: string[] = [];
+
+  // Extract from each source
+  if (context.claudeMdContent) {
+    allRules.push(...extractRulesFromContent(context.claudeMdContent));
+  }
+  if (context.cursorRulesContent) {
+    allRules.push(...extractRulesFromContent(context.cursorRulesContent));
+  }
+  if (context.windsurfRulesContent) {
+    allRules.push(...extractRulesFromContent(context.windsurfRulesContent));
+  }
+  if (context.clineRulesContent) {
+    allRules.push(...extractRulesFromContent(context.clineRulesContent));
+  }
+  if (context.geminiMdContent) {
+    allRules.push(...extractRulesFromContent(context.geminiMdContent));
+  }
+  if (context.copilotInstructionsContent) {
+    allRules.push(...extractRulesFromContent(context.copilotInstructionsContent));
+  }
+  if (context.cursorMdcContent) {
+    for (const content of Object.values(context.cursorMdcContent)) {
+      allRules.push(...extractRulesFromMdc(content));
+    }
+  }
+
+  // Deduplicate (case-insensitive comparison)
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const rule of allRules) {
+    const key = rule.toLowerCase().trim();
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(rule);
+    }
+  }
+
+  return unique;
 }

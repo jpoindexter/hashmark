@@ -103,7 +103,7 @@ export async function POST(request: Request) {
   // Look up the repo in our database by GitHub repo ID
   const repo = await db.repository.findUnique({
     where: { githubRepoId: payload.repository.id },
-    select: { id: true, userId: true, fullName: true },
+    select: { id: true, userId: true, fullName: true, scanRoot: true },
   });
 
   if (!repo) {
@@ -152,7 +152,7 @@ export async function POST(request: Request) {
 
   try {
     const token = await getGitHubToken(repo.userId);
-    runScan(scan.id, repo.fullName, token).catch(console.error);
+    runScan(scan.id, repo.fullName, token, repo.scanRoot).catch(console.error);
   } catch (error) {
     // If we can't get the token, fail the scan gracefully
     await db.scan.update({

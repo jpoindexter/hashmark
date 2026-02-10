@@ -29,7 +29,19 @@ const HOOK_PATTERNS = [
   "src/hooks/**/*.tsx",
   "hooks/**/*.ts",
   "hooks/**/*.tsx",
+  // Recursive: monorepo support — match nested project directories
+  "**/src/hooks/**/*.ts",
+  "**/src/hooks/**/*.tsx",
+  "**/hooks/**/*.ts",
+  "**/hooks/**/*.tsx",
+  // Composables (Vue convention)
+  "**/src/composables/**/*.ts",
+  "**/composables/**/*.ts",
+  // Exclusions
   "!**/node_modules/**",
+  "!**/dist/**",
+  "!**/build/**",
+  "!**/.next/**",
   "!**/*.test.*",
   "!**/*.spec.*",
   "!**/index.ts",  // Skip barrel exports
@@ -90,11 +102,13 @@ function extractHookNames(content: string): string[] {
   return [...new Set(hooks)];
 }
 
-/** Converts a file path to an import path */
+/** Converts a file path to an import path (handles monorepo nesting) */
 function toImportPath(file: string): string {
   const withoutExt = file.replace(/\.(tsx?|jsx?)$/, "");
-  if (withoutExt.startsWith("src/")) {
-    return "@/" + withoutExt.slice(4);
+  // Find the last occurrence of src/ for monorepo support
+  const srcIndex = withoutExt.lastIndexOf("src/");
+  if (srcIndex !== -1) {
+    return "@/" + withoutExt.slice(srcIndex + 4);
   }
   return "@/" + withoutExt;
 }

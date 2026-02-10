@@ -7,6 +7,7 @@ const TABS = [
   { href: "", label: "INTELLIGENCE" },
   { href: "/files", label: "FILES" },
   { href: "/history", label: "HISTORY" },
+  { href: "/settings", label: "SETTINGS" },
 ] as const;
 
 export function RepoSubNav({ repoId }: { repoId: string }) {

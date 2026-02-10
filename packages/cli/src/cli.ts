@@ -325,6 +325,27 @@ cli
       if (existingContext.hasClaudeMd) {
         console.log(pc.green(`  ✓ Found existing ${existingContext.claudeMdPath}`));
       }
+      if (existingContext.hasCursorRules) {
+        console.log(pc.green(`  ✓ Found existing .cursorrules`));
+      }
+      if (existingContext.hasCursorMdc) {
+        console.log(pc.green(`  ✓ Found ${existingContext.cursorMdcFiles.length} .cursor/rules/*.mdc files`));
+      }
+      if (existingContext.hasWindsurfRules) {
+        console.log(pc.green(`  ✓ Found existing .windsurfrules`));
+      }
+      if (existingContext.hasClineRules) {
+        console.log(pc.green(`  ✓ Found existing .clinerules`));
+      }
+      if (existingContext.hasGeminiMd) {
+        console.log(pc.green(`  ✓ Found existing GEMINI.md`));
+      }
+      if (existingContext.hasCopilotInstructions) {
+        console.log(pc.green(`  ✓ Found existing copilot-instructions.md`));
+      }
+      if (existingContext.allRules.length > 0) {
+        console.log(pc.green(`  ✓ Extracted ${existingContext.allRules.length} rules from existing context files`));
+      }
       if (existingContext.hasAiFolder) {
         console.log(pc.green(`  ✓ Found .ai/ folder (${existingContext.aiFiles.length} files)`));
       }

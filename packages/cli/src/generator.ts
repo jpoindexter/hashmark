@@ -13,7 +13,7 @@
  */
 
 import type { ScanResult, Component, Framework, Tokens, Hook, Utilities, Commands, ExistingContext, ComponentVariant, ApiRoute, ApiSchema, EnvVar, DetectedPatterns, DatabaseSchema, FileStats, BarrelExport, ComponentDependency, FileTree, ImportGraph, TypeScanResult, AntiPatternsResult } from "./types.js";
-import { extractRulesFromClaudeMd } from "./scanners/existing-context.js";
+import { extractRulesFromContent } from "./scanners/existing-context.js";
 import { formatFileTree } from "./scanners/file-tree.js";
 import { formatImportGraph } from "./scanners/imports.js";
 import { formatTypes } from "./scanners/types.js";
@@ -24,8 +24,9 @@ export interface GeneratorOptions {
   compact?: boolean;
   compress?: boolean;
   minimal?: boolean;      // Ultra-compact: TL;DR + rules + component names only (~1K tokens)
-  includeTree?: boolean;  // Include file tree (off by default)
+  includeTree?: boolean;  // Include file tree (always on by default now)
   xml?: boolean;          // XML format (industry standard, matches Repomix)
+  existingContent?: string; // Existing file content for preserving user sections
 }
 
 /**
@@ -160,8 +161,8 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
   }
   lines.push("");
 
-  // File Tree Section (only when --tree flag is used)
-  if (includeTree && fileTree) {
+  // File Tree Section (always included for comprehensive output)
+  if (fileTree) {
     lines.push(formatFileTree(fileTree));
   }
 
@@ -228,17 +229,23 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
     lines.push("");
   }
 
-  // Extract rules from existing CLAUDE.md if present
-  if (existingContext.hasClaudeMd && existingContext.claudeMdContent) {
-    const extractedRules = extractRulesFromClaudeMd(existingContext.claudeMdContent);
-    if (extractedRules.length > 0) {
-      lines.push("### Additional Rules (from CLAUDE.md)");
-      lines.push("");
-      for (const rule of extractedRules.slice(0, 10)) {
-        lines.push(`- ${rule}`);
-      }
-      lines.push("");
+  // Extract and merge rules from ALL existing context files
+  if (existingContext.allRules && existingContext.allRules.length > 0) {
+    const sources: string[] = [];
+    if (existingContext.hasClaudeMd) sources.push("CLAUDE.md");
+    if (existingContext.hasCursorRules) sources.push(".cursorrules");
+    if (existingContext.hasWindsurfRules) sources.push(".windsurfrules");
+    if (existingContext.hasClineRules) sources.push(".clinerules");
+    if (existingContext.hasGeminiMd) sources.push("GEMINI.md");
+    if (existingContext.hasCopilotInstructions) sources.push("copilot-instructions.md");
+    if (existingContext.hasCursorMdc) sources.push(".cursor/rules/*.mdc");
+
+    lines.push(`### User Rules (from ${sources.join(", ")})`);
+    lines.push("");
+    for (const rule of existingContext.allRules) {
+      lines.push(`- ${rule}`);
     }
+    lines.push("");
   }
 
   // Framework-specific rules
@@ -394,7 +401,7 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
   }
 
   // Import Graph Section (hub files, circular deps, external deps)
-  if (!compact && !compress && importGraph) {
+  if (importGraph) {
     lines.push(formatImportGraph(importGraph));
   }
 
@@ -405,7 +412,7 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
     lines.push("Components with CVA variants (use these instead of custom styling):");
     lines.push("");
 
-    for (const v of variants.slice(0, 15)) {
+    for (const v of variants) {
       const variantTypes = Object.entries(v.variants)
         .map(([type, options]) => `${type}: ${options.join(", ")}`)
         .join(" | ");
@@ -417,9 +424,6 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
           .join(", ");
         lines.push(`  - Defaults: ${defaults}`);
       }
-    }
-    if (variants.length > 15) {
-      lines.push(`- ... and ${variants.length - 15} more`);
     }
     lines.push("");
   }
@@ -578,17 +582,13 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
     lines.push(`${database.models.length} ${database.provider} models:`);
     lines.push("");
 
-    for (const model of database.models.slice(0, 20)) {
-      const fieldList = model.fields.slice(0, 6).join(", ");
-      const moreFields = model.fields.length > 6 ? `, +${model.fields.length - 6} more` : "";
-      lines.push(`- **${model.name}** — ${fieldList}${moreFields}`);
+    for (const model of database.models) {
+      const fieldList = model.fields.join(", ");
+      lines.push(`- **${model.name}** — ${fieldList}`);
 
       if (model.relations.length > 0) {
         lines.push(`  - Relations: ${model.relations.join(", ")}`);
       }
-    }
-    if (database.models.length > 20) {
-      lines.push(`- ... and ${database.models.length - 20} more`);
     }
     lines.push("");
   }
@@ -606,8 +606,9 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
       lines.push("### Required");
       lines.push("");
       lines.push("```bash");
-      for (const env of required.slice(0, 20)) {
-        lines.push(env.name);
+      for (const env of required) {
+        const desc = env.description ? `  # ${env.description}` : "";
+        lines.push(`${env.name}${desc}`);
       }
       lines.push("```");
       lines.push("");
@@ -617,11 +618,9 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
       lines.push("### Optional");
       lines.push("");
       lines.push("```bash");
-      for (const env of optional.slice(0, 15)) {
-        lines.push(env.name);
-      }
-      if (optional.length > 15) {
-        lines.push(`# ... and ${optional.length - 15} more`);
+      for (const env of optional) {
+        const desc = env.description ? `  # ${env.description}` : "";
+        lines.push(`${env.name}${desc}`);
       }
       lines.push("```");
       lines.push("");
@@ -711,11 +710,8 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
       lines.push("<summary>Raw CSS Variables (click to expand)</summary>");
       lines.push("");
       lines.push("```css");
-      for (const [name, value] of Object.entries(tokens.colors).slice(0, 30)) {
+      for (const [name, value] of Object.entries(tokens.colors)) {
         lines.push(`--${name}: ${value};`);
-      }
-      if (Object.keys(tokens.colors).length > 30) {
-        lines.push(`/* ... and ${Object.keys(tokens.colors).length - 30} more */`);
       }
       lines.push("```");
       lines.push("");
@@ -838,25 +834,81 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
   }
 
   // Reference to existing docs
-  if (existingContext.hasClaudeMd || existingContext.hasAiFolder) {
-    lines.push("## Additional Documentation");
+  const hasExistingDocs = existingContext.hasClaudeMd || existingContext.hasAiFolder ||
+    existingContext.hasCursorRules || existingContext.hasWindsurfRules ||
+    existingContext.hasClineRules || existingContext.hasGeminiMd ||
+    existingContext.hasCopilotInstructions || existingContext.hasCursorMdc;
+
+  if (hasExistingDocs) {
+    lines.push("## Existing AI Context Files");
     lines.push("");
     if (existingContext.hasClaudeMd) {
-      lines.push(`- **${existingContext.claudeMdPath}** — Detailed project documentation`);
+      lines.push(`- **${existingContext.claudeMdPath}** — Claude Code instructions`);
+    }
+    if (existingContext.hasCursorRules) {
+      lines.push("- **.cursorrules** — Cursor AI rules");
+    }
+    if (existingContext.hasCursorMdc) {
+      for (const file of existingContext.cursorMdcFiles) {
+        lines.push(`- **${file}** — Cursor MDC rules`);
+      }
+    }
+    if (existingContext.hasWindsurfRules) {
+      lines.push("- **.windsurfrules** — Windsurf rules");
+    }
+    if (existingContext.hasClineRules) {
+      lines.push("- **.clinerules** — Cline/Roo Code rules");
+    }
+    if (existingContext.hasGeminiMd) {
+      lines.push("- **GEMINI.md** — Google Gemini CLI instructions");
+    }
+    if (existingContext.hasCopilotInstructions) {
+      lines.push("- **copilot-instructions.md** — GitHub Copilot instructions");
     }
     if (existingContext.hasAiFolder) {
       lines.push(`- **.ai/ folder** — AI-native context files:`);
-      for (const file of existingContext.aiFiles.slice(0, 10)) {
+      for (const file of existingContext.aiFiles) {
         lines.push(`  - \`${file}\``);
-      }
-      if (existingContext.aiFiles.length > 10) {
-        lines.push(`  - ... and ${existingContext.aiFiles.length - 10} more`);
       }
     }
     lines.push("");
   }
 
+  // User-editable section — preserve existing content or add default placeholder
+  const existingUserSection = options.existingContent
+    ? extractUserSection(options.existingContent)
+    : null;
+
+  if (existingUserSection) {
+    lines.push(existingUserSection);
+  } else {
+    lines.push("<!-- user:start -->");
+    lines.push("## Custom Notes");
+    lines.push("");
+    lines.push("<!-- Add your custom project notes here. This section is preserved across regenerations. -->");
+    lines.push("");
+    lines.push("<!-- user:end -->");
+  }
+  lines.push("");
+
   return lines.join("\n");
+}
+
+/**
+ * Extracts the user-editable section from existing file content
+ * Preserves content between <!-- user:start --> and <!-- user:end --> markers
+ */
+function extractUserSection(content: string): string | null {
+  const startMarker = "<!-- user:start -->";
+  const endMarker = "<!-- user:end -->";
+  const startIdx = content.indexOf(startMarker);
+  const endIdx = content.indexOf(endMarker);
+
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    return content.slice(startIdx, endIdx + endMarker.length);
+  }
+
+  return null;
 }
 
 function getFrameworkRules(framework: Framework, tokens: Tokens, utilities: Utilities): string[] {

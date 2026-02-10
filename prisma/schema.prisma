@@ -72,6 +72,7 @@ model Repository {
   private         Boolean   @default(false)
   language        String?
   description     String?
+  scanRoot        String?   // Subdirectory to scan (e.g., "web", "apps/frontend")
   actionInstalled Boolean   @default(false)
   lastScanAt      DateTime?
   createdAt       DateTime  @default(now())
@@ -89,6 +90,7 @@ model Scan {
   fileCount      Int?
   lineCount      Int?
   componentCount Int?
+  hookCount      Int?
   apiRouteCount  Int?
   modelCount     Int?
   tokenEstimate  Int?

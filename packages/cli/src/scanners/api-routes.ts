@@ -28,20 +28,30 @@ import { extractZodSchemasFromAST } from "./ast-schema-parser.js";
  * // Returns: [{ path: '/api/users/:id', methods: ['GET', 'PUT'], isProtected: true }]
  */
 export async function scanApiRoutes(dir: string, typeExports?: TypeExport[]): Promise<ApiRoute[]> {
-  // Look for Next.js App Router API routes
+  // Look for Next.js App Router API routes (including monorepo nesting)
   const files = await fg([
     "src/app/api/**/route.ts",
     "src/app/api/**/route.js",
     "app/api/**/route.ts",
     "app/api/**/route.js",
-    // Also check pages router
+    // Pages router
     "src/pages/api/**/*.ts",
     "src/pages/api/**/*.js",
     "pages/api/**/*.ts",
     "pages/api/**/*.js",
+    // Recursive: monorepo support
+    "**/src/app/api/**/route.ts",
+    "**/src/app/api/**/route.js",
+    "**/app/api/**/route.ts",
+    "**/app/api/**/route.js",
+    "**/src/pages/api/**/*.ts",
+    "**/src/pages/api/**/*.js",
+    "**/pages/api/**/*.ts",
+    "**/pages/api/**/*.js",
   ], {
     cwd: dir,
     absolute: false,
+    ignore: ["**/node_modules/**", "**/dist/**", "**/.next/**"],
   });
 
   const routes: ApiRoute[] = [];
@@ -146,15 +156,31 @@ function parseRoute(file: string, content: string, projectRoot: string, typeExpo
 
 /**
  * Converts a file path to an API route path
+ * Handles monorepo paths by finding the last occurrence of app/api/ or pages/api/
  * @example "src/app/api/users/[id]/route.ts" → "/api/users/:id"
+ * @example "web/src/app/api/users/route.ts" → "/api/users"
  */
 function fileToApiPath(file: string): string {
-  let path = file
-    .replace(/^src\//, "")
-    .replace(/^pages/, "")
-    .replace(/^app/, "")
-    .replace(/\/route\.(ts|js)$/, "")
-    .replace(/\.(ts|js)$/, "");
+  let path = file;
+
+  // Remove route file suffix
+  path = path.replace(/\/route\.(ts|js)$/, "").replace(/\.(ts|js)$/, "");
+
+  // Find the last occurrence of app/api/ or pages/api/ to handle monorepo nesting
+  const appApiIndex = path.lastIndexOf("app/api/");
+  const pagesApiIndex = path.lastIndexOf("pages/api/");
+
+  if (appApiIndex !== -1) {
+    path = path.slice(appApiIndex + "app".length);
+  } else if (pagesApiIndex !== -1) {
+    path = path.slice(pagesApiIndex + "pages".length);
+  } else {
+    // Fallback: strip known prefixes
+    path = path
+      .replace(/^src\//, "")
+      .replace(/^pages/, "")
+      .replace(/^app/, "");
+  }
 
   // Convert [param] to :param for readability
   path = path.replace(/\[([^\]]+)\]/g, ":$1");

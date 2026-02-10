@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { estimateTokens, FORMAT_MAP } from "../scan-worker";
+import { estimateTokens, FORMAT_MAP } from "../scan-utils";
 import { formatScanError } from "../scan-error";
 
 describe("estimateTokens", () => {

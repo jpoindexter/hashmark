@@ -9,8 +9,9 @@
  * @module json-generator
  */
 
-import type { ScanResult } from "./types.js";
+import type { ScanResult, ExistingContext } from "./types.js";
 import { estimateTokens } from "./utils/tokens.js";
+import { extractRulesFromContent } from "./scanners/existing-context.js";
 
 /** Structure of the AGENTS.index.json file */
 export interface AgentsIndex {
@@ -73,6 +74,11 @@ export interface AgentsIndex {
     path: string;
     exports: string[];
   }>;
+  /** Rules extracted from existing context files */
+  existingRules?: Array<{
+    source: string;
+    rules: string[];
+  }>;
 }
 
 /**
@@ -83,7 +89,7 @@ export interface AgentsIndex {
  * @returns JSON string of the index
  */
 export function generateAgentsIndex(result: ScanResult, markdownContent: string): string {
-  const { components, framework, hooks, apiRoutes, database, stats, barrels } = result;
+  const { components, framework, hooks, apiRoutes, database, stats, barrels, existingContext } = result;
 
   const index: AgentsIndex = {
     version: "1.0",
@@ -129,7 +135,42 @@ export function generateAgentsIndex(result: ScanResult, markdownContent: string)
       path: b.importPath,
       exports: b.exports.filter(e => !e.startsWith("*")),
     })),
+    ...(existingContext.allRules.length > 0 && {
+      existingRules: buildExistingRulesSources(existingContext),
+    }),
   };
 
   return JSON.stringify(index, null, 2);
+}
+
+/** Build per-source rules list for the JSON index */
+function buildExistingRulesSources(ctx: ExistingContext): Array<{ source: string; rules: string[] }> {
+  const sources: Array<{ source: string; rules: string[] }> = [];
+
+  if (ctx.claudeMdContent) {
+    const rules = extractRulesFromContent(ctx.claudeMdContent);
+    if (rules.length > 0) sources.push({ source: "CLAUDE.md", rules });
+  }
+  if (ctx.cursorRulesContent) {
+    const rules = extractRulesFromContent(ctx.cursorRulesContent);
+    if (rules.length > 0) sources.push({ source: ".cursorrules", rules });
+  }
+  if (ctx.windsurfRulesContent) {
+    const rules = extractRulesFromContent(ctx.windsurfRulesContent);
+    if (rules.length > 0) sources.push({ source: ".windsurfrules", rules });
+  }
+  if (ctx.clineRulesContent) {
+    const rules = extractRulesFromContent(ctx.clineRulesContent);
+    if (rules.length > 0) sources.push({ source: ".clinerules", rules });
+  }
+  if (ctx.geminiMdContent) {
+    const rules = extractRulesFromContent(ctx.geminiMdContent);
+    if (rules.length > 0) sources.push({ source: "GEMINI.md", rules });
+  }
+  if (ctx.copilotInstructionsContent) {
+    const rules = extractRulesFromContent(ctx.copilotInstructionsContent);
+    if (rules.length > 0) sources.push({ source: "copilot-instructions.md", rules });
+  }
+
+  return sources;
 }

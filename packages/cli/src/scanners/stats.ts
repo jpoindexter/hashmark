@@ -37,9 +37,37 @@ export interface FileStats {
 export async function scanStats(dir: string): Promise<FileStats> {
   const files = await fg(
     [
-      "**/*.{ts,tsx,js,jsx,css,scss,json,md}",
+      // JavaScript/TypeScript ecosystem
+      "**/*.{ts,tsx,js,jsx,mjs,cjs,css,scss,less,json,md,mdx}",
+      // Python
+      "**/*.py",
+      // Go
+      "**/*.go",
+      // Rust
+      "**/*.rs",
+      // Ruby
+      "**/*.rb",
+      // Java/Kotlin
+      "**/*.{java,kt,kts}",
+      // PHP
+      "**/*.php",
+      // Frontend frameworks
+      "**/*.{vue,svelte}",
+      // Swift/Objective-C
+      "**/*.{swift,m,h}",
+      // C/C++
+      "**/*.{c,cpp,cc,cxx,hpp}",
+      // C#
+      "**/*.cs",
+      // Shell
+      "**/*.{sh,bash,zsh}",
+      // Config/Data
+      "**/*.{yaml,yml,toml,sql,graphql,gql,proto}",
+      // Exclusions — JS/TS ecosystem
       "!**/node_modules/**",
       "!**/.next/**",
+      "!**/.nuxt/**",
+      "!**/.svelte-kit/**",
       "!**/dist/**",
       "!**/build/**",
       "!**/.git/**",
@@ -48,6 +76,21 @@ export async function scanStats(dir: string): Promise<FileStats> {
       "!**/package-lock.json",
       "!**/pnpm-lock.yaml",
       "!**/yarn.lock",
+      // Exclusions — Python
+      "!**/venv/**",
+      "!**/.venv/**",
+      "!**/__pycache__/**",
+      "!**/*.egg-info/**",
+      // Exclusions — Rust
+      "!**/target/**",
+      // Exclusions — Go
+      "!**/vendor/**",
+      // Exclusions — Java/Kotlin
+      "!**/.gradle/**",
+      "!**/bin/**",
+      "!**/obj/**",
+      // Exclusions — C#
+      "!**/packages/**",
     ],
     {
       cwd: dir,

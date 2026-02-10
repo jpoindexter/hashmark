@@ -55,9 +55,16 @@ export async function scanDatabase(dir: string): Promise<DatabaseSchema | null> 
 
 /** Scans for Prisma schema files and extracts models */
 async function scanPrisma(dir: string): Promise<DatabaseSchema | null> {
-  const files = await fg(["prisma/schema.prisma", "schema.prisma"], {
+  const files = await fg([
+    "prisma/schema.prisma",
+    "schema.prisma",
+    // Recursive: monorepo support
+    "**/prisma/schema.prisma",
+    "**/schema.prisma",
+  ], {
     cwd: dir,
     absolute: false,
+    ignore: ["**/node_modules/**", "**/dist/**"],
   });
 
   if (files.length === 0) return null;
