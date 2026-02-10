@@ -267,6 +267,11 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
     const grouped = groupComponentsByDirectory(components);
     const groupCount = Object.keys(grouped).length;
 
+    // Cap individual component listings to keep output manageable.
+    // For large codebases, show a summary table + top groups in detail.
+    const MAX_LISTED_COMPONENTS = 200;
+    const isLargeCodebase = components.length > MAX_LISTED_COMPONENTS;
+
     lines.push(`${components.length} components across ${groupCount} categories.`);
     lines.push("");
 
@@ -281,38 +286,59 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
       return aName.localeCompare(bName);
     });
 
+    // For large codebases, emit a summary table first
+    if (isLargeCodebase) {
+      lines.push("| Category | Count |");
+      lines.push("|---|---|");
+      for (const [dir, comps] of sortedGroups) {
+        lines.push(`| ${formatDirectoryName(dir)} | ${comps.length} |`);
+      }
+      lines.push("");
+      lines.push(`Showing top ${MAX_LISTED_COMPONENTS} components below. Full list available in AGENTS.index.json.`);
+      lines.push("");
+    }
+
+    let totalListed = 0;
+
     for (const [dir, comps] of sortedGroups) {
+      if (isLargeCodebase && totalListed >= MAX_LISTED_COMPONENTS) break;
+
       const groupName = formatDirectoryName(dir);
       lines.push(`### ${groupName} (${comps.length})`);
       lines.push("");
 
-      for (const comp of comps) {
+      const compsToShow = isLargeCodebase
+        ? comps.slice(0, MAX_LISTED_COMPONENTS - totalListed)
+        : comps;
+
+      for (const comp of compsToShow) {
         const allExports = comp.exports.map(e => `\`${e}\``).join(", ");
         lines.push(`- ${allExports} — \`${comp.importPath}\``);
 
         // Compress mode: minimal output, just component names and paths
         if (compress) {
-          // Skip all details in compress mode
           continue;
         }
 
         // In compact mode, limit props to 5 and skip descriptions
         if (!compact) {
-          // Add props if available
           if (comp.props && comp.props.length > 0) {
             lines.push(`  - Props: ${comp.props.join(", ")}`);
           }
-
-          // Add description if available
           if (comp.description) {
             lines.push(`  - ${comp.description}`);
           }
         } else if (comp.props && comp.props.length > 0) {
-          // Compact: show top 5 props only
           const topProps = comp.props.slice(0, 5);
           const more = comp.props.length > 5 ? ` (+${comp.props.length - 5})` : "";
           lines.push(`  - Props: ${topProps.join(", ")}${more}`);
         }
+
+        totalListed++;
+      }
+
+      if (isLargeCodebase && compsToShow.length < comps.length) {
+        lines.push(`- ... ${comps.length - compsToShow.length} more in this category`);
       }
       lines.push("");
     }
@@ -964,18 +990,29 @@ function groupComponentsByDirectory(components: Component[]): Record<string, Com
 }
 
 function formatDirectoryName(dir: string): string {
-  const lastPart = dir.split("/").pop() || dir;
+  const parts = dir.split("/");
+  const lastPart = parts.pop() || dir;
 
-  if (lastPart === "ui") return "UI Components";
-  if (lastPart === "charts") return "Charts";
-  if (lastPart === "auth") return "Auth Components";
-  if (lastPart === "admin") return "Admin Components";
-  if (lastPart === "billing") return "Billing Components";
+  const nameMap: Record<string, string> = {
+    ui: "UI Components",
+    charts: "Charts",
+    auth: "Auth",
+    admin: "Admin",
+    billing: "Billing",
+  };
 
-  return lastPart
-    .split(/[-_]/)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+  const baseName = nameMap[lastPart] ??
+    lastPart.split(/[-_]/).map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
+
+  // Add parent context to disambiguate (e.g., "web > UI Components" vs "fabrk-dev > UI Components")
+  // Find a meaningful parent: skip generic dirs like src, components, app
+  const genericDirs = new Set(["src", "components", "app", "pages", "lib", "hooks"]);
+  const contextPart = parts.filter((p) => !genericDirs.has(p)).pop();
+  if (contextPart && parts.length > 1) {
+    return `${contextPart} > ${baseName}`;
+  }
+
+  return baseName;
 }
 
 function groupRoutesByBasePath(routes: ApiRoute[]): Record<string, ApiRoute[]> {
