@@ -1,2 +1,25 @@
+# === HASHMARK PRE-COMMIT HOOKS ===
+
+# 1. File size validation (300-line limit)
+echo "[hook] Checking file sizes..."
+node scripts/validate-file-size.js
+
+# 2. Security validation (secrets, dangerous patterns)
+echo "[hook] Running security checks..."
+node scripts/validate-security.js
+
+# 3. Server/Client component validation
+echo "[hook] Validating components..."
+node scripts/validate-components.js
+
+# 4. Import validation (deep paths, duplicates)
+echo "[hook] Checking imports..."
+node scripts/validate-imports.js
+
+# 5. Lint-staged (ESLint + format)
+echo "[hook] Running lint-staged..."
 pnpm lint-staged
+
+# 6. Tests
+echo "[hook] Running tests..."
 pnpm test
