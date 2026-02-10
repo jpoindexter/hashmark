@@ -214,22 +214,20 @@ function calculateCognitiveAST(body: TSESTree.Node, functionName: string): numbe
   function walk(node: TSESTree.Node, nesting: number): void {
     switch (node.type) {
       case "IfStatement": {
-        const ifNode = node as TSESTree.IfStatement;
+        let current = node as TSESTree.IfStatement;
         complexity += 1 + nesting; // increment + nesting penalty
-        walk(ifNode.consequent, nesting + 1);
-        if (ifNode.alternate) {
-          if (ifNode.alternate.type === "IfStatement") {
-            // else if: +1 but no nesting increase
+        walk(current.consequent, nesting + 1);
+        while (current.alternate) {
+          if (current.alternate.type === "IfStatement") {
+            // else if: +1, no nesting penalty
             complexity += 1;
-            const elseIf = ifNode.alternate as TSESTree.IfStatement;
-            walk(elseIf.consequent, nesting + 1);
-            if (elseIf.alternate) {
-              walk(elseIf.alternate, nesting);
-            }
+            current = current.alternate as TSESTree.IfStatement;
+            walk(current.consequent, nesting + 1);
           } else {
-            // else: +1, no nesting increase
+            // else: +1, no nesting penalty
             complexity += 1;
-            walk(ifNode.alternate, nesting + 1);
+            walk(current.alternate, nesting + 1);
+            break;
           }
         }
         return; // Don't walk children again
