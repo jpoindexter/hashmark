@@ -59,6 +59,7 @@
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@typescript-eslint/typescript-estree": "^8.54.0",
     "cac": "^6.7.14",
+    "chokidar": "^5.0.0",
     "clipboardy": "^5.2.1",
     "fast-glob": "^3.3.0",
     "graphql": "^16.12.0",

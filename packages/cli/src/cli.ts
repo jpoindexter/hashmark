@@ -33,6 +33,9 @@ import { detectSecrets } from "./utils/secrets.js";
 import { parseSize, splitContent, getSplitFilenames } from "./utils/split.js";
 import { reportFindings } from "./utils/reporter.js";
 import { loadConfig } from "./config.js";
+import { sync } from "./sync.js";
+import { startWatch } from "./watch.js";
+import { installHooks, uninstallHooks } from "./hooks/install.js";
 import { writeFileSync, existsSync, rmSync, mkdirSync, readFileSync } from "fs";
 import { join, relative, dirname } from "path";
 import { execSync } from "child_process";
@@ -123,6 +126,59 @@ cli
 
     } catch (error) {
       console.error(pc.red(`\n  ✗ Scan failed: ${error instanceof Error ? error.message : error}\n`));
+      process.exit(1);
+    }
+  });
+
+// --- sync command ---
+cli
+  .command("sync [dir]", "Build .hashmark/index.json relationship graph")
+  .option("--watch", "Keep watching for changes")
+  .action(async (dir: string | undefined, options: { watch?: boolean }) => {
+    const targetDir = dir || process.cwd();
+    try {
+      await sync(targetDir);
+      if (options.watch) {
+        await startWatch(targetDir);
+      }
+    } catch (error) {
+      console.error(pc.red(`\n  ✗ Sync failed: ${error instanceof Error ? error.message : error}\n`));
+      process.exit(1);
+    }
+  });
+
+// --- watch command ---
+cli
+  .command("watch [dir]", "Watch for changes and keep relationship index fresh")
+  .action(async (dir: string | undefined) => {
+    const targetDir = dir || process.cwd();
+    try {
+      // Run initial sync, then watch
+      await sync(targetDir);
+      await startWatch(targetDir);
+    } catch (error) {
+      console.error(pc.red(`\n  ✗ Watch failed: ${error instanceof Error ? error.message : error}\n`));
+      process.exit(1);
+    }
+  });
+
+// --- hook command ---
+cli
+  .command("hook <action>", "Manage Claude Code hooks (install/uninstall)")
+  .option("--pre-commit", "Also install pre-commit hook")
+  .action(async (action: string, options: { preCommit?: boolean }) => {
+    const targetDir = process.cwd();
+    try {
+      if (action === "install") {
+        await installHooks(targetDir, { preCommit: options.preCommit });
+      } else if (action === "uninstall") {
+        await uninstallHooks(targetDir);
+      } else {
+        console.error(pc.red(`\n  ✗ Unknown action: ${action}. Use 'install' or 'uninstall'\n`));
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error(pc.red(`\n  ✗ Hook ${action} failed: ${error instanceof Error ? error.message : error}\n`));
       process.exit(1);
     }
   });

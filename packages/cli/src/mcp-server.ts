@@ -36,6 +36,9 @@ try {
   // fallback
 }
 
+// Import utilities
+import { loadIndex } from "./utils/load-index.js";
+
 // Import scanners
 import { scanComponents } from "./scanners/components.js";
 import { scanTokens } from "./scanners/tokens.js";
@@ -398,6 +401,68 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
           },
           required: ["directory", "query"],
+        },
+      },
+      // --- Runtime context tools (powered by .hashmark/index.json) ---
+      {
+        name: "get_file_relationships",
+        description:
+          "Get import/export relationships for a file. Shows what the file imports, what imports it, and what it exports. Powered by hashmark's relationship index.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            directory: {
+              type: "string",
+              description: "The project root directory",
+            },
+            filePath: {
+              type: "string",
+              description: "Relative path to the file (e.g., 'src/lib/auth.ts')",
+            },
+          },
+          required: ["directory", "filePath"],
+        },
+      },
+      {
+        name: "get_impact_analysis",
+        description:
+          "Analyze what files would be affected by changing a given file. Performs BFS traversal through the import graph to find all direct and transitive dependents.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            directory: {
+              type: "string",
+              description: "The project root directory",
+            },
+            filePath: {
+              type: "string",
+              description: "Relative path to the file to analyze",
+            },
+            depth: {
+              type: "number",
+              description: "Maximum traversal depth (default: 3)",
+            },
+          },
+          required: ["directory", "filePath"],
+        },
+      },
+      {
+        name: "search_by_export",
+        description:
+          "Find where a function, class, type, or variable is exported and who imports it. Useful for tracing symbol usage across the codebase.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            directory: {
+              type: "string",
+              description: "The project root directory",
+            },
+            symbolName: {
+              type: "string",
+              description: "The export name to search for (case-insensitive substring match)",
+            },
+          },
+          required: ["directory", "symbolName"],
         },
       },
     ],
@@ -1235,6 +1300,194 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             type: "text",
             text: `Found ${results.length} result(s) for "${query}":\n\n${output.join("\n\n---\n\n")}`,
           }],
+        };
+      }
+
+      // --- Runtime context tools ---
+      case "get_file_relationships": {
+        const dir = resolve(args?.directory as string);
+        const filePath = args?.filePath as string;
+
+        const index = await loadIndex(dir);
+        if (!index) {
+          return {
+            content: [{ type: "text", text: "No relationship index found. Run 'hashmark sync' first." }],
+            isError: true,
+          };
+        }
+
+        // Try exact match and normalized path
+        const fileInfo = index.files[filePath] || index.files[filePath.replace(/\\/g, "/")];
+        if (!fileInfo) {
+          return {
+            content: [{ type: "text", text: `File "${filePath}" not found in index. Run 'hashmark sync' to update.` }],
+            isError: true,
+          };
+        }
+
+        const lines = [`# ${filePath}`, ""];
+
+        if (fileInfo.exports.length > 0) {
+          lines.push(`**Exports:** ${fileInfo.exports.join(", ")}`);
+        }
+
+        lines.push(`**Language:** ${fileInfo.language}`);
+        lines.push(`**Size:** ${fileInfo.size} lines`);
+
+        if (fileInfo.imports.length > 0) {
+          lines.push("");
+          lines.push("## Imports (dependencies)");
+          for (const imp of fileInfo.imports) {
+            lines.push(`- \`${imp}\``);
+          }
+        }
+
+        if (fileInfo.importedBy.length > 0) {
+          lines.push("");
+          lines.push(`## Imported By (${fileInfo.importedBy.length} dependents)`);
+          for (const dep of fileInfo.importedBy) {
+            lines.push(`- \`${dep}\``);
+          }
+        }
+
+        return {
+          content: [{ type: "text", text: lines.join("\n") }],
+        };
+      }
+
+      case "get_impact_analysis": {
+        const dir = resolve(args?.directory as string);
+        const filePath = args?.filePath as string;
+        const maxDepth = (args?.depth as number) || 3;
+
+        const index = await loadIndex(dir);
+        if (!index) {
+          return {
+            content: [{ type: "text", text: "No relationship index found. Run 'hashmark sync' first." }],
+            isError: true,
+          };
+        }
+
+        // BFS through importedBy edges
+        const visited = new Set<string>();
+        const byDepth: Map<number, string[]> = new Map();
+        const queue: Array<{ path: string; depth: number }> = [{ path: filePath, depth: 0 }];
+        visited.add(filePath);
+
+        while (queue.length > 0) {
+          const current = queue.shift()!;
+          if (current.depth >= maxDepth) continue;
+
+          const info = index.files[current.path];
+          if (!info) continue;
+
+          for (const dependent of info.importedBy) {
+            if (!visited.has(dependent)) {
+              visited.add(dependent);
+              const depth = current.depth + 1;
+              if (!byDepth.has(depth)) byDepth.set(depth, []);
+              byDepth.get(depth)!.push(dependent);
+              queue.push({ path: dependent, depth });
+            }
+          }
+        }
+
+        const totalAffected = visited.size - 1; // exclude the file itself
+
+        if (totalAffected === 0) {
+          return {
+            content: [{
+              type: "text",
+              text: `# Impact Analysis: ${filePath}\n\nNo other files depend on this file.`,
+            }],
+          };
+        }
+
+        const lines = [
+          `# Impact Analysis: ${filePath}`,
+          "",
+          `**${totalAffected} files affected** across ${byDepth.size} depth level(s)`,
+          "",
+        ];
+
+        for (const [depth, files] of [...byDepth.entries()].sort((a, b) => a[0] - b[0])) {
+          const label = depth === 1 ? "Direct dependents" : depth === 2 ? "Indirect dependents" : `Depth ${depth}`;
+          lines.push(`## ${label} (${files.length} files)`);
+          for (const f of files.slice(0, 20)) {
+            lines.push(`- \`${f}\``);
+          }
+          if (files.length > 20) {
+            lines.push(`- ... and ${files.length - 20} more`);
+          }
+          lines.push("");
+        }
+
+        return {
+          content: [{ type: "text", text: lines.join("\n") }],
+        };
+      }
+
+      case "search_by_export": {
+        const dir = resolve(args?.directory as string);
+        const symbolName = (args?.symbolName as string).toLowerCase();
+
+        const index = await loadIndex(dir);
+        if (!index) {
+          return {
+            content: [{ type: "text", text: "No relationship index found. Run 'hashmark sync' first." }],
+            isError: true,
+          };
+        }
+
+        // Find files that export a matching symbol
+        const matches: Array<{
+          file: string;
+          symbol: string;
+          importedBy: string[];
+        }> = [];
+
+        for (const [filePath, info] of Object.entries(index.files)) {
+          for (const exp of info.exports) {
+            if (exp.toLowerCase().includes(symbolName)) {
+              matches.push({
+                file: filePath,
+                symbol: exp,
+                importedBy: info.importedBy,
+              });
+            }
+          }
+        }
+
+        if (matches.length === 0) {
+          return {
+            content: [{ type: "text", text: `No exports found matching "${symbolName}"` }],
+          };
+        }
+
+        const lines = [`# Export Search: "${symbolName}"`, "", `Found ${matches.length} matching export(s):`, ""];
+
+        for (const m of matches.slice(0, 15)) {
+          lines.push(`## \`${m.symbol}\` — \`${m.file}\``);
+          if (m.importedBy.length > 0) {
+            lines.push(`Used by ${m.importedBy.length} file(s):`);
+            for (const dep of m.importedBy.slice(0, 10)) {
+              lines.push(`- \`${dep}\``);
+            }
+            if (m.importedBy.length > 10) {
+              lines.push(`- ... and ${m.importedBy.length - 10} more`);
+            }
+          } else {
+            lines.push("Not imported by any files");
+          }
+          lines.push("");
+        }
+
+        if (matches.length > 15) {
+          lines.push(`... and ${matches.length - 15} more matches`);
+        }
+
+        return {
+          content: [{ type: "text", text: lines.join("\n") }],
         };
       }
 
