@@ -93,24 +93,23 @@ interface Scan {
   updatedAt: string;
 }
 
-// Scan results JSON (output of hashmark-cli --json)
+// Scan results JSON (Context IR)
 interface ScanResults {
-  framework: string;
+  framework: Framework;
   language: string;
-  components: ComponentInfo[];
-  apiRoutes: ApiRouteInfo[];
-  models: ModelInfo[];
-  hooks: string[];
-  patterns: PatternInfo[];
-  envVars: EnvVarInfo[];
-  stats: {
-    files: number;
-    lines: number;
-    components: number;
-    apiRoutes: number;
-    models: number;
+  components: Component[];
+  apiRoutes: ApiRoute[];
+  models: DatabaseModel[];
+  hooks: Hook[];
+  envVars: EnvVar[];
+  stats: FileStats;
+  aiReadiness: AiReadinessScore;
+  aiRecommendations: AIRecommendations;
+  relationships: {
+    componentToHooks: Record<string, string[]>;
+    apiToModels: Record<string, string[]>;
   };
-  [key: string]: unknown; // Additional scanner output
+  [key: string]: unknown;
 }
 
 interface ComponentInfo {

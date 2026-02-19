@@ -18,13 +18,21 @@ import type { ScanResult } from "../types.js";
 
 /**
  * The high-level orchestrator for the Single-Pass Scanning Engine.
- * Combines registry, visitor, and results processing.
+ * Combines plugin registration, codebase traversal, and result consolidation.
  */
 export class ScannerEngine {
+  /**
+   * Orchestrates a full codebase scan using a single-pass visitor.
+   * 
+   * @param dir - The root directory to scan.
+   * @param exclude - Array of glob patterns to exclude from the scan.
+   * @param options - Additional scan configuration (e.g., deep scan flags).
+   * @returns A consolidated ScanResult (Context IR).
+   */
   async run(dir: string, exclude: string[] = [], options: any = {}): Promise<ScanResult> {
     const registry = new ScannerRegistry();
     
-    // Register all single-pass plugins
+    // 1. Register all single-pass plugins
     registry.register(new ComponentsScanner());
     registry.register(new HooksScanner());
     registry.register(new ApiRoutesScanner());
@@ -41,13 +49,13 @@ export class ScannerEngine {
     
     const visitor = new CodebaseVisitor(registry);
     
-    // Run foundational scans + single-pass traversal
+    // 2. Perform foundations scans (framework detection) + single-pass traversal
     const base = await visitor.visit(dir, exclude, options);
     
-    // Process results into the main ScanResult format
+    // 3. Consolidate plugin metadata into the unified Context IR
     const results = registry.getResults();
     
-    const scanResult: any = {
+    const scanResult: ScanResult = {
       framework: base.framework,
       utilities: results.utilities,
       tokens: results.tokens,
@@ -62,18 +70,33 @@ export class ScannerEngine {
       testCoverage: results.testCoverage || { testFramework: "none", testFiles: [], testedComponents: [], untestedComponents: [], coverage: 0 },
       git: results.git || null,
       aiRecommendations: results.complexity || null,
-      // Remaining legacy placeholders
+      
+      // Legacy compatibility layers
       commands: { custom: {} },
       variants: [],
-      patterns: { patterns: [], hasReactHookForm: false, hasZod: false, hasZustand: false, hasRedux: false, hasTanstackQuery: false, hasTrpc: false, hasSwr: false, hasRadixSlot: false, hasForwardRef: false, hasVitest: false, hasJest: false, hasPlaywright: false },
+      patterns: { 
+        patterns: [], 
+        hasReactHookForm: false, 
+        hasZod: false, 
+        hasZustand: false, 
+        hasRedux: false, 
+        hasTanstackQuery: false, 
+        hasTrpc: false, 
+        hasSwr: false, 
+        hasRadixSlot: false, 
+        hasForwardRef: false, 
+        hasVitest: false, 
+        hasJest: false, 
+        hasPlaywright: false 
+      },
       barrels: [],
       dependencies: [],
       latentHooks: []
     };
 
-    // Calculate post-traversal metrics
+    // 4. Calculate post-traversal readiness metrics
     scanResult.aiReadiness = calculateAiReadiness(scanResult);
 
-    return scanResult as ScanResult;
+    return scanResult;
   }
 }

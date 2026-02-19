@@ -15,8 +15,8 @@
 │                                                     │
 │  ┌──────────┐  ┌──────────┐  ┌──────────────────┐  │
 │  │ Stripe   │  │ GitHub   │  │    Scanner       │  │
-│  │ Payments │  │   API    │  │   (hashmark   │  │
-│  │          │  │ (Octokit)│  │    subprocess)   │  │
+│  │ Payments │  │   API    │  │   (Single-Pass   │  │
+│  │          │  │ (Octokit)│  │    Plugin Engine)│  │
 │  └──────────┘  └──────────┘  └──────────────────┘  │
 │                                                     │
 │  ┌──────────┐  ┌──────────┐  ┌──────────────────┐  │
@@ -45,8 +45,8 @@
 │  ┌──────────────────────────────────┐               │
 │  │     Hashmark GitHub Action      │               │
 │  │                                  │               │
-│  │  1. npx hashmark-cli │               │
-│  │  2. Generate all 7 formats       │               │
+│  │  1. npx hashmark-cli             │               │
+│  │  2. Single-Pass Engine Run       │               │
 │  │  3. Auto-commit if changed       │               │
 │  └──────────────────────────────────┘               │
 │                                                     │
@@ -66,140 +66,58 @@
 ```
 hashmark/
 ├── docs/                      # Product documentation
-│   ├── ARCHITECTURE.md        # This file
-│   ├── PRODUCT.md             # Product spec
-│   └── ROADMAP.md             # Build roadmap
+├── packages/
+│   ├── action/                # GitHub Action entry point
+│   └── cli/                   # Scanner Engine (Monorepo package)
+│       ├── src/
+│       │   ├── engine/        # Single-Pass "Visitor" orchestrator
+│       │   ├── scanners/      # Modular analysis plugins
+│       │   ├── formats/       # Documentation generators
+│       │   └── types.ts       # Unified Context IR types
 ├── prisma/
 │   └── schema.prisma          # Database schema
-├── public/                    # Static assets
 ├── src/
 │   ├── app/
-│   │   ├── (marketing)/       # Public pages (landing, pricing)
-│   │   │   ├── layout.tsx
-│   │   │   └── pricing/
-│   │   │       └── page.tsx
+│   │   ├── (marketing)/       # Public pages
 │   │   ├── (dashboard)/       # Auth-required pages
-│   │   │   ├── layout.tsx
-│   │   │   ├── dashboard/
-│   │   │   │   ├── page.tsx           # Repo overview
-│   │   │   │   └── [repoId]/
-│   │   │   │       ├── page.tsx       # Repo intelligence
-│   │   │   │       └── files/
-│   │   │   │           └── page.tsx   # Generated files
-│   │   │   └── settings/
-│   │   │       └── page.tsx
-│   │   ├── api/
-│   │   │   ├── auth/[...nextauth]/    # NextAuth handler
-│   │   │   │   └── route.ts
-│   │   │   ├── scan/
-│   │   │   │   └── route.ts           # Trigger scan
-│   │   │   └── webhooks/
-│   │   │       ├── stripe/
-│   │   │       │   └── route.ts       # Stripe webhooks
-│   │   │       └── github/
-│   │   │           └── route.ts       # GitHub webhooks
-│   │   ├── layout.tsx                 # Root layout
-│   │   ├── page.tsx                   # Landing page
-│   │   └── globals.css
+│   │   └── api/
+│   │       ├── scan/
+│   │       │   └── [repoId]/
+│   │       │       └── stream/ # SSE Progress endpoint
+│   │       └── webhooks/
 │   ├── components/
-│   │   ├── landing/                   # Landing page components
-│   │   │   ├── hero.tsx
-│   │   │   ├── how-it-works.tsx
-│   │   │   ├── pricing-table.tsx
-│   │   │   └── footer.tsx
-│   │   ├── dashboard/                 # Dashboard components
-│   │   │   ├── repo-card.tsx
-│   │   │   ├── scan-results.tsx
-│   │   │   ├── kpi-card.tsx
-│   │   │   └── file-preview.tsx
-│   │   └── shared/                    # Shared UI
-│   │       ├── button.tsx
-│   │       ├── card.tsx
-│   │       ├── nav.tsx
-│   │       └── badge.tsx
-│   └── lib/
-│       ├── auth.ts                    # NextAuth config
-│       ├── db.ts                      # Prisma client singleton
-│       ├── stripe.ts                  # Stripe client + helpers
-│       ├── github.ts                  # Octokit + GitHub API helpers
-│       └── scanner.ts                 # hashmark wrapper
+│   │   ├── dashboard/         # Intelligence UI components
+│   │   └── shared/            # Common UI primitives
+│   └── hooks/
+│       └── use-scan-stream.ts # SSE consumer hook
 └── .env.example
 ```
 
 ## Data Flow
 
-### 1. User Signs Up
-```
-User clicks "Sign in with GitHub"
-    → NextAuth redirects to GitHub OAuth
-    → GitHub returns access_token + user profile
-    → NextAuth creates User + Account in Postgres
-    → User redirected to /dashboard
-```
+### 1. Single-Pass Scanner Engine
+Instead of independent parallel scripts, Hashmark uses a **Single-Pass Visitor Engine**:
+1. **Traverse**: The `CodebaseVisitor` performs a single sequential pass over the file system.
+2. **Dispatch**: For every file, matching content is dispatched to registered `ScannerPlugins` (Components, API, Hooks, etc.).
+3. **Analyze**: Plugins perform AST analysis (via `@typescript-eslint/typescript-estree`) and extract metadata.
+4. **Consolidate**: All metadata is merged into a unified **Context IR** (Intermediate Representation).
+5. **Generate**: Documentation formats are generated from the IR without additional file system access.
 
-### 2. User Connects a Repo
-```
-Dashboard loads user's GitHub repos via Octokit
-    → User clicks "Connect" on a repo
-    → Server Action creates Repository record in Postgres
-    → Optional: Triggers initial scan
-```
+### 2. Real-time Progress (SSE)
+Dashboard provides a "Live Terminal" experience:
+1. **Trigger**: User starts a scan.
+2. **Stream**: The client opens an `EventSource` connection to `/api/scan/[repoId]/stream`.
+3. **Update**: As the background worker progresses (Cloning → Scanning → Generating), it updates the DB status.
+4. **Push**: The SSE route pushes status changes immediately to the UI.
 
-### 3. Manual Scan (Free Tier)
-```
-User clicks "Scan" on connected repo
-    → POST /api/scan { repoId }
-    → Server creates Scan record (status: PENDING)
-    → Background: Clone repo (shallow) to temp dir
-    → Run: npx hashmark-cli <path> --json
-    → Parse JSON output into scan results
-    → Store results in Scan record (status: COMPLETED)
-    → Generate all 7 file formats
-    → Store GeneratedFile records
-    → User sees results in dashboard
-```
-
-### 4. Auto-Sync (Pro Tier)
-```
-User clicks "Install Action"
-    → Hashmark generates .github/workflows/hashmark.yml
-    → Creates file in user's repo via GitHub Contents API
-    → Sets actionInstalled: true on Repository record
-
-On every push to main:
-    → GitHub Action runs in repo CI
-    → Runs hashmark scanners
-    → Generates all 7 formats
-    → Auto-commits changed files
-    → (Optional) Webhook notifies Hashmark to update dashboard
-```
-
-### 5. Payment Flow
-```
-User clicks "Upgrade to Pro"
-    → Redirect to Stripe Checkout (with price_id)
-    → User completes payment
-    → Stripe webhook: checkout.session.completed
-    → Update User.plan to PRO
-    → Update User.stripeCustomerId
-    → Pro features unlocked
-```
-
-## Database Schema
-
-See `prisma/schema.prisma` for full schema. Key models:
-
-- **User** — GitHub auth, plan tier, Stripe customer
-- **Repository** — Connected GitHub repos
-- **Scan** — Scan results (JSON), stats, status
-- **GeneratedFile** — Each output format content
-- **CustomRule** — User-defined context rules
+### 3. Intelligence & Grading
+1. **Readiness Score**: A 0-100 grade based on codebase compatibility with AI tools.
+2. **Complexity Analysis**: AST-based cognitive complexity mapping to recommend AI model effort.
+3. **Semantic Mapping**: Cross-plugin relationship tracking (e.g., matching API routes to Database models).
 
 ## Security Considerations
 
-- GitHub OAuth tokens stored encrypted in Account table (NextAuth handles this)
-- Stripe webhook signature verification
-- Rate limiting on scan API (prevent abuse)
-- Repo access validated against user's GitHub permissions
-- No source code stored — only scan metadata and generated context files
-- Temp clone directories cleaned up after scan
+- **Memory Safety**: Sequential file processing and a 256KB-per-file size limit prevent Node.js heap OOM errors on large codebases.
+- **Credential Protection**: GitHub OAuth tokens stored encrypted; repo access validated against GitHub permissions.
+- **Privacy**: No source code is stored on Hashmark servers — only the extracted metadata IR and generated context files.
+- **Temp Cleanup**: Temporary clone directories are aggressively purged after scan completion.

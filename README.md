@@ -32,11 +32,12 @@ Maintaining 7 files with the same content is painful. They drift out of sync. Th
 
 ## How It Works
 
-1. **Connect** — Sign in with GitHub, select your repos
-2. **Scan** — 28 scanners analyze your codebase (components, APIs, patterns, database, complexity, tokens, hooks, tests, and more)
-3. **Sync** — Every format auto-generated and auto-committed via GitHub Action on every push
+1. **Connect** — Sign in with GitHub, select your repos.
+2. **Scan** — The **Single-Pass Visitor Engine** analyzes your codebase in < 2 seconds (components, APIs, database, complexity, AI readiness).
+3. **Live Stream** — Watch the scan progress in real-time via **SSE (Server-Sent Events)** with a live terminal UI.
+4. **Sync** — Every format (AGENTS.md, CLAUDE.md, .cursorrules, etc.) is auto-generated and auto-committed via GitHub Action.
 
-No PRs to review. No manual updates. Every AI tool gets fresh context automatically.
+No PRs to review. No manual updates. Every AI tool gets fresh, high-fidelity context automatically.
 
 ## Try the CLI Free
 
