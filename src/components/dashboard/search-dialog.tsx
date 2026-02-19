@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, X, Code, Route, Database, FileText, Zap, Terminal, Palette, Settings, BarChart3 } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
 import type { SearchResult } from "@/hooks/use-search";
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Button, Input } from "@fabrk/components";
 
 const SECTION_ICONS: Record<string, React.ElementType> = {
   components: Code,
@@ -201,7 +200,7 @@ export function SearchDialog({
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
             placeholder="SEARCH CODEBASES..."
             className="flex-1 bg-transparent font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             aria-label="Search query"

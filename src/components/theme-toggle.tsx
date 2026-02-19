@@ -3,7 +3,7 @@
 import { useTheme } from "next-themes";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { useSyncExternalStore } from "react";
-import { Button } from '@/components/ui/button'
+import { Button } from "@fabrk/components";
 
 const subscribe = () => () => {};
 const getSnapshot = () => true;

@@ -2,8 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { updateRepoScanRoot } from "@/app/(dashboard)/dashboard/[repoId]/actions";
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+import { Input, Button } from "@fabrk/components";
 
 export function RepoSettingsPage({
   repoId,
@@ -75,7 +74,7 @@ export function RepoSettingsPage({
                   name="scanRoot"
                   type="text"
                   value={value}
-                  onChange={(e) => setValue(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
                   placeholder="e.g., web, apps/frontend, packages/api"
                   className="flex-1 border border-border bg-background px-[var(--grid-3)] py-[var(--grid-2)] type-body text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
                   aria-describedby="scanRoot-help"

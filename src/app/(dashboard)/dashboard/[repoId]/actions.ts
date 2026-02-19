@@ -57,7 +57,7 @@ export async function triggerRepoScan(formData: FormData) {
   if (!repoId) throw new Error("Missing repoId");
 
   // Rate limit scan triggers
-  const rateCheck = checkRateLimit(session.user.id, "scan-trigger", { max: 10, windowSeconds: 600 });
+  const rateCheck = await checkRateLimit(session.user.id, "scan-trigger", { max: 10, windowSeconds: 600 });
   if (!rateCheck.allowed) throw new Error("Too many scan requests. Please wait before trying again.");
 
   const repo = await db.repository.findUnique({
