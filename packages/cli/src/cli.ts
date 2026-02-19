@@ -45,6 +45,7 @@ import { scanSecurity, formatSecurityAudit } from "./scanners/security.js";
 import { detectMonorepo, formatMonorepoOverview } from "./scanners/monorepo.js";
 import { scanGraphQL } from "./scanners/graphql.js";
 import { scanLatentHooks } from "./scanners/latent-hooks.js";
+import { calculateAiReadiness } from "./scanners/ai-readiness.js";
 import { generateAgentsMd } from "./generator.js";
 import { generateAgentsIndex } from "./json-generator.js";
 import { generateAllFormats, generateFormat, FORMAT_REGISTRY, type FormatId } from "./formats/index.js";
@@ -316,7 +317,10 @@ cli
       }
 
       // Build scan result object
-      const scanResult = { components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, typeExports, antiPatterns, testCoverage, securityAudit: securityAudit || undefined, aiRecommendations, graphqlSchemas, latentHooks };
+      const scanResult: ScanResult = { components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, typeExports, antiPatterns, testCoverage, securityAudit: securityAudit || undefined, aiRecommendations, graphqlSchemas, latentHooks };
+
+      // Calculate AI readiness score
+      scanResult.aiReadiness = calculateAiReadiness(scanResult);
 
       // Check for existing non-generated AGENTS.md
       if (existingContext.hasAgentsMd && !options.force) {

@@ -86,6 +86,12 @@ export interface AgentsIndex {
     description?: string;
     pattern?: string;
   }>;
+  /** AI readiness score */
+  aiReadiness?: {
+    total: number;
+    breakdown: Record<string, number>;
+    recommendations: string[];
+  };
   /** AST-based complexity analysis */
   complexity?: {
     topFunctions: Array<{
@@ -114,7 +120,7 @@ export interface AgentsIndex {
  * @returns JSON string of the index
  */
 export function generateAgentsIndex(result: ScanResult, markdownContent: string): string {
-  const { components, framework, hooks, apiRoutes, database, stats, barrels, existingContext, aiRecommendations, latentHooks } = result;
+  const { components, framework, hooks, apiRoutes, database, stats, barrels, existingContext, aiRecommendations, latentHooks, aiReadiness } = result;
 
   const index: AgentsIndex = {
     version: "1.0",
@@ -167,6 +173,9 @@ export function generateAgentsIndex(result: ScanResult, markdownContent: string)
         ...(h.description && { description: h.description }),
         ...(h.pattern && { pattern: h.pattern }),
       })),
+    }),
+    ...(aiReadiness && {
+      aiReadiness,
     }),
     ...(existingContext.allRules.length > 0 && {
       existingRules: buildExistingRulesSources(existingContext),

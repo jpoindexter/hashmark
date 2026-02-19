@@ -522,6 +522,7 @@ export interface SecurityAudit {
 export type { AreaComplexity, FileComplexity, ComplexityLevel, AIRecommendations } from "./scanners/complexity.js";
 export type { FunctionComplexity, HalsteadMetrics, FileASTComplexity } from "./scanners/ast-complexity.js";
 import type { AIRecommendations } from "./scanners/complexity.js";
+import type { AiReadinessScore } from "./scanners/ai-readiness.js";
 
 // ============================================================================
 // Main Result Type
@@ -561,6 +562,8 @@ export interface ScanResult {
   dependencies: ComponentDependency[];
   /** AI automation hooks */
   latentHooks: LatentHook[];
+  /** AI readiness score */
+  aiReadiness?: AiReadinessScore;
   /** File tree (optional) */
   fileTree?: FileTree;
   /** Import graph (optional) */
