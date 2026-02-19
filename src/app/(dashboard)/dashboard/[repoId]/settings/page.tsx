@@ -17,10 +17,17 @@ export default async function SettingsRoute({
 
   const { repoId } = await params;
 
-  const repo = await db.repository.findUnique({
-    where: { id: repoId, userId: session.user.id },
-    select: { id: true, name: true, fullName: true, scanRoot: true },
-  });
+  const [repo, user] = await Promise.all([
+    db.repository.findUnique({
+      where: { id: repoId, userId: session.user.id },
+      select: { id: true, name: true, fullName: true, scanRoot: true },
+    }),
+    db.user.findUnique({
+      where: { id: session.user.id },
+      select: { plan: true },
+    }),
+  ]);
+
   if (!repo) redirect("/dashboard/repos");
 
   return (
@@ -28,6 +35,7 @@ export default async function SettingsRoute({
       repoId={repoId}
       repoName={repo.fullName}
       scanRoot={repo.scanRoot}
+      plan={user?.plan ?? "FREE"}
     />
   );
 }

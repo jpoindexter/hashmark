@@ -106,6 +106,7 @@ export async function triggerScan(formData: FormData) {
 
   const repo = await db.repository.findUnique({
     where: { id: repoId, userId: session.user.id },
+    include: { user: { select: { plan: true } } },
   });
   if (!repo) throw new Error("Repository not found");
 
@@ -124,7 +125,7 @@ export async function triggerScan(formData: FormData) {
 
   // Fire-and-forget: kick off background scan
   const token = await getGitHubToken(session.user.id);
-  runScan(scan.id, repo.fullName, token, repo.scanRoot).catch(console.error);
+  runScan(scan.id, repo.fullName, token, repo.scanRoot, repo.user.plan).catch(console.error);
 
   revalidatePath("/dashboard/repos");
   revalidatePath(`/dashboard/${repoId}`);

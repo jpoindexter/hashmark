@@ -3,15 +3,18 @@
 import { useState, useTransition } from "react";
 import { updateRepoScanRoot } from "@/app/(dashboard)/dashboard/[repoId]/actions";
 import { Input, Button } from "@fabrk/components";
+import { UpgradeGate } from "@/components/shared/upgrade-gate";
 
 export function RepoSettingsPage({
   repoId,
   repoName,
   scanRoot,
+  plan,
 }: {
   repoId: string;
   repoName: string;
   scanRoot: string | null;
+  plan: string;
 }) {
   const [value, setValue] = useState(scanRoot ?? "");
   const [saved, setSaved] = useState(false);
@@ -54,65 +57,73 @@ export function RepoSettingsPage({
         <h2 className="mono-section-title text-muted-foreground">
           SCAN CONFIGURATION
         </h2>
-        <div className="mono-box bg-card">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label
-                htmlFor="scanRoot"
-                className="type-caption font-bold uppercase text-muted-foreground"
-              >
-                SCAN ROOT
-              </label>
-              <p className="type-caption text-muted-foreground mt-[var(--grid-1)]">
-                Subdirectory to scan within{" "}
-                <span className="text-foreground font-bold">{repoName}</span>.
-                Leave empty to auto-detect.
-              </p>
-              <div className="mt-[var(--grid-2)] flex items-center gap-[var(--grid-3)]">
-                <Input
-                  id="scanRoot"
-                  name="scanRoot"
-                  type="text"
-                  value={value}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
-                  placeholder="e.g., web, apps/frontend, packages/api"
-                  className="flex-1 border border-border bg-background px-[var(--grid-3)] py-[var(--grid-2)] type-body text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
-                  aria-describedby="scanRoot-help"
-                />
-                <Button
-                  type="submit"
-                  disabled={isPending}
-                  className="border border-border bg-background px-[var(--grid-4)] py-[var(--grid-2)] type-nav text-foreground transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
+        {plan === "FREE" ? (
+          <UpgradeGate
+            feature="MONOREPO SCAN ROOT"
+            description="Custom scan roots allow you to target specific subdirectories in monorepos. Upgrade to Pro to unlock this and analyze individual packages with precision."
+            requiredPlan="PRO"
+          />
+        ) : (
+          <div className="mono-box bg-card">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="scanRoot"
+                  className="type-caption font-bold uppercase text-muted-foreground"
                 >
-                  {isPending ? "SAVING..." : "> SAVE"}
-                </Button>
+                  SCAN ROOT
+                </label>
+                <p className="type-caption text-muted-foreground mt-[var(--grid-1)]">
+                  Subdirectory to scan within{" "}
+                  <span className="text-foreground font-bold">{repoName}</span>.
+                  Leave empty to auto-detect.
+                </p>
+                <div className="mt-[var(--grid-2)] flex items-center gap-[var(--grid-3)]">
+                  <Input
+                    id="scanRoot"
+                    name="scanRoot"
+                    type="text"
+                    value={value}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
+                    placeholder="e.g., web, apps/frontend, packages/api"
+                    className="flex-1 border border-border bg-background px-[var(--grid-3)] py-[var(--grid-2)] type-body text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
+                    aria-describedby="scanRoot-help"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={isPending}
+                    className="border border-border bg-background px-[var(--grid-4)] py-[var(--grid-2)] type-nav text-foreground transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
+                  >
+                    {isPending ? "SAVING..." : "> SAVE"}
+                  </Button>
+                </div>
+                <p id="scanRoot-help" className="mt-[var(--grid-1)] type-caption text-muted-foreground">
+                  {value.trim() === "" ? (
+                    <span className="text-accent">AUTO-DETECT</span>
+                  ) : (
+                    <>
+                      Scanner will target:{" "}
+                      <span className="text-foreground font-bold">
+                        {repoName}/{value.trim()}
+                      </span>
+                    </>
+                  )}
+                </p>
               </div>
-              <p id="scanRoot-help" className="mt-[var(--grid-1)] type-caption text-muted-foreground">
-                {value.trim() === "" ? (
-                  <span className="text-accent">AUTO-DETECT</span>
-                ) : (
-                  <>
-                    Scanner will target:{" "}
-                    <span className="text-foreground font-bold">
-                      {repoName}/{value.trim()}
-                    </span>
-                  </>
-                )}
-              </p>
-            </div>
 
-            {error && (
-              <p className="type-caption text-destructive" role="alert">
-                {error}
-              </p>
-            )}
-            {saved && (
-              <p className="type-caption text-accent" role="status">
-                Scan root updated. Next scan will use the new path.
-              </p>
-            )}
-          </form>
-        </div>
+              {error && (
+                <p className="type-caption text-destructive" role="alert">
+                  {error}
+                </p>
+              )}
+              {saved && (
+                <p className="type-caption text-accent" role="status">
+                  Scan root updated. Next scan will use the new path.
+                </p>
+              )}
+            </form>
+          </div>
+        )}
       </section>
 
       <section>

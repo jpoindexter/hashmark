@@ -66,75 +66,78 @@ Hashmark is the cloud product for hashmark-cli (formerly agent-smith). The CLI i
 
 ---
 
-## Phase 2: Codebase Intelligence Dashboard (~1 week)
+## Phase 2: Codebase Intelligence Dashboard [DONE]
 
 Build with FABRK framework packages. Dual-purpose: show developers what the AI sees + manage context file generation. Reference model: SonarSource's dashboard for code quality, adapted for AI context.
 
 **Design system**: FABRK integration complete — globals.css has all 25+ CSS variables, mode object works seamlessly. Terminal aesthetic: zinc grays, emerald accent, amber warnings, sharp corners, monospace.
 
-### 2.1 Dashboard Shell
-- [ ] Install FABRK packages (design-system, components, auth, payments, security, core)
-- [ ] Dashboard layout (sidebar, header, breadcrumbs)
-- [ ] Protected routes (require auth)
-- [ ] Navigation between pages
+### 2.1 Dashboard Shell [DONE]
+- [x] Install FABRK packages (design-system, components, auth, payments, security, core)
+- [x] Dashboard layout (sidebar, header, breadcrumbs)
+- [x] Protected routes (require auth)
+- [x] Navigation between pages
 
-### 2.2 Repo Management
-- [ ] `/dashboard/repos` — List user's GitHub repos (Octokit)
-- [ ] Connect/disconnect repos
-- [ ] Repo status indicators (connected, last scan)
-- [ ] One-click scan trigger
+### 2.2 Repo Management [DONE]
+- [x] `/dashboard/repos` — List user's GitHub repos (Octokit)
+- [x] Connect/disconnect repos
+- [x] Repo status indicators (connected, last scan)
+- [x] One-click scan trigger
 
-### 2.3 Codebase Intelligence (Scan Visualization)
-- [ ] `/dashboard/[repoId]` — "See what your AI sees" — scan results visualization
-- [ ] KPI cards (total files, components found, API routes, complexity score)
-- [ ] Component inventory table (name, variants, dependencies, file path)
-- [ ] API routes table (path, method, auth status, request/response schema)
-- [ ] Complexity heatmap by directory (BarChart)
-- [ ] Dependency graph (which files import what)
-- [ ] Scanner coverage summary (which of 27 scanners found results)
+### 2.3 Codebase Intelligence (Scan Visualization) [DONE]
+- [x] `/dashboard/[repoId]` — "See what your AI sees" — scan results visualization
+- [x] KPI cards (total files, components found, API routes, complexity score)
+- [x] Component inventory table (name, variants, dependencies, file path)
+- [x] API routes table (path, method, auth status, request/response schema)
+- [x] Complexity heatmap by directory (BarChart)
+- [x] Dependency graph (which files import what)
+- [x] Scanner coverage summary (which of 27 scanners found results)
 
-### 2.4 Format Preview + Download
-- [ ] `/dashboard/[repoId]/files` — Preview all 8 formats
-- [ ] Syntax-highlighted preview
-- [ ] Download individual format
-- [ ] Download all as ZIP
-- [ ] Copy to clipboard
+### 2.4 Format Preview + Download [DONE]
+- [x] `/dashboard/[repoId]/files` — Preview all 8 formats
+- [x] Syntax-highlighted preview
+- [x] Download individual format
+- [x] Download all as ZIP
+- [x] Copy to clipboard
 
-### 2.5 API Routes
-- [ ] `POST /api/scan/[repoId]` — Trigger scan
-- [ ] `GET /api/scan/[repoId]/latest` — Latest results
-- [ ] `GET /api/repos` — List repos
-- [ ] `POST /api/repos/connect` — Connect repo
-- [ ] `GET /api/files/[repoId]/[format]` — Get format content
-- [ ] `POST /api/action/install` — Install GitHub Action
-
----
-
-## Phase 3: Payments (~3 days)
-
-### 3.1 Stripe Integration
-- [ ] Create Stripe products (Pro, Team)
-- [ ] `/pricing` page with checkout CTAs
-- [ ] Checkout session creation
-- [ ] Webhook handler (invoice.paid, subscription events)
-- [ ] `/dashboard/billing` — Plan management, portal link
-
-### 3.2 Feature Gating
-- [ ] Free: 1 repo, manual scan, download only
-- [ ] Pro: unlimited repos, auto-sync, custom rules, scan history
-- [ ] Team: org-wide rules, team dashboard
-- [ ] Middleware plan check on protected features
+### 2.5 API Routes [DONE]
+- [x] `POST /api/scan/[repoId]` — Trigger scan
+- [x] `GET /api/scan/[repoId]/latest` — Latest results
+- [x] `GET /api/repos` — List repos
+- [x] `POST /api/repos/connect` — Connect repo
+- [x] `GET /api/files/[repoId]/[format]` — Get format content
+- [x] `POST /api/action/install` — Install GitHub Action
 
 ---
 
-## Phase 4: Polish + Launch (~3 days)
+## Phase 3: Payments [PARTIAL]
 
-### 4.1 UX
-- [ ] Loading states (skeleton screens)
-- [ ] Empty states (no repos, no scans)
-- [ ] Error handling (scan failures, API errors)
+### 3.1 Stripe Integration [PARTIAL]
+- [x] Create Stripe products (Pro, Team)
+- [x] `/pricing` page with checkout CTAs
+- [x] Checkout session creation
+- [x] Webhook handler (invoice.paid, subscription events)
+- [x] `/dashboard/billing` — Plan management, portal link
+
+### 3.2 Feature Gating [DONE]
+- [x] Free: 1 repo, manual scan, download only
+- [x] Pro: unlimited repos, auto-sync, custom rules, scan history
+- [x] Team: org-wide rules, team dashboard
+- [x] Middleware plan check on protected features
+- [x] Monorepo scan root gating
+- [x] Premium scanner (security) gating in background worker
+
+---
+
+## Phase 4: Polish + Launch [PARTIAL]
+
+### 4.1 UX [PARTIAL]
+- [x] Loading states (skeleton screens)
+- [x] Empty states (no repos, no scans)
+- [x] Error handling (scan failures, API errors)
+- [x] Global error and not-found pages for dashboard
 - [ ] Toast notifications
-- [ ] Mobile responsive
+- [x] Mobile responsive base
 
 ### 4.2 Deploy
 - [ ] Deploy to Vercel
