@@ -12,7 +12,7 @@
  * @module generator
  */
 
-import type { ScanResult, Component, Framework, Tokens, Hook, Utilities, Commands, ExistingContext, ComponentVariant, ApiRoute, ApiSchema, EnvVar, DetectedPatterns, DatabaseSchema, FileStats, BarrelExport, ComponentDependency, FileTree, ImportGraph, TypeScanResult, AntiPatternsResult } from "./types.js";
+import type { ScanResult, Component, Framework, Tokens, Hook, Utilities, Commands, ExistingContext, ComponentVariant, ApiRoute, ApiSchema, EnvVar, DetectedPatterns, DatabaseSchema, FileStats, BarrelExport, ComponentDependency, FileTree, ImportGraph, TypeScanResult, AntiPatternsResult, AIRecommendations, FileComplexity, FunctionComplexity } from "./types.js";
 import { extractRulesFromContent } from "./scanners/existing-context.js";
 import { formatFileTree } from "./scanners/file-tree.js";
 import { formatImportGraph } from "./scanners/imports.js";
@@ -826,10 +826,10 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
 
     // Function hotspots table — top 10 functions by cognitive complexity
     const allFunctions = aiRecommendations.complexFiles
-      .flatMap((f) =>
-        (f.functions ?? []).map((fn) => ({ ...fn, file: f.path }))
+      .flatMap((f: FileComplexity) =>
+        (f.functions ?? []).map((fn: FunctionComplexity) => ({ ...fn, file: f.path }))
       )
-      .sort((a, b) => b.cognitive - a.cognitive)
+      .sort((a: any, b: any) => b.cognitive - a.cognitive)
       .slice(0, 10);
 
     if (allFunctions.length > 0 && !compact && !compress) {

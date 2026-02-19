@@ -5,7 +5,7 @@ import { StatsGrid, EmptyState, Button, Input, Badge } from "@fabrk/components";
 import { Search, AlertTriangle, Layers, ShieldCheck } from "lucide-react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { triggerRepoScan } from "@/app/(dashboard)/dashboard/[repoId]/actions";
-import { useScanPolling, type ScanProgress } from "@/hooks/use-scan-polling";
+import { useScanStream, type ScanProgress } from "@/hooks/use-scan-stream";
 import {
   ScanResultsTables,
   type ScanResults,
@@ -202,7 +202,7 @@ export function IntelligencePage({
 }) {
   const results = (scan?.results as ScanResults) ?? null;
   const isScanning = scan?.status === "SCANNING" || scan?.status === "PENDING";
-  const progress = useScanPolling(repo.id, scan?.status);
+  const progress = useScanStream(repo.id, scan?.status);
 
   return (
     <div className="mono-stack-lg">

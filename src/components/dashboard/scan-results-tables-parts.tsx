@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@fabrk/components";
 import { Zap, Terminal, Sparkles } from "lucide-react";
 
 export interface ScanResults {

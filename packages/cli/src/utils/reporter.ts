@@ -70,15 +70,15 @@ export function reportFindings(result: ScanResult) {
     console.log(pc.green(`  ✓ Found ${barrels.length} barrel exports`));
   }
   
-  if (importGraph.hubFiles.length > 0) {
+  if (importGraph?.hubFiles && importGraph.hubFiles.length > 0) {
     console.log(pc.green(`  ✓ Found ${importGraph.hubFiles.length} hub files (most imported)`));
   }
   
-  if (importGraph.circularDeps.length > 0) {
+  if (importGraph?.circularDeps && importGraph.circularDeps.length > 0) {
     console.log(pc.yellow(`  ⚠ Found ${importGraph.circularDeps.length} circular dependencies`));
   }
   
-  if (importGraph.unusedFiles.length > 0) {
+  if (importGraph?.unusedFiles && importGraph.unusedFiles.length > 0) {
     console.log(pc.yellow(`  ⚠ Found ${importGraph.unusedFiles.length} potentially unused components`));
   }
   

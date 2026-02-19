@@ -223,8 +223,8 @@ function buildExistingRulesSources(ctx: ExistingContext): Array<{ source: string
 /** Build complexity data for the JSON index from AI recommendations */
 function buildComplexityData(ai: AIRecommendations): AgentsIndex["complexity"] {
   const allFunctions = ai.complexFiles
-    .flatMap((f) =>
-      (f.functions ?? []).map((fn) => ({
+    .flatMap((f: any) =>
+      (f.functions ?? []).map((fn: any) => ({
         name: fn.name,
         file: f.path,
         line: fn.startLine,
@@ -238,10 +238,10 @@ function buildComplexityData(ai: AIRecommendations): AgentsIndex["complexity"] {
         maintainabilityIndex: fn.maintainabilityIndex,
       }))
     )
-    .sort((a, b) => b.cognitive - a.cognitive)
+    .sort((a: any, b: any) => b.cognitive - a.cognitive)
     .slice(0, 20);
 
-  const fileScores = ai.complexFiles.map((f) => ({
+  const fileScores = ai.complexFiles.map((f: any) => ({
     path: f.path,
     score: f.score,
     level: f.level,

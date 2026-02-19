@@ -9,7 +9,7 @@ import {
   installGitHubAction,
   uninstallGitHubAction,
 } from "@/app/(dashboard)/dashboard/repos/actions-github";
-import { useScanPolling } from "@/hooks/use-scan-polling";
+import { useScanStream } from "@/hooks/use-scan-stream";
 import { Zap } from "lucide-react";
 
 type RepoWithLatestScan = Repository & {
@@ -28,7 +28,7 @@ export function RepoCard({
     latestScan?.status === "SCANNING" || latestScan?.status === "PENDING";
   const canAutoSync = plan !== "FREE";
 
-  const progress = useScanPolling(repo.id, latestScan?.status);
+  const progress = useScanStream(repo.id, latestScan?.status);
 
   return (
     <div className="mono-box bg-card">

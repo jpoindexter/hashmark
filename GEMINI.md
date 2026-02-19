@@ -5,23 +5,17 @@
 ## Project
 
 **Stack**: Next.js 16.1.6, App Router, TypeScript, Tailwind CSS, prisma
-**Size**: 144 files, 17,867 lines
-**Components**: 33
+**Size**: 212 files, 31,337 lines
+**Components**: 36
 
 ## Commands
 
 ```bash
-npm run dev          # Start dev server
-npm run build        # Production build
-npm test             # Run tests
-npm run lint         # Lint code
-npm run typecheck    # Type check
-npm run hashmark     # Run hashmark CLI
 ```
 
 ## Coding Rules
 
-- Use existing 33 components. Don't create duplicates.
+- Use existing 36 components. Don't create duplicates.
 - Use semantic design tokens: `bg-primary`, `text-foreground`, `border-border`.
 - Never hardcode color values.
 - Default to Server Components. Add `'use client'` only for interactivity.
@@ -33,14 +27,15 @@ npm run hashmark     # Run hashmark CLI
 ### Components
 
 - **app**: OGImage, TwitterImage
-- **dashboard**: UpgradeButton, ComplexityPage, ConnectRepoDialog, DashboardBreadcrumbs, PlanUsageSection, DashboardShellWrapper, FilesPage, IntelligencePage, RepoCard, RepoSettingsPage, RepoSubNav, ReposPage, RuleCard, RuleDialog, ScanHistoryPage, ScanResultsTables, SearchDialog, SettingsPage, TrialBanner
+- **dashboard**: UpgradeButton, ComplexityPage, ConnectRepoDialog, DashboardBreadcrumbs, PlanUsageSection, DashboardShellWrapper, FilesPage, IntelligencePage, RepoCard, RepoSettingsPage, RepoSubNav, ReposPage, RuleCard, RuleDialog, ScanHistoryPage, LatentHooksSection, ScanResultsTables, SearchDialog, SettingsPage, TrialBanner, UpgradeSuccessToast
 - **landing**: CliSection, Footer, Formats, Hero, HowItWorks, PricingTable
 - **shared**: LoginCard, OAuthButtons, StatusBadge, UpgradeGate
-- **components**: ThemeProvider, ThemeToggle
+- **components**: ThemeProvider, ThemeToggle, Toaster
 
 ### Hooks
 
 - `useScanPolling` — `@/hooks/use-scan-polling` (client only)
+- `useScanStream` — `@/hooks/use-scan-stream` (client only)
 - `useSearch` — `@/hooks/use-search` (client only)
 
 ### API Routes
@@ -52,6 +47,7 @@ npm run hashmark     # Run hashmark CLI
 - `POST` `/api/scan/:repoId` (auth)
 - `GET` `/api/scan/:repoId/download` (auth)
 - `GET` `/api/scan/:repoId/latest` (auth)
+- `GET` `/api/scan/:repoId/stream` (auth)
 - `GET` `/api/search` (auth)
 - `POST` `/api/webhooks/github`
 
@@ -76,10 +72,6 @@ prisma with 9 models:
   Relations: scope, user
 - **SearchChunk**: id, repositoryId, scanId, sectionHeading, sectionType
   Relations: searchVector, repository, scan
-
-### Patterns
-
-- Testing: Vitest
 
 ### AI Automation Hooks
 

@@ -494,9 +494,10 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 
           const antiPatterns = generateAntiPatterns(framework, utilities, tokens, components, utilities.hasMode);
           const testCoverage = await scanTestCoverage(dir, components);
+          const latentHooks: any[] = []; // MCP doesn't use hooks yet
 
           content = generateAgentsMd(
-            { components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, typeExports, antiPatterns, testCoverage, graphqlSchemas },
+            { components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, typeExports, antiPatterns, testCoverage, graphqlSchemas, latentHooks },
             { minimal: false, compact: false }
           );
 
@@ -657,7 +658,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const testCoverage = await scanTestCoverage(dir, components);
 
         const content = generateAgentsMd(
-          { components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, typeExports, antiPatterns, testCoverage },
+          { components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, typeExports, antiPatterns, testCoverage, latentHooks: [] },
           { minimal, compact }
         );
 
@@ -885,12 +886,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           setCache("complexity", dir, analysis);
         }
 
-        const areas = analysis.areas.slice(0, 5).map(a => {
+        const areas = analysis.areas.slice(0, 5).map((a: any) => {
           const icon = a.level === "high" ? "🔴" : a.level === "medium" ? "🟡" : "🟢";
           return `${icon} **${a.name}**: ${a.avgScore}/100 (${a.fileCount} files)`;
         });
 
-        const files = analysis.complexFiles.slice(0, 3).map(f => {
+        const files = analysis.complexFiles.slice(0, 3).map((f: any) => {
           return `- \`${f.path}\` (${f.score}/100) — ${f.reasons.slice(0, 2).join(", ")}`;
         });
 
