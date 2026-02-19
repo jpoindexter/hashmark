@@ -305,6 +305,18 @@ export interface Hook {
   isClientOnly: boolean;
 }
 
+/** AI Automation Hook (inspired by Latent-K) */
+export interface LatentHook {
+  /** Event that triggers the hook (e.g., "session_start", "file_edit", "task_complete") */
+  event: string;
+  /** Command to execute (e.g., "npm run lint") */
+  command: string;
+  /** Description of what the hook does */
+  description?: string;
+  /** Optional file pattern this hook applies to */
+  pattern?: string;
+}
+
 // ============================================================================
 // Pattern Detection Types
 // ============================================================================
@@ -547,6 +559,8 @@ export interface ScanResult {
   barrels: BarrelExport[];
   /** Component dependencies */
   dependencies: ComponentDependency[];
+  /** AI automation hooks */
+  latentHooks: LatentHook[];
   /** File tree (optional) */
   fileTree?: FileTree;
   /** Import graph (optional) */

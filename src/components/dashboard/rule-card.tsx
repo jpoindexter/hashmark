@@ -1,7 +1,7 @@
 "use client";
 
 import type { CustomRule } from "@prisma/client";
-import { Badge, Button } from "@fabrk/components";
+import { Badge, Button, Input } from "@fabrk/components";
 import {
   toggleRule,
   deleteRule,
@@ -34,13 +34,13 @@ export function RuleCard({ rule }: { rule: CustomRule }) {
 
       <div className="ml-4 flex gap-[var(--grid-2)]">
         <form action={toggleRule}>
-          <input type="hidden" name="ruleId" value={rule.id} />
+          <Input type="hidden" name="ruleId" value={rule.id} />
           <Button type="submit" variant="outline" size="sm">
             {rule.enabled ? "DISABLE" : "ENABLE"}
           </Button>
         </form>
         <form action={deleteRule}>
-          <input type="hidden" name="ruleId" value={rule.id} />
+          <Input type="hidden" name="ruleId" value={rule.id} />
           <Button type="submit" variant="ghost" size="sm">
             DELETE
           </Button>

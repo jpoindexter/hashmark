@@ -10,58 +10,58 @@ beforeEach(async () => {
 describe("checkRateLimit", () => {
   const opts = { max: 3, windowSeconds: 60 };
 
-  it("allows first request", () => {
-    const result = checkRateLimit("user-1", "test-first", opts);
+  it("allows first request", async () => {
+    const result = await checkRateLimit("user-1", "test-first", opts);
     expect(result.allowed).toBe(true);
     expect(result.remaining).toBe(2);
     expect(result.limit).toBe(3);
   });
 
-  it("tracks remaining count down to zero", () => {
+  it("tracks remaining count down to zero", async () => {
     const id = `user-countdown-${Date.now()}`;
-    checkRateLimit(id, "test-countdown", opts);
-    checkRateLimit(id, "test-countdown", opts);
-    const third = checkRateLimit(id, "test-countdown", opts);
+    await checkRateLimit(id, "test-countdown", opts);
+    await checkRateLimit(id, "test-countdown", opts);
+    const third = await checkRateLimit(id, "test-countdown", opts);
     expect(third.allowed).toBe(true);
     expect(third.remaining).toBe(0);
   });
 
-  it("rejects after limit exceeded", () => {
+  it("rejects after limit exceeded", async () => {
     const id = `user-reject-${Date.now()}`;
-    checkRateLimit(id, "test-reject", opts);
-    checkRateLimit(id, "test-reject", opts);
-    checkRateLimit(id, "test-reject", opts);
-    const fourth = checkRateLimit(id, "test-reject", opts);
+    await checkRateLimit(id, "test-reject", opts);
+    await checkRateLimit(id, "test-reject", opts);
+    await checkRateLimit(id, "test-reject", opts);
+    const fourth = await checkRateLimit(id, "test-reject", opts);
     expect(fourth.allowed).toBe(false);
     expect(fourth.remaining).toBe(0);
   });
 
-  it("isolates different buckets", () => {
+  it("isolates different buckets", async () => {
     const id = `user-buckets-${Date.now()}`;
-    checkRateLimit(id, "bucket-a", opts);
-    checkRateLimit(id, "bucket-a", opts);
-    checkRateLimit(id, "bucket-a", opts);
+    await checkRateLimit(id, "bucket-a", opts);
+    await checkRateLimit(id, "bucket-a", opts);
+    await checkRateLimit(id, "bucket-a", opts);
 
     // Different bucket should still be allowed
-    const result = checkRateLimit(id, "bucket-b", opts);
+    const result = await checkRateLimit(id, "bucket-b", opts);
     expect(result.allowed).toBe(true);
     expect(result.remaining).toBe(2);
   });
 
-  it("isolates different users", () => {
+  it("isolates different users", async () => {
     const ts = Date.now();
-    checkRateLimit(`user-a-${ts}`, "test-users", opts);
-    checkRateLimit(`user-a-${ts}`, "test-users", opts);
-    checkRateLimit(`user-a-${ts}`, "test-users", opts);
+    await checkRateLimit(`user-a-${ts}`, "test-users", opts);
+    await checkRateLimit(`user-a-${ts}`, "test-users", opts);
+    await checkRateLimit(`user-a-${ts}`, "test-users", opts);
 
     // Different user should still be allowed
-    const result = checkRateLimit(`user-b-${ts}`, "test-users", opts);
+    const result = await checkRateLimit(`user-b-${ts}`, "test-users", opts);
     expect(result.allowed).toBe(true);
   });
 
-  it("returns resetAt in the future", () => {
+  it("returns resetAt in the future", async () => {
     const before = Date.now();
-    const result = checkRateLimit(`user-reset-${before}`, "test-reset", opts);
+    const result = await checkRateLimit(`user-reset-${before}`, "test-reset", opts);
     expect(result.resetAt).toBeGreaterThan(before);
     expect(result.resetAt).toBeLessThanOrEqual(before + 60_000 + 100);
   });

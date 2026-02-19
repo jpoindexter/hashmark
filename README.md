@@ -33,7 +33,7 @@ Maintaining 7 files with the same content is painful. They drift out of sync. Th
 ## How It Works
 
 1. **Connect** — Sign in with GitHub, select your repos
-2. **Scan** — 27 scanners analyze your codebase (components, APIs, patterns, database, complexity, tokens, hooks, tests, and more)
+2. **Scan** — 28 scanners analyze your codebase (components, APIs, patterns, database, complexity, tokens, hooks, tests, and more)
 3. **Sync** — Every format auto-generated and auto-committed via GitHub Action on every push
 
 No PRs to review. No manual updates. Every AI tool gets fresh context automatically.
@@ -41,10 +41,10 @@ No PRs to review. No manual updates. Every AI tool gets fresh context automatica
 ## Try the CLI Free
 
 ```bash
-npx @jpoindexter/agent-smith
+npx hashmark
 ```
 
-The [agent-smith CLI](https://www.npmjs.com/package/@jpoindexter/agent-smith) generates AGENTS.md locally for free. Hashmark is the cloud product that handles all formats and keeps them in sync.
+The [hashmark CLI](https://www.npmjs.com/package/hashmark-cli) generates AGENTS.md locally for free. Hashmark is the cloud product that handles all formats and keeps them in sync.
 
 ## Pricing
 

@@ -18,7 +18,7 @@ export async function POST(
   }
 
   // Rate limit by user
-  const limited = rateLimitResponse(session.user.id, "scan-trigger", SCAN_LIMIT);
+  const limited = await rateLimitResponse(session.user.id, "scan-trigger", SCAN_LIMIT);
   if (limited) return limited;
 
   const { repoId } = await params;

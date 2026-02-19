@@ -15,7 +15,7 @@
 │                                                     │
 │  ┌──────────┐  ┌──────────┐  ┌──────────────────┐  │
 │  │ Stripe   │  │ GitHub   │  │    Scanner       │  │
-│  │ Payments │  │   API    │  │   (agent-smith   │  │
+│  │ Payments │  │   API    │  │   (hashmark   │  │
 │  │          │  │ (Octokit)│  │    subprocess)   │  │
 │  └──────────┘  └──────────┘  └──────────────────┘  │
 │                                                     │
@@ -39,7 +39,7 @@
 │  ┌──────────────────────────────────┐               │
 │  │     Hashmark GitHub Action      │               │
 │  │                                  │               │
-│  │  1. npx @jpoindexter/agent-smith │               │
+│  │  1. npx hashmark-cli │               │
 │  │  2. Generate all 7 formats       │               │
 │  │  3. Auto-commit if changed       │               │
 │  └──────────────────────────────────┘               │
@@ -116,7 +116,7 @@ hashmark/
 │       ├── db.ts                      # Prisma client singleton
 │       ├── stripe.ts                  # Stripe client + helpers
 │       ├── github.ts                  # Octokit + GitHub API helpers
-│       └── scanner.ts                 # agent-smith wrapper
+│       └── scanner.ts                 # hashmark wrapper
 └── .env.example
 ```
 
@@ -145,7 +145,7 @@ User clicks "Scan" on connected repo
     → POST /api/scan { repoId }
     → Server creates Scan record (status: PENDING)
     → Background: Clone repo (shallow) to temp dir
-    → Run: npx @jpoindexter/agent-smith <path> --json
+    → Run: npx hashmark-cli <path> --json
     → Parse JSON output into scan results
     → Store results in Scan record (status: COMPLETED)
     → Generate all 7 file formats
@@ -162,7 +162,7 @@ User clicks "Install Action"
 
 On every push to main:
     → GitHub Action runs in repo CI
-    → Runs agent-smith scanners
+    → Runs hashmark scanners
     → Generates all 7 formats
     → Auto-commits changed files
     → (Optional) Webhook notifies Hashmark to update dashboard

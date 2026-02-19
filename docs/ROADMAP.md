@@ -40,8 +40,8 @@ Hashmark is the cloud product for hashmark-cli (formerly agent-smith). The CLI i
 
 ### 1.4 Scanner Engine [DONE]
 - [x] Move agent-smith into packages/cli/ as hashmark-cli
-- [x] 27 scanners fully operational
-- [x] Rename all branding from agentsmith → hashmark
+- [x] 28 scanners fully operational
+- [x] Rename all branding from agent-smith → hashmark
 - [x] Backwards-compatible config loading
 
 ### 1.5 Multi-Format Generators [DONE]

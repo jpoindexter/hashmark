@@ -2,9 +2,15 @@
   "name": "Card",
   "import": "import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'",
   "category": "layout",
-  "description": "Container for grouped content. Primary layout primitive for sections.",
-  "tags": ["container", "layout", "section", "panel"],
-  "variants": [],
+  "description": "M3 surface container with tonal elevation. Uses surface-container color tokens and rounded-xl (12-16px) radius instead of box shadows.",
+  "tags": ["container", "layout", "section", "panel", "surface"],
+  "variants": [
+    {
+      "name": "elevation",
+      "values": ["level0", "level1", "level2", "level3", "level4", "level5"],
+      "default": "level1"
+    }
+  ],
   "props": {
     "className": {
       "type": "string",
@@ -12,10 +18,11 @@
       "description": "Additional Tailwind classes"
     }
   },
-  "example": "<Card className={cn(\"border border-border\", mode.radius)}>\n  <CardHeader>SECTION TITLE</CardHeader>\n  <CardContent>Content here</CardContent>\n</Card>",
+  "example": "<Card className={cn(\"rounded-xl bg-surface-container-low border-0\")}>\n  <CardHeader>\n    <h2 className=\"text-[22px] leading-7 font-normal text-on-surface\">Section Title</h2>\n  </CardHeader>\n  <CardContent>Content here</CardContent>\n</Card>",
   "never": [
-    "Never use raw <div> for content sections — use Card",
-    "Never hardcode border-radius — use mode.radius"
+    "Never use raw <div> for content sections -- use Card",
+    "Never use box shadows for elevation -- use M3 tonal elevation (surface-container levels)",
+    "Never use sharp corners -- M3 cards use rounded-xl (12px) or rounded-2xl (16px)"
   ],
   "dependencies": []
 }

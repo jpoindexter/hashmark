@@ -2,7 +2,7 @@
   "name": "Separator",
   "import": "import { Separator } from '@/components/ui/separator'",
   "category": "layout",
-  "description": "Visual divider between content sections. Built on Radix.",
+  "description": "M3 divider. Uses outline-variant color token. Can be full-width or inset (with leading padding for list dividers).",
   "tags": ["divider", "line", "separator", "layout"],
   "variants": [],
   "props": {
@@ -13,10 +13,10 @@
     },
     "className": { "type": "string", "required": false }
   },
-  "example": "<Separator className=\"my-4\" />",
+  "example": "<Separator className=\"bg-outline-variant\" />",
   "never": [
-    "Never use <hr> — always use <Separator>",
-    "Never hardcode border-color — uses border token automatically"
+    "Never use <hr> -- always use <Separator>",
+    "Never hardcode divider colors -- use outline-variant token"
   ],
   "dependencies": ["@radix-ui/react-separator"]
 }

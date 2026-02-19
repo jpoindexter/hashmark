@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Repository, Scan } from "@prisma/client";
-import { Badge, Button } from "@fabrk/components";
+import { Badge, Button, Input } from "@fabrk/components";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { disconnectRepo, triggerScan } from "@/app/(dashboard)/dashboard/repos/actions";
 import {
@@ -81,14 +81,14 @@ export function RepoCard({
                   : installGitHubAction
               }
             >
-              <input type="hidden" name="repoId" value={repo.id} />
+              <Input type="hidden" name="repoId" value={repo.id} />
               <Button type="submit" variant="ghost" size="sm">
                 {repo.actionInstalled ? "REMOVE ACTION" : "> INSTALL ACTION"}
               </Button>
             </form>
           )}
           <form action={triggerScan}>
-            <input type="hidden" name="repoId" value={repo.id} />
+            <Input type="hidden" name="repoId" value={repo.id} />
             <Button
               type="submit"
               variant="outline"
@@ -101,7 +101,7 @@ export function RepoCard({
             </Button>
           </form>
           <form action={disconnectRepo}>
-            <input type="hidden" name="repoId" value={repo.id} />
+            <Input type="hidden" name="repoId" value={repo.id} />
             <Button type="submit" variant="ghost" size="sm">
               X
             </Button>

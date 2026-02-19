@@ -3,6 +3,7 @@
 import { useTheme } from "next-themes";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { useSyncExternalStore } from "react";
+import { Button } from '@/components/ui/button'
 
 const subscribe = () => () => {};
 const getSnapshot = () => true;
@@ -33,7 +34,7 @@ export function ThemeToggle() {
   return (
     <div className="flex items-center gap-0 border border-border">
       {options.map(({ value, icon: Icon, label }) => (
-        <button
+        <Button
           key={value}
           onClick={() => setTheme(value)}
           className={`p-[var(--grid-1)].5 transition-colors ${
@@ -45,7 +46,7 @@ export function ThemeToggle() {
           aria-label={`Switch to ${label} theme`}
         >
           <Icon className="size-3.5" />
-        </button>
+        </Button>
       ))}
     </div>
   );

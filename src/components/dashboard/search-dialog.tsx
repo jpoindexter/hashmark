@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Search, X, Code, Route, Database, FileText, Zap, Terminal, Palette, Settings, BarChart3 } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
 import type { SearchResult } from "@/hooks/use-search";
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 const SECTION_ICONS: Record<string, React.ElementType> = {
   components: Code,
@@ -68,7 +70,7 @@ function SearchResultItem({
 }) {
   const Icon = SECTION_ICONS[result.sectionType] ?? FileText;
   return (
-    <button
+    <Button
       data-index={index}
       role="option"
       aria-selected={isSelected}
@@ -95,7 +97,7 @@ function SearchResultItem({
           {result.repoFullName}
         </span>
       </div>
-    </button>
+    </Button>
   );
 }
 
@@ -189,13 +191,13 @@ export function SearchDialog({
     >
       <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-xl border border-border bg-card shadow-2xl"
+        className="relative w-full max-w-xl border border-border bg-card bg-primary/14"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
         <div className="flex items-center gap-[var(--grid-3)] border-b border-border px-[var(--grid-4)] py-[var(--grid-3)]">
           <Search className="size-4 shrink-0 text-muted-foreground" />
-          <input
+          <Input
             ref={inputRef}
             type="text"
             value={query}
@@ -205,13 +207,13 @@ export function SearchDialog({
             aria-label="Search query"
           />
           {query && (
-            <button
+            <Button
               onClick={() => setQuery("")}
               className="text-muted-foreground hover:text-foreground"
               aria-label="Clear search"
             >
               <X className="size-4" />
-            </button>
+            </Button>
           )}
           <kbd className="hidden rounded border border-border px-[var(--grid-1)].5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
             ESC
@@ -276,7 +278,7 @@ export function SearchTrigger({ onOpen }: { onOpen: () => void }) {
   }, [onOpen]);
 
   return (
-    <button
+    <Button
       onClick={onOpen}
       className="flex items-center gap-[var(--grid-2)] border border-border bg-muted/50 px-[var(--grid-3)] py-[var(--grid-1)].5 font-mono text-xs text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
       aria-label="Search codebases"
@@ -286,6 +288,6 @@ export function SearchTrigger({ onOpen }: { onOpen: () => void }) {
       <kbd className="hidden rounded border border-border px-[var(--grid-1)] py-0.5 text-[10px] sm:inline">
         ⌘K
       </kbd>
-    </button>
+    </Button>
   );
 }

@@ -2,6 +2,7 @@
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
+import { Button } from '@/components/ui/button'
 
 export function OAuthButtons() {
   const [loading, setLoading] = useState(false);
@@ -13,14 +14,14 @@ export function OAuthButtons() {
 
   return (
     <div className="space-y-2">
-      <button
+      <Button
         onClick={handleGitHubSignIn}
         disabled={loading}
         className="flex w-full items-center justify-center gap-[var(--grid-2)] border border-border bg-secondary px-[var(--grid-4)] py-[var(--grid-4)] type-button text-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
       >
         <GitHubIcon />
         {loading ? "CONNECTING..." : "> SIGN IN WITH GITHUB"}
-      </button>
+      </Button>
     </div>
   );
 }

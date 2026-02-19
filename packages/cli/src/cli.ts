@@ -44,6 +44,7 @@ import { scanTestCoverage } from "./scanners/tests.js";
 import { scanSecurity, formatSecurityAudit } from "./scanners/security.js";
 import { detectMonorepo, formatMonorepoOverview } from "./scanners/monorepo.js";
 import { scanGraphQL } from "./scanners/graphql.js";
+import { scanLatentHooks } from "./scanners/latent-hooks.js";
 import { generateAgentsMd } from "./generator.js";
 import { generateAgentsIndex } from "./json-generator.js";
 import { generateAllFormats, generateFormat, FORMAT_REGISTRY, type FormatId } from "./formats/index.js";
@@ -51,7 +52,8 @@ import { validateGitUrl, escapeShellPath } from "./utils/shell.js";
 import { estimateTokens, formatTokens, getContextUsage } from "./utils/tokens.js";
 import { detectSecrets } from "./utils/secrets.js";
 import { parseSize, splitContent, getSplitFilenames } from "./utils/split.js";
-import { loadConfig } from "./config.js";
+import { reportFindings } from "./utils/reporter.js";
+import { loadConfig, DEFAULT_CONFIG } from "./config.js";
 import { writeFileSync, existsSync, rmSync, mkdirSync, watch } from "fs";
 import { join, relative } from "path";
 import { execSync } from "child_process";
@@ -184,12 +186,16 @@ cli
             const pkgConfig = loadConfig(pkg.path);
             const pkgExcludePatterns = pkgConfig.exclude || [];
 
-            const [pkgComponents, pkgTokens, pkgFramework, pkgHooks, pkgUtilities, pkgCommands, pkgExistingContext, pkgVariants, pkgApiRoutes, pkgEnvVars, pkgPatterns, pkgDatabase, pkgStats, pkgBarrels, pkgDependencies, pkgFileTree, pkgImportGraph, pkgTypeExports, pkgGraphQLSchemas] = await Promise.all([
+            // Detect framework and utilities first as latent hooks depend on them
+            const [pkgFramework, pkgUtilities] = await Promise.all([
+              detectFramework(pkg.path),
+              scanUtilities(pkg.path),
+            ]);
+
+            const [pkgComponents, pkgTokens, pkgHooks, pkgCommands, pkgExistingContext, pkgVariants, pkgApiRoutes, pkgEnvVars, pkgPatterns, pkgDatabase, pkgStats, pkgBarrels, pkgDependencies, pkgFileTree, pkgImportGraph, pkgTypeExports, pkgGraphQLSchemas, pkgLatentHooks] = await Promise.all([
               scanComponents(pkg.path, pkgExcludePatterns),
               scanTokens(pkg.path),
-              detectFramework(pkg.path),
               scanHooks(pkg.path),
-              scanUtilities(pkg.path),
               scanCommands(pkg.path),
               scanExistingContext(pkg.path),
               scanVariants(pkg.path),
@@ -204,13 +210,16 @@ cli
               scanImports(pkg.path),
               scanTypes(pkg.path),
               scanGraphQL(pkg.path),
+              scanLatentHooks(pkg.path, pkgFramework, pkgUtilities),
             ]);
 
             const pkgAntiPatterns = generateAntiPatterns(pkgFramework, pkgUtilities, pkgTokens, pkgComponents, pkgUtilities.hasMode);
             const pkgTestCoverage = await scanTestCoverage(pkg.path, pkgComponents);
 
+            const pkgScanResult = { components: pkgComponents, tokens: pkgTokens, framework: pkgFramework, hooks: pkgHooks, utilities: pkgUtilities, commands: pkgCommands, existingContext: pkgExistingContext, variants: pkgVariants, apiRoutes: pkgApiRoutes, envVars: pkgEnvVars, patterns: pkgPatterns, database: pkgDatabase, stats: pkgStats, barrels: pkgBarrels, dependencies: pkgDependencies, fileTree: pkgFileTree, importGraph: pkgImportGraph, typeExports: pkgTypeExports, antiPatterns: pkgAntiPatterns, testCoverage: pkgTestCoverage, graphqlSchemas: pkgGraphQLSchemas, latentHooks: pkgLatentHooks };
+            
             const pkgContent = generateAgentsMd(
-              { components: pkgComponents, tokens: pkgTokens, framework: pkgFramework, hooks: pkgHooks, utilities: pkgUtilities, commands: pkgCommands, existingContext: pkgExistingContext, variants: pkgVariants, apiRoutes: pkgApiRoutes, envVars: pkgEnvVars, patterns: pkgPatterns, database: pkgDatabase, stats: pkgStats, barrels: pkgBarrels, dependencies: pkgDependencies, fileTree: pkgFileTree, importGraph: pkgImportGraph, typeExports: pkgTypeExports, antiPatterns: pkgAntiPatterns, testCoverage: pkgTestCoverage, graphqlSchemas: pkgGraphQLSchemas },
+              pkgScanResult,
               { compact: options.compact, compress: options.compress, minimal: options.minimal }
             );
 
@@ -258,13 +267,17 @@ cli
       const excludePatterns = config.exclude || [];
       const typeExports = await scanTypes(targetDir);
 
+      // Run framework and utilities first as latent hooks depend on them
+      const [framework, utilities] = await Promise.all([
+        detectFramework(targetDir),
+        scanUtilities(targetDir),
+      ]);
+
       // Run remaining scanners in parallel
-      const [components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, graphqlSchemas] = await Promise.all([
+      const [components, tokens, hooks, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, graphqlSchemas, latentHooks] = await Promise.all([
         scanComponents(targetDir, excludePatterns),
         scanTokens(targetDir),
-        detectFramework(targetDir),
         scanHooks(targetDir),
-        scanUtilities(targetDir),
         scanCommands(targetDir),
         scanExistingContext(targetDir),
         scanVariants(targetDir),
@@ -278,6 +291,7 @@ cli
         scanFileTree(targetDir),
         scanImports(targetDir),
         scanGraphQL(targetDir),
+        scanLatentHooks(targetDir, framework, utilities),
       ]);
 
       // Generate anti-patterns based on detected features
@@ -292,99 +306,6 @@ cli
       // Analyze complexity and generate AI recommendations
       const aiRecommendations = await analyzeComplexity(targetDir);
 
-      // Report findings
-      console.log(pc.green(`  ✓ Found ${components.length} components`));
-      if (variants.length > 0) {
-        console.log(pc.green(`  ✓ Found ${variants.length} components with CVA variants`));
-      }
-      console.log(pc.green(`  ✓ Found ${Object.keys(tokens.colors).length} color tokens`));
-      console.log(pc.green(`  ✓ Found ${hooks.length} custom hooks`));
-      if (apiRoutes.length > 0) {
-        console.log(pc.green(`  ✓ Found ${apiRoutes.length} API routes`));
-      }
-      if (graphqlSchemas && graphqlSchemas.size > 0) {
-        console.log(pc.green(`  ✓ Found ${graphqlSchemas.size} GraphQL schemas`));
-      }
-      if (envVars.length > 0) {
-        console.log(pc.green(`  ✓ Found ${envVars.length} environment variables`));
-      }
-      console.log(pc.green(`  ✓ Detected ${framework.name}${framework.router ? ` (${framework.router})` : ""}`));
-
-      if (utilities.hasShadcn) {
-        console.log(pc.green(`  ✓ Detected shadcn/ui (${utilities.radixPackages.length} Radix packages)`));
-      }
-      if (utilities.hasCn) {
-        console.log(pc.green(`  ✓ Found cn() utility`));
-      }
-      if (utilities.hasMode) {
-        console.log(pc.green(`  ✓ Found mode/design-system`));
-      }
-      if (patterns.patterns.length > 0) {
-        console.log(pc.green(`  ✓ Detected ${patterns.patterns.length} code patterns`));
-      }
-      if (existingContext.hasClaudeMd) {
-        console.log(pc.green(`  ✓ Found existing ${existingContext.claudeMdPath}`));
-      }
-      if (existingContext.hasCursorRules) {
-        console.log(pc.green(`  ✓ Found existing .cursorrules`));
-      }
-      if (existingContext.hasCursorMdc) {
-        console.log(pc.green(`  ✓ Found ${existingContext.cursorMdcFiles.length} .cursor/rules/*.mdc files`));
-      }
-      if (existingContext.hasWindsurfRules) {
-        console.log(pc.green(`  ✓ Found existing .windsurfrules`));
-      }
-      if (existingContext.hasClineRules) {
-        console.log(pc.green(`  ✓ Found existing .clinerules`));
-      }
-      if (existingContext.hasGeminiMd) {
-        console.log(pc.green(`  ✓ Found existing GEMINI.md`));
-      }
-      if (existingContext.hasCopilotInstructions) {
-        console.log(pc.green(`  ✓ Found existing copilot-instructions.md`));
-      }
-      if (existingContext.allRules.length > 0) {
-        console.log(pc.green(`  ✓ Extracted ${existingContext.allRules.length} rules from existing context files`));
-      }
-      if (existingContext.hasAiFolder) {
-        console.log(pc.green(`  ✓ Found .ai/ folder (${existingContext.aiFiles.length} files)`));
-      }
-      if (database) {
-        console.log(pc.green(`  ✓ Found ${database.provider} schema (${database.models.length} models)`));
-      }
-      console.log(pc.green(`  ✓ Scanned ${stats.totalFiles} files (${formatBytes(stats.totalSize)}, ${stats.totalLines.toLocaleString()} lines)`));
-      if (barrels.length > 0) {
-        console.log(pc.green(`  ✓ Found ${barrels.length} barrel exports`));
-      }
-      if (importGraph.hubFiles.length > 0) {
-        console.log(pc.green(`  ✓ Found ${importGraph.hubFiles.length} hub files (most imported)`));
-      }
-      if (importGraph.circularDeps.length > 0) {
-        console.log(pc.yellow(`  ⚠ Found ${importGraph.circularDeps.length} circular dependencies`));
-      }
-      if (importGraph.unusedFiles.length > 0) {
-        console.log(pc.yellow(`  ⚠ Found ${importGraph.unusedFiles.length} potentially unused components`));
-      }
-      if (typeExports.propsTypes.length > 0) {
-        console.log(pc.green(`  ✓ Found ${typeExports.propsTypes.length} Props types`));
-      }
-      if (testCoverage.testFiles.length > 0) {
-        console.log(pc.green(`  ✓ Found ${testCoverage.testFiles.length} test files (${testCoverage.coverage}% component coverage)`));
-      }
-      if (securityAudit) {
-        const v = securityAudit.vulnerabilities;
-        if (v.total > 0) {
-          const parts: string[] = [];
-          if (v.critical > 0) parts.push(`${v.critical} critical`);
-          if (v.high > 0) parts.push(`${v.high} high`);
-          if (v.moderate > 0) parts.push(`${v.moderate} moderate`);
-          if (v.low > 0) parts.push(`${v.low} low`);
-          console.log(pc.yellow(`  ⚠ Security: ${parts.join(", ")} vulnerabilities`));
-        } else if (!securityAudit.auditError) {
-          console.log(pc.green(`  ✓ Security: No vulnerabilities found`));
-        }
-      }
-
       // Scan git log if requested
       let gitInfo = null;
       if (options.includeGitLog) {
@@ -394,6 +315,9 @@ cli
         }
       }
 
+      // Build scan result object
+      const scanResult = { components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, typeExports, antiPatterns, testCoverage, securityAudit: securityAudit || undefined, aiRecommendations, graphqlSchemas, latentHooks };
+
       // Check for existing non-generated AGENTS.md
       if (existingContext.hasAgentsMd && !options.force) {
         console.log(pc.yellow(`\n  ⚠ Found existing ${existingContext.agentsMdPath} with custom content`));
@@ -401,8 +325,8 @@ cli
         return;
       }
 
-      // Build scan result object
-      const scanResult = { components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, typeExports, antiPatterns, testCoverage, securityAudit: securityAudit || undefined, aiRecommendations, graphqlSchemas };
+      // Report findings
+      reportFindings(scanResult);
 
       // Multi-format generation (--format flag)
       if (options.format) {
@@ -607,7 +531,7 @@ cli
         // Generate JSON index if requested (not with --xml)
         if (options.json && !options.xml) {
           const jsonContent = generateAgentsIndex(
-            { components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, typeExports, antiPatterns, testCoverage, aiRecommendations, graphqlSchemas },
+            { components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, typeExports, antiPatterns, testCoverage, aiRecommendations, graphqlSchemas, latentHooks },
             content
           );
           const jsonPath = join(writeDir, outputFile.replace(".md", ".index.json"));
@@ -719,6 +643,45 @@ cli
       });
 
       process.exit(1);
+    }
+  });
+
+cli.command("init", "Initialize a new hashmark configuration")
+  .action(async () => {
+    const cwd = process.cwd();
+    const configPath = join(cwd, "hashmark.config.json");
+
+    console.log(pc.cyan("\n  # hashmark init\n"));
+
+    if (existsSync(configPath)) {
+      console.log(pc.yellow(`  ⚠ Configuration already exists: ${pc.dim("hashmark.config.json")}\n`));
+      return;
+    }
+
+    const defaultConfig = {
+      output: "AGENTS.md",
+      include: ["components", "hooks", "routes", "tokens", "patterns", "variants", "env"],
+      exclude: ["node_modules", ".next", "dist", ".git", "coverage"],
+      rules: []
+    };
+
+    try {
+      writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2));
+      console.log(pc.green(`  ✓ Created hashmark.config.json`));
+
+      // Suggest adding to .gitignore
+      const gitignorePath = join(cwd, ".gitignore");
+      if (existsSync(gitignorePath)) {
+        const gitignoreContent = readFileSync(gitignorePath, "utf-8");
+        if (!gitignoreContent.includes("AGENTS.md")) {
+          console.log(pc.dim(`\n  Tip: Add AGENTS.md to your .gitignore to keep it out of source control:`));
+          console.log(pc.cyan(`  echo "AGENTS.md" >> .gitignore`));
+        }
+      }
+
+      console.log(pc.dim(`\n  Run ${pc.cyan("hashmark")} to generate your first context file.\n`));
+    } catch (error) {
+      console.error(pc.red(`  ✗ Failed to create configuration: ${error instanceof Error ? error.message : error}\n`));
     }
   });
 

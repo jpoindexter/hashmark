@@ -5,10 +5,10 @@
 ## TL;DR
 
 - **Stack**: Next.js 16.1.6 + TypeScript 5 + Tailwind 4
-- **Components**: 24 total — USE EXISTING, don't create new
-- **High-impact files**: auth, db, github, status-badge (changes affect many files)
-- **Database**: prisma with 8 models
-- **API**: 8 routes (6 protected)
+- **Components**: 33 total — USE EXISTING, don't create new
+- **High-impact files**: auth, db, github, rate-limit (changes affect many files)
+- **Database**: prisma with 9 models
+- **API**: 9 routes (7 protected)
 
 **Rules**: Use design tokens (not hardcoded colors), use `cn()` for classes, check existing components first
 
@@ -36,17 +36,124 @@ npm run dev
 | **Framework** | Next.js 16.1.6 (App Router) |
 | **Language** | TypeScript |
 | **Styling** | Tailwind CSS |
-| **Components** | 24 |
-| **Custom Hooks** | 1 |
-| **API Routes** | 8 |
-| **Codebase** | 145 files, 24,889 lines |
+| **Components** | 33 |
+| **Custom Hooks** | 2 |
+| **API Routes** | 9 |
+| **Patterns** | 1 detected |
+| **Codebase** | 143 files, 17,715 lines |
+
+## Project Structure
+
+```
+├── config/ (2)
+│   └── eslint-rules/ (2)
+├── docs/ (14)
+│   ├── ANALYTICS.md
+│   ├── API_CONTRACTS.md
+│   ├── ARCHITECTURE.md
+│   ├── BUSINESS.md
+│   ├── DASHBOARD_MIGRATION_PROMPT.md
+│   ├── FEATURE_MATRIX.md
+│   ├── GITHUB_ACTION_SPEC.md
+│   ├── MARKETING.md
+│   └── ... 6 more files
+├── packages/ (59)
+│   ├── action/ (5)
+│   │   ├── src/ (1)
+│   │   │   └── index.ts
+│   │   ├── package.json
+│   │   └── tsconfig.json
+│   └── cli/ (54)
+│       ├── scripts/ (1)
+│       ├── src/ (49)
+│       │   ├── formats/ (8)
+│       │   ├── scanners/ (28)
+│       │   ├── utils/ (7)
+│       │   ├── cli.ts
+│       │   ├── config.ts
+│       │   ├── generator.ts
+│       │   ├── json-generator.ts
+│       │   ├── mcp-server.ts
+│       │   └── types.ts
+│       ├── package.json
+│       ├── tsconfig.json
+│       └── vitest.config.ts
+├── prisma/ (3)
+│   ├── schema.prisma
+│   ├── search-setup.sql
+│   └── seed.ts
+├── public/ (5)
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
+├── scripts/ (4)
+│   ├── validate-components.js
+│   ├── validate-file-size.js
+│   ├── validate-imports.js
+│   └── validate-security.js
+├── src/ (71)
+│   ├── app/ (18)
+│   │   ├── (dashboard)/ (4)
+│   │   ├── (marketing)/ (4)
+│   │   ├── api/ (2)
+│   │   │   ├── repos/ (1)
+│   │   │   └── search/ (1)
+│   │   ├── layout.tsx
+│   │   ├── opengraph-image.tsx
+│   │   └── twitter-image.tsx
+│   ├── components/ (31)
+│   │   ├── dashboard/ (19)
+│   │   ├── landing/ (6)
+│   │   ├── shared/ (4)
+│   │   ├── theme-provider.tsx
+│   │   └── theme-toggle.tsx
+│   ├── config/ (1)
+│   │   └── api-endpoints.ts
+│   ├── hooks/ (2)
+│   │   ├── use-scan-polling.ts
+│   │   └── use-search.ts
+│   ├── lib/ (18)
+│   │   ├── __tests__/ (4)
+│   │   ├── auth.ts
+│   │   ├── cn.ts
+│   │   ├── db.ts
+│   │   ├── github.ts
+│   │   ├── mode.ts
+│   │   ├── rate-limit.ts
+│   │   ├── scan-detect.ts
+│   │   ├── scan-error.ts
+│   │   └── ... 6 more files
+│   └── middleware.ts
+├── the-monospace-web-main/ (13)
+│   ├── demo/ (3)
+│   ├── src/ (3)
+│   │   └── index.js
+│   ├── flake.lock
+│   ├── flake.nix
+│   ├── index.html
+│   ├── LICENSE.md
+│   ├── Makefile
+│   ├── package.json
+│   └── README.md
+├── AGENTS.md
+├── CLAUDE.md
+├── commitlint.config.js
+├── eslint.config.mjs
+├── GEMINI.md
+├── next-env.d.ts
+├── next.config.ts
+├── package.json
+└── ... 7 more files
+```
 
 ## Critical Rules
 
 **These rules are NON-NEGOTIABLE:**
 
 ### 1. USE EXISTING COMPONENTS
-This project has 24 components. Check the list below before creating anything new.
+This project has 33 components. Check the list below before creating anything new.
 
 ```tsx
 // WRONG
@@ -68,34 +175,80 @@ style={{ color: "#3b82f6" }}
 className="bg-primary text-primary-foreground"
 ```
 
+### User Rules (from CLAUDE.md, .cursorrules, .windsurfrules, .clinerules, GEMINI.md, copilot-instructions.md, .cursor/rules/*.mdc)
+
+- ALWAYS check existing 33 components before creating new ones
+- ALWAYS** check existing 33 components before creating new ones
+- Prefer Server Components by default — only add `'use client'` when needed
+- ALWAYS use `next/image` for images and `next/link` for navigation
+- ALWAYS** use `next/image` for images and `next/link` for navigation
+- NEVER use `any` — use proper types or `unknown`
+- NEVER** use `any` — use proper types or `unknown`
+- NEVER use arbitrary values (`w-[137px]`) — use Tailwind scale values
+- NEVER** use arbitrary values (`w-[137px]`) — use Tailwind scale values
+- Always use existing components (33 available). Never create duplicates.
+- Use semantic design tokens (bg-primary, text-foreground) — never hardcode colors.
+- Default to Server Components. Only add 'use client' when interactivity is needed.
+- Use next/image for images and next/link for navigation.
+- Type all function parameters and return types. Never use 'any'.
+- Use Tailwind scale values. Avoid arbitrary values like w-[137px].
+- ALWAYS use semantic design tokens: bg-primary, text-foreground, border-border.
+- NEVER hardcode color values (no bg-blue-500, no #hex, no rgb()).
+- Default to Server Components. Only add 'use client' for interactivity.
+- Type all function parameters. NEVER use 'any'.
+- Use Tailwind scale values. No arbitrary values like w-[137px].
+- Check this list before creating any new component.
+- Use `<Card>` not `<div className="rounded border">`.
+- Use semantic design tokens (bg-primary, text-foreground). Never hardcode colors.
+- Type all parameters. Avoid `any`.
+- Use Tailwind scale values. No arbitrary values like `w-[137px]`.
+- Default to Server Components. Add `'use client'` only for interactivity.
+
 ### Framework-Specific
 
 - Use `'use client'` directive only when component needs interactivity
 - Prefer Server Components by default
 - Use `next/image` for images, `next/link` for navigation
 - Never use arbitrary values (`w-[137px]`) — use scale values
-- Use design system radius tokens, not arbitrary rounded values
 - Type all props and function parameters
 - Avoid `any` — use proper types or `unknown`
 
 ## Components
 
-24 components across 3 categories.
+33 components across 5 categories.
 
-### Dashboard (14)
+### App (2)
+
+- `OGImage` — `@/app/opengraph-image`
+- `TwitterImage` — `@/app/twitter-image`
+
+### Components (2)
+
+- `ThemeProvider` — `@/components/theme-provider`
+- `ThemeToggle` — `@/components/theme-toggle`
+
+### Dashboard (19)
 
 - `UpgradeButton`, `ManageSubscriptionButton`, `PlanSelectButton` — `@/components/dashboard/billing-actions`
+- `ComplexityPage` — `@/components/dashboard/complexity-page`
 - `ConnectRepoDialog` — `@/components/dashboard/connect-repo-dialog`
 - `DashboardBreadcrumbs` — `@/components/dashboard/dashboard-breadcrumbs`
+- `PlanUsageSection`, `RecentActivitySection`, `ReposQuickView` — `@/components/dashboard/dashboard-overview-sections`
+  - Props: repoCount, repoLimit
 - `DashboardShellWrapper` — `@/components/dashboard/dashboard-shell-wrapper`
 - `FilesPage` — `@/components/dashboard/files-page`
 - `IntelligencePage` — `@/components/dashboard/intelligence-page`
 - `RepoCard` — `@/components/dashboard/repo-card`
+- `RepoSettingsPage` — `@/components/dashboard/repo-settings-page`
 - `RepoSubNav` — `@/components/dashboard/repo-sub-nav`
 - `ReposPage` — `@/components/dashboard/repos-page`
 - `RuleCard` — `@/components/dashboard/rule-card`
 - `RuleDialog` — `@/components/dashboard/rule-dialog`
 - `ScanHistoryPage` — `@/components/dashboard/scan-history-page`
+- `ScanResultsTables` — `@/components/dashboard/scan-results-tables`
+  - Props: results
+- `SearchDialog`, `SearchTrigger` — `@/components/dashboard/search-dialog`
+  - Render snippet with **bold** markers as <strong> elements.
 - `SettingsPage` — `@/components/dashboard/settings-page`
 - `TrialBanner` — `@/components/dashboard/trial-banner`
 
@@ -120,16 +273,24 @@ className="bg-primary text-primary-foreground"
 ## Custom Hooks
 
 - `useScanPolling` — `@/hooks/use-scan-polling` *(client only)*
+- `useSearch` — `@/hooks/use-search` *(client only)*
+
+## Component Dependencies
+
+Key imports for each component:
+
+- **DashboardShellWrapper** → ThemeToggle
 
 ## Most Imported Files
 
 These files are imported most frequently - changes here have wide impact:
 
-- `src/lib/auth.ts` — imported by 22 files
-- `src/lib/db.ts` — imported by 21 files
-- `src/lib/github.ts` — imported by 5 files
+- `src/lib/auth.ts` — imported by 24 files
+- `src/lib/db.ts` — imported by 24 files
+- `src/lib/github.ts` — imported by 6 files
+- `src/lib/rate-limit.ts` — imported by 5 files
+- `src/lib/scan-worker.ts` — imported by 4 files
 - `src/components/shared/status-badge.tsx` — imported by 4 files
-- `src/lib/scan-worker.ts` — imported by 3 files
 - `src/lib/stripe.ts` — imported by 3 files
 
 ## ⚠️ Potentially Unused Components
@@ -139,9 +300,12 @@ These component files are never imported anywhere:
 - `src/components/dashboard/billing-actions.tsx`
 - `src/components/dashboard/connect-repo-dialog.tsx`
 - `src/components/dashboard/dashboard-breadcrumbs.tsx`
+- `src/components/dashboard/dashboard-overview-sections.tsx`
 - `src/components/dashboard/repo-card.tsx`
 - `src/components/dashboard/rule-card.tsx`
 - `src/components/dashboard/rule-dialog.tsx`
+- `src/components/dashboard/scan-results-tables.tsx`
+- `src/components/dashboard/search-dialog.tsx`
 - `src/components/shared/oauth-buttons.tsx`
 
 *Consider removing these or they may be entry points not detected.*
@@ -150,24 +314,25 @@ These component files are never imported anywhere:
 
 Most used external packages:
 
-- `next` — 41 imports
-- `@fabrk/components` — 19 imports
-- `lucide-react` — 13 imports
-- `react` — 8 imports
+- `next` — 48 imports
+- `@fabrk/components` — 22 imports
+- `lucide-react` — 16 imports
+- `react` — 12 imports
 - `next-auth` — 4 imports
+- `fs` — 3 imports
+- `path` — 3 imports
+- `@prisma/client` — 2 imports
+- `zod` — 2 imports
+- `next-themes` — 1 imports
 - `@auth/prisma-adapter` — 1 imports
-- `@prisma/client` — 1 imports
+- `clsx` — 1 imports
+- `tailwind-merge` — 1 imports
 - `@octokit/rest` — 1 imports
 - `child_process` — 1 imports
-- `util` — 1 imports
-- `fs` — 1 imports
-- `path` — 1 imports
-- `stripe` — 1 imports
-- `crypto` — 1 imports
 
 ## API Routes
 
-8 API endpoints (1 with schemas):
+9 API endpoints (2 with schemas):
 
 ### Billing
 
@@ -185,29 +350,36 @@ Most used external packages:
 - `GET` `/api/scan/:repoId/download` 🔒
 - `GET` `/api/scan/:repoId/latest` 🔒
 
+### Search
+
+- `GET` `/api/search` 🔒
+  - **Query**: SearchSchema { q: string (max: 200, min: 1), repoId?: string, sectionType?: string, limit: coerce (default: 20, max: 50, min: 1), offset: coerce (default: 0, min: 0) }
+
 ### Webhooks
 
 - `POST` `/api/webhooks/github`
 
 ## Database Models
 
-8 prisma models:
+9 prisma models:
 
-- **Account** — id, userId, type, provider, providerAccountId, refresh_token, +6 more
+- **Account** — id, userId, type, provider, providerAccountId, refresh_token, access_token, expires_at, token_type, scope, id_token, session_state
   - Relations: user
 - **Session** — id, sessionToken, userId, expires
   - Relations: user
 - **VerificationToken** — identifier, token, expires
-- **User** — id, name, email, emailVerified, image, githubId, +3 more
+- **User** — id, name, email, emailVerified, image, githubId, stripeCustomerId, createdAt, updatedAt
   - Relations: plan, accounts, sessions, repositories, customRules
-- **Repository** — id, userId, githubRepoId, name, fullName, defaultBranch, +7 more
-  - Relations: user, scans
-- **Scan** — id, repositoryId, results, fileCount, lineCount, componentCount, +8 more
-  - Relations: status, repository, generatedFiles
+- **Repository** — id, userId, githubRepoId, name, fullName, defaultBranch, private, language, description, scanRoot, actionInstalled, lastScanAt, createdAt, updatedAt
+  - Relations: user, scans, searchChunks
+- **Scan** — id, repositoryId, results, fileCount, lineCount, componentCount, hookCount, apiRouteCount, modelCount, tokenEstimate, error, duration, commitSha, createdAt, updatedAt
+  - Relations: status, repository, generatedFiles, searchChunks
 - **GeneratedFile** — id, scanId, fileName, content, tokenCount, createdAt
   - Relations: format, scan
-- **CustomRule** — id, userId, name, description, rule, enabled, +2 more
+- **CustomRule** — id, userId, name, description, rule, enabled, createdAt, updatedAt
   - Relations: scope, user
+- **SearchChunk** — id, repositoryId, scanId, sectionHeading, sectionType, content, chunkIndex, tokenCount, createdAt
+  - Relations: searchVector, repository, scan
 
 ## Environment Variables
 
@@ -227,63 +399,11 @@ STRIPE_TEAM_PRICE_ID
 GITHUB_WEBHOOK_SECRET
 ```
 
-## Design Tokens
+## Code Patterns
 
-### Color Tokens
+Detected patterns in this codebase:
 
-**Use semantic classes, never hardcoded colors:**
-
-```
-// Backgrounds
-bg-background, bg-card, bg-muted, bg-primary, bg-secondary, bg-destructive, bg-accent
-
-// Text
-text-foreground, text-muted-foreground, text-primary-foreground, text-destructive
-
-// Borders
-border-border, border-primary, border-destructive
-
-// NEVER USE:
-// bg-white, bg-black, bg-gray-500, text-gray-600, #ffffff, rgb(...)
-```
-
-<details>
-<summary>Raw CSS Variables (click to expand)</summary>
-
-```css
---background: #09090b;
---foreground: #fafafa;
---card: #18181b;
---card-foreground: #fafafa;
---popover: #18181b;
---popover-foreground: #fafafa;
---primary: #10b981;
---primary-foreground: #ecfdf5;
---secondary: #27272a;
---secondary-foreground: #fafafa;
---muted: #18181b;
---muted-foreground: #a1a1aa;
---accent: #10b981;
---accent-foreground: #ecfdf5;
---destructive: #ef4444;
---destructive-foreground: #fafafa;
---border: #27272a;
---input: #27272a;
---ring: #10b981;
---success: #10b981;
---success-foreground: #ecfdf5;
---warning: #f59e0b;
---warning-foreground: #09090b;
---info: #3b82f6;
---info-foreground: #fafafa;
---chart-1: #10b981;
---chart-2: #3b82f6;
---chart-3: #f59e0b;
---chart-4: #8b5cf6;
---chart-5: #ef4444;
-```
-
-</details>
+- Testing: Vitest
 
 ## Additional Guidelines
 
@@ -316,36 +436,52 @@ border-border, border-primary, border-destructive
 
 **Complexity by Area:**
 
-- 🟡 **Scanners/Parsers** (24 files, complexity: 40/100)
-  - Recommended: Standard effort (balanced model)
-  - Characteristics: complex regex patterns, high cognitive complexity, moderate cognitive complexity
-- 🟡 **Source Files** (20 files, complexity: 38/100)
+- 🟡 **Scanners/Parsers** (27 files, complexity: 36/100)
   - Recommended: Standard effort (balanced model)
   - Characteristics: complex regex patterns, high cognitive complexity, moderate cognitive complexity
 - 🟡 **Type Definitions** (2 files, complexity: 33/100)
   - Recommended: Standard effort (balanced model)
   - Characteristics: complex regex patterns, large file (>500 lines), moderate cognitive complexity
-- 🟢 **Database** (2 files, complexity: 28/100)
+- 🟡 **Source Files** (25 files, complexity: 31/100)
+  - Recommended: Standard effort (balanced model)
+  - Characteristics: complex regex patterns, moderate cognitive complexity, high cognitive complexity
+- 🟢 **Database** (2 files, complexity: 23/100)
   - Recommended: Minimal effort (fast, low-cost model)
-  - Characteristics: high cognitive complexity, complex regex patterns
-- 🟢 **Utilities** (10 files, complexity: 18/100)
+  - Characteristics: moderate cognitive complexity, complex regex patterns
+- 🟢 **Hooks** (2 files, complexity: 18/100)
   - Recommended: Minimal effort (fast, low-cost model)
-  - Characteristics: complex regex patterns, moderate cognitive complexity
+  - Characteristics: moderate cognitive complexity
 
 **High Complexity Files** (use most capable model with extended thinking):
 
-- `packages/cli/src/cli.ts` (964 lines, score: 90/100)
-  - large file (>500 lines), high cognitive complexity, high coupling (many imports), heavy async logic, complex regex patterns, complex types
-- `packages/cli/src/mcp-server.ts` (1239 lines, score: 85/100)
-  - large file (>500 lines), high cognitive complexity, high coupling (many imports), heavy async logic, complex regex patterns
-- `packages/cli/src/generator.ts` (1274 lines, score: 65/100)
+- `packages/cli/src/mcp-server.ts` (1311 lines, score: 75/100, MI: 63.8)
+  - large file (>500 lines), moderate cognitive complexity, high coupling (many imports), heavy async logic, complex regex patterns
+- `packages/cli/src/generator.ts` (1424 lines, score: 65/100, MI: 42.5)
   - large file (>500 lines), high cognitive complexity, complex regex patterns, complex types
+- `packages/cli/src/scanners/ast-schema-parser.ts` (884 lines, score: 65/100, MI: 54.4)
+  - large file (>500 lines), high cognitive complexity, complex regex patterns, complex types
+
+**Function Hotspots** (highest cognitive complexity):
+
+| Function | File | Cyclomatic | Cognitive | MI |
+|---|---|---|---|---|
+| generateAgentsMd | packages/cli/src/generator.ts:43 | 248 | 475 | 0 |
+| detectMonorepo | packages/cli/src/scanners/monorepo.ts:52 | 41 | 92 | 17.9 |
+| detectFrameworkInSubdirs | packages/cli/src/scanners/framework.ts:196 | 24 | 56 | 33.5 |
+| generateXmlOutput | packages/cli/src/generator.ts:1203 | 40 | 51 | 21.1 |
+| calculateCognitiveAST | packages/cli/src/scanners/ast-complexity.ts:211 | 37 | 48 | 26.2 |
+| collectFunctionsFromNode | packages/cli/src/scanners/ast-complexity.ts:528 | 29 | 43 | 31.3 |
+| resolvePackageSchema | packages/cli/src/scanners/ast-schema-parser.ts:718 | 23 | 40 | 30.8 |
+| parseZodField | packages/cli/src/scanners/ast-schema-parser.ts:377 | 29 | 34 | 30.4 |
+| detectPythonFramework | packages/cli/src/scanners/framework.ts:290 | 19 | 34 | 34.6 |
+| parseRoute | packages/cli/src/scanners/api-routes.ts:75 | 38 | 32 | 30 |
 
 ## Commands
 
 ```bash
 npm run dev          # next dev --turbopack
 npm run build        # prisma generate && next build
+npm test             # vitest run
 npm run lint         # eslint
 npm run typecheck    # tsc --noEmit
 ```
@@ -357,14 +493,47 @@ npm run db:push
 npm run db:generate
 npm run db:studio
 npm run db:seed
+npm run db:search-setup
 ```
 
 ### Other Commands
 
 ```bash
 npm run start
+npm run hashmark
 ```
 
-## Additional Documentation
+## AI Automation Hooks
 
-- **CLAUDE.md** — Detailed project documentation
+These hooks automate common development tasks during your session:
+
+- **task_complete**: `npm run lint`
+  - Verify no linting regressions after task completion
+- **file_edit**: `npx tsc --noEmit` (for `**/*.{ts,tsx}`)
+  - Check for type errors in the background
+- **file_edit**: `npm test -- {{file}}` (for `src/**/*.ts`)
+  - Run related tests when a file is modified
+- **session_start**: `ls -d node_modules || npm install`
+  - Ensure dependencies are installed at start of session
+- **file_create**: `mkdir -p src/components/ui` (for `src/components/ui/*.tsx`)
+  - Always place new UI primitives in the standard UI folder
+
+## Existing AI Context Files
+
+- **CLAUDE.md** — Claude Code instructions
+- **.cursorrules** — Cursor AI rules
+- **.cursor/rules/api.mdc** — Cursor MDC rules
+- **.cursor/rules/components.mdc** — Cursor MDC rules
+- **.cursor/rules/database.mdc** — Cursor MDC rules
+- **.cursor/rules/general.mdc** — Cursor MDC rules
+- **.windsurfrules** — Windsurf rules
+- **.clinerules** — Cline/Roo Code rules
+- **GEMINI.md** — Google Gemini CLI instructions
+- **copilot-instructions.md** — GitHub Copilot instructions
+
+<!-- user:start -->
+## Custom Notes
+
+<!-- Add your custom project notes here. This section is preserved across regenerations. -->
+
+<!-- user:end -->

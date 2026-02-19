@@ -60,8 +60,8 @@ export function ComplexityPage({ data, hasScan }: { data: ComplexityData | null;
   const [sortField, setSortField] = useState<SortField>("cognitive");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
-  const functions = data?.topFunctions ?? [];
   const sortedFunctions = useMemo(() => {
+    const functions = data?.topFunctions ?? [];
     if (functions.length === 0) return [];
     return [...functions].sort((a, b) => {
       const get = (row: FunctionRow) => {
@@ -74,7 +74,7 @@ export function ComplexityPage({ data, hasScan }: { data: ComplexityData | null;
       };
       return sortDir === "desc" ? get(b) - get(a) : get(a) - get(b);
     });
-  }, [functions, sortField, sortDir]);
+  }, [data?.topFunctions, sortField, sortDir]);
 
   function handleSort(field: SortField) {
     if (field === sortField) setSortDir((d) => (d === "desc" ? "asc" : "desc"));

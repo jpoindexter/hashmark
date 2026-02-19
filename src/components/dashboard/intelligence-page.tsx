@@ -1,7 +1,7 @@
 "use client";
 
 import type { Repository, Scan } from "@prisma/client";
-import { StatsGrid, EmptyState, Button } from "@fabrk/components";
+import { StatsGrid, EmptyState, Button, Input } from "@fabrk/components";
 import { Search, AlertTriangle } from "lucide-react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { triggerRepoScan } from "@/app/(dashboard)/dashboard/[repoId]/actions";
@@ -100,7 +100,7 @@ export function IntelligencePage({
           )}
         </div>
         <form action={triggerRepoScan}>
-          <input type="hidden" name="repoId" value={repo.id} />
+          <Input type="hidden" name="repoId" value={repo.id} />
           <Button type="submit" disabled={isScanning}>
             {isScanning ? "SCANNING..." : "> SCAN NOW"}
           </Button>

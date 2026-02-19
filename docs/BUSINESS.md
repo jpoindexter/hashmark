@@ -10,12 +10,12 @@
 
 ## Traction So Far
 
-The free CLI tool (agent-smith) launched in February 2026:
+The free CLI tool (hashmark) launched in February 2026:
 - **652 downloads in 3 days** from a single blog post
 - **47% conversion rate** from blog readers to CLI installs
 - **8 versions published** (v1.0.0 → v1.1.5), rapid iteration
 - **Zero paid marketing** — organic distribution only
-- Published as `@jpoindexter/agent-smith` on npm
+- Published as `hashmark-cli` on npm
 
 This is the most traction Jason has had in a year of shipping projects. The signal is clear: developers want this.
 
@@ -42,7 +42,7 @@ Every AI coding tool introduced its own context file format between 2023-2026:
 - Sentry opened a GitHub issue about migrating between formats
 - Dev forums full of "how do I keep my .cursorrules and CLAUDE.md in sync?"
 - The AGENTS.md standard was created specifically because of this fragmentation
-- agent-smith's 652 downloads in 3 days proves demand for automation
+- hashmark's 652 downloads in 3 days proves demand for automation
 
 ### AI Coding Tool Adoption Is Exploding
 
@@ -171,7 +171,7 @@ This dual output strengthens the business model:
 | Repomix or Context7 add all-format support | Medium | Medium | Speed advantage; Hashmark has GitHub Action auto-sync |
 | GitHub builds this natively into Copilot | Low | Very High | Would validate the space; likely acquires us first |
 | Low conversion from free to paid | Medium | Medium | Adjust free tier limits; add more Pro-only features |
-| Agent-smith CLI gets cloned | High | Low | CLI is open source anyway; cloud product is the moat |
+| Hashmark CLI gets cloned | High | Low | CLI is open source anyway; cloud product is the moat |
 | Vibe-coded clones (AST Visualizer-style) | High | Low | Single-language, visualization-only — no multi-format output, no auto-sync, no dashboard. Easy to build a toy, hard to build the full platform. |
 
 ## Strategic Advantages

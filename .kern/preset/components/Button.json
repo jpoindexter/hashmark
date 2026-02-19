@@ -2,12 +2,12 @@
   "name": "Button",
   "import": "import { Button } from '@/components/ui/button'",
   "category": "action",
-  "description": "Primary action trigger. Always use Button component, never raw <button>.",
-  "tags": ["action", "submit", "trigger", "cta"],
+  "description": "M3 button with pill shape (rounded-full) by default. Supports filled, tonal, outlined, elevated, and text variants per Material Design 3 spec.",
+  "tags": ["action", "submit", "trigger", "cta", "fab"],
   "variants": [
     {
       "name": "variant",
-      "values": ["default", "outline", "ghost", "destructive"],
+      "values": ["default", "tonal", "outline", "elevated", "ghost", "destructive"],
       "default": "default"
     },
     { "name": "size", "values": ["sm", "md", "lg"], "default": "md" }
@@ -15,7 +15,7 @@
   "sizes": ["sm", "md", "lg"],
   "props": {
     "variant": {
-      "type": "\"default\" | \"outline\" | \"ghost\" | \"destructive\"",
+      "type": "\"default\" | \"tonal\" | \"outline\" | \"elevated\" | \"ghost\" | \"destructive\"",
       "required": false,
       "default": "default"
     },
@@ -27,11 +27,12 @@
     },
     "disabled": { "type": "boolean", "required": false, "default": "false" }
   },
-  "example": "<Button variant=\"outline\" size=\"sm\">> SAVE CHANGES</Button>",
+  "example": "<Button className=\"rounded-full\">Save changes</Button>\n<Button variant=\"tonal\" className=\"rounded-full\">Secondary action</Button>\n<Button variant=\"outline\" className=\"rounded-full\">Cancel</Button>",
   "never": [
-    "Never use raw <button> — always use <Button>",
-    "Never hardcode colors — use variant prop",
-    "Never use px/py — sizes are grid-locked via size prop"
+    "Never use raw <button> -- always use <Button>",
+    "Never use rounded-lg or rounded-md on buttons -- M3 buttons are rounded-full (pill shape)",
+    "Never hardcode colors -- use variant prop",
+    "Never make buttons shorter than 40px (button-md) -- M3 requires comfortable touch targets"
   ],
   "dependencies": ["@radix-ui/react-slot"]
 }

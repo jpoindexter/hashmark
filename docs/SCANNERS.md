@@ -2,11 +2,11 @@
 
 ## Overview
 
-Hashmark uses agent-smith's 27 specialized scanners to extract comprehensive metadata from any codebase. Each scanner focuses on one dimension of the codebase and produces structured data that feeds into the context file generators.
+Hashmark uses hashmark's 28 specialized scanners to extract comprehensive metadata from any codebase. Each scanner focuses on one dimension of the codebase and produces structured data that feeds into the context file generators.
 
 All scanners run in parallel for maximum speed. A typical scan of a 1500-file codebase completes in 5-15 seconds.
 
-**Source**: `/Users/jasonpoindexter/Documents/GitHub/_active/agentsmith/src/scanners/`
+**Source**: `/Users/jasonpoindexter/Documents/GitHub/_active/hashmark/src/scanners/`
 
 ---
 
@@ -321,6 +321,17 @@ All scanners run in parallel for maximum speed. A typical scan of a 1500-file co
 - 95%+ accuracy using AST parsing instead of regex
 
 **Why it matters**: This is the most advanced scanner — gives AI exact API contracts with validation rules.
+
+### 28. AI Automation Hooks Scanner (`latent-hooks.ts`)
+**What it finds**: Context-aware triggers for AI coding assistants.
+
+**Extracts**:
+- `session_start`: Setup tasks (e.g., `npm install`)
+- `file_edit`: Proactive background tasks (e.g., `npx tsc`, `prettier`, project-specific tests)
+- `task_complete`: Post-task validation (e.g., `npm run lint`)
+- `file_create`: Architectural constraints (e.g., standard UI primitives folder)
+
+**Why it matters**: Tells the AI *when* to run certain commands, enabling self-healing and proactive validation without manual prompting. Inspired by Latent-K but auto-generated based on the project's specific tech stack.
 
 ---
 

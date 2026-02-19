@@ -79,6 +79,13 @@ export interface AgentsIndex {
     source: string;
     rules: string[];
   }>;
+  /** AI automation hooks */
+  latentHooks?: Array<{
+    event: string;
+    command: string;
+    description?: string;
+    pattern?: string;
+  }>;
   /** AST-based complexity analysis */
   complexity?: {
     topFunctions: Array<{
@@ -107,7 +114,7 @@ export interface AgentsIndex {
  * @returns JSON string of the index
  */
 export function generateAgentsIndex(result: ScanResult, markdownContent: string): string {
-  const { components, framework, hooks, apiRoutes, database, stats, barrels, existingContext, aiRecommendations } = result;
+  const { components, framework, hooks, apiRoutes, database, stats, barrels, existingContext, aiRecommendations, latentHooks } = result;
 
   const index: AgentsIndex = {
     version: "1.0",
@@ -153,6 +160,14 @@ export function generateAgentsIndex(result: ScanResult, markdownContent: string)
       path: b.importPath,
       exports: b.exports.filter(e => !e.startsWith("*")),
     })),
+    ...(latentHooks && latentHooks.length > 0 && {
+      latentHooks: latentHooks.map(h => ({
+        event: h.event,
+        command: h.command,
+        ...(h.description && { description: h.description }),
+        ...(h.pattern && { pattern: h.pattern }),
+      })),
+    }),
     ...(existingContext.allRules.length > 0 && {
       existingRules: buildExistingRulesSources(existingContext),
     }),

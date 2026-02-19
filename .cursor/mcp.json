@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "kern": {
+      "command": "npx",
+      "args": [
+        "@usekern/mcp-server"
+      ]
+    }
+  }
+}

@@ -2,7 +2,15 @@
 // Regenerate with: kern sync --mode
 
 export const mode = {
-  radius: "rounded-none",
+  radius: {
+    "none": "rounded-none",
+    "xs": "rounded-[var(--radius-xs)]",
+    "sm": "rounded-[var(--radius-sm)]",
+    "md": "rounded-[var(--radius-md)]",
+    "lg": "rounded-[var(--radius-lg)]",
+    "xl": "rounded-[var(--radius-xl)]",
+    "full": "rounded-full",
+  },
 
   color: {
     bg: {
@@ -23,10 +31,16 @@ export const mode = {
       card: "text-card-foreground",
       muted: "text-muted-foreground",
       primary: "text-primary-foreground",
+      "primary-container": "text-primary-container-foreground",
       secondary: "text-secondary-foreground",
+      "secondary-container": "text-secondary-container-foreground",
+      tertiary: "text-tertiary-foreground",
+      "tertiary-container": "text-tertiary-container-foreground",
       accent: "text-accent-foreground",
       popover: "text-popover-foreground",
       destructive: "text-destructive-foreground",
+      surface: "text-surface-foreground",
+      "surface-variant": "text-surface-variant-foreground",
     },
     border: {
       default: "border-border",
@@ -37,22 +51,29 @@ export const mode = {
 
   typography: {
     display: {
-      lg: "text-[48px] leading-[48px] font-black uppercase",
-      md: "text-[32px] leading-[32px] font-extrabold uppercase",
+      lg: "text-[57px] leading-[64px] font-normal",
+      md: "text-[45px] leading-[52px] font-normal",
+      sm: "text-[36px] leading-[44px] font-normal",
     },
     headline: {
-      lg: "text-[24px] leading-[32px] font-bold uppercase",
-      md: "text-[20px] leading-[32px] font-bold uppercase",
+      lg: "text-[32px] leading-[40px] font-normal",
+      md: "text-[28px] leading-[36px] font-normal",
+      sm: "text-[24px] leading-[32px] font-normal",
+    },
+    title: {
+      lg: "text-[22px] leading-[28px] font-normal",
+      md: "text-[16px] leading-[24px] font-medium",
+      sm: "text-[14px] leading-[20px] font-medium",
     },
     body: {
-      lg: "text-[15px] leading-[24px] font-normal",
-      md: "text-[13px] leading-[16px] font-normal",
+      lg: "text-[16px] leading-[24px] font-normal",
+      md: "text-[14px] leading-[20px] font-normal",
+      sm: "text-[12px] leading-[16px] font-normal",
     },
     label: {
-      md: "text-[10px] leading-[16px] font-bold uppercase tracking-[0.1em]",
-    },
-    caption: {
-      caption: "text-[11px] leading-[16px] font-normal",
+      lg: "text-[14px] leading-[20px] font-medium",
+      md: "text-[12px] leading-[16px] font-medium",
+      sm: "text-[11px] leading-[16px] font-medium",
     },
   },
 

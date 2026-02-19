@@ -16,23 +16,27 @@
       "style={{ color: }}"
     ],
     "required": [
-      "bg-background",
-      "bg-muted",
+      "bg-surface",
+      "bg-primary",
+      "bg-primary-container",
+      "bg-secondary-container",
       "text-foreground",
+      "text-on-surface",
       "text-muted-foreground",
-      "border-border"
+      "border-outline",
+      "border-outline-variant"
     ],
     "fix_map": {
-      "bg-gray-*": "bg-muted",
-      "bg-white": "bg-background",
-      "bg-black": "bg-foreground",
+      "bg-gray-*": "bg-secondary-container",
+      "bg-white": "bg-surface",
+      "bg-black": "bg-on-surface",
       "text-gray-*": "text-muted-foreground",
-      "text-white": "text-primary-foreground",
+      "text-white": "text-on-surface",
       "text-black": "text-foreground",
       "text-slate-*": "text-muted-foreground",
-      "border-gray-*": "border-border"
+      "border-gray-*": "border-outline-variant"
     },
-    "message": "Use semantic color tokens. Never hardcode colors."
+    "message": "Use M3 semantic color tokens (surface, on-surface, primary, primary-container, etc.). Never hardcode colors."
   },
   {
     "id": "no-raw-elements",
@@ -48,74 +52,6 @@
     "message": "Use components from @/components/ui/. Never use raw HTML elements for interactive controls."
   },
   {
-    "id": "no-arbitrary-spacing",
-    "severity": "error",
-    "forbidden": [
-      "p-1",
-      "p-2",
-      "p-3",
-      "p-4",
-      "p-5",
-      "p-6",
-      "p-8",
-      "p-10",
-      "p-12",
-      "px-1",
-      "px-2",
-      "px-3",
-      "px-4",
-      "px-5",
-      "px-6",
-      "px-8",
-      "py-1",
-      "py-2",
-      "py-3",
-      "py-4",
-      "py-5",
-      "py-6",
-      "py-8",
-      "m-1",
-      "m-2",
-      "m-3",
-      "m-4",
-      "m-5",
-      "m-6",
-      "m-8",
-      "mt-1",
-      "mt-2",
-      "mt-3",
-      "mt-4",
-      "mt-5",
-      "mt-6",
-      "mt-8",
-      "mb-1",
-      "mb-2",
-      "mb-3",
-      "mb-4",
-      "mb-5",
-      "mb-6",
-      "mb-8",
-      "gap-1",
-      "gap-2",
-      "gap-3",
-      "gap-4",
-      "gap-5",
-      "gap-6",
-      "gap-8"
-    ],
-    "required": ["p-[var(--grid-*)]", "m-[var(--grid-*)]", "gap-[var(--grid-*)]"],
-    "fix_map": {
-      "p-*": "p-[var(--grid-$*)]",
-      "px-*": "px-[var(--grid-$*)]",
-      "py-*": "py-[var(--grid-$*)]",
-      "m-*": "m-[var(--grid-$*)]",
-      "mt-*": "mt-[var(--grid-$*)]",
-      "mb-*": "mb-[var(--grid-$*)]",
-      "gap-*": "gap-[var(--grid-$*)]"
-    },
-    "message": "All spacing must use grid CSS variables. No Tailwind spacing utilities."
-  },
-  {
     "id": "use-cn-utility",
     "severity": "error",
     "forbidden": ["className={`${", "className={condition ?", "className=\"base \" +"],
@@ -123,32 +59,38 @@
     "message": "Use cn() for conditional classes. Never use string concatenation or template literals."
   },
   {
-    "id": "mode-radius",
-    "severity": "error",
+    "id": "pill-buttons",
+    "severity": "warning",
+    "applies_to": ["Button", "FAB", "ExtendedFAB"],
     "forbidden": [
-      "rounded-lg",
-      "rounded-md",
-      "rounded-xl",
-      "rounded-sm",
-      "rounded-2xl",
-      "rounded-3xl"
+      "rounded-lg on Button",
+      "rounded-md on Button",
+      "rounded-sm on Button",
+      "rounded-xl on Button"
     ],
-    "required": ["mode.radius"],
-    "fix_map": {
-      "rounded-lg": "rounded-none",
-      "rounded-md": "rounded-none",
-      "rounded-xl": "rounded-none",
-      "rounded-sm": "rounded-none",
-      "rounded-2xl": "rounded-none",
-      "rounded-3xl": "rounded-none"
-    },
-    "exceptions": ["rounded-full on Switch", "no radius on partial borders (border-b, border-t)"],
-    "message": "Use mode.radius for border radius. Never hardcode rounded-* values."
+    "required": ["rounded-full"],
+    "message": "Material Design 3 uses pill-shaped (fully rounded) buttons by default."
   },
   {
-    "id": "uppercase-labels",
+    "id": "tonal-elevation",
     "severity": "warning",
-    "applies_to": ["badges", "labels", "button-text", "card-headers", "h1", "h2"],
-    "message": "Swiss preset: labels, badges, button text, and headings are UPPERCASE."
+    "applies_to": ["Card", "Surface", "Dialog", "Sheet", "NavigationBar"],
+    "forbidden": ["shadow-sm", "shadow-md", "shadow-lg", "shadow-xl", "shadow-2xl"],
+    "required": ["bg-primary/5", "bg-primary/8", "bg-primary/11", "bg-primary/14"],
+    "fix_map": {
+      "shadow-sm": "bg-primary/5",
+      "shadow-md": "bg-primary/8",
+      "shadow-lg": "bg-primary/11",
+      "shadow-xl": "bg-primary/14",
+      "shadow-2xl": "bg-primary/14"
+    },
+    "message": "Use tonal elevation (bg-primary/5, bg-primary/10) instead of box shadows for M3 elevation."
+  },
+  {
+    "id": "large-touch-targets",
+    "severity": "warning",
+    "applies_to": ["Button", "IconButton", "Checkbox", "Switch", "RadioGroup", "Tabs"],
+    "required": ["min-h-12", "min-w-12", "48px minimum touch target"],
+    "message": "Interactive elements must have a minimum 48px touch target area for M3 accessibility."
   }
 ]

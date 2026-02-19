@@ -98,7 +98,7 @@ export function FilesPage({
           <ul>
             {files.map((file) => (
               <li key={file.id}>
-                <button
+                <Button
                   onClick={() => setSelected(file.id)}
                   className={`w-full px-[var(--grid-4)] py-[var(--grid-2)] text-left text-xs transition-colors ${
                     selected === file.id
@@ -114,7 +114,7 @@ export function FilesPage({
                       {file.tokenCount.toLocaleString()} tokens
                     </p>
                   )}
-                </button>
+                </Button>
               </li>
             ))}
           </ul>

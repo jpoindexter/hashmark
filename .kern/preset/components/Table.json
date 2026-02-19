@@ -2,17 +2,17 @@
   "name": "Table",
   "import": "import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'",
   "category": "data",
-  "description": "Data table for structured information. Use Table components, never raw <table> elements.",
+  "description": "M3 data table. Header uses label-small (12px/500) with on-surface-variant color. Rows separated by outline-variant dividers. Wrap in rounded-xl container.",
   "tags": ["data", "table", "list", "grid", "rows"],
   "variants": [],
   "props": {
     "className": { "type": "string", "required": false }
   },
-  "example": "<Table>\n  <TableHeader>\n    <TableRow>\n      <TableHead>NAME</TableHead>\n      <TableHead>STATUS</TableHead>\n      <TableHead>DATE</TableHead>\n    </TableRow>\n  </TableHeader>\n  <TableBody>\n    <TableRow>\n      <TableCell className=\"font-mono text-[13px]\">J.SMITH</TableCell>\n      <TableCell><Badge variant=\"outline\">ACTIVE</Badge></TableCell>\n      <TableCell className=\"text-muted-foreground\">2026-02-09</TableCell>\n    </TableRow>\n  </TableBody>\n</Table>",
+  "example": "<div className=\"rounded-xl bg-surface-container-low overflow-hidden\">\n  <Table>\n    <TableHeader>\n      <TableRow className=\"border-b border-outline-variant\">\n        <TableHead className=\"text-[12px] font-medium text-on-surface-variant\">Name</TableHead>\n        <TableHead className=\"text-[12px] font-medium text-on-surface-variant\">Status</TableHead>\n        <TableHead className=\"text-[12px] font-medium text-on-surface-variant\">Date</TableHead>\n      </TableRow>\n    </TableHeader>\n    <TableBody>\n      <TableRow className=\"border-b border-outline-variant\">\n        <TableCell className=\"text-[14px] text-on-surface\">Jane Smith</TableCell>\n        <TableCell><Badge variant=\"tonal\" className=\"rounded-full\">Active</Badge></TableCell>\n        <TableCell className=\"text-[14px] text-on-surface-variant\">2026-02-10</TableCell>\n      </TableRow>\n    </TableBody>\n  </Table>\n</div>",
   "never": [
-    "Never use raw <table> — always use Table components",
-    "Never hardcode table colors — use semantic tokens",
-    "Table headers should be UPPERCASE in Swiss-Industrial"
+    "Never use raw <table> -- always use Table components",
+    "Never hardcode table colors -- use on-surface and on-surface-variant tokens",
+    "Never use heavy borders -- M3 tables use subtle outline-variant dividers"
   ],
   "dependencies": []
 }

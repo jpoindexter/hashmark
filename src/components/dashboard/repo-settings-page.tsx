@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { updateRepoScanRoot } from "@/app/(dashboard)/dashboard/[repoId]/actions";
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 
 export function RepoSettingsPage({
   repoId,
@@ -68,7 +70,7 @@ export function RepoSettingsPage({
                 Leave empty to auto-detect.
               </p>
               <div className="mt-[var(--grid-2)] flex items-center gap-[var(--grid-3)]">
-                <input
+                <Input
                   id="scanRoot"
                   name="scanRoot"
                   type="text"
@@ -78,13 +80,13 @@ export function RepoSettingsPage({
                   className="flex-1 border border-border bg-background px-[var(--grid-3)] py-[var(--grid-2)] type-body text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
                   aria-describedby="scanRoot-help"
                 />
-                <button
+                <Button
                   type="submit"
                   disabled={isPending}
                   className="border border-border bg-background px-[var(--grid-4)] py-[var(--grid-2)] type-nav text-foreground transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
                 >
                   {isPending ? "SAVING..." : "> SAVE"}
-                </button>
+                </Button>
               </div>
               <p id="scanRoot-help" className="mt-[var(--grid-1)] type-caption text-muted-foreground">
                 {value.trim() === "" ? (
