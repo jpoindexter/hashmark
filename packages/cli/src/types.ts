@@ -305,6 +305,18 @@ export interface Hook {
   isClientOnly: boolean;
 }
 
+/** AI Automation Hook (inspired by Latent-K) */
+export interface LatentHook {
+  /** Event that triggers the hook (e.g., "session_start", "file_edit", "task_complete") */
+  event: string;
+  /** Command to execute (e.g., "npm run lint") */
+  command: string;
+  /** Description of what the hook does */
+  description?: string;
+  /** Optional file pattern this hook applies to */
+  pattern?: string;
+}
+
 // ============================================================================
 // Pattern Detection Types
 // ============================================================================
@@ -507,13 +519,158 @@ export interface SecurityAudit {
 // AI Configuration & Complexity
 // ============================================================================
 
-export type { AreaComplexity, FileComplexity, ComplexityLevel, AIRecommendations } from "./scanners/complexity.js";
-export type { FunctionComplexity, HalsteadMetrics, FileASTComplexity } from "./scanners/ast-complexity.js";
-import type { AIRecommendations } from "./scanners/complexity.js";
+/** Complexity level for files or sections */
+export type ComplexityLevel = "low" | "medium" | "high";
+
+/** File complexity information */
+export interface FileComplexity {
+  /** File path */
+  path: string;
+  /** Lines of code */
+  lines: number;
+  /** Complexity score (0-100) */
+  score: number;
+  /** Complexity level */
+  level: ComplexityLevel;
+  /** Reasons for complexity */
+  reasons: string[];
+  /** Function-level complexity breakdown (from AST analysis) */
+  functions?: FunctionComplexity[];
+  /** File-level Halstead metrics */
+  halstead?: HalsteadMetrics;
+  /** Maintainability Index (0-100, higher = easier to maintain) */
+  maintainabilityIndex?: number;
+}
+
+/** Area-based complexity (e.g., "API Routes", "Components") */
+export interface AreaComplexity {
+  /** Area name */
+  name: string;
+  /** Complexity level */
+  level: ComplexityLevel;
+  /** File count */
+  fileCount: number;
+  /** Average complexity score */
+  avgScore: number;
+  /** Characteristics */
+  characteristics: string[];
+}
+
+/** AI effort/resource tier for provider-agnostic recommendations */
+export type ModelTier = "minimal" | "standard" | "maximum";
+
+/** AI configuration recommendations */
+export interface AIRecommendations {
+  /** Recommended model tier for simple tasks */
+  simpleModel: ModelTier;
+  /** Recommended model tier for complex tasks */
+  complexModel: ModelTier;
+  /** Whether to enable extended thinking */
+  extendedThinkingRecommended: boolean;
+  /** Areas categorized by complexity */
+  areas: AreaComplexity[];
+  /** Most complex files */
+  complexFiles: FileComplexity[];
+}
+
+/** Halstead software science metrics */
+export interface HalsteadMetrics {
+  /** n1: distinct operators */
+  operators: number;
+  /** n2: distinct operands */
+  operands: number;
+  /** N1: total operator occurrences */
+  totalOperators: number;
+  /** N2: total operand occurrences */
+  totalOperands: number;
+  /** n = n1 + n2 */
+  vocabulary: number;
+  /** N = N1 + N2 */
+  length: number;
+  /** V = N * log2(n) */
+  volume: number;
+  /** D = (n1/2) * (N2/n2) */
+  difficulty: number;
+  /** E = D * V */
+  effort: number;
+  /** B = V / 3000 */
+  estimatedBugs: number;
+}
+
+/** Per-function complexity metrics */
+export interface FunctionComplexity {
+  /** Function/method name */
+  name: string;
+  /** Start line number (1-based) */
+  startLine: number;
+  /** End line number (1-based) */
+  endLine: number;
+  /** McCabe cyclomatic complexity V(G) */
+  cyclomatic: number;
+  /** SonarQube cognitive complexity */
+  cognitive: number;
+  /** Halstead metrics */
+  halstead: HalsteadMetrics;
+  /** Maintainability Index (0-100) */
+  maintainabilityIndex: number;
+  /** Lines of code in function body */
+  loc: number;
+}
+
+/** File-level complexity results from AST */
+export interface FileASTComplexity {
+  /** Relative file path */
+  path: string;
+  /** Per-function complexity breakdown */
+  functions: FunctionComplexity[];
+  /** Sum of all function cyclomatic complexities */
+  fileCyclomatic: number;
+  /** Sum of all function cognitive complexities */
+  fileCognitive: number;
+  /** Average maintainability index across functions */
+  avgMaintainability: number;
+  /** Total lines of code */
+  loc: number;
+}
+
+/** AI-Readiness Score results */
+export interface AiReadinessScore {
+  total: number; // 0-100
+  breakdown: {
+    documentation: number; // 0-20
+    typeSafety: number; // 0-20
+    modularization: number; // 0-20
+    testing: number; // 0-20
+    context: number; // 0-20
+  };
+  recommendations: string[];
+}
 
 // ============================================================================
 // Main Result Type
 // ============================================================================
+
+/** Git commit information */
+export interface GitCommit {
+  /** Short commit hash (7 chars) */
+  hash: string;
+  /** Commit date (YYYY-MM-DD) */
+  date: string;
+  /** Author name */
+  author: string;
+  /** Commit message (truncated to 80 chars) */
+  message: string;
+}
+
+/** Git repository information */
+export interface GitInfo {
+  /** Recent commits */
+  commits: GitCommit[];
+  /** Current branch name */
+  branch: string;
+  /** Remote origin URL if configured */
+  remoteUrl?: string;
+}
 
 /** Complete scan result containing all analysis data */
 export interface ScanResult {
@@ -547,6 +704,15 @@ export interface ScanResult {
   barrels: BarrelExport[];
   /** Component dependencies */
   dependencies: ComponentDependency[];
+  /** AI automation hooks */
+  latentHooks: LatentHook[];
+  /** AI readiness score */
+  aiReadiness?: AiReadinessScore;
+  /** Semantic relationships */
+  relationships?: {
+    componentToHooks: Record<string, string[]>;
+    apiToModels: Record<string, string[]>;
+  };
   /** File tree (optional) */
   fileTree?: FileTree;
   /** Import graph (optional) */

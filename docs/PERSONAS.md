@@ -57,7 +57,7 @@ Four personas with Jobs-to-be-Done for Hashmark (hashmark.md).
 ### Discovery Channel
 
 - Hacker News (reads daily), dev.to blog post, Twitter/X thread about context file fragmentation
-- Or: runs `npx @jpoindexter/agent-smith` after seeing a blog post, sees the Hashmark upsell in CLI output
+- Or: runs `npx hashmark-cli` after seeing a blog post, sees the Hashmark upsell in CLI output
 
 ### Activation Trigger
 

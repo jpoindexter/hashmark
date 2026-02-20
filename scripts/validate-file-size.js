@@ -26,6 +26,7 @@ const EXCLUSIONS = [
   /config\//,
   /\.husky\//,
   /vitest\.config/,
+  /the-monospace-web-main\//,
 ];
 
 function getStagedFiles() {

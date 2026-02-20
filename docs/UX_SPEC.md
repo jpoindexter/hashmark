@@ -660,10 +660,10 @@ Triggered by `> CONNECT REPO` button:
 |------|--------|-------|
 | Repository | `prisma.repository.findUnique({ where: { id: repoId, userId } })` | Verify ownership |
 | Latest scan | `prisma.scan.findFirst({ where: { repositoryId }, orderBy: { createdAt: 'desc' } })` | Most recent scan results |
-| Scan results (JSON) | `scan.results` | Parsed JSON from agent-smith output |
+| Scan results (JSON) | `scan.results` | Parsed JSON from hashmark output |
 | Generated files count | `prisma.generatedFile.count({ where: { scanId } })` | Number of formats generated |
 
-**Scan Results JSON Structure** (from agent-smith output):
+**Scan Results JSON Structure** (from hashmark output):
 
 ```typescript
 interface ScanResults {

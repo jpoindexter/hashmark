@@ -181,7 +181,7 @@ The dashboard shows developers the SAME data that gets encoded into context file
 | **cursorrules.org** | — | Free | Template-based .cursorrules generator | Template-based, not code-aware, single format |
 | **Cursor Directory** | — | Free | Generates rules from package.json | Only reads package.json, Cursor-only |
 | **CTX** | — | Free (MIT) | Collects codebase info into markdown for AI | Manual config, no tool-specific formats, no sync |
-| **agent-smith CLI** | — | Free (our CLI) | Generates AGENTS.md from 27 scanners | AGENTS.md only, manual, feeds Hashmark funnel |
+| **hashmark CLI** | — | Free (our CLI) | Generates AGENTS.md from 27 scanners | AGENTS.md only, manual, feeds Hashmark funnel |
 
 #### Repomix (20.6K stars, 188K monthly npm downloads)
 One-shot codebase dump tool by Kazuki Yamada ([@yamadashy](https://github.com/yamadashy)). Packs your entire repo into a single XML/Markdown file you paste into ChatGPT/Claude. Originally "Repopack" — renamed Dec 2024 due to legal considerations. Has MCP server. **Key difference**: Repomix creates a blob of raw code. Hashmark creates structured, tool-specific context files with architecture analysis, anti-patterns, and component inventories. Repomix is adjacent (context input), not directly competitive (context file generation/management).
@@ -277,7 +277,7 @@ On every push to main branch:
     ↓
 GitHub Action runs in the repo's CI environment
     ↓
-Runs agent-smith's 27 scanners on the codebase
+Runs hashmark's 27 scanners on the codebase
     ↓
 Generates all 8 context file formats
     ↓
@@ -356,7 +356,7 @@ Free tier is generous enough to demonstrate value (all formats, download), restr
 
 ### Distribution Channels (Priority Order)
 
-1. **CLI → Cloud funnel**: agent-smith CLI (652 downloads in 3 days) → Hashmark upsell in CLI output → free signup → Pro upgrade
+1. **CLI → Cloud funnel**: hashmark CLI (652 downloads in 3 days) → Hashmark upsell in CLI output → free signup → Pro upgrade
 2. **Blog posts**: First post converted 47% of readers. Plan 6 posts in first 2 months targeting dev.to, Hashnode, Hacker News.
 3. **Hacker News**: Show HN launch post. Topic is highly relevant to HN audience.
 4. **Twitter/X**: Data threads ("I scanned 100 repos, only 3% had up-to-date context files")
@@ -376,7 +376,7 @@ See [MARKETING.md](./MARKETING.md) for full go-to-market plan.
 - [ ] 50+ free signups
 - [ ] 5+ paying customers
 - [ ] First blog post published
-- [ ] agent-smith CLI shows Hashmark upsell
+- [ ] hashmark CLI shows Hashmark upsell
 
 ## Timeline: The Context File Explosion
 

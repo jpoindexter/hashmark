@@ -1,21 +1,57 @@
 import { NextResponse } from "next/server";
 
+// --- Storage Interface ---
+
 interface RateLimitEntry {
   count: number;
   resetAt: number;
 }
 
-const store = new Map<string, RateLimitEntry>();
+interface RateLimitStore {
+  increment(key: string, windowMs: number): Promise<RateLimitEntry>;
+}
 
-// Clean up expired entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of store) {
-    if (entry.resetAt <= now) {
-      store.delete(key);
+// --- In-Memory Implementation ---
+
+class InMemoryStore implements RateLimitStore {
+  private store = new Map<string, RateLimitEntry>();
+
+  constructor() {
+    // Clean up expired entries every 5 minutes
+    if (typeof setInterval !== "undefined") {
+      setInterval(() => this.cleanup(), 5 * 60 * 1000).unref?.();
     }
   }
-}, 5 * 60 * 1000);
+
+  private cleanup() {
+    const now = Date.now();
+    for (const [key, entry] of this.store) {
+      if (entry.resetAt <= now) {
+        this.store.delete(key);
+      }
+    }
+  }
+
+  async increment(key: string, windowMs: number): Promise<RateLimitEntry> {
+    const now = Date.now();
+    const entry = this.store.get(key);
+
+    if (!entry || entry.resetAt <= now) {
+      const resetAt = now + windowMs;
+      const newEntry = { count: 1, resetAt };
+      this.store.set(key, newEntry);
+      return newEntry;
+    }
+
+    entry.count++;
+    return entry;
+  }
+}
+
+// --- Configuration ---
+
+// Swap this out for RedisStore in production
+const store: RateLimitStore = new InMemoryStore();
 
 interface RateLimitOptions {
   /** Max requests per window */
@@ -33,32 +69,17 @@ interface RateLimitResult {
 
 /**
  * Check rate limit for a given identifier (e.g., userId or IP).
- * Uses in-memory store — resets on deploy. Good enough for launch;
- * swap to Redis/Upstash for multi-instance deployments.
+ * Currently uses in-memory store. Refactored to support async stores (Redis).
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   identifier: string,
   bucket: string,
   options: RateLimitOptions
-): RateLimitResult {
+): Promise<RateLimitResult> {
   const key = `${bucket}:${identifier}`;
-  const now = Date.now();
-  const entry = store.get(key);
+  const windowMs = options.windowSeconds * 1000;
 
-  // Window expired or first request
-  if (!entry || entry.resetAt <= now) {
-    const resetAt = now + options.windowSeconds * 1000;
-    store.set(key, { count: 1, resetAt });
-    return {
-      allowed: true,
-      remaining: options.max - 1,
-      limit: options.max,
-      resetAt,
-    };
-  }
-
-  // Within window
-  entry.count++;
+  const entry = await store.increment(key, windowMs);
   const allowed = entry.count <= options.max;
 
   return {
@@ -73,12 +94,12 @@ export function checkRateLimit(
  * Apply rate limiting to an API route handler.
  * Returns a 429 response if the limit is exceeded, or null if allowed.
  */
-export function rateLimitResponse(
+export async function rateLimitResponse(
   identifier: string,
   bucket: string,
   options: RateLimitOptions
-): NextResponse | null {
-  const result = checkRateLimit(identifier, bucket, options);
+): Promise<NextResponse | null> {
+  const result = await checkRateLimit(identifier, bucket, options);
 
   if (!result.allowed) {
     const retryAfter = Math.ceil((result.resetAt - Date.now()) / 1000);

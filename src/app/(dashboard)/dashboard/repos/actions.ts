@@ -101,11 +101,12 @@ export async function triggerScan(formData: FormData) {
   if (!repoId) throw new Error("Missing repoId");
 
   // Rate limit scan triggers
-  const rateCheck = checkRateLimit(session.user.id, "scan-trigger", { max: 10, windowSeconds: 600 });
+  const rateCheck = await checkRateLimit(session.user.id, "scan-trigger", { max: 10, windowSeconds: 600 });
   if (!rateCheck.allowed) throw new Error("Too many scan requests. Please wait before trying again.");
 
   const repo = await db.repository.findUnique({
     where: { id: repoId, userId: session.user.id },
+    include: { user: { select: { plan: true } } },
   });
   if (!repo) throw new Error("Repository not found");
 
@@ -124,7 +125,7 @@ export async function triggerScan(formData: FormData) {
 
   // Fire-and-forget: kick off background scan
   const token = await getGitHubToken(session.user.id);
-  runScan(scan.id, repo.fullName, token, repo.scanRoot).catch(console.error);
+  runScan(scan.id, repo.fullName, token, repo.scanRoot, repo.user.plan).catch(console.error);
 
   revalidatePath("/dashboard/repos");
   revalidatePath(`/dashboard/${repoId}`);

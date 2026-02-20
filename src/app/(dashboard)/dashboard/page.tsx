@@ -9,6 +9,7 @@ import {
   RecentActivitySection,
   ReposQuickView,
 } from "@/components/dashboard/dashboard-overview-sections";
+import { UpgradeSuccessToast } from "@/components/dashboard/upgrade-success-toast";
 
 export const metadata = {
   title: "Dashboard — Hashmark",
@@ -52,16 +53,8 @@ export default async function DashboardPage({
 
   return (
     <div className="mono-stack-lg">
+      <UpgradeSuccessToast show={upgraded} />
       {plan === "FREE" && <TrialBanner />}
-
-      {upgraded && (
-        <div className="border border-accent bg-accent/10 px-6 py-4">
-          <p className="type-h3 text-accent">UPGRADE SUCCESSFUL</p>
-          <p className="mt-1 type-caption text-muted-foreground">
-            Your plan has been upgraded. All features are now unlocked.
-          </p>
-        </div>
-      )}
 
       <DashboardHeader
         title="DASHBOARD"
@@ -82,7 +75,7 @@ export default async function DashboardPage({
         <h2 className="mono-section-title text-muted-foreground">
           QUICK ACTIONS
         </h2>
-        <div className="flex gap-4">
+        <div className="flex gap-[var(--grid-4)]">
           <Button asChild>
             <Link href="/dashboard/repos?connect=true">
               {"> CONNECT REPO"}

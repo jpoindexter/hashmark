@@ -1,0 +1,29 @@
+{
+  "name": "Badge",
+  "import": "import { Badge } from '@/components/ui/badge'",
+  "category": "display",
+  "description": "M3 badge / chip component. Uses rounded-full (pill shape) with tonal container colors. Supports filled, tonal, and outlined variants.",
+  "tags": ["status", "tag", "label", "indicator", "chip"],
+  "variants": [
+    {
+      "name": "variant",
+      "values": ["default", "tonal", "outline", "destructive"],
+      "default": "default"
+    }
+  ],
+  "props": {
+    "variant": {
+      "type": "\"default\" | \"tonal\" | \"outline\" | \"destructive\"",
+      "required": false,
+      "default": "default"
+    },
+    "className": { "type": "string", "required": false }
+  },
+  "example": "<Badge variant=\"tonal\" className=\"rounded-full bg-secondary-container text-on-secondary-container\">Active</Badge>\n<Badge variant=\"outline\" className=\"rounded-full border-outline\">Draft</Badge>",
+  "never": [
+    "Never use raw <span> for status indicators -- use Badge",
+    "Never hardcode badge colors -- use variant prop with container tokens",
+    "Never use sharp corners on badges -- M3 badges are always rounded-full"
+  ],
+  "dependencies": []
+}

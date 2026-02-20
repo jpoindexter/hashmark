@@ -81,6 +81,8 @@ model Repository {
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   scans        Scan[]
   searchChunks SearchChunk[]
+
+  @@index([userId])
 }
 
 model Scan {
@@ -104,6 +106,8 @@ model Scan {
   repository     Repository     @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
   generatedFiles GeneratedFile[]
   searchChunks   SearchChunk[]
+
+  @@index([repositoryId, createdAt(sort: Desc)])
 }
 
 model GeneratedFile {
@@ -116,6 +120,8 @@ model GeneratedFile {
   createdAt  DateTime   @default(now())
 
   scan Scan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([scanId, format])
 }
 
 model CustomRule {

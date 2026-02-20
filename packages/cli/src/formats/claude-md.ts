@@ -16,7 +16,7 @@
 import type { ScanResult } from "../types.js";
 
 export function generateClaudeMd(scan: ScanResult, customRules: string[] = []): string {
-  const { components, framework, hooks, utilities, commands, apiRoutes, envVars, patterns, database, stats, existingContext, barrels, importGraph, variants } = scan;
+  const { components, framework, hooks, utilities, commands, apiRoutes, envVars, patterns, database, stats, existingContext, barrels, importGraph, variants, latentHooks } = scan;
   const lines: string[] = [];
 
   lines.push("# CLAUDE.md");
@@ -254,6 +254,19 @@ export function generateClaudeMd(scan: ScanResult, customRules: string[] = []): 
     lines.push("text-foreground, text-muted-foreground, text-primary-foreground");
     lines.push("border-border, border-primary");
     lines.push("```");
+    lines.push("");
+  }
+
+  // AI Automation Hooks
+  if (latentHooks && latentHooks.length > 0) {
+    lines.push("## AI Automation Hooks");
+    lines.push("");
+    lines.push("Use these triggers to automate your workflow:");
+    lines.push("");
+    for (const hook of latentHooks) {
+      const patternDesc = hook.pattern ? ` (for \`${hook.pattern}\`)` : "";
+      lines.push(`- **${hook.event}**: \`${hook.command}\`${patternDesc}`);
+    }
     lines.push("");
   }
 

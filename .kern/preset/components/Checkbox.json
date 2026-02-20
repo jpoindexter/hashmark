@@ -1,0 +1,21 @@
+{
+  "name": "Checkbox",
+  "import": "import { Checkbox } from '@/components/ui/checkbox'",
+  "category": "form",
+  "description": "M3 checkbox built on Radix. Uses rounded-[2px] corners, primary color when checked, and 48px minimum touch target.",
+  "tags": ["form", "toggle", "check", "boolean"],
+  "variants": [],
+  "props": {
+    "checked": { "type": "boolean", "required": false },
+    "onCheckedChange": { "type": "(checked: boolean) => void", "required": false },
+    "disabled": { "type": "boolean", "required": false, "default": "false" },
+    "id": { "type": "string", "required": false }
+  },
+  "example": "<div className=\"flex items-center gap-[var(--grid-3)]\">\n  <Checkbox id=\"terms\" className=\"min-h-12 min-w-12 flex items-center justify-center\" />\n  <label htmlFor=\"terms\" className=\"text-[16px] leading-6 text-on-surface\">Accept terms and conditions</label>\n</div>",
+  "never": [
+    "Never use raw <input type=\"checkbox\"> -- always use <Checkbox>",
+    "Never make checkbox touch target smaller than 48px",
+    "Never style checkbox directly -- use primary and on-primary semantic tokens"
+  ],
+  "dependencies": ["@radix-ui/react-checkbox"]
+}

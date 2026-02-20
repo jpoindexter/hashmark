@@ -1,100 +1,46 @@
 /**
- * Environment Variable Scanner
- *
- * Discovers environment variables from:
- * - .env.example files
- * - Zod validation schemas (src/lib/env)
- * - process.env usage in source files
- *
- * @module scanners/env-vars
+ * Environment Variable Scanner Plugin
  */
 
-import { readFileSync, existsSync } from "fs";
-import { join } from "path";
+import type { EnvVar } from "../types.js";
+import type { ScannerPlugin, ScannerContext } from "../engine/types.js";
 
-/** Environment variable definition */
-export interface EnvVar {
-  /** Variable name (e.g., "DATABASE_URL") */
-  name: string;
-  /** Whether the variable is required */
-  required: boolean;
-  /** Whether a default value is provided */
-  hasDefault: boolean;
-  /** Description from comments */
-  description?: string;
-  /** Category (e.g., "database", "auth") */
-  category?: string;
-}
+export class EnvVarsScanner implements ScannerPlugin<EnvVar[]> {
+  name = "envVars";
+  filePatterns = ["**/.env*", "**/env.ts", "**/env.js", "**/env/*.ts"];
+  
+  private envVars: EnvVar[] = [];
+  private seenVars = new Set<string>();
 
-/**
- * Scans for environment variable definitions
- *
- * @param dir - Project root directory
- * @returns Array of discovered environment variables
- */
-export async function scanEnvVars(dir: string): Promise<EnvVar[]> {
-  const envVars: EnvVar[] = [];
-  const seenVars = new Set<string>();
-
-  // 1. Check .env.example or .env.local.example
-  const exampleFiles = [".env.example", ".env.local.example", ".env.sample"];
-  for (const exampleFile of exampleFiles) {
-    const path = join(dir, exampleFile);
-    if (existsSync(path)) {
-      const content = readFileSync(path, "utf-8");
-      parseEnvExample(content, envVars, seenVars);
-      break;
+  async onFile(path: string, content: string) {
+    if (path.includes(".env") && (path.endsWith(".example") || path.endsWith(".sample") || path.endsWith(".local"))) {
+      parseEnvExample(content, this.envVars, this.seenVars);
+    } else if (path.includes("env.") || path.includes("/env/")) {
+      parseZodValidation(content, this.envVars, this.seenVars);
     }
   }
 
-  // 2. Check for Zod validation schema
-  const validationPaths = [
-    "src/lib/env/validation.ts",
-    "src/lib/env/index.ts",
-    "src/env.ts",
-    "lib/env.ts",
-  ];
-
-  for (const valPath of validationPaths) {
-    const path = join(dir, valPath);
-    if (existsSync(path)) {
-      const content = readFileSync(path, "utf-8");
-      parseZodValidation(content, envVars, seenVars);
-      break;
-    }
+  getResult() {
+    return this.envVars.sort((a, b) => a.name.localeCompare(b.name));
   }
-
-  // 3. Scan source files for process.env usage
-  // (This is expensive so we skip it for now)
-
-  return envVars;
 }
 
-/** Parses environment variables from .env.example file format */
 function parseEnvExample(content: string, envVars: EnvVar[], seenVars: Set<string>): void {
   const lines = content.split("\n");
   let currentCategory: string | undefined;
 
   for (const line of lines) {
-    // Detect category comments
-    const categoryMatch = line.match(/^#\s*[-=]+\s*(.+?)\s*[-=]*$/i) ||
-                          line.match(/^#\s*\[(.+?)\]/) ||
-                          line.match(/^#\s*(.+):?\s*$/);
-
+    const categoryMatch = line.match(/^#\s*[-=]+\s*(.+?)\s*[-=]*$/i) || line.match(/^#\s*\[(.+?)\]/) || line.match(/^#\s*(.+):?\s*$/);
     if (categoryMatch && !line.includes("=")) {
       const cat = categoryMatch[1].trim();
-      if (cat.length > 2 && cat.length < 50) {
-        currentCategory = cat;
-      }
+      if (cat.length > 2 && cat.length < 50) currentCategory = cat;
       continue;
     }
 
-    // Parse env var
     const varMatch = line.match(/^([A-Z][A-Z0-9_]+)\s*=\s*(.*)$/);
     if (varMatch && !seenVars.has(varMatch[1])) {
       const name = varMatch[1];
       const value = varMatch[2];
-
       seenVars.add(name);
       envVars.push({
         name,
@@ -106,17 +52,11 @@ function parseEnvExample(content: string, envVars: EnvVar[], seenVars: Set<strin
   }
 }
 
-/** Parses environment variables from Zod validation schemas */
 function parseZodValidation(content: string, envVars: EnvVar[], seenVars: Set<string>): void {
-  // Look for z.string() patterns with env var names
   const patterns = [
-    // z.string() with optional()
     /([A-Z][A-Z0-9_]+)\s*:\s*z\.string\(\)(?:\.min\([^)]+\))?(?:\.optional\(\))/g,
-    // z.string() required
     /([A-Z][A-Z0-9_]+)\s*:\s*z\.string\(\)(?:\.min\([^)]+\))?(?!\.optional)/g,
-    // env.* access
     /env\.([A-Z][A-Z0-9_]+)/g,
-    // process.env.*
     /process\.env\.([A-Z][A-Z0-9_]+)/g,
   ];
 
@@ -126,17 +66,19 @@ function parseZodValidation(content: string, envVars: EnvVar[], seenVars: Set<st
       const name = match[1];
       if (!seenVars.has(name)) {
         seenVars.add(name);
-
-        // Determine if required based on pattern
-        const isOptional = content.includes(`${name}: z.string().optional()`) ||
-                          content.includes(`${name}: z.string().min(1).optional()`);
-
-        envVars.push({
-          name,
-          required: !isOptional,
-          hasDefault: false,
-        });
+        const isOptional = content.includes(`${name}: z.string().optional()`);
+        envVars.push({ name, required: !isOptional, hasDefault: false });
       }
     }
   }
+}
+
+/** Legacy support */
+export async function scanEnvVars(dir: string): Promise<EnvVar[]> {
+  const { ScannerRegistry } = await import("../engine/registry.js");
+  const { CodebaseVisitor } = await import("../engine/visitor.js");
+  const registry = new ScannerRegistry().register(new EnvVarsScanner());
+  const visitor = new CodebaseVisitor(registry);
+  const result = await visitor.visit(dir);
+  return result.pluginResults.envVars;
 }

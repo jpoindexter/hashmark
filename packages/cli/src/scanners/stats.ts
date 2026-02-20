@@ -13,89 +13,70 @@
 
 import fg from "fast-glob";
 import { readFileSync, statSync } from "fs";
+import type { FileStats } from "../types.js";
+import type { ScannerPlugin } from "../engine/types.js";
 
-/** File statistics for the codebase */
-export interface FileStats {
-  /** Total number of files scanned */
-  totalFiles: number;
-  /** Total lines of code */
-  totalLines: number;
-  /** Total size in bytes */
-  totalSize: number;
-  /** Largest files by line count */
-  largestFiles: { path: string; lines: number }[];
-  /** File count by extension */
-  filesByType: Record<string, number>;
+export class StatsScanner implements ScannerPlugin<FileStats> {
+  name = "stats";
+  filePatterns = ["**/*"]; // Watch everything for stats
+
+  private stats: FileStats = {
+    totalFiles: 0,
+    totalLines: 0,
+    totalSize: 0,
+    largestFiles: [],
+    filesByType: {},
+  };
+
+  private fileEntries: { path: string; lines: number }[] = [];
+
+  async onFile(path: string, content: string) {
+    this.stats.totalFiles++;
+    
+    // Count lines
+    const lines = content.split("\n").length;
+    this.stats.totalLines += lines;
+    
+    // Calculate size (approximate from string length if not using actual fs.stat)
+    // But since we have the content, we can use Buffer.byteLength
+    const size = Buffer.byteLength(content, "utf-8");
+    this.stats.totalSize += size;
+
+    // Track for largest files
+    this.fileEntries.push({ path, lines });
+
+    // Track by extension
+    const ext = path.split(".").pop() || "other";
+    this.stats.filesByType[ext] = (this.stats.filesByType[ext] || 0) + 1;
+  }
+
+  finalize() {
+    // Get top 5 largest files by lines
+    this.stats.largestFiles = this.fileEntries
+      .sort((a, b) => b.lines - a.lines)
+      .slice(0, 5);
+  }
+
+  getResult() {
+    return this.stats;
+  }
 }
 
 /**
- * Scans for file statistics in the codebase
- *
- * @param dir - Project root directory
- * @returns File statistics summary
+ * Legacy support for file statistics
+ * @deprecated Use ScannerEngine with StatsScanner plugin
  */
 export async function scanStats(dir: string): Promise<FileStats> {
   const files = await fg(
     [
-      // JavaScript/TypeScript ecosystem
-      "**/*.{ts,tsx,js,jsx,mjs,cjs,css,scss,less,json,md,mdx}",
-      // Python
-      "**/*.py",
-      // Go
-      "**/*.go",
-      // Rust
-      "**/*.rs",
-      // Ruby
-      "**/*.rb",
-      // Java/Kotlin
-      "**/*.{java,kt,kts}",
-      // PHP
-      "**/*.php",
-      // Frontend frameworks
-      "**/*.{vue,svelte}",
-      // Swift/Objective-C
-      "**/*.{swift,m,h}",
-      // C/C++
-      "**/*.{c,cpp,cc,cxx,hpp}",
-      // C#
-      "**/*.cs",
-      // Shell
-      "**/*.{sh,bash,zsh}",
-      // Config/Data
-      "**/*.{yaml,yml,toml,sql,graphql,gql,proto}",
-      // Exclusions — JS/TS ecosystem
+      "**/*.{ts,tsx,js,jsx,mjs,cjs,css,scss,less,json,md,mdx,py,go,rs,rb,java,kt,kts,php,vue,svelte,swift,m,h,c,cpp,cc,cxx,hpp,cs,sh,bash,zsh,yaml,yml,toml,sql,graphql,gql,proto}",
       "!**/node_modules/**",
       "!**/.next/**",
-      "!**/.nuxt/**",
-      "!**/.svelte-kit/**",
+      "!**/.git/**",
       "!**/dist/**",
       "!**/build/**",
-      "!**/.git/**",
-      "!**/coverage/**",
-      "!**/*.min.js",
-      "!**/package-lock.json",
-      "!**/pnpm-lock.yaml",
-      "!**/yarn.lock",
-      // Exclusions — Python
-      "!**/venv/**",
-      "!**/.venv/**",
-      "!**/__pycache__/**",
-      "!**/*.egg-info/**",
-      // Exclusions — Rust
-      "!**/target/**",
-      // Exclusions — Go
-      "!**/vendor/**",
-      // Exclusions — Java/Kotlin
-      "!**/.gradle/**",
-      "!**/bin/**",
-      "!**/obj/**",
-      // Exclusions — C#
-      "!**/packages/**",
     ],
-    {
-      cwd: dir,
-      absolute: false,
-    }
+    { cwd: dir, absolute: false }
   );
 
   let totalLines = 0;
@@ -108,31 +89,20 @@ export async function scanStats(dir: string): Promise<FileStats> {
       const fullPath = `${dir}/${file}`;
       const stat = statSync(fullPath);
       totalSize += stat.size;
-
       const content = readFileSync(fullPath, "utf-8");
       const lines = content.split("\n").length;
       totalLines += lines;
-
       fileSizes.push({ path: file, lines });
-
-      // Track by extension
       const ext = file.split(".").pop() || "other";
       filesByType[ext] = (filesByType[ext] || 0) + 1;
-    } catch {
-      // Skip files we can't read
-    }
+    } catch {}
   }
-
-  // Get top 5 largest files by lines
-  const largestFiles = fileSizes
-    .sort((a, b) => b.lines - a.lines)
-    .slice(0, 5);
 
   return {
     totalFiles: files.length,
     totalLines,
     totalSize,
-    largestFiles,
+    largestFiles: fileSizes.sort((a, b) => b.lines - a.lines).slice(0, 5),
     filesByType,
   };
 }

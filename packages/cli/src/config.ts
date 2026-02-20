@@ -48,7 +48,7 @@ export interface HashmarkConfig {
 export type AgentsmithConfig = HashmarkConfig;
 
 /** Default configuration values */
-const DEFAULT_CONFIG: HashmarkConfig = {
+export const DEFAULT_CONFIG: HashmarkConfig = {
   output: "AGENTS.md",
   include: ["components", "hooks", "routes", "tokens", "patterns", "variants", "env"],
   exclude: [],

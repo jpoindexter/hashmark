@@ -17,7 +17,7 @@ export async function GET(
   }
 
   // Rate limit by user
-  const limited = rateLimitResponse(session.user.id, "download", DOWNLOAD_LIMIT);
+  const limited = await rateLimitResponse(session.user.id, "download", DOWNLOAD_LIMIT);
   if (limited) return limited;
 
   const { repoId } = await params;

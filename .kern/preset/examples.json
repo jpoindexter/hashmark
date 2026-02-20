@@ -1,0 +1,47 @@
+[
+  {
+    "id": "button-wrong-vs-right",
+    "wrong": "<button className=\"px-4 py-2 bg-purple-500 text-white rounded-lg\">Save</button>",
+    "correct": "<Button className=\"rounded-full\">Save</Button>",
+    "violations": [
+      "raw element",
+      "hardcoded colors",
+      "hardcoded spacing",
+      "hardcoded radius (should be rounded-full for M3 pill shape)"
+    ]
+  },
+  {
+    "id": "card-wrong-vs-right",
+    "wrong": "<div className=\"rounded-lg border p-6 shadow-md bg-white\">\n  <h3 className=\"text-lg font-bold\">Settings</h3>\n</div>",
+    "correct": "<Card className={cn(\"rounded-xl bg-surface-container-low border-0\")}>\n  <CardHeader>\n    <h3 className=\"text-[22px] leading-7 font-normal text-on-surface\">Settings</h3>\n  </CardHeader>\n  <CardContent>...</CardContent>\n</Card>",
+    "violations": [
+      "raw div as card",
+      "hardcoded bg-white (use surface token)",
+      "box shadow instead of tonal elevation",
+      "hardcoded radius",
+      "no M3 surface container color"
+    ]
+  },
+  {
+    "id": "elevation-wrong-vs-right",
+    "wrong": "<div className=\"shadow-lg bg-white rounded-xl p-4\">\n  <p className=\"text-gray-700\">Elevated card</p>\n</div>",
+    "correct": "<Card className={cn(\"rounded-xl bg-surface-container border-0\")}>\n  <CardContent className=\"p-[var(--grid-4)]\">\n    <p className=\"text-[14px] leading-5 text-on-surface\">Elevated card</p>\n  </CardContent>\n</Card>",
+    "violations": [
+      "box shadow instead of tonal elevation",
+      "hardcoded bg-white",
+      "hardcoded text-gray-700",
+      "M3 uses surface tint overlays not drop shadows"
+    ]
+  },
+  {
+    "id": "color-wrong-vs-right",
+    "wrong": "<span className=\"text-gray-500\">Status</span>\n<div className=\"bg-purple-100 border border-purple-300 rounded-md p-2\">\n  <span className=\"text-purple-800\">Active</span>\n</div>",
+    "correct": "<span className=\"text-on-surface-variant\">Status</span>\n<div className=\"bg-primary-container rounded-full px-[var(--grid-4)] py-[var(--grid-1)]\">\n  <span className=\"text-on-primary-container\">Active</span>\n</div>",
+    "violations": [
+      "hardcoded gray and purple values",
+      "not using M3 semantic container tokens",
+      "rounded-md instead of rounded-full for pill shapes",
+      "hardcoded spacing"
+    ]
+  }
+]

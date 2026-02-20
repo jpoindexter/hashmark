@@ -10,7 +10,7 @@
 import type { ScanResult } from "../types.js";
 
 export function generateGeminiMd(scan: ScanResult, customRules: string[] = []): string {
-  const { components, framework, hooks, utilities, commands, apiRoutes, patterns, database, stats, barrels, envVars } = scan;
+  const { components, framework, hooks, utilities, commands, apiRoutes, patterns, database, stats, barrels, envVars, latentHooks } = scan;
   const lines: string[] = [];
 
   lines.push("# GEMINI.md");
@@ -45,6 +45,7 @@ export function generateGeminiMd(scan: ScanResult, customRules: string[] = []): 
   if (commands.test) lines.push(`npm test             # Run tests`);
   if (commands.lint) lines.push(`npm run lint         # Lint code`);
   if (commands.typecheck) lines.push(`npm run typecheck    # Type check`);
+  if (commands.custom.hashmark) lines.push(`npm run hashmark     # Run hashmark CLI`);
   lines.push("```");
   lines.push("");
 
@@ -167,6 +168,17 @@ export function generateGeminiMd(scan: ScanResult, customRules: string[] = []): 
     lines.push("");
     for (const pattern of patterns.patterns) {
       lines.push(`- ${pattern}`);
+    }
+    lines.push("");
+  }
+
+  // AI Automation Hooks
+  if (latentHooks && latentHooks.length > 0) {
+    lines.push("### AI Automation Hooks");
+    lines.push("");
+    for (const hook of latentHooks) {
+      const patternDesc = hook.pattern ? ` (for \`${hook.pattern}\`)` : "";
+      lines.push(`- **${hook.event}**: \`${hook.command}\`${patternDesc}`);
     }
     lines.push("");
   }

@@ -18,13 +18,14 @@ export async function POST(
   }
 
   // Rate limit by user
-  const limited = rateLimitResponse(session.user.id, "scan-trigger", SCAN_LIMIT);
+  const limited = await rateLimitResponse(session.user.id, "scan-trigger", SCAN_LIMIT);
   if (limited) return limited;
 
   const { repoId } = await params;
 
   const repo = await db.repository.findUnique({
     where: { id: repoId, userId: session.user.id },
+    include: { user: { select: { plan: true } } },
   });
   if (!repo) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -47,7 +48,7 @@ export async function POST(
 
   // Fire-and-forget: kick off background scan
   const token = await getGitHubToken(session.user.id);
-  runScan(scan.id, repo.fullName, token, repo.scanRoot).catch(console.error);
+  runScan(scan.id, repo.fullName, token, repo.scanRoot, repo.user.plan).catch(console.error);
 
   return NextResponse.json({ scanId: scan.id }, { status: 202 });
 }

@@ -3,6 +3,7 @@
 import { useTheme } from "next-themes";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { useSyncExternalStore } from "react";
+import { Button } from "@fabrk/components";
 
 const subscribe = () => () => {};
 const getSnapshot = () => true;
@@ -18,8 +19,8 @@ export function ThemeToggle() {
 
   if (!hydrated) {
     return (
-      <div className="flex items-center gap-1 border border-border p-0.5">
-        <div className="p-1.5"><Monitor className="size-3.5" /></div>
+      <div className="flex items-center gap-[var(--grid-1)] border border-border p-0.5">
+        <div className="p-[var(--grid-1)].5"><Monitor className="size-3.5" /></div>
       </div>
     );
   }
@@ -33,10 +34,10 @@ export function ThemeToggle() {
   return (
     <div className="flex items-center gap-0 border border-border">
       {options.map(({ value, icon: Icon, label }) => (
-        <button
+        <Button
           key={value}
           onClick={() => setTheme(value)}
-          className={`p-1.5 transition-colors ${
+          className={`p-[var(--grid-1)].5 transition-colors ${
             theme === value
               ? "bg-accent text-accent-foreground"
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -45,7 +46,7 @@ export function ThemeToggle() {
           aria-label={`Switch to ${label} theme`}
         >
           <Icon className="size-3.5" />
-        </button>
+        </Button>
       ))}
     </div>
   );

@@ -33,7 +33,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const limited = rateLimitResponse(session.user.id, "search", {
+  const limited = await rateLimitResponse(session.user.id, "search", {
     max: 60,
     windowSeconds: 60,
   });

@@ -12,12 +12,13 @@
  * @module generator
  */
 
-import type { ScanResult, Component, Framework, Tokens, Hook, Utilities, Commands, ExistingContext, ComponentVariant, ApiRoute, ApiSchema, EnvVar, DetectedPatterns, DatabaseSchema, FileStats, BarrelExport, ComponentDependency, FileTree, ImportGraph, TypeScanResult, AntiPatternsResult } from "./types.js";
+import type { ScanResult, Component, Framework, Tokens, Hook, Utilities, Commands, ExistingContext, ComponentVariant, ApiRoute, ApiSchema, EnvVar, DetectedPatterns, DatabaseSchema, FileStats, BarrelExport, ComponentDependency, FileTree, ImportGraph, TypeScanResult, AntiPatternsResult, AIRecommendations, FileComplexity, FunctionComplexity } from "./types.js";
 import { extractRulesFromContent } from "./scanners/existing-context.js";
 import { formatFileTree } from "./scanners/file-tree.js";
 import { formatImportGraph } from "./scanners/imports.js";
 import { formatTypes } from "./scanners/types.js";
 import { formatAntiPatterns } from "./scanners/anti-patterns.js";
+import { groupComponentsByDirectory, formatDirectoryName } from "./utils/grouping.js";
 
 /** Options for controlling AGENTS.md generation */
 export interface GeneratorOptions {
@@ -41,7 +42,7 @@ export interface GeneratorOptions {
  * writeFileSync('AGENTS.md', content);
  */
 export function generateAgentsMd(result: ScanResult, options: GeneratorOptions = {}): string {
-  const { components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, typeExports, antiPatterns, aiRecommendations, graphqlSchemas } = result;
+  const { components, tokens, framework, hooks, utilities, commands, existingContext, variants, apiRoutes, envVars, patterns, database, stats, barrels, dependencies, fileTree, importGraph, typeExports, antiPatterns, aiRecommendations, graphqlSchemas, latentHooks } = result;
   const { compact = false, compress = false, minimal = false, includeTree = false, xml = false } = options;
 
   // Minimal mode: ultra-compact output (~1K tokens)
@@ -825,10 +826,10 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
 
     // Function hotspots table — top 10 functions by cognitive complexity
     const allFunctions = aiRecommendations.complexFiles
-      .flatMap((f) =>
-        (f.functions ?? []).map((fn) => ({ ...fn, file: f.path }))
+      .flatMap((f: FileComplexity) =>
+        (f.functions ?? []).map((fn: FunctionComplexity) => ({ ...fn, file: f.path }))
       )
-      .sort((a, b) => b.cognitive - a.cognitive)
+      .sort((a: any, b: any) => b.cognitive - a.cognitive)
       .slice(0, 10);
 
     if (allFunctions.length > 0 && !compact && !compress) {
@@ -881,6 +882,22 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
       lines.push("```");
       lines.push("");
     }
+  }
+
+  // AI Automation Hooks (inspired by Latent-K)
+  if (latentHooks && latentHooks.length > 0 && !minimal) {
+    lines.push("## AI Automation Hooks");
+    lines.push("");
+    lines.push("These hooks automate common development tasks during your session:");
+    lines.push("");
+    for (const hook of latentHooks) {
+      const patternDesc = hook.pattern ? ` (for \`${hook.pattern}\`)` : "";
+      lines.push(`- **${hook.event}**: \`${hook.command}\`${patternDesc}`);
+      if (hook.description) {
+        lines.push(`  - ${hook.description}`);
+      }
+    }
+    lines.push("");
   }
 
   // Reference to existing docs
@@ -996,49 +1013,6 @@ function getFrameworkRules(framework: Framework, tokens: Tokens, utilities: Util
   return rules;
 }
 
-function groupComponentsByDirectory(components: Component[]): Record<string, Component[]> {
-  const grouped: Record<string, Component[]> = {};
-
-  for (const comp of components) {
-    const parts = comp.path.split("/");
-    parts.pop();
-    const dir = parts.join("/") || "root";
-
-    if (!grouped[dir]) {
-      grouped[dir] = [];
-    }
-    grouped[dir].push(comp);
-  }
-
-  return grouped;
-}
-
-function formatDirectoryName(dir: string): string {
-  const parts = dir.split("/");
-  const lastPart = parts.pop() || dir;
-
-  const nameMap: Record<string, string> = {
-    ui: "UI Components",
-    charts: "Charts",
-    auth: "Auth",
-    admin: "Admin",
-    billing: "Billing",
-  };
-
-  const baseName = nameMap[lastPart] ??
-    lastPart.split(/[-_]/).map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
-
-  // Add parent context to disambiguate (e.g., "web > UI Components" vs "fabrk-dev > UI Components")
-  // Find a meaningful parent: skip generic dirs like src, components, app
-  const genericDirs = new Set(["src", "components", "app", "pages", "lib", "hooks"]);
-  const contextPart = parts.filter((p) => !genericDirs.has(p)).pop();
-  if (contextPart && parts.length > 1) {
-    return `${contextPart} > ${baseName}`;
-  }
-
-  return baseName;
-}
-
 function groupRoutesByBasePath(routes: ApiRoute[]): Record<string, ApiRoute[]> {
   const grouped: Record<string, ApiRoute[]> = {};
 
@@ -1098,7 +1072,7 @@ function formatSchema(schema: ApiSchema, compact: boolean = false): string {
  * TL;DR + Rules with inline examples + Component names only
  */
 function generateMinimalOutput(result: ScanResult, options: GeneratorOptions): string {
-  const { components, framework, utilities, hooks, apiRoutes, database, importGraph, graphqlSchemas } = result;
+  const { components, framework, utilities, hooks, apiRoutes, database, importGraph, graphqlSchemas, latentHooks } = result;
   const lines: string[] = [];
 
   // Header
@@ -1169,6 +1143,15 @@ function generateMinimalOutput(result: ScanResult, options: GeneratorOptions): s
     lines.push("");
   }
 
+  // AI Automation Hooks
+  if (latentHooks && latentHooks.length > 0) {
+    lines.push("## AI Automation Hooks");
+    lines.push("");
+    const hooksList = latentHooks.map(h => `**${h.event}**: \`${h.command}\``).join(", ");
+    lines.push(hooksList);
+    lines.push("");
+  }
+
   return lines.join("\n");
 }
 
@@ -1176,7 +1159,7 @@ function generateMinimalOutput(result: ScanResult, options: GeneratorOptions): s
  * Generate XML-structured output (industry standard, matches Repomix)
  */
 function generateXmlOutput(result: ScanResult): string {
-  const { components, tokens, framework, utilities, hooks, apiRoutes, database, importGraph, graphqlSchemas } = result;
+  const { components, tokens, framework, utilities, hooks, apiRoutes, database, importGraph, graphqlSchemas, latentHooks } = result;
   const lines: string[] = [];
 
   lines.push('<?xml version="1.0" encoding="UTF-8"?>');
@@ -1302,6 +1285,18 @@ function generateXmlOutput(result: ScanResult): string {
     lines.push('    <borders>border-border, border-primary</borders>');
     lines.push('    <forbidden>bg-white, bg-black, bg-gray-*, #hexvalues</forbidden>');
     lines.push('  </design-tokens>');
+    lines.push('');
+  }
+
+  // AI Automation Hooks
+  if (latentHooks && latentHooks.length > 0) {
+    lines.push('  <automation-hooks>');
+    for (const hook of latentHooks) {
+      const descAttr = hook.description ? ` description="${escapeXml(hook.description)}"` : '';
+      const patternAttr = hook.pattern ? ` pattern="${escapeXml(hook.pattern)}"` : '';
+      lines.push(`    <hook event="${escapeXml(hook.event)}" command="${escapeXml(hook.command)}"${descAttr}${patternAttr} />`);
+    }
+    lines.push('  </automation-hooks>');
     lines.push('');
   }
 

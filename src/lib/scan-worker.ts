@@ -43,7 +43,7 @@ async function cloneRepo(fullName: string, token: string, tmpDir: string) {
  * Run a full scan: clone → CLI → parse → store → cleanup.
  * Called fire-and-forget from server actions.
  */
-export async function runScan(scanId: string, fullName: string, token: string, scanRoot?: string | null) {
+export async function runScan(scanId: string, fullName: string, token: string, scanRoot?: string | null, plan: string = "FREE") {
   if (!REPO_NAME_RE.test(fullName)) {
     await db.scan.update({
       where: { id: scanId },
@@ -86,7 +86,13 @@ export async function runScan(scanId: string, fullName: string, token: string, s
 
     // 3. Run CLI scanner (execFile — no shell)
     await updateProgress("SCANNING", `Running scanners on ${effectiveScanRoot || "root"}...`);
-    await execFileAsync("node", [CLI_PATH, scanDir, "--format", "all", "--json", "--force"], {
+    
+    const cliArgs = [CLI_PATH, scanDir, "--format", "all", "--json", "--force"];
+    if (plan !== "FREE") {
+      cliArgs.push("--security");
+    }
+
+    await execFileAsync("node", cliArgs, {
       timeout: 300_000, maxBuffer: 10 * 1024 * 1024,
     });
 

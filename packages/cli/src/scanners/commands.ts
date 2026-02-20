@@ -33,7 +33,7 @@ export interface Commands {
 
 /** Scripts considered important for AI documentation */
 const IMPORTANT_SCRIPTS = [
-  "dev", "build", "start", "test", "lint", "format", "typecheck", "type-check",
+  "dev", "build", "start", "test", "lint", "format", "typecheck", "type-check", "hashmark",
   "db:push", "db:pull", "db:migrate", "db:seed", "db:studio", "db:reset",
   "ai:validate", "ai:lint", "ai:security", "validate", "setup",
 ];

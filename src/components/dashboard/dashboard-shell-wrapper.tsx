@@ -83,10 +83,10 @@ export function DashboardShellWrapper({
       onSignOut={() => signOut({ callbackUrl: "/login" })}
       linkComponent={Link}
     >
-      <div className="mx-auto max-w-7xl p-6">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="mx-auto max-w-7xl p-[var(--grid-6)]">
+        <div className="mb-[var(--grid-4)] flex items-center justify-between">
           <DashboardBreadcrumbs />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-[var(--grid-2)]">
             <SearchTrigger onOpen={() => setSearchOpen(true)} />
             <ThemeToggle />
           </div>

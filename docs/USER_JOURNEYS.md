@@ -14,7 +14,7 @@ Six end-to-end journeys covering the full Hashmark lifecycle: CLI discovery, web
 
 1. **Terminal** -- Install and run the CLI.
    ```bash
-   npx @jpoindexter/agent-smith .
+   npx hashmark-cli .
    ```
    Expected output (5-15 seconds):
    ```
@@ -102,7 +102,7 @@ GitHub OAuth completed and user lands on dashboard (activation step 1 of 2).
    Scanning your-org/your-repo...
    ■■■■■■■■□□ 80%  Analyzing components...
    ```
-   Scan runs server-side: shallow clone to temp dir, `npx @jpoindexter/agent-smith <path> --json --force`, parse JSON, store results, clean up temp dir. Takes 10-30 seconds.
+   Scan runs server-side: shallow clone to temp dir, `npx hashmark-cli <path> --json --force`, parse JSON, store results, clean up temp dir. Takes 10-30 seconds.
 
 4. **Repo Intelligence** (`hashmark.md/dashboard/[repoId]`) -- Scan completes. Page populates with KPI cards:
    - Files: 847
@@ -169,7 +169,7 @@ User completes a scan and downloads at least one generated file (activation comp
 
 5. **First Auto-Sync** (happens later, in user's repo) -- Developer pushes code to main. GitHub Actions runs `hashmark.yml`:
    - Checks out repo
-   - Runs `npx @jpoindexter/agent-smith . --json --force`
+   - Runs `npx hashmark-cli . --json --force`
    - Generates all selected formats
    - Compares with existing files
    - If changed: commits updated files with message "chore: sync AI context files [hashmark]"
@@ -185,7 +185,7 @@ GitHub Action runs successfully on next push and commits updated context files (
 | Failure | Recovery |
 |---------|----------|
 | GitHub API rejects workflow creation (insufficient permissions, branch protection) | Modal shows: "Unable to create workflow file. Your repo may have branch protection rules. You can manually add the file." Shows copyable YAML and manual instructions |
-| Action fails on first run (Node version, agent-smith error) | GitHub Action logs show error. Dashboard shows "Last sync: Failed" with link to GitHub Actions log. User can re-trigger via `workflow_dispatch` |
+| Action fails on first run (Node version, hashmark error) | GitHub Action logs show error. Dashboard shows "Last sync: Failed" with link to GitHub Actions log. User can re-trigger via `workflow_dispatch` |
 | Infinite loop (action commit triggers action) | Prevented by `paths-ignore` in workflow YAML. Backup: commit author check (`hashmark[bot]` skips) |
 | Free user clicks "Install Action" | Paywall modal: "Auto-sync is a Pro feature. Upgrade for $19/mo to keep your context files always up to date." Upgrade button |
 

@@ -1,0 +1,27 @@
+{
+  "name": "Input",
+  "import": "import { Input } from '@/components/ui/input'",
+  "category": "form",
+  "description": "M3 text field. 56px height with rounded-xs (4px) top corners for filled variant. Supports filled and outlined styles per M3 spec.",
+  "tags": ["form", "text", "field", "input", "text-field"],
+  "variants": [
+    {
+      "name": "variant",
+      "values": ["filled", "outlined"],
+      "default": "filled"
+    }
+  ],
+  "props": {
+    "type": { "type": "string", "required": false, "default": "text" },
+    "placeholder": { "type": "string", "required": false },
+    "disabled": { "type": "boolean", "required": false, "default": "false" },
+    "className": { "type": "string", "required": false }
+  },
+  "example": "<Input type=\"text\" placeholder=\"Enter your name\" />",
+  "never": [
+    "Never use raw <input> -- always use <Input>",
+    "Never make inputs shorter than 56px -- M3 text fields are 56px tall",
+    "Never hardcode border colors -- use outline and outline-variant tokens"
+  ],
+  "dependencies": []
+}

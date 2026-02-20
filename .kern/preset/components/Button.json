@@ -1,0 +1,38 @@
+{
+  "name": "Button",
+  "import": "import { Button } from '@/components/ui/button'",
+  "category": "action",
+  "description": "M3 button with pill shape (rounded-full) by default. Supports filled, tonal, outlined, elevated, and text variants per Material Design 3 spec.",
+  "tags": ["action", "submit", "trigger", "cta", "fab"],
+  "variants": [
+    {
+      "name": "variant",
+      "values": ["default", "tonal", "outline", "elevated", "ghost", "destructive"],
+      "default": "default"
+    },
+    { "name": "size", "values": ["sm", "md", "lg"], "default": "md" }
+  ],
+  "sizes": ["sm", "md", "lg"],
+  "props": {
+    "variant": {
+      "type": "\"default\" | \"tonal\" | \"outline\" | \"elevated\" | \"ghost\" | \"destructive\"",
+      "required": false,
+      "default": "default"
+    },
+    "size": { "type": "\"sm\" | \"md\" | \"lg\"", "required": false, "default": "md" },
+    "asChild": {
+      "type": "boolean",
+      "required": false,
+      "description": "Merge props onto child element"
+    },
+    "disabled": { "type": "boolean", "required": false, "default": "false" }
+  },
+  "example": "<Button className=\"rounded-full\">Save changes</Button>\n<Button variant=\"tonal\" className=\"rounded-full\">Secondary action</Button>\n<Button variant=\"outline\" className=\"rounded-full\">Cancel</Button>",
+  "never": [
+    "Never use raw <button> -- always use <Button>",
+    "Never use rounded-lg or rounded-md on buttons -- M3 buttons are rounded-full (pill shape)",
+    "Never hardcode colors -- use variant prop",
+    "Never make buttons shorter than 40px (button-md) -- M3 requires comfortable touch targets"
+  ],
+  "dependencies": ["@radix-ui/react-slot"]
+}

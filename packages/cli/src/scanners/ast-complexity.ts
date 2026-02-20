@@ -94,7 +94,7 @@ export interface FileASTComplexity {
 function walkAST(node: TSESTree.Node, visitor: (node: TSESTree.Node) => void): void {
   visitor(node);
   for (const key in node) {
-    const value = (node as Record<string, unknown>)[key];
+    const value = (node as any)[key];
     if (value && typeof value === "object") {
       if (Array.isArray(value)) {
         for (const child of value) {
@@ -313,7 +313,7 @@ function calculateCognitiveAST(body: TSESTree.Node, functionName: string): numbe
   function walkChildren(node: TSESTree.Node, nesting: number): void {
     for (const key in node) {
       if (key === "parent") continue;
-      const value = (node as Record<string, unknown>)[key];
+      const value = (node as any)[key];
       if (value && typeof value === "object") {
         if (Array.isArray(value)) {
           for (const child of value) {

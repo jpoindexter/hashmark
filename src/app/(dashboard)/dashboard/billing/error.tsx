@@ -11,7 +11,7 @@ export default function BillingError({
   reset: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-4 mono-box border-destructive/50 bg-card">
+    <div className="flex flex-col items-center justify-center gap-[var(--grid-4)] mono-box border-destructive/50 bg-card">
       <AlertTriangle className="h-8 w-8 text-destructive" />
       <h2 className="type-h3">
         [ERROR] FAILED TO LOAD BILLING

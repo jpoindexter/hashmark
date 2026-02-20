@@ -1,0 +1,21 @@
+{
+  "name": "Select",
+  "import": "import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'",
+  "category": "form",
+  "description": "M3 dropdown menu built on Radix. Trigger matches M3 text field height (56px) with rounded-xs corners. Menu uses rounded-xs with surface-container background.",
+  "tags": ["form", "dropdown", "select", "picker", "menu"],
+  "variants": [],
+  "props": {
+    "value": { "type": "string", "required": false },
+    "onValueChange": { "type": "(value: string) => void", "required": false },
+    "defaultValue": { "type": "string", "required": false },
+    "disabled": { "type": "boolean", "required": false, "default": "false" }
+  },
+  "example": "<Select>\n  <SelectTrigger className=\"h-14 rounded-xs border-outline\">\n    <SelectValue placeholder=\"Select option\" />\n  </SelectTrigger>\n  <SelectContent className=\"rounded-xs bg-surface-container\">\n    <SelectItem value=\"a\">Option A</SelectItem>\n    <SelectItem value=\"b\">Option B</SelectItem>\n  </SelectContent>\n</Select>",
+  "never": [
+    "Never use raw <select> -- always use Select from Radix",
+    "Never hardcode dropdown colors -- use surface-container tokens",
+    "Never use box shadows on dropdown -- use tonal elevation"
+  ],
+  "dependencies": ["@radix-ui/react-select"]
+}

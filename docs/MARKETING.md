@@ -36,12 +36,12 @@
 
 ### 1. CLI → Cloud Funnel (Primary)
 
-**The proven channel.** agent-smith CLI got 652 downloads in 3 days from one blog post.
+**The proven channel.** hashmark CLI got 652 downloads in 3 days from one blog post.
 
 ```
 Blog post / HN / Twitter
     ↓ (47% conversion)
-CLI install: npx @jpoindexter/agent-smith
+CLI install: npx hashmark-cli
     ↓ (generates AGENTS.md, shows value)
 CLI output: "Want all 7 formats + auto-sync? → hashmark.md"
     ↓ (X% conversion)
@@ -51,7 +51,7 @@ Pro upgrade ($19/mo)
 ```
 
 **Action items:**
-- [ ] Add Hashmark upsell to agent-smith CLI output
+- [ ] Add Hashmark upsell to hashmark CLI output
 - [ ] Add "Powered by Hashmark" footer to generated AGENTS.md files
 - [ ] Track CLI → signup conversion with UTM params
 
@@ -112,7 +112,7 @@ Publishing the Hashmark GitHub Action to the marketplace gives us:
 
 ### 7. CLI Upsell Moments
 
-Agent-smith CLI should show Hashmark at these moments:
+Hashmark CLI should show Hashmark at these moments:
 
 ```
 After scan completes:
@@ -135,7 +135,7 @@ When scanning a large monorepo:
 
 ### Pre-Launch (1 week before)
 - [ ] Landing page live at hashmark.md
-- [ ] CLI upsell added to agent-smith
+- [ ] CLI upsell added to hashmark
 - [ ] 3 teaser tweets about the fragmentation problem
 - [ ] Email list signup on landing page (for "early access")
 - [ ] Scan 10 popular open source repos, screenshot results for blog
@@ -146,7 +146,7 @@ When scanning a large monorepo:
 - [ ] Twitter: Launch thread
 - [ ] Reddit: r/programming, r/webdev posts
 - [ ] Product Hunt: Submit listing
-- [ ] Update agent-smith CLI with Hashmark link
+- [ ] Update hashmark CLI with Hashmark link
 
 ### Post-Launch (Week 1)
 - [ ] Respond to every HN comment

@@ -29,13 +29,31 @@ export async function tryReadFile(path: string): Promise<string | null> {
 /** Parse AGENTS.index.json into structured scan results */
 export async function parseScanIndex(scanDir: string) {
   let scanStats = {
-    files: 0, lines: 0, components: 0, routes: 0, models: 0, tokens: 0, hooks: 0,
+    files: 0,
+    lines: 0,
+    components: 0,
+    routes: 0,
+    models: 0,
+    tokens: 0,
+    hooks: 0,
   };
   const results: {
     components: Array<{ name: string; path: string; category?: string }>;
     apiRoutes: Array<{ path: string; method: string; auth?: boolean }>;
     complexity: Array<{ path: string; score: number; lines: number }>;
     scanners: Array<{ name: string; found: number }>;
+    patterns?: string[];
+    latentHooks?: Array<{
+      event: string;
+      command: string;
+      description?: string;
+      pattern?: string;
+    }>;
+    aiReadiness?: {
+      total: number;
+      breakdown: Record<string, number>;
+      recommendations: string[];
+    };
     astComplexity?: {
       topFunctions: Array<{
         name: string;
@@ -65,7 +83,9 @@ export async function parseScanIndex(scanDir: string) {
     if (Array.isArray(index.components)) {
       results.components = index.components.map(
         (c: { name: string; path: string; description?: string }) => ({
-          name: c.name, path: c.path, category: c.description ?? undefined,
+          name: c.name,
+          path: c.path,
+          category: c.description ?? undefined,
         })
       );
     }
@@ -73,7 +93,9 @@ export async function parseScanIndex(scanDir: string) {
     if (Array.isArray(index.routes)) {
       results.apiRoutes = index.routes.map(
         (r: { path: string; methods: string[]; protected?: boolean }) => ({
-          path: r.path, method: r.methods?.[0] ?? "GET", auth: r.protected ?? false,
+          path: r.path,
+          method: r.methods?.[0] ?? "GET",
+          auth: r.protected ?? false,
         })
       );
     }
@@ -91,6 +113,17 @@ export async function parseScanIndex(scanDir: string) {
         fileScores: index.complexity.fileScores ?? [],
       };
     }
+
+    // Extract new fields added in Phase 4
+    if (index.aiReadiness) {
+      results.aiReadiness = index.aiReadiness;
+    }
+    if (index.latentHooks) {
+      results.latentHooks = index.latentHooks;
+    }
+    if (index.patterns) {
+      results.patterns = index.patterns;
+    }
   } catch {
     // JSON parse error — non-critical
   }
@@ -101,17 +134,27 @@ export async function parseScanIndex(scanDir: string) {
 /** Collect all generated format files from the scanned directory */
 export async function collectFiles(scanDir: string) {
   const generatedFiles: Array<{
-    format: FileFormat; fileName: string; content: string; tokenCount: number;
+    format: FileFormat;
+    fileName: string;
+    content: string;
+    tokenCount: number;
   }> = [];
 
   for (const [fileName, format] of Object.entries(FORMAT_MAP)) {
     const content = await tryReadFile(join(scanDir, fileName));
     if (content) {
-      generatedFiles.push({ format, fileName, content, tokenCount: estimateTokens(content) });
+      generatedFiles.push({
+        format,
+        fileName,
+        content,
+        tokenCount: estimateTokens(content),
+      });
     }
   }
 
-  const copilotContent = await tryReadFile(join(scanDir, ".github", "copilot-instructions.md"));
+  const copilotContent = await tryReadFile(
+    join(scanDir, ".github", "copilot-instructions.md")
+  );
   if (copilotContent) {
     generatedFiles.push({
       format: "COPILOT_INSTRUCTIONS",

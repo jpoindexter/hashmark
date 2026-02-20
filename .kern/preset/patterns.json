@@ -1,0 +1,78 @@
+[
+  {
+    "name": "top-app-bar",
+    "description": "Material Design 3 top app bar with title, navigation icon, and action icons",
+    "tags": ["header", "app-bar", "navigation", "title", "toolbar"],
+    "components": ["Button"],
+    "code": "<div className=\"flex items-center h-16 px-[var(--grid-1)] bg-surface\">\n  <Button variant=\"ghost\" size=\"icon\" className=\"rounded-full min-h-12 min-w-12\">\n    <MenuIcon className=\"h-6 w-6 text-on-surface\" />\n  </Button>\n  <h1 className={cn(\"ml-[var(--grid-4)] text-[22px] leading-7 font-normal text-on-surface\")}>Page Title</h1>\n  <div className=\"ml-auto flex\">\n    <Button variant=\"ghost\" size=\"icon\" className=\"rounded-full min-h-12 min-w-12\">\n      <SearchIcon className=\"h-6 w-6 text-on-surface-variant\" />\n    </Button>\n    <Button variant=\"ghost\" size=\"icon\" className=\"rounded-full min-h-12 min-w-12\">\n      <MoreVertIcon className=\"h-6 w-6 text-on-surface-variant\" />\n    </Button>\n  </div>\n</div>",
+    "layout": {
+      "structure": "single-column",
+      "maxWidth": "full",
+      "spacing": "0"
+    },
+    "type": "section"
+  },
+  {
+    "name": "settings-section",
+    "description": "M3 settings card with form fields using filled text field style",
+    "tags": ["settings", "preferences", "configuration", "form", "profile", "account"],
+    "components": [
+      "Card",
+      "CardHeader",
+      "CardContent",
+      "Form",
+      "FormField",
+      "FormItem",
+      "FormLabel",
+      "FormControl",
+      "FormMessage",
+      "Input",
+      "Button"
+    ],
+    "code": "<Card className={cn(\"bg-surface-container-low rounded-xl border-0\")}>\n  <CardHeader className=\"px-[var(--grid-4)] pt-[var(--grid-6)] pb-[var(--grid-2)]\">\n    <h2 className=\"text-[22px] leading-7 font-normal text-on-surface\">Section Title</h2>\n    <p className=\"text-[14px] leading-5 text-on-surface-variant\">Section description here</p>\n  </CardHeader>\n  <CardContent className=\"px-[var(--grid-4)] pb-[var(--grid-6)]\">\n    <Form {...form}>\n      <form onSubmit={form.handleSubmit(onSubmit)} className=\"space-y-[var(--grid-4)]\">\n        <FormField\n          control={form.control}\n          name=\"fieldName\"\n          render={({ field }) => (\n            <FormItem>\n              <FormLabel className=\"text-[12px] leading-4 font-medium text-on-surface-variant\">Field label</FormLabel>\n              <FormControl>\n                <Input placeholder=\"Placeholder\" {...field} />\n              </FormControl>\n              <FormMessage />\n            </FormItem>\n          )}\n        />\n        <div className=\"flex justify-end gap-[var(--grid-2)] pt-[var(--grid-4)]\">\n          <Button variant=\"outline\">Cancel</Button>\n          <Button>Save changes</Button>\n        </div>\n      </form>\n    </Form>\n  </CardContent>\n</Card>",
+    "layout": {
+      "structure": "single-column",
+      "maxWidth": "2xl",
+      "spacing": "var(--grid-6)"
+    },
+    "type": "form",
+    "client_required": true,
+    "client_reason": "Form uses react-hook-form which requires client-side state"
+  },
+  {
+    "name": "data-table",
+    "description": "M3-style data table with rounded container and tonal header",
+    "tags": ["table", "data", "list", "sortable", "pagination", "rows"],
+    "components": ["Table", "TableHeader", "TableBody", "TableRow", "TableCell", "Button", "Badge"],
+    "code": "<div className=\"rounded-xl bg-surface-container-low overflow-hidden\">\n  <Table>\n    <TableHeader>\n      <TableRow className=\"bg-surface-container\">\n        <TableHead className=\"text-[12px] font-medium text-on-surface-variant\">Column</TableHead>\n        <TableHead className=\"text-[12px] font-medium text-on-surface-variant\">Status</TableHead>\n        <TableHead className=\"text-right text-[12px] font-medium text-on-surface-variant\">Actions</TableHead>\n      </TableRow>\n    </TableHeader>\n    <TableBody>\n      {data.map((row) => (\n        <TableRow key={row.id} className=\"border-b border-outline-variant\">\n          <TableCell className=\"text-[14px] text-on-surface\">{row.name}</TableCell>\n          <TableCell><Badge variant=\"tonal\">{row.status}</Badge></TableCell>\n          <TableCell className=\"text-right\">\n            <Button variant=\"ghost\" size=\"sm\" className=\"rounded-full\">Edit</Button>\n          </TableCell>\n        </TableRow>\n      ))}\n    </TableBody>\n  </Table>\n</div>",
+    "layout": {
+      "structure": "full-width",
+      "spacing": "var(--grid-4)"
+    },
+    "type": "data"
+  },
+  {
+    "name": "empty-state",
+    "description": "M3 empty state with icon, message, and filled tonal action button",
+    "tags": ["empty", "placeholder", "no-data", "onboarding", "zero-state"],
+    "components": ["Card", "Button"],
+    "code": "<Card className={cn(\"flex flex-col items-center justify-center p-[var(--grid-16)] text-center bg-surface-container-lowest rounded-2xl border-0\")}>\n  <div className=\"mb-[var(--grid-6)] rounded-full bg-primary-container p-[var(--grid-6)]\">\n    <IconPlaceholder className=\"h-[var(--grid-8)] w-[var(--grid-8)] text-on-primary-container\" />\n  </div>\n  <h3 className=\"text-[24px] leading-8 font-normal text-on-surface\">No items yet</h3>\n  <p className=\"text-[14px] leading-5 text-on-surface-variant mt-[var(--grid-2)] max-w-sm\">Description of what to do next to get started</p>\n  <Button className=\"mt-[var(--grid-6)] rounded-full\">Get started</Button>\n</Card>",
+    "layout": {
+      "structure": "centered",
+      "spacing": "var(--grid-4)"
+    },
+    "type": "section"
+  },
+  {
+    "name": "dashboard-card",
+    "description": "M3 metric card with tonal surface elevation and trend indicator",
+    "tags": ["dashboard", "metric", "stats", "kpi", "card", "analytics"],
+    "components": ["Card", "CardHeader", "CardContent", "Badge"],
+    "code": "<Card className={cn(\"rounded-xl bg-surface-container-low border-0\")}>\n  <CardHeader className=\"flex flex-row items-center justify-between p-[var(--grid-4)]\">\n    <span className=\"text-[12px] leading-4 font-medium text-on-surface-variant\">Metric label</span>\n    <Badge variant=\"tonal\" className=\"bg-tertiary-container text-on-tertiary-container rounded-full\">+12%</Badge>\n  </CardHeader>\n  <CardContent className=\"p-[var(--grid-4)] pt-0\">\n    <div className=\"text-[45px] leading-[52px] font-normal text-on-surface\">1,234</div>\n    <p className=\"text-[12px] leading-4 text-on-surface-variant mt-[var(--grid-1)]\">vs. previous period</p>\n  </CardContent>\n</Card>",
+    "layout": {
+      "structure": "grid",
+      "spacing": "var(--grid-4)"
+    },
+    "type": "data"
+  }
+]

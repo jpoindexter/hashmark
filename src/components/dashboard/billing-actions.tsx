@@ -58,7 +58,7 @@ export function UpgradeButton({ priceId }: { priceId: string }) {
         {"> UPGRADE"}
       </Button>
       {error && (
-        <p className="mt-2 type-caption text-destructive">{error}</p>
+        <p className="mt-[var(--grid-2)] type-caption text-destructive">{error}</p>
       )}
     </div>
   );
@@ -96,7 +96,7 @@ export function ManageSubscriptionButton() {
         {"> MANAGE SUBSCRIPTION"}
       </Button>
       {error && (
-        <p className="mt-2 type-caption text-destructive">{error}</p>
+        <p className="mt-[var(--grid-2)] type-caption text-destructive">{error}</p>
       )}
     </div>
   );
@@ -114,7 +114,7 @@ export function PlanSelectButton({
 
   if (isCurrent) {
     return (
-      <Button variant="outline" disabled className="mt-4 w-full">
+      <Button variant="outline" disabled className="mt-[var(--grid-4)] w-full">
         CURRENT PLAN
       </Button>
     );
@@ -143,7 +143,7 @@ export function PlanSelectButton({
   return (
     <div>
       <Button
-        className="mt-4 w-full"
+        className="mt-[var(--grid-4)] w-full"
         onClick={handleSelect}
         loading={loading}
         loadingText="REDIRECTING..."
@@ -151,7 +151,7 @@ export function PlanSelectButton({
         {"> SELECT PLAN"}
       </Button>
       {error && (
-        <p className="mt-2 type-caption text-destructive">{error}</p>
+        <p className="mt-[var(--grid-2)] type-caption text-destructive">{error}</p>
       )}
     </div>
   );

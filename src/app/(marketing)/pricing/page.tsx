@@ -119,15 +119,15 @@ export default function PricingPage() {
     <div className="min-h-screen bg-background font-mono text-foreground">
       {/* Nav */}
       <nav className="fixed top-0 z-50 w-full border-b border-border bg-background">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-[var(--grid-6)]">
           <Link
             href="/"
-            className="flex items-center gap-2 type-button"
+            className="flex items-center gap-[var(--grid-2)] type-button"
           >
             <span className="text-xl text-foreground">#</span>
             <span>Hashmark</span>
           </Link>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-[var(--grid-6)]">
             <Link
               href="/#pricing"
               className="type-nav text-muted-foreground transition-colors hover:text-foreground"
@@ -136,7 +136,7 @@ export default function PricingPage() {
             </Link>
             <Link
               href="/login"
-              className="border border-border px-4 py-1.5 type-button transition-colors hover:bg-muted hover:border-foreground"
+              className="border border-border px-[var(--grid-4)] py-[var(--grid-1)].5 type-button transition-colors hover:bg-muted hover:border-foreground"
             >
               {"> SIGN IN"}
             </Link>
@@ -144,48 +144,48 @@ export default function PricingPage() {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-5xl px-6 pb-24 pt-28">
+      <main className="mx-auto max-w-5xl px-[var(--grid-6)] pb-24 pt-28">
         {/* Header */}
         <div className="mb-16 text-center">
           <h1 className="type-h1 text-4xl">
             SIMPLE PRICING
           </h1>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="mt-[var(--grid-4)] text-lg text-muted-foreground">
             One price. All formats. Every scan.
           </p>
         </div>
 
         {/* Plan Cards */}
-        <div className="mb-24 mono-grid-3 gap-6">
+        <div className="mb-24 mono-grid-3 gap-[var(--grid-6)]">
           {PLANS.map((plan) => (
             <div
               key={plan.name}
-              className={`flex flex-col border p-6 ${
+              className={`flex flex-col border p-[var(--grid-6)] ${
                 plan.highlighted
                   ? "border-foreground bg-card"
                   : "border-border"
               }`}
             >
-              <div className="mb-6">
+              <div className="mb-[var(--grid-6)]">
                 <span className="type-label text-muted-foreground">
                   [{plan.name}]
                 </span>
-                <div className="mt-2 flex items-baseline gap-1">
+                <div className="mt-[var(--grid-2)] flex items-baseline gap-[var(--grid-1)]">
                   <span className="text-3xl font-bold">{plan.price}</span>
                   <span className="type-caption text-muted-foreground">
                     {plan.period}
                   </span>
                 </div>
-                <p className="mt-1 type-body text-muted-foreground">
+                <p className="mt-[var(--grid-1)] type-body text-muted-foreground">
                   {plan.description}
                 </p>
               </div>
 
-              <ul className="mb-8 flex-1 space-y-3">
+              <ul className="mb-[var(--grid-8)] flex-1 space-y-3">
                 {plan.features.map((feature) => (
                   <li
                     key={feature}
-                    className="flex items-start gap-2 type-body"
+                    className="flex items-start gap-[var(--grid-2)] type-body"
                   >
                     <span className="mt-0.5 text-foreground">#</span>
                     <span>{feature}</span>
@@ -195,7 +195,7 @@ export default function PricingPage() {
 
               <a
                 href={plan.href}
-                className={`block w-full py-2.5 text-center type-button transition-colors ${
+                className={`block w-full py-[var(--grid-2)].5 text-center type-button transition-colors ${
                   plan.highlighted
                     ? "bg-foreground text-background hover:bg-foreground/90"
                     : "border border-border hover:border-foreground hover:bg-muted"
@@ -209,7 +209,7 @@ export default function PricingPage() {
 
         {/* Feature Comparison Table */}
         <section className="mb-24">
-          <h2 className="mb-8 text-center type-label text-muted-foreground">
+          <h2 className="mb-[var(--grid-8)] text-center type-label text-muted-foreground">
             FEATURE COMPARISON
           </h2>
           <div className="overflow-x-auto">
@@ -238,7 +238,7 @@ export default function PricingPage() {
 
         {/* FAQ */}
         <section>
-          <h2 className="mb-8 text-center type-label text-muted-foreground">
+          <h2 className="mb-[var(--grid-8)] text-center type-label text-muted-foreground">
             FREQUENTLY ASKED QUESTIONS
           </h2>
           <div className="mono-stack-sm">

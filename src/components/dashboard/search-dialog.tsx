@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, X, Code, Route, Database, FileText, Zap, Terminal, Palette, Settings, BarChart3 } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
 import type { SearchResult } from "@/hooks/use-search";
+import { Button, Input } from "@fabrk/components";
 
 const SECTION_ICONS: Record<string, React.ElementType> = {
   components: Code,
@@ -68,11 +69,11 @@ function SearchResultItem({
 }) {
   const Icon = SECTION_ICONS[result.sectionType] ?? FileText;
   return (
-    <button
+    <Button
       data-index={index}
       role="option"
       aria-selected={isSelected}
-      className={`flex w-full items-start gap-3 border-b border-border px-4 py-3 text-left transition-colors ${
+      className={`flex w-full items-start gap-[var(--grid-3)] border-b border-border px-[var(--grid-4)] py-[var(--grid-3)] text-left transition-colors ${
         isSelected ? "bg-accent/10" : "hover:bg-muted/50"
       }`}
       onClick={() => onSelect(result)}
@@ -80,22 +81,22 @@ function SearchResultItem({
     >
       <Icon className="mt-0.5 size-4 shrink-0 text-accent" />
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-[var(--grid-2)]">
           <span className="truncate font-mono text-xs font-bold uppercase text-foreground">
             {result.sectionHeading}
           </span>
-          <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[10px] uppercase text-muted-foreground">
+          <span className="shrink-0 rounded bg-muted px-[var(--grid-1)] py-0.5 font-mono text-[10px] uppercase text-muted-foreground">
             {result.sectionType.replace("_", " ")}
           </span>
         </div>
-        <p className="mt-1 line-clamp-2 font-mono text-xs leading-relaxed text-muted-foreground">
+        <p className="mt-[var(--grid-1)] line-clamp-2 font-mono text-xs leading-relaxed text-muted-foreground">
           <SnippetText snippet={result.snippet} />
         </p>
-        <span className="mt-1 block font-mono text-[10px] text-muted-foreground/60">
+        <span className="mt-[var(--grid-1)] block font-mono text-[10px] text-muted-foreground/60">
           {result.repoFullName}
         </span>
       </div>
-    </button>
+    </Button>
   );
 }
 
@@ -189,48 +190,48 @@ export function SearchDialog({
     >
       <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-xl border border-border bg-card shadow-2xl"
+        className="relative w-full max-w-xl border border-border bg-card bg-primary/14"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
-        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+        <div className="flex items-center gap-[var(--grid-3)] border-b border-border px-[var(--grid-4)] py-[var(--grid-3)]">
           <Search className="size-4 shrink-0 text-muted-foreground" />
-          <input
+          <Input
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
             placeholder="SEARCH CODEBASES..."
             className="flex-1 bg-transparent font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             aria-label="Search query"
           />
           {query && (
-            <button
+            <Button
               onClick={() => setQuery("")}
               className="text-muted-foreground hover:text-foreground"
               aria-label="Clear search"
             >
               <X className="size-4" />
-            </button>
+            </Button>
           )}
-          <kbd className="hidden rounded border border-border px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
+          <kbd className="hidden rounded border border-border px-[var(--grid-1)].5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
             ESC
           </kbd>
         </div>
 
         <div ref={listRef} className="max-h-[50vh] overflow-y-auto" role="listbox">
           {isLoading && query.length >= 2 && (
-            <div className="px-4 py-8 text-center font-mono text-xs text-muted-foreground">
+            <div className="px-[var(--grid-4)] py-[var(--grid-8)] text-center font-mono text-xs text-muted-foreground">
               SEARCHING...
             </div>
           )}
           {error && (
-            <div className="px-4 py-8 text-center font-mono text-xs text-destructive">
+            <div className="px-[var(--grid-4)] py-[var(--grid-8)] text-center font-mono text-xs text-destructive">
               {error}
             </div>
           )}
           {!isLoading && !error && query.length >= 2 && results.length === 0 && (
-            <div className="px-4 py-8 text-center font-mono text-xs text-muted-foreground">
+            <div className="px-[var(--grid-4)] py-[var(--grid-8)] text-center font-mono text-xs text-muted-foreground">
               NO RESULTS FOR &quot;{query}&quot;
             </div>
           )}
@@ -247,11 +248,11 @@ export function SearchDialog({
         </div>
 
         {results.length > 0 && (
-          <div className="flex items-center justify-between border-t border-border px-4 py-2">
+          <div className="flex items-center justify-between border-t border-border px-[var(--grid-4)] py-[var(--grid-2)]">
             <span className="font-mono text-[10px] text-muted-foreground">
               {total} RESULT{total !== 1 ? "S" : ""}
             </span>
-            <div className="flex gap-2 font-mono text-[10px] text-muted-foreground">
+            <div className="flex gap-[var(--grid-2)] font-mono text-[10px] text-muted-foreground">
               <span>↑↓ NAVIGATE</span>
               <span>↵ SELECT</span>
             </div>
@@ -276,16 +277,16 @@ export function SearchTrigger({ onOpen }: { onOpen: () => void }) {
   }, [onOpen]);
 
   return (
-    <button
+    <Button
       onClick={onOpen}
-      className="flex items-center gap-2 border border-border bg-muted/50 px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+      className="flex items-center gap-[var(--grid-2)] border border-border bg-muted/50 px-[var(--grid-3)] py-[var(--grid-1)].5 font-mono text-xs text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
       aria-label="Search codebases"
     >
       <Search className="size-3" />
       <span className="hidden sm:inline">&gt; SEARCH</span>
-      <kbd className="hidden rounded border border-border px-1 py-0.5 text-[10px] sm:inline">
+      <kbd className="hidden rounded border border-border px-[var(--grid-1)] py-0.5 text-[10px] sm:inline">
         ⌘K
       </kbd>
-    </button>
+    </Button>
   );
 }

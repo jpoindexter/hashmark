@@ -1,0 +1,24 @@
+{
+  "name": "Tabs",
+  "import": "import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'",
+  "category": "navigation",
+  "description": "M3 tabs built on Radix. Active tab uses primary color indicator. Tab items have 48px minimum height for touch target. Label uses title-small (14px/500).",
+  "tags": ["tabs", "navigation", "panel", "switch"],
+  "variants": [],
+  "props": {
+    "defaultValue": {
+      "type": "string",
+      "required": true,
+      "description": "Initial active tab value"
+    },
+    "value": { "type": "string", "required": false },
+    "onValueChange": { "type": "(value: string) => void", "required": false }
+  },
+  "example": "<Tabs defaultValue=\"general\">\n  <TabsList className=\"bg-surface border-b border-outline-variant w-full justify-start rounded-none h-12\">\n    <TabsTrigger value=\"general\" className=\"min-h-12 text-[14px] font-medium data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none\">General</TabsTrigger>\n    <TabsTrigger value=\"security\" className=\"min-h-12 text-[14px] font-medium data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none\">Security</TabsTrigger>\n    <TabsTrigger value=\"billing\" className=\"min-h-12 text-[14px] font-medium data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none\">Billing</TabsTrigger>\n  </TabsList>\n  <TabsContent value=\"general\" className=\"p-[var(--grid-4)]\">General settings content</TabsContent>\n  <TabsContent value=\"security\" className=\"p-[var(--grid-4)]\">Security settings content</TabsContent>\n  <TabsContent value=\"billing\" className=\"p-[var(--grid-4)]\">Billing settings content</TabsContent>\n</Tabs>",
+  "never": [
+    "Never build custom tab systems -- use Tabs from Radix",
+    "Never hardcode tab indicator colors -- use primary token",
+    "Never make tab items shorter than 48px -- M3 requires minimum touch target height"
+  ],
+  "dependencies": ["@radix-ui/react-tabs"]
+}

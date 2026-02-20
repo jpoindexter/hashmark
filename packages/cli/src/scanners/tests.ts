@@ -1,151 +1,108 @@
 /**
  * Test Coverage Scanner
- *
- * Analyzes test coverage by:
- * - Detecting the testing framework (Vitest, Jest, Playwright)
- * - Finding all test files
- * - Mapping tests to components
- * - Calculating coverage percentage
- *
- * @module scanners/tests
  */
 
 import fg from "fast-glob";
 import { readFileSync } from "fs";
 import { basename } from "path";
-import type { Component } from "../types.js";
+import type { Component, TestCoverage } from "../types.js";
+import type { ScannerPlugin, ScannerContext } from "../engine/types.js";
 
-/** Test coverage analysis results */
-export interface TestCoverage {
-  /** Detected testing framework */
-  testFramework: "vitest" | "jest" | "playwright" | "testing-library" | "none";
-  /** All test file paths */
-  testFiles: string[];
-  /** Component names that have tests */
-  testedComponents: string[];
-  /** Component names without tests */
-  untestedComponents: string[];
-  /** Coverage percentage (0-100) */
-  coverage: number;
-}
+export class TestScanner implements ScannerPlugin<TestCoverage> {
+  name = "testCoverage";
+  filePatterns = [
+    "**/*.test.{ts,tsx,js,jsx}",
+    "**/*.spec.{ts,tsx,js,jsx}",
+    "**/__tests__/**/*.{ts,tsx,js,jsx}",
+    "**/tests/**/*.{ts,tsx,js,jsx}",
+    "**/test/**/*.{ts,tsx,js,jsx}",
+    "**/package.json"
+  ];
 
-/**
- * Analyzes test coverage for components
- *
- * @param dir - Project root directory
- * @param components - Components discovered by the component scanner
- * @returns Test coverage analysis
- *
- * @example
- * const coverage = await scanTestCoverage('/path/to/project', components);
- * console.log(`${coverage.coverage}% of components have tests`);
- */
-export async function scanTestCoverage(
-  dir: string,
-  components: Component[]
-): Promise<TestCoverage> {
-  // Detect test framework from package.json
-  const testFramework = await detectTestFramework(dir);
+  private results: TestCoverage = {
+    testFramework: "none",
+    testFiles: [],
+    testedComponents: [],
+    untestedComponents: [],
+    coverage: 0,
+  };
 
-  // Find all test files
-  const testFiles = await fg(
-    [
-      "**/*.test.{ts,tsx,js,jsx}",
-      "**/*.spec.{ts,tsx,js,jsx}",
-      "**/__tests__/**/*.{ts,tsx,js,jsx}",
-      "**/tests/**/*.{ts,tsx,js,jsx}",
-      "**/test/**/*.{ts,tsx,js,jsx}",
-    ],
-    {
-      cwd: dir,
-      absolute: false,
-      ignore: ["**/node_modules/**", "**/dist/**", "**/.next/**"],
+  private testFileContents: { path: string; content: string }[] = [];
+
+  async onFile(path: string, content: string) {
+    if (path.endsWith("package.json")) {
+      try {
+        const pkg = JSON.parse(content);
+        const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+        if (deps.vitest || deps["@vitest/ui"]) this.results.testFramework = "vitest";
+        else if (deps.jest || deps["@types/jest"]) this.results.testFramework = "jest";
+        else if (deps["@playwright/test"]) this.results.testFramework = "playwright";
+        else if (deps["@testing-library/react"]) this.results.testFramework = "testing-library";
+      } catch {}
+    } else {
+      this.results.testFiles.push(path);
+      this.testFileContents.push({ path, content });
     }
-  );
+  }
 
-  // Map test files to component names
-  const testedComponentNames = new Set<string>();
+  async finalize(context: ScannerContext, allResults?: Record<string, any>) {
+    const components: Component[] = allResults?.components || [];
+    const testedComponentNames = new Set<string>();
 
-  for (const testFile of testFiles) {
-    // Extract component name from test file
-    // Button.test.tsx -> Button
-    // button.spec.ts -> button -> Button
-    // __tests__/Button.tsx -> Button
-    const fileName = basename(testFile)
-      .replace(/\.(test|spec)\.(ts|tsx|js|jsx)$/, "")
-      .replace(/\.(ts|tsx|js|jsx)$/, "");
+    for (const { path: testFile, content } of this.testFileContents) {
+      const fileName = basename(testFile)
+        .replace(/\.(test|spec)\.(ts|tsx|js|jsx)$/, "")
+        .replace(/\.(ts|tsx|js|jsx)$/, "");
 
-    // Try to match with component names (case-insensitive)
-    for (const comp of components) {
-      if (comp.name.toLowerCase() === fileName.toLowerCase()) {
-        testedComponentNames.add(comp.name);
-      }
-      // Also check exports
-      for (const exp of comp.exports) {
-        if (exp.toLowerCase() === fileName.toLowerCase()) {
+      for (const comp of components) {
+        // Name matching
+        if (comp.name.toLowerCase() === fileName.toLowerCase()) {
           testedComponentNames.add(comp.name);
         }
-      }
-    }
-
-    // Also scan test file content for component imports
-    try {
-      const content = readFileSync(`${dir}/${testFile}`, "utf-8");
-      for (const comp of components) {
-        // Check if component is imported in the test
+        // Export matching
+        if (comp.exports.some(e => e.toLowerCase() === fileName.toLowerCase())) {
+          testedComponentNames.add(comp.name);
+        }
+        // Import matching
         const importPattern = new RegExp(`import.*\\b${comp.name}\\b.*from`, "i");
         if (importPattern.test(content)) {
           testedComponentNames.add(comp.name);
         }
       }
-    } catch {
-      // Ignore read errors
     }
+
+    this.results.testedComponents = Array.from(testedComponentNames).sort();
+    this.results.untestedComponents = components
+      .map(c => c.name)
+      .filter(name => !testedComponentNames.has(name))
+      .sort();
+
+    this.results.coverage = components.length > 0
+      ? Math.round((this.results.testedComponents.length / components.length) * 100)
+      : 0;
   }
 
-  const testedComponents = Array.from(testedComponentNames).sort();
-  const untestedComponents = components
-    .map(c => c.name)
-    .filter(name => !testedComponentNames.has(name))
-    .sort();
-
-  const coverage = components.length > 0
-    ? Math.round((testedComponents.length / components.length) * 100)
-    : 0;
-
-  return {
-    testFramework,
-    testFiles,
-    testedComponents,
-    untestedComponents,
-    coverage,
-  };
+  getResult() {
+    return this.results;
+  }
 }
 
-/** Detects which testing framework is installed from package.json */
-async function detectTestFramework(
-  dir: string
-): Promise<TestCoverage["testFramework"]> {
-  try {
-    const pkgPath = `${dir}/package.json`;
-    const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
-    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+/** Legacy support */
+export async function scanTestCoverage(dir: string, components: Component[]): Promise<TestCoverage> {
+  const scanner = new TestScanner();
+  const fg = (await import("fast-glob")).default;
+  const fs = await import("fs");
+  const path = await import("path");
 
-    if (deps.vitest || deps["@vitest/ui"]) {
-      return "vitest";
+  const files = await fg(scanner.filePatterns, { cwd: dir, absolute: false });
+  for (const file of files) {
+    const fullPath = path.join(dir, file);
+    if (fs.existsSync(fullPath)) {
+      const content = fs.readFileSync(fullPath, "utf-8");
+      await scanner.onFile(file, content);
     }
-    if (deps.jest || deps["@types/jest"]) {
-      return "jest";
-    }
-    if (deps["@playwright/test"]) {
-      return "playwright";
-    }
-    if (deps["@testing-library/react"] || deps["@testing-library/dom"]) {
-      return "testing-library";
-    }
-  } catch {
-    // Ignore errors
   }
 
-  return "none";
+  await scanner.finalize({ cwd: dir } as any, { components });
+  return scanner.getResult();
 }

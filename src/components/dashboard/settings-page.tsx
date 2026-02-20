@@ -28,7 +28,7 @@ export function SettingsPage({
           PROFILE
         </h2>
         <div className="mono-box bg-card">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-[var(--grid-4)]">
             {user.image ? (
               <Image
                 src={user.image}
@@ -45,7 +45,7 @@ export function SettingsPage({
             <div>
               <p className="type-body font-bold">{user.name ?? "Developer"}</p>
               <p className="type-caption text-muted-foreground">{user.email}</p>
-              <div className="mt-1">
+              <div className="mt-[var(--grid-1)]">
                 <TierBadge tier={user.plan.toLowerCase()} />
               </div>
             </div>
@@ -55,7 +55,7 @@ export function SettingsPage({
 
       {/* Custom rules section */}
       <section>
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-[var(--grid-4)] flex items-center justify-between">
           <h2 className="mono-section-title text-muted-foreground">
             CUSTOM RULES ({rules.length})
           </h2>

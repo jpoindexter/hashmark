@@ -28,7 +28,7 @@ export function RepoSubNav({ repoId }: { repoId: string }) {
           <Link
             key={tab.label}
             href={href}
-            className={`border-b-2 px-6 py-4 type-nav transition-colors ${
+            className={`border-b-2 px-[var(--grid-6)] py-[var(--grid-4)] type-nav transition-colors ${
               isActive
                 ? "border-accent text-accent"
                 : "border-transparent text-muted-foreground hover:text-foreground"

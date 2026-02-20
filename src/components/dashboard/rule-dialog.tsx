@@ -36,7 +36,7 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
       />
 
       <div className="relative z-10 w-full max-w-lg border border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border p-4">
+        <div className="flex items-center justify-between border-b border-border p-[var(--grid-4)]">
           <h2 className="type-h3">
             ADD CUSTOM RULE
           </h2>
@@ -50,9 +50,9 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 p-4">
+        <form onSubmit={handleSubmit} className="space-y-4 p-[var(--grid-4)]">
           <div>
-            <label className="mb-1 block type-label text-muted-foreground">
+            <label className="mb-[var(--grid-1)] block type-label text-muted-foreground">
               [NAME]
             </label>
             <Input
@@ -64,7 +64,7 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
-            <label className="mb-1 block type-label text-muted-foreground">
+            <label className="mb-[var(--grid-1)] block type-label text-muted-foreground">
               [DESCRIPTION] (OPTIONAL)
             </label>
             <Input
@@ -74,7 +74,7 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
-            <label className="mb-1 block type-label text-muted-foreground">
+            <label className="mb-[var(--grid-1)] block type-label text-muted-foreground">
               [RULE CONTENT]
             </label>
             <Textarea
@@ -87,7 +87,7 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
-            <label className="mb-1 block type-label text-muted-foreground">
+            <label className="mb-[var(--grid-1)] block type-label text-muted-foreground">
               [SCOPE]
             </label>
             <Select name="scope" defaultValue="REPO">
@@ -101,7 +101,7 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
             </Select>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-[var(--grid-2)] pt-2">
             <Button type="button" variant="outline" onClick={onClose}>
               CANCEL
             </Button>
