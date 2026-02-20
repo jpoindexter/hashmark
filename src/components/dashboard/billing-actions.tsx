@@ -25,7 +25,7 @@ async function handleBillingAction(
   return data;
 }
 
-export function UpgradeButton({ priceId }: { priceId: string }) {
+export function UpgradeButton({ productId }: { productId: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +34,7 @@ export function UpgradeButton({ priceId }: { priceId: string }) {
     setError(null);
     try {
       const result = await handleBillingAction("/api/billing/checkout", {
-        priceId,
+        productId,
       });
       if (result.error) {
         setError(result.error);
@@ -103,10 +103,10 @@ export function ManageSubscriptionButton() {
 }
 
 export function PlanSelectButton({
-  priceId,
+  productId,
   isCurrent,
 }: {
-  priceId: string;
+  productId: string;
   isCurrent: boolean;
 }) {
   const [loading, setLoading] = useState(false);
@@ -121,12 +121,12 @@ export function PlanSelectButton({
   }
 
   const handleSelect = async () => {
-    if (!priceId) return;
+    if (!productId) return;
     setLoading(true);
     setError(null);
     try {
       const result = await handleBillingAction("/api/billing/checkout", {
-        priceId,
+        productId,
       });
       if (result.error) {
         setError(result.error);

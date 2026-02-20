@@ -44,15 +44,15 @@ const PLANS = [
     name: "TEAM",
     price: "$29",
     period: "/seat/mo",
-    description: "For teams — coming soon",
+    description: "For teams",
     features: [
       "Everything in Pro",
       "Shared team billing",
       "Priority support",
       "Early access to new features",
     ],
-    cta: "> JOIN WAITLIST",
-    href: "mailto:hello@theft.studio?subject=Hashmark%20Team%20Plan%20Waitlist",
+    cta: "> UPGRADE TO TEAM",
+    href: "/login",
     highlighted: false,
   },
 ];

@@ -23,7 +23,7 @@ const PLANS = [
   {
     name: "PRO" as const,
     price: "$19/mo",
-    priceId: process.env.STRIPE_PRO_PRICE_ID ?? "",
+    priceId: process.env.POLAR_PRO_PRODUCT_ID ?? "",
     features: [
       "Unlimited repos",
       "Auto-sync (GitHub Action)",
@@ -34,7 +34,7 @@ const PLANS = [
   {
     name: "TEAM" as const,
     price: "$29/seat/mo",
-    priceId: process.env.STRIPE_TEAM_PRICE_ID ?? "",
+    priceId: process.env.POLAR_TEAM_PRODUCT_ID ?? "",
     features: [
       "Everything in Pro",
       "Shared team billing",
@@ -67,7 +67,7 @@ export default async function BillingPage() {
   const [user, repoCount, scanCount, fileCount] = await Promise.all([
     db.user.findUnique({
       where: { id: session.user.id },
-      select: { plan: true, stripeCustomerId: true, createdAt: true },
+      select: { plan: true, createdAt: true },
     }),
     db.repository.count({ where: { userId: session.user.id } }),
     db.scan.count({
@@ -109,7 +109,7 @@ export default async function BillingPage() {
           </div>
 
           {user.plan === "FREE" ? (
-            <UpgradeButton priceId={PLANS[1].priceId} />
+            <UpgradeButton productId={PLANS[1].priceId} />
           ) : (
             <ManageSubscriptionButton />
           )}
@@ -176,7 +176,7 @@ export default async function BillingPage() {
               </ul>
               {plan.name !== "FREE" && (
                 <PlanSelectButton
-                  priceId={plan.priceId}
+                  productId={plan.priceId}
                   isCurrent={user.plan === plan.name}
                 />
               )}

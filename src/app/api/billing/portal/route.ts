@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { stripe } from "@/lib/stripe";
+import { polar } from "@/lib/polar";
 import { NextResponse } from "next/server";
 
 export async function POST() {
@@ -9,22 +9,24 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Verify the user exists and has a paid plan before opening the portal
   const user = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { stripeCustomerId: true },
+    select: { plan: true },
   });
 
-  if (!user?.stripeCustomerId) {
+  if (!user || user.plan === "FREE") {
     return NextResponse.json(
-      { error: "No billing account found" },
+      { error: "No active subscription found" },
       { status: 400 }
     );
   }
 
-  const portalSession = await stripe.billingPortal.sessions.create({
-    customer: user.stripeCustomerId,
-    return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`,
+  // Polar identifies the customer by the externalCustomerId we set at checkout (userId)
+  const portalSession = await polar.customerSessions.create({
+    externalCustomerId: session.user.id,
+    returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`,
   });
 
-  return NextResponse.json({ url: portalSession.url });
+  return NextResponse.json({ url: portalSession.customerPortalUrl });
 }

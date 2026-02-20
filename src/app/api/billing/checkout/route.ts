@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { stripe } from "@/lib/stripe";
+import { polar } from "@/lib/polar";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -9,47 +8,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { priceId } = await request.json();
+  const { productId } = await request.json();
 
-  // Allowlist: only accept known price IDs to prevent arbitrary plan grants
-  const ALLOWED_PRICES = new Set([
-    process.env.STRIPE_PRO_PRICE_ID,
-    process.env.STRIPE_TEAM_PRICE_ID,
+  // Allowlist: only accept known product IDs to prevent arbitrary plan grants
+  const ALLOWED_PRODUCTS = new Set([
+    process.env.POLAR_PRO_PRODUCT_ID,
+    process.env.POLAR_TEAM_PRODUCT_ID,
   ]);
-  if (!priceId || !ALLOWED_PRICES.has(priceId)) {
-    return NextResponse.json({ error: "Invalid priceId" }, { status: 400 });
+  if (!productId || !ALLOWED_PRODUCTS.has(productId)) {
+    return NextResponse.json({ error: "Invalid productId" }, { status: 400 });
   }
 
-  const user = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { email: true, stripeCustomerId: true },
+  const checkout = await polar.checkouts.create({
+    products: [productId],
+    externalCustomerId: session.user.id,
+    successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?upgraded=true`,
+    returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`,
   });
 
-  if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  // Create or reuse Stripe customer
-  let customerId = user.stripeCustomerId;
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: user.email ?? undefined,
-      metadata: { userId: session.user.id },
-    });
-    customerId = customer.id;
-    await db.user.update({
-      where: { id: session.user.id },
-      data: { stripeCustomerId: customerId },
-    });
-  }
-
-  const checkoutSession = await stripe.checkout.sessions.create({
-    customer: customerId,
-    mode: "subscription",
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?upgraded=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`,
-  });
-
-  return NextResponse.json({ url: checkoutSession.url });
+  return NextResponse.json({ url: checkout.url }, { status: 201 });
 }
