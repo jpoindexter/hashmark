@@ -74,6 +74,14 @@ export function extractExportedSymbols(content: string): ExportedSymbol[] {
     add(m[1], "const", `(${m[2]}) =>`);
   }
 
+  // export const { a, b, c } = expr  (destructured)
+  for (const m of cleaned.matchAll(/export\s+const\s+\{([^}]+)\}\s*=/g)) {
+    for (const entry of m[1].split(",")) {
+      const name = entry.trim().split(/\s+as\s+/).pop()!.trim();
+      if (name && /^\w+$/.test(name)) add(name, "const");
+    }
+  }
+
   // export const foo = value  (non-function)
   for (const m of cleaned.matchAll(/export\s+const\s+(\w+)\s*(?::\s*([^=\n]+))?\s*=/g)) {
     if (!seen.has(m[1])) {
@@ -226,10 +234,81 @@ function specifierMatchesPath(specifier: string, filePath: string): boolean {
   return fileBase.endsWith(specBase) || fileBase.endsWith(normalized) || fileBaseName === specBaseName;
 }
 
-/** Strips single-line and multi-line comments from source code */
+/**
+ * Strips comments and string/template literal contents from source code.
+ *
+ * Uses a character-level state machine so nested template literals like
+ * `outer ${`inner`} text` are handled correctly. The naive regex approach
+ * pairs backticks incorrectly when templates are nested, which can swallow
+ * export declarations that appear after the malformed match.
+ */
 function removeComments(content: string): string {
-  let result = content.replace(/\/\/.*$/gm, "");
-  result = result.replace(/\/\*[\s\S]*?\*\//g, "");
-  result = result.replace(/`(?:[^`\\]|\\.)*`/g, '""');
+  let result = "";
+  let i = 0;
+  const len = content.length;
+
+  while (i < len) {
+    const ch = content[i];
+
+    // Single-line comment: // ...
+    if (ch === "/" && content[i + 1] === "/") {
+      while (i < len && content[i] !== "\n") i++;
+      continue;
+    }
+
+    // Multi-line comment: /* ... */
+    if (ch === "/" && content[i + 1] === "*") {
+      i += 2;
+      while (i < len && !(content[i - 1] === "*" && content[i] === "/")) i++;
+      i++;
+      continue;
+    }
+
+    // Double-quoted string: "..."
+    if (ch === '"') {
+      result += '"';
+      i++;
+      while (i < len && content[i] !== '"' && content[i] !== "\n") {
+        if (content[i] === "\\") i++; // skip escaped char
+        i++;
+      }
+      if (i < len) i++; // closing quote
+      result += '"';
+      continue;
+    }
+
+    // Single-quoted string: '...'
+    if (ch === "'") {
+      result += '"';
+      i++;
+      while (i < len && content[i] !== "'" && content[i] !== "\n") {
+        if (content[i] === "\\") i++;
+        i++;
+      }
+      if (i < len) i++;
+      result += '"';
+      continue;
+    }
+
+    // Template literal: `...${...}...`  (handles arbitrary nesting depth)
+    if (ch === "`") {
+      result += '"';
+      i++;
+      let exprDepth = 0; // depth of ${ } nesting inside the template
+      while (i < len) {
+        if (content[i] === "\\" ) { i += 2; continue; } // escaped char
+        if (content[i] === "`" && exprDepth === 0) { i++; break; } // end of template
+        if (content[i] === "$" && content[i + 1] === "{") { exprDepth++; i += 2; continue; }
+        if (content[i] === "}" && exprDepth > 0) { exprDepth--; i++; continue; }
+        i++;
+      }
+      result += '"';
+      continue;
+    }
+
+    result += ch;
+    i++;
+  }
+
   return result;
 }
