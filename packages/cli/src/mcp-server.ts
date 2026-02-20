@@ -1328,7 +1328,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const lines = [`# ${filePath}`, ""];
 
         if (fileInfo.exports.length > 0) {
-          lines.push(`**Exports:** ${fileInfo.exports.join(", ")}`);
+          const exportStrs = fileInfo.exports.map((e: { name: string; signature?: string; kind?: string } | string) =>
+            typeof e === "string" ? e : e.signature ? `${e.name}${e.signature}` : e.name
+          );
+          lines.push(`**Exports:** ${exportStrs.join(", ")}`);
         }
 
         lines.push(`**Language:** ${fileInfo.language}`);
@@ -1448,10 +1451,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         for (const [filePath, info] of Object.entries(index.files)) {
           for (const exp of info.exports) {
-            if (exp.toLowerCase().includes(symbolName)) {
+            const expName = typeof exp === "string" ? exp : exp.name;
+            const expSig = typeof exp === "string" ? undefined : exp.signature;
+            if (expName.toLowerCase().includes(symbolName)) {
               matches.push({
                 file: filePath,
-                symbol: exp,
+                symbol: expSig ? `${expName}${expSig}` : expName,
                 importedBy: info.importedBy,
               });
             }

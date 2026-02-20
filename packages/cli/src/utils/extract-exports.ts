@@ -1,80 +1,101 @@
 /**
  * Extract Exports
  *
- * Regex-based extraction of all exported symbols from a source file.
- * Handles functions, classes, constants, types, interfaces, enums,
- * default exports, and named re-exports.
+ * Regex-based extraction of all exported symbols from a source file,
+ * including compact signatures for functions and types.
  *
  * @module utils/extract-exports
  */
 
-/** Represents a single exported symbol */
+/** Represents a single exported symbol with optional signature */
 export interface ExportedSymbol {
   /** The symbol name */
   name: string;
   /** The kind of export */
   kind: "function" | "class" | "const" | "let" | "var" | "type" | "interface" | "enum" | "default" | "re-export";
+  /**
+   * Compact signature for display in context injection.
+   * e.g. "(userId: string) => Promise<User>" for functions
+   *      "{ id: string; name: string }" for types
+   */
+  signature?: string;
 }
 
 /**
  * Extracts all exported symbol names from file content.
- *
- * @param content - Source file content
- * @returns Array of exported symbol names (deduplicated)
  */
 export function extractAllExports(content: string): string[] {
-  const symbols = extractExportedSymbols(content);
-  return [...new Set(symbols.map(s => s.name))];
+  return extractExportedSymbols(content).map(s => s.name);
 }
 
 /**
- * Extracts all exported symbols with their kinds from file content.
- *
- * @param content - Source file content
- * @returns Array of ExportedSymbol objects
+ * Extracts all exported symbols with kinds and compact signatures.
  */
 export function extractExportedSymbols(content: string): ExportedSymbol[] {
   const symbols: ExportedSymbol[] = [];
   const seen = new Set<string>();
 
-  const add = (name: string, kind: ExportedSymbol["kind"]) => {
+  const add = (name: string, kind: ExportedSymbol["kind"], signature?: string) => {
     if (name && !seen.has(name)) {
       seen.add(name);
-      symbols.push({ name, kind });
+      symbols.push({ name, kind, ...(signature ? { signature } : {}) });
     }
   };
 
-  // Remove comments to avoid false positives
   const cleaned = removeComments(content);
 
-  // export function foo() / export async function foo()
-  for (const m of cleaned.matchAll(/export\s+(?:async\s+)?function\s+(\w+)/g)) {
-    add(m[1], "function");
+  // export [async] function foo(params): ReturnType
+  for (const m of cleaned.matchAll(
+    /export\s+(?:async\s+)?function\*?\s+(\w+)\s*(\([^)]*\))(?:\s*:\s*([^\n{;]+))?/g
+  )) {
+    const params = m[2].trim();
+    const ret = m[3]?.trim();
+    const sig = ret ? `${params} => ${ret}` : params;
+    add(m[1], "function", sig.length > 80 ? params : sig);
   }
 
-  // export function* foo() (generators)
-  for (const m of cleaned.matchAll(/export\s+(?:async\s+)?function\*\s+(\w+)/g)) {
-    add(m[1], "function");
+  // export class Foo [extends Bar]
+  for (const m of cleaned.matchAll(/export\s+(?:abstract\s+)?class\s+(\w+)(?:\s+extends\s+(\w+))?/g)) {
+    add(m[1], "class", m[2] ? `extends ${m[2]}` : undefined);
   }
 
-  // export class Foo
-  for (const m of cleaned.matchAll(/export\s+(?:abstract\s+)?class\s+(\w+)/g)) {
-    add(m[1], "class");
+  // export const foo = (params): ReturnType => ...  (arrow function)
+  for (const m of cleaned.matchAll(
+    /export\s+const\s+(\w+)\s*=\s*(?:async\s+)?\(([^)]*)\)(?:\s*:\s*([^\n=>{]+))?\s*=>/g
+  )) {
+    const params = `(${m[2].trim()})`;
+    const ret = m[3]?.trim();
+    const sig = ret ? `${params} => ${ret}` : params;
+    add(m[1], "const", sig.length > 80 ? params : sig);
   }
 
-  // export const/let/var foo
-  for (const m of cleaned.matchAll(/export\s+(const|let|var)\s+(\w+)/g)) {
-    add(m[2], m[1] as ExportedSymbol["kind"]);
+  // export const foo = value  (non-function)
+  for (const m of cleaned.matchAll(/export\s+const\s+(\w+)\s*(?::\s*([^=\n]+))?\s*=/g)) {
+    if (!seen.has(m[1])) {
+      const typeAnnotation = m[2]?.trim();
+      add(m[1], "const", typeAnnotation && typeAnnotation.length < 60 ? typeAnnotation : undefined);
+    }
   }
 
-  // export type Foo
-  for (const m of cleaned.matchAll(/export\s+type\s+(\w+)\s*[=<{]/g)) {
+  // export let/var
+  for (const m of cleaned.matchAll(/export\s+(let|var)\s+(\w+)/g)) {
+    add(m[2], m[1] as "let" | "var");
+  }
+
+  // export type Foo = ...
+  for (const m of cleaned.matchAll(/export\s+type\s+(\w+)(?:<[^>]*>)?\s*=\s*([^\n;{]+)/g)) {
+    const rhs = m[2].trim();
+    add(m[1], "type", rhs.length < 60 ? rhs : undefined);
+  }
+
+  // export type Foo { (object shorthand — no =) }
+  for (const m of cleaned.matchAll(/export\s+type\s+(\w+)(?:<[^>]*>)?\s*\{/g)) {
     add(m[1], "type");
   }
 
-  // export interface Foo
-  for (const m of cleaned.matchAll(/export\s+interface\s+(\w+)/g)) {
-    add(m[1], "interface");
+  // export interface Foo [extends Bar]
+  for (const m of cleaned.matchAll(/export\s+interface\s+(\w+)(?:\s+extends\s+([\w,\s]+))?\s*\{/g)) {
+    add(m[1], "interface", m[2]?.trim() ? `extends ${m[2].trim()}` : undefined);
   }
 
   // export enum Foo
@@ -83,24 +104,24 @@ export function extractExportedSymbols(content: string): ExportedSymbol[] {
   }
 
   // export default function Foo / export default class Foo
-  for (const m of cleaned.matchAll(/export\s+default\s+(?:async\s+)?function\s+(\w+)/g)) {
-    add(m[1], "default");
+  for (const m of cleaned.matchAll(
+    /export\s+default\s+(?:async\s+)?function\s+(\w+)\s*(\([^)]*\))(?:\s*:\s*([^\n{;]+))?/g
+  )) {
+    const params = m[2].trim();
+    const ret = m[3]?.trim();
+    add(m[1], "default", ret ? `${params} => ${ret}` : params);
   }
   for (const m of cleaned.matchAll(/export\s+default\s+(?:abstract\s+)?class\s+(\w+)/g)) {
     add(m[1], "default");
   }
 
-  // export { foo, bar, baz as qux }
+  // export { foo, bar as baz }  (named, no from clause)
   for (const m of cleaned.matchAll(/export\s*\{([^}]+)\}/g)) {
-    const inner = m[1];
-    // Skip re-exports with "from" clause — those come from other files
     const afterBrace = cleaned.slice((m.index ?? 0) + m[0].length, (m.index ?? 0) + m[0].length + 30);
     if (/^\s*from\s+['"]/.test(afterBrace)) continue;
-
-    for (const name of inner.split(",")) {
+    for (const name of m[1].split(",")) {
       const trimmed = name.trim();
       if (!trimmed) continue;
-      // Handle "foo as bar" — take the exported name (bar)
       const parts = trimmed.split(/\s+as\s+/);
       const exportedName = (parts[1] || parts[0]).trim();
       if (exportedName && /^\w+$/.test(exportedName) && exportedName !== "default") {
@@ -109,31 +130,31 @@ export function extractExportedSymbols(content: string): ExportedSymbol[] {
     }
   }
 
-  // Python: def foo (top-level, no indentation)
-  for (const m of cleaned.matchAll(/^def\s+(\w+)\s*\(/gm)) {
-    // Only match if at start of line (no indentation) — top-level functions
-    const lineStart = cleaned.lastIndexOf("\n", (m.index ?? 0)) + 1;
-    if ((m.index ?? 0) === lineStart) {
-      add(m[1], "function");
+  // Python: top-level def foo(params)
+  for (const m of cleaned.matchAll(/^def\s+(\w+)\s*(\([^)]*\))(?:\s*->\s*([^\n:]+))?/gm)) {
+    if ((m.index ?? 0) === cleaned.lastIndexOf("\n", (m.index ?? 0)) + 1) {
+      const sig = m[3]?.trim() ? `${m[2].trim()} -> ${m[3].trim()}` : m[2].trim();
+      add(m[1], "function", sig.length < 80 ? sig : m[2].trim());
     }
   }
 
-  // Python: class Foo (top-level)
-  for (const m of cleaned.matchAll(/^class\s+(\w+)/gm)) {
-    const lineStart = cleaned.lastIndexOf("\n", (m.index ?? 0)) + 1;
-    if ((m.index ?? 0) === lineStart) {
-      add(m[1], "class");
+  // Python: top-level class Foo
+  for (const m of cleaned.matchAll(/^class\s+(\w+)(?:\(([^)]*)\))?/gm)) {
+    if ((m.index ?? 0) === cleaned.lastIndexOf("\n", (m.index ?? 0)) + 1) {
+      add(m[1], "class", m[2]?.trim() ? `extends ${m[2].trim()}` : undefined);
     }
   }
 
-  // Go: func Foo (exported = PascalCase)
-  for (const m of cleaned.matchAll(/^func\s+(\([^)]*\)\s+)?([A-Z]\w*)/gm)) {
-    add(m[2], "function");
+  // Go: exported func Foo(params) ReturnType
+  for (const m of cleaned.matchAll(/^func\s+(\([^)]*\)\s+)?([A-Z]\w*)\s*(\([^)]*\))(?:\s+([^\n{]+))?/gm)) {
+    const sig = m[4]?.trim() ? `${m[3].trim()} ${m[4].trim()}` : m[3].trim();
+    add(m[2], "function", sig.length < 80 ? sig : m[3].trim());
   }
 
-  // Rust: pub fn foo / pub struct Foo / pub enum Foo / pub trait Foo
-  for (const m of cleaned.matchAll(/pub\s+(?:async\s+)?fn\s+(\w+)/g)) {
-    add(m[1], "function");
+  // Rust: pub [async] fn foo(params) -> ReturnType
+  for (const m of cleaned.matchAll(/pub\s+(?:async\s+)?fn\s+(\w+)\s*(\([^)]*\))(?:\s*->\s*([^\n{]+))?/g)) {
+    const sig = m[3]?.trim() ? `${m[2].trim()} -> ${m[3].trim()}` : m[2].trim();
+    add(m[1], "function", sig.length < 80 ? sig : m[2].trim());
   }
   for (const m of cleaned.matchAll(/pub\s+struct\s+(\w+)/g)) {
     add(m[1], "class");
@@ -148,13 +169,66 @@ export function extractExportedSymbols(content: string): ExportedSymbol[] {
   return symbols;
 }
 
+/**
+ * Extract named imports from a file's import statements for a given source path.
+ * Returns list of symbol names imported from that source.
+ *
+ * e.g. `import { auth, signIn } from "@/lib/auth"` → ["auth", "signIn"]
+ */
+export function extractNamedImportsFrom(content: string, sourcePath: string): string[] {
+  const names: string[] = [];
+  const cleaned = removeComments(content);
+
+  // Match: import { a, b as c } from "..."
+  const importRegex = /import\s+\{([^}]+)\}\s+from\s+['"]([^'"]+)['"]/g;
+  for (const m of cleaned.matchAll(importRegex)) {
+    const specifier = m[2];
+    // Loose match — check if the specifier resolves to sourcePath
+    if (!specifierMatchesPath(specifier, sourcePath)) continue;
+    for (const name of m[1].split(",")) {
+      const trimmed = name.trim();
+      if (!trimmed) continue;
+      // "foo as bar" → use local name "bar" (that's what the file actually uses)
+      // but we want the imported name "foo" (the export from the source)
+      const parts = trimmed.split(/\s+as\s+/);
+      const importedName = parts[0].trim();
+      if (importedName && /^\w+$/.test(importedName)) {
+        names.push(importedName);
+      }
+    }
+  }
+
+  // Match: import DefaultExport from "..."
+  const defaultRegex = /import\s+(\w+)\s+from\s+['"]([^'"]+)['"]/g;
+  for (const m of cleaned.matchAll(defaultRegex)) {
+    if (!specifierMatchesPath(m[2], sourcePath)) continue;
+    names.push("default");
+  }
+
+  return [...new Set(names)];
+}
+
+/** Check if an import specifier likely resolves to the given relative path */
+function specifierMatchesPath(specifier: string, filePath: string): boolean {
+  // Strip extension from filePath for comparison
+  const fileBase = filePath.replace(/\.[^.]+$/, "");
+  const fileBaseName = fileBase.split("/").pop() ?? fileBase;
+
+  // @/ alias → src/
+  const normalized = specifier.replace(/^@\//, "src/").replace(/^~\//, "");
+
+  // Strip extension from specifier
+  const specBase = normalized.replace(/\.[^.]+$/, "");
+  const specBaseName = specBase.split("/").pop() ?? specBase;
+
+  // Check if tails match
+  return fileBase.endsWith(specBase) || fileBase.endsWith(normalized) || fileBaseName === specBaseName;
+}
+
 /** Strips single-line and multi-line comments from source code */
 function removeComments(content: string): string {
-  // Remove single-line comments
   let result = content.replace(/\/\/.*$/gm, "");
-  // Remove multi-line comments
   result = result.replace(/\/\*[\s\S]*?\*\//g, "");
-  // Remove template literals (they can contain fake exports in generators)
   result = result.replace(/`(?:[^`\\]|\\.)*`/g, '""');
   return result;
 }
