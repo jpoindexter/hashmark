@@ -59,7 +59,7 @@ export function extractExportedSymbols(content: string): ExportedSymbol[] {
     add(m[1], "class", m[2] ? `extends ${m[2]}` : undefined);
   }
 
-  // export const foo = (params): ReturnType => ...  (arrow function)
+  // export const foo = (params): ReturnType => ...  (arrow function, parenthesised params)
   for (const m of cleaned.matchAll(
     /export\s+const\s+(\w+)\s*=\s*(?:async\s+)?\(([^)]*)\)(?:\s*:\s*([^\n=>{]+))?\s*=>/g
   )) {
@@ -67,6 +67,11 @@ export function extractExportedSymbols(content: string): ExportedSymbol[] {
     const ret = m[3]?.trim();
     const sig = ret ? `${params} => ${ret}` : params;
     add(m[1], "const", sig.length > 80 ? params : sig);
+  }
+
+  // export const foo = x => ...  (single-param arrow, no parens)
+  for (const m of cleaned.matchAll(/export\s+const\s+(\w+)\s*=\s*(?:async\s+)?(\w+)\s*=>/g)) {
+    add(m[1], "const", `(${m[2]}) =>`);
   }
 
   // export const foo = value  (non-function)
@@ -130,19 +135,15 @@ export function extractExportedSymbols(content: string): ExportedSymbol[] {
     }
   }
 
-  // Python: top-level def foo(params)
+  // Python: top-level def foo(params) — ^gm anchors to start of line, so indented methods are excluded
   for (const m of cleaned.matchAll(/^def\s+(\w+)\s*(\([^)]*\))(?:\s*->\s*([^\n:]+))?/gm)) {
-    if ((m.index ?? 0) === cleaned.lastIndexOf("\n", (m.index ?? 0)) + 1) {
-      const sig = m[3]?.trim() ? `${m[2].trim()} -> ${m[3].trim()}` : m[2].trim();
-      add(m[1], "function", sig.length < 80 ? sig : m[2].trim());
-    }
+    const sig = m[3]?.trim() ? `${m[2].trim()} -> ${m[3].trim()}` : m[2].trim();
+    add(m[1], "function", sig.length < 80 ? sig : m[2].trim());
   }
 
-  // Python: top-level class Foo
+  // Python: top-level class Foo — ^gm excludes indented inner classes
   for (const m of cleaned.matchAll(/^class\s+(\w+)(?:\(([^)]*)\))?/gm)) {
-    if ((m.index ?? 0) === cleaned.lastIndexOf("\n", (m.index ?? 0)) + 1) {
-      add(m[1], "class", m[2]?.trim() ? `extends ${m[2].trim()}` : undefined);
-    }
+    add(m[1], "class", m[2]?.trim() ? `extends ${m[2].trim()}` : undefined);
   }
 
   // Go: exported func Foo(params) ReturnType

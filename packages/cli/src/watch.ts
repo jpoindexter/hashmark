@@ -46,6 +46,21 @@ const IGNORE_PATTERNS = [
 export async function startWatch(dir: string): Promise<void> {
   const absDir = resolve(dir);
 
+  // Initial sync before entering watch loop
+  try {
+    const start = Date.now();
+    const initial = await buildRelationshipIndex(absDir);
+    const hashmarkDir = join(absDir, ".hashmark");
+    if (!existsSync(hashmarkDir)) {
+      mkdirSync(hashmarkDir, { recursive: true });
+    }
+    writeFileSync(join(hashmarkDir, "index.json"), JSON.stringify(initial, null, 2), "utf-8");
+    clearIndexCache();
+    console.log(pc.green(`  ✓ Indexed ${initial.fileCount} files`) + pc.dim(` (${Date.now() - start}ms)`));
+  } catch (error) {
+    console.error(pc.red(`  ✗ Initial sync failed: ${error instanceof Error ? error.message : error}`));
+  }
+
   console.log(pc.cyan("  Watching for changes..."));
   console.log(pc.dim("  Press Ctrl+C to stop\n"));
 

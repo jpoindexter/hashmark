@@ -7,9 +7,10 @@
  * @module utils/load-index
  */
 
-import { existsSync, readFileSync, statSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "fs";
 import { join, resolve } from "path";
 import type { RelationshipIndex } from "../sync.js";
+import { buildRelationshipIndex } from "../sync.js";
 
 /** Maximum age before index is considered stale (10 minutes) */
 const MAX_AGE_MS = 10 * 60 * 1000;
@@ -61,9 +62,6 @@ export async function loadIndex(dir: string, autoSync = true): Promise<Relations
 
   // Index missing or stale — run sync
   if (autoSync) {
-    const { buildRelationshipIndex } = await import("../sync.js");
-    const { writeFileSync, mkdirSync } = await import("fs");
-
     const index = await buildRelationshipIndex(absDir);
 
     // Write the index

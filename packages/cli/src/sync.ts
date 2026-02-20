@@ -88,7 +88,8 @@ export async function buildRelationshipIndex(dir: string): Promise<RelationshipI
     const exports = fileExports.get(filePath) ?? [];
     const ext = extname(filePath).toLowerCase();
     const language = LANGUAGE_MAP[ext] || "unknown";
-    const size = content.split("\n").length;
+    // Count newlines directly — avoids off-by-one from trailing newline
+    const size = (content.match(/\n/g)?.length ?? 0) + (content.endsWith("\n") ? 0 : 1);
     const normalizedImports = info.imports.map(normalizeImportPath);
     const normalizedImportedBy = info.importedBy.map(normalizeImportPath);
 
