@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { polar } from "@/lib/polar";
+import { getPolar } from "@/lib/polar";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid productId" }, { status: 400 });
   }
 
-  const checkout = await polar.checkouts.create({
+  const checkout = await getPolar().checkouts.create({
     products: [productId],
     externalCustomerId: session.user.id,
     successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?upgraded=true`,

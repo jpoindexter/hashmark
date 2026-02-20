@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { polar } from "@/lib/polar";
+import { getPolar } from "@/lib/polar";
 import { NextResponse } from "next/server";
 
 export async function POST() {
@@ -23,7 +23,7 @@ export async function POST() {
   }
 
   // Polar identifies the customer by the externalCustomerId we set at checkout (userId)
-  const portalSession = await polar.customerSessions.create({
+  const portalSession = await getPolar().customerSessions.create({
     externalCustomerId: session.user.id,
     returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`,
   });
