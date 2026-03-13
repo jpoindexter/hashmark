@@ -5,8 +5,10 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@fabrk/design-system': file:../fabrk-framework/packages/design-system
-  '@fabrk/config': file:../fabrk-framework/packages/config
+  '@fabrk/components': file:./vendor/fabrk-components-0.4.1.tgz
+  '@fabrk/core': file:./vendor/fabrk-core-0.3.1.tgz
+  '@fabrk/design-system': file:./vendor/fabrk-design-system-0.4.1.tgz
+  '@fabrk/config': file:./vendor/fabrk-config-0.3.1.tgz
 
 importers:
 
@@ -16,14 +18,14 @@ importers:
         specifier: ^2.11.1
         version: 2.11.1(@prisma/client@6.19.2(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3))
       '@fabrk/components':
-        specifier: file:../fabrk-framework/packages/components
-        version: file:../fabrk-framework/packages/components(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: file:vendor/fabrk-components-0.4.1.tgz
+        version: file:vendor/fabrk-components-0.4.1.tgz(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@fabrk/core':
-        specifier: file:../fabrk-framework/packages/core
-        version: file:../fabrk-framework/packages/core(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: file:vendor/fabrk-core-0.3.1.tgz
+        version: file:vendor/fabrk-core-0.3.1.tgz(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@fabrk/design-system':
-        specifier: file:../fabrk-framework/packages/design-system
-        version: file:../fabrk-framework/packages/design-system(react@19.2.3)
+        specifier: file:vendor/fabrk-design-system-0.4.1.tgz
+        version: file:vendor/fabrk-design-system-0.4.1.tgz(react@19.2.3)
       '@octokit/rest':
         specifier: ^22.0.1
         version: 22.0.1
@@ -584,25 +586,33 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@fabrk/components@file:../fabrk-framework/packages/components':
-    resolution: {directory: ../fabrk-framework/packages/components, type: directory}
+  '@fabrk/components@file:vendor/fabrk-components-0.4.1.tgz':
+    resolution: {integrity: sha512-RFynoHtmWY4cDDvrZf9DiVoKyMkirQ2lg0ux9aEeiV2/P4g+hBeeKprFUjgK9PsxQVf7CwraSscL+OoCzYaDVg==, tarball: file:vendor/fabrk-components-0.4.1.tgz}
+    version: 0.4.1
+    engines: {node: '>=22.0.0'}
     peerDependencies:
       next: '>=14.0.0'
       react: ^19.0.0
       react-dom: ^19.0.0
 
-  '@fabrk/config@file:../fabrk-framework/packages/config':
-    resolution: {directory: ../fabrk-framework/packages/config, type: directory}
+  '@fabrk/config@file:vendor/fabrk-config-0.3.1.tgz':
+    resolution: {integrity: sha512-sAOgqCE9jMIjgmWH3RVd1I1jx0QjlLiBYRyf0OUd8e8kgk0SUG/C2o3zeuEe4S64JPX5l2u9jn59x5tR3NP1sg==, tarball: file:vendor/fabrk-config-0.3.1.tgz}
+    version: 0.3.1
+    engines: {node: '>=22.0.0'}
 
-  '@fabrk/core@file:../fabrk-framework/packages/core':
-    resolution: {directory: ../fabrk-framework/packages/core, type: directory}
+  '@fabrk/core@file:vendor/fabrk-core-0.3.1.tgz':
+    resolution: {integrity: sha512-NHZHiRxgTd/1F3+0O/uoo8xIqbQTBWhJwAoB2FOXFG6JOVSKGXqR4mOI4AJi/fpUDRtZvUJh3ej2bYQVLBFhjQ==, tarball: file:vendor/fabrk-core-0.3.1.tgz}
+    version: 0.3.1
+    engines: {node: '>=22.0.0'}
     peerDependencies:
       next: '>=14.0.0'
       react: ^19.0.0
       react-dom: ^19.0.0
 
-  '@fabrk/design-system@file:../fabrk-framework/packages/design-system':
-    resolution: {directory: ../fabrk-framework/packages/design-system, type: directory}
+  '@fabrk/design-system@file:vendor/fabrk-design-system-0.4.1.tgz':
+    resolution: {integrity: sha512-LKYl2jN1TfvVphqouW0QSw1PSq6hWes0ZHngdm5ngkicfh14j7krerADj85EeZIf0yYk8YvcSCiEB472BJ67kw==, tarball: file:vendor/fabrk-design-system-0.4.1.tgz}
+    version: 0.4.1
+    engines: {node: '>=22.0.0'}
     peerDependencies:
       react: ^19.0.0
 
@@ -1285,11 +1295,6 @@ packages:
         optional: true
       '@types/react-dom':
         optional: true
-
-  '@radix-ui/react-icons@1.3.2':
-    resolution: {integrity: sha512-fyQIhGDhzfc9pK2kH6Pl9c4BDJGfMkPqkyIgYDthyNYoNg3wVhoJMMh19WS4Up/1KMPFVpNsT2q3WmXn2N1m6g==}
-    peerDependencies:
-      react: ^16.x || ^17.x || ^18.x || ^19.0.0 || ^19.0.0-rc
 
   '@radix-ui/react-id@1.1.1':
     resolution: {integrity: sha512-kGkGegYIdQsOb4XjsfM97rXsiHaBwco+hFI66oO4s9LU+PLAC5oJ7khdOVFxkhsmlbpUqDAvXw11CluXP+jkHg==}
@@ -4571,12 +4576,6 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
-  vaul@1.1.2:
-    resolution: {integrity: sha512-ZFkClGpWyI2WUQjdLJ/BaGuV6AVQiJ3uELGk3OYtP+B6yCO7Cmn9vPFXVJkRaGkOJu3m8bQMgtyzNHixULceQA==}
-    peerDependencies:
-      react: ^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc
-      react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc
-
   victory-vendor@36.9.2:
     resolution: {integrity: sha512-PnpQQMuxlwYdocC8fIJqVXvkeViHYzotI+NJrCuav0ZYFoq912ZHBk3mCeuj+5/VpodOjPe1z0Fk2ihgzlXqjQ==}
 
@@ -5148,16 +5147,16 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@fabrk/components@file:../fabrk-framework/packages/components(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+  '@fabrk/components@file:vendor/fabrk-components-0.4.1.tgz(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
-      '@fabrk/design-system': file:../fabrk-framework/packages/design-system(react@19.2.3)
+      '@fabrk/core': file:vendor/fabrk-core-0.3.1.tgz(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@fabrk/design-system': file:vendor/fabrk-design-system-0.4.1.tgz(react@19.2.3)
       '@radix-ui/react-accordion': 1.2.12(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@radix-ui/react-alert-dialog': 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@radix-ui/react-avatar': 1.1.11(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@radix-ui/react-checkbox': 1.3.3(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@radix-ui/react-dialog': 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@radix-ui/react-dropdown-menu': 2.1.16(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      '@radix-ui/react-icons': 1.3.2(react@19.2.3)
       '@radix-ui/react-label': 2.1.8(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@radix-ui/react-popover': 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@radix-ui/react-radio-group': 1.3.8(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -5171,7 +5170,6 @@ snapshots:
       '@radix-ui/react-tooltip': 1.2.8(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@tanstack/react-table': 8.21.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       class-variance-authority: 0.7.1
-      clsx: 2.1.1
       cmdk: 1.1.1(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       date-fns: 4.1.0
       input-otp: 1.4.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -5183,27 +5181,24 @@ snapshots:
       react-dom: 19.2.3(react@19.2.3)
       react-hook-form: 7.71.1(react@19.2.3)
       recharts: 2.15.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      tailwind-merge: 2.6.1
-      vaul: 1.1.2(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@fabrk/config@file:../fabrk-framework/packages/config':
+  '@fabrk/config@file:vendor/fabrk-config-0.3.1.tgz':
     dependencies:
       zod: 3.25.76
 
-  '@fabrk/core@file:../fabrk-framework/packages/core(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+  '@fabrk/core@file:vendor/fabrk-core-0.3.1.tgz(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
-      '@fabrk/config': file:../fabrk-framework/packages/config
+      '@fabrk/config': file:vendor/fabrk-config-0.3.1.tgz
       clsx: 2.1.1
       next: 16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
       tailwind-merge: 2.6.1
-      zod: 3.25.76
 
-  '@fabrk/design-system@file:../fabrk-framework/packages/design-system(react@19.2.3)':
+  '@fabrk/design-system@file:vendor/fabrk-design-system-0.4.1.tgz(react@19.2.3)':
     dependencies:
       react: 19.2.3
 
@@ -5885,10 +5880,6 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.13
       '@types/react-dom': 19.2.3(@types/react@19.2.13)
-
-  '@radix-ui/react-icons@1.3.2(react@19.2.3)':
-    dependencies:
-      react: 19.2.3
 
   '@radix-ui/react-id@1.1.1(@types/react@19.2.13)(react@19.2.3)':
     dependencies:
@@ -9360,15 +9351,6 @@ snapshots:
       react: 19.2.3
 
   vary@1.1.2: {}
-
-  vaul@1.1.2(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
-    dependencies:
-      '@radix-ui/react-dialog': 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      react: 19.2.3
-      react-dom: 19.2.3(react@19.2.3)
-    transitivePeerDependencies:
-      - '@types/react'
-      - '@types/react-dom'
 
   victory-vendor@36.9.2:
     dependencies:

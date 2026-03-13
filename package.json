@@ -21,9 +21,9 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
-    "@fabrk/components": "file:../fabrk-framework/packages/components",
-    "@fabrk/core": "file:../fabrk-framework/packages/core",
-    "@fabrk/design-system": "file:../fabrk-framework/packages/design-system",
+    "@fabrk/components": "file:./vendor/fabrk-components-0.4.1.tgz",
+    "@fabrk/core": "file:./vendor/fabrk-core-0.3.1.tgz",
+    "@fabrk/design-system": "file:./vendor/fabrk-design-system-0.4.1.tgz",
     "@octokit/rest": "^22.0.1",
     "@polar-sh/sdk": "^0.43.1",
     "@prisma/client": "^6.19.2",
@@ -46,8 +46,10 @@
       "@prisma/engines"
     ],
     "overrides": {
-      "@fabrk/design-system": "file:../fabrk-framework/packages/design-system",
-      "@fabrk/config": "file:../fabrk-framework/packages/config"
+      "@fabrk/components": "file:./vendor/fabrk-components-0.4.1.tgz",
+      "@fabrk/core": "file:./vendor/fabrk-core-0.3.1.tgz",
+      "@fabrk/design-system": "file:./vendor/fabrk-design-system-0.4.1.tgz",
+      "@fabrk/config": "file:./vendor/fabrk-config-0.3.1.tgz"
     }
   },
   "lint-staged": {
