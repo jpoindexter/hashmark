@@ -4,6 +4,8 @@ import { LoginCard } from "@/components/shared/login-card";
 
 export const metadata = {
   title: "Sign In — Hashmark",
+  description: "Sign in to Hashmark to generate and sync AI context files for your repositories.",
+  robots: { index: false },
 };
 
 export default async function LoginPage() {

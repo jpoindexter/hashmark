@@ -155,6 +155,6 @@ export async function runScan(scanId: string, fullName: string, token: string, s
       data: { status: "FAILED", duration: Date.now() - startTime, error: message },
     });
   } finally {
-    try { await rm(tmpDir, { recursive: true, force: true }); } catch { /* Ignore cleanup errors */ }
+    try { await rm(tmpDir, { recursive: true, force: true }); } catch (cleanupErr) { console.error(`[scan-worker] Cleanup failed for ${tmpDir}:`, cleanupErr); }
   }
 }

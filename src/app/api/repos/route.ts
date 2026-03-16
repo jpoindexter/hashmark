@@ -34,10 +34,12 @@ export async function GET() {
 
     return NextResponse.json(repos);
   } catch (error) {
-    console.error("Failed to fetch GitHub repos:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("Failed to fetch GitHub repos:", msg);
+    const isAuthError = msg.includes("401") || msg.includes("credentials") || msg.includes("token");
     return NextResponse.json(
-      { error: "Failed to fetch repositories" },
-      { status: 500 }
+      { error: isAuthError ? "GitHub auth expired. Please sign out and back in." : "Failed to fetch repositories. Try again." },
+      { status: isAuthError ? 401 : 500 }
     );
   }
 }

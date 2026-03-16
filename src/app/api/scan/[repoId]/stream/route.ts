@@ -29,23 +29,27 @@ export async function GET(
       // Poll the database for progress updates
       // Note: In a larger scale app, use Redis Pub/Sub here.
       const interval = setInterval(async () => {
-        const scan = await db.scan.findFirst({
-          where: { repositoryId: repoId },
-          orderBy: { createdAt: "desc" },
-          select: { status: true, results: true },
-        });
+        try {
+          const scan = await db.scan.findFirst({
+            where: { repositoryId: repoId },
+            orderBy: { createdAt: "desc" },
+            select: { status: true, results: true },
+          });
 
-        if (!scan) return;
+          if (!scan) return;
 
-        const results = scan.results as Record<string, unknown>;
-        const progress = results?.progress;
+          const results = scan.results as Record<string, unknown>;
+          const progress = results?.progress;
 
-        sendEvent({
-          status: scan.status,
-          progress,
-        });
+          sendEvent({ status: scan.status, progress });
 
-        if (scan.status === "COMPLETED" || scan.status === "FAILED") {
+          if (scan.status === "COMPLETED" || scan.status === "FAILED") {
+            clearInterval(interval);
+            controller.close();
+          }
+        } catch (err) {
+          console.error("[SSE] DB error:", err);
+          sendEvent({ status: "FAILED", error: "Stream error" });
           clearInterval(interval);
           controller.close();
         }
