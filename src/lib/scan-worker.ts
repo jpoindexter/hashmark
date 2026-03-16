@@ -1,6 +1,6 @@
 import { execFile } from "child_process";
 import { promisify } from "util";
-import { access, rm } from "fs/promises";
+import { access, rm, writeFile } from "fs/promises";
 import { join, resolve } from "path";
 import { db } from "./db";
 import { formatScanError } from "./scan-error";
@@ -43,7 +43,7 @@ async function cloneRepo(fullName: string, token: string, tmpDir: string) {
  * Run a full scan: clone → CLI → parse → store → cleanup.
  * Called fire-and-forget from server actions.
  */
-export async function runScan(scanId: string, fullName: string, token: string, scanRoot?: string | null, plan: string = "FREE") {
+export async function runScan(scanId: string, fullName: string, token: string, scanRoot?: string | null, plan: string = "FREE", userId?: string) {
   if (!REPO_NAME_RE.test(fullName)) {
     await db.scan.update({
       where: { id: scanId },
@@ -84,9 +84,22 @@ export async function runScan(scanId: string, fullName: string, token: string, s
       }
     }
 
-    // 3. Run CLI scanner (execFile — no shell)
+    // 3. Inject custom rules for Pro/Team users (writes hashmark.config.json to scanDir)
+    if (plan !== "FREE" && userId) {
+      const customRules = await db.customRule.findMany({
+        where: { userId, enabled: true },
+        select: { rule: true },
+        orderBy: { createdAt: "asc" },
+      });
+      if (customRules.length > 0) {
+        const config = { rules: customRules.map((r) => r.rule) };
+        await writeFile(join(scanDir, "hashmark.config.json"), JSON.stringify(config, null, 2));
+      }
+    }
+
+    // 4. Run CLI scanner (execFile — no shell)
     await updateProgress("SCANNING", `Running scanners on ${effectiveScanRoot || "root"}...`);
-    
+
     const cliArgs = [CLI_PATH, scanDir, "--format", "all", "--json", "--force"];
     if (plan !== "FREE") {
       cliArgs.push("--security");
@@ -96,17 +109,17 @@ export async function runScan(scanId: string, fullName: string, token: string, s
       timeout: 300_000, maxBuffer: 10 * 1024 * 1024,
     });
 
-    // 4. Parse results
+    // 5. Parse results
     await updateProgress("PARSING", "Parsing scan results...");
     const { scanStats, results } = await parseScanIndex(scanDir);
 
-    // 5. Collect files
+    // 6. Collect files
     await updateProgress("COLLECTING", `Found ${scanStats.files} files, ${scanStats.components} components`);
     const generatedFiles = await collectFiles(scanDir);
 
     const duration = Date.now() - startTime;
 
-    // 6. Store results
+    // 7. Store results
     await db.scan.update({
       where: { id: scanId },
       data: {

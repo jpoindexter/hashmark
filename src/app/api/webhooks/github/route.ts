@@ -152,7 +152,7 @@ export async function POST(request: Request) {
 
   try {
     const token = await getGitHubToken(repo.userId);
-    runScan(scan.id, repo.fullName, token, repo.scanRoot).catch(console.error);
+    runScan(scan.id, repo.fullName, token, repo.scanRoot, user?.plan ?? "FREE", repo.userId).catch(console.error);
   } catch (error) {
     // If we can't get the token, fail the scan gracefully
     await db.scan.update({

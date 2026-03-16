@@ -190,8 +190,9 @@ export async function triggerRepoScan(formData: FormData) {
     },
   });
 
+  const user = await db.user.findUnique({ where: { id: session.user.id }, select: { plan: true } });
   const token = await getGitHubToken(session.user.id);
-  runScan(scan.id, repo.fullName, token, repo.scanRoot).catch(console.error);
+  runScan(scan.id, repo.fullName, token, repo.scanRoot, user?.plan ?? "FREE", session.user.id).catch(console.error);
 
   revalidatePath(`/dashboard/${repoId}`);
 }

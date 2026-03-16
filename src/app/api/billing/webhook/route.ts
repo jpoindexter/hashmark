@@ -2,6 +2,22 @@ import { validateEvent, WebhookVerificationError } from "@polar-sh/sdk/webhooks"
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
+// In-memory dedup cache for webhook event IDs.
+// Prevents double-processing when Polar retries on transient errors.
+// Max 500 entries — old entries evicted when full to bound memory usage.
+const MAX_SEEN = 500;
+const seenEventIds = new Set<string>();
+
+function markSeen(id: string): boolean {
+  if (seenEventIds.has(id)) return true;
+  if (seenEventIds.size >= MAX_SEEN) {
+    const first = seenEventIds.values().next().value;
+    if (first) seenEventIds.delete(first);
+  }
+  seenEventIds.add(id);
+  return false;
+}
+
 export async function POST(request: Request) {
   const body = await request.arrayBuffer();
 
@@ -23,6 +39,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
     }
     throw err;
+  }
+
+  // Deduplicate: Polar retries on non-2xx — avoid double plan updates
+  const eventId = (event as { id?: string }).id;
+  if (eventId && markSeen(eventId)) {
+    return NextResponse.json({ received: true, action: "duplicate" }, { status: 202 });
   }
 
   switch (event.type) {
