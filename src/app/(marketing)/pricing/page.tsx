@@ -21,7 +21,7 @@ const PLANS = [
       "Basic intelligence dashboard",
     ],
     cta: "> GET STARTED",
-    href: "/login",
+    href: "/login?plan=free",
     highlighted: false,
   },
   {
@@ -37,7 +37,7 @@ const PLANS = [
       "Scan history with diffs",
     ],
     cta: "> UPGRADE TO PRO",
-    href: "/login",
+    href: "/login?plan=pro",
     highlighted: true,
   },
   {
@@ -52,7 +52,7 @@ const PLANS = [
       "Early access to new features",
     ],
     cta: "> UPGRADE TO TEAM",
-    href: "/login",
+    href: "/login?plan=team",
     highlighted: false,
   },
 ];

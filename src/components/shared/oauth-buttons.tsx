@@ -4,12 +4,12 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { Button } from "@fabrk/components";
 
-export function OAuthButtons() {
+export function OAuthButtons({ callbackUrl = "/dashboard" }: { callbackUrl?: string }) {
   const [loading, setLoading] = useState(false);
 
   const handleGitHubSignIn = async () => {
     setLoading(true);
-    await signIn("github", { callbackUrl: "/dashboard" });
+    await signIn("github", { callbackUrl });
   };
 
   return (

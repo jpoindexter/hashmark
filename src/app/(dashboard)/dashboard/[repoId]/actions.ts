@@ -2,11 +2,123 @@
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getGitHubToken } from "@/lib/github";
+import { getGitHubToken, createOctokit, createOrUpdateFile } from "@/lib/github";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { runScan } from "@/lib/scan-worker";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+
+const WORKFLOW_PATH = ".github/workflows/hashmark-scan.yml";
+
+const WORKFLOW_CONTENT = `# Hashmark Auto-Sync
+#
+# Runs on every push to main/master and regenerates AI context files:
+#   AGENTS.md, CLAUDE.md, .cursorrules, .cursor/rules/, GEMINI.md,
+#   .windsurfrules, .clinerules, .github/copilot-instructions.md
+#
+# No secrets required — uses GITHUB_TOKEN automatically
+# Requires: Pro or Team plan at https://hashmark.md
+
+name: Hashmark — Update AI Context Files
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  hashmark:
+    name: Regenerate AI context files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: \${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Hashmark CLI
+        run: npm install -g hashmark-cli
+
+      - name: Generate AI context files
+        run: hashmark --force
+
+      - name: Commit updated context files
+        run: |
+          git config --local user.email "hashmark-bot@users.noreply.github.com"
+          git config --local user.name "Hashmark Bot"
+          git add \\
+            AGENTS.md \\
+            CLAUDE.md \\
+            GEMINI.md \\
+            .cursorrules \\
+            .windsurfrules \\
+            .clinerules \\
+            ".cursor/rules/" \\
+            ".github/copilot-instructions.md" \\
+            2>/dev/null || true
+          git diff --staged --quiet || \\
+            git commit -m "chore: update AI context files [hashmark] [skip ci]"
+          git push
+`;
+
+export async function installGitHubAction(repoId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const repo = await db.repository.findUnique({
+    where: { id: repoId, userId: session.user.id },
+    select: { id: true, fullName: true },
+  });
+  if (!repo) throw new Error("Repository not found");
+
+  const user = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { plan: true },
+  });
+  if (user?.plan === "FREE") throw new Error("GitHub Action requires Pro or Team plan.");
+
+  const token = await getGitHubToken(session.user.id);
+  const octokit = createOctokit(token);
+  const [owner, repoName] = repo.fullName.split("/");
+
+  // Check if file already exists (need SHA to update)
+  let existingSha: string | undefined;
+  try {
+    const { data } = await octokit.repos.getContent({ owner, repo: repoName, path: WORKFLOW_PATH });
+    if ("sha" in data) existingSha = data.sha;
+  } catch {
+    // File doesn't exist — that's fine, we'll create it
+  }
+
+  await createOrUpdateFile(
+    token,
+    owner,
+    repoName,
+    WORKFLOW_PATH,
+    WORKFLOW_CONTENT,
+    existingSha
+      ? "chore: update Hashmark GitHub Action workflow"
+      : "chore: add Hashmark GitHub Action for AI context file auto-sync",
+    existingSha
+  );
+
+  await db.repository.update({
+    where: { id: repo.id },
+    data: { actionInstalled: true },
+  });
+
+  revalidatePath(`/dashboard/${repoId}/settings`);
+}
 
 const scanRootSchema = z
   .string()

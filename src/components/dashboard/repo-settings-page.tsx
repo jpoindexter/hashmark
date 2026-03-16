@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateRepoScanRoot } from "@/app/(dashboard)/dashboard/[repoId]/actions";
+import { updateRepoScanRoot, installGitHubAction } from "@/app/(dashboard)/dashboard/[repoId]/actions";
 import { Input, Button } from "@fabrk/components";
 import { UpgradeGate } from "@/components/shared/upgrade-gate";
 
@@ -9,17 +9,32 @@ export function RepoSettingsPage({
   repoId,
   repoName,
   scanRoot,
+  actionInstalled,
   plan,
 }: {
   repoId: string;
   repoName: string;
   scanRoot: string | null;
+  actionInstalled: boolean;
   plan: string;
 }) {
   const [value, setValue] = useState(scanRoot ?? "");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const [actionInstalling, setActionInstalling] = useState(false);
+  const [actionInstalled2, setActionInstalled2] = useState(actionInstalled);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  function handleInstallAction() {
+    setActionInstalling(true);
+    setActionError(null);
+    installGitHubAction(repoId)
+      .then(() => setActionInstalled2(true))
+      .catch((err) => setActionError(err instanceof Error ? err.message : "Installation failed"))
+      .finally(() => setActionInstalling(false));
+  }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -122,6 +137,48 @@ export function RepoSettingsPage({
                 </p>
               )}
             </form>
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="mono-section-title text-muted-foreground">
+          AUTO-SYNC (GITHUB ACTION)
+        </h2>
+        {plan === "FREE" ? (
+          <UpgradeGate
+            feature="AUTO-SYNC"
+            description="Auto-sync installs a GitHub Action that regenerates your AI context files on every push. No manual scans, always in sync. Requires Pro or Team plan."
+            requiredPlan="PRO"
+          />
+        ) : actionInstalled2 ? (
+          <div className="mono-box bg-card flex items-center justify-between">
+            <div>
+              <p className="type-label text-accent">[INSTALLED]</p>
+              <p className="mt-[var(--grid-1)] type-caption text-muted-foreground">
+                GitHub Action is active in <span className="text-foreground font-bold">{repoName}</span>. Context files auto-update on every push.
+              </p>
+            </div>
+            <Button variant="outline" onClick={handleInstallAction} disabled={actionInstalling}>
+              {actionInstalling ? "UPDATING..." : "> REINSTALL"}
+            </Button>
+          </div>
+        ) : (
+          <div className="mono-box bg-card">
+            <p className="type-caption text-muted-foreground">
+              Install a GitHub Action in <span className="text-foreground font-bold">{repoName}</span> to auto-regenerate AI context files on every push to main. No secrets required — uses{" "}
+              <code className="text-accent">GITHUB_TOKEN</code> automatically.
+            </p>
+            <div className="mt-[var(--grid-4)]">
+              <Button onClick={handleInstallAction} disabled={actionInstalling}>
+                {actionInstalling ? "INSTALLING..." : "> INSTALL GITHUB ACTION"}
+              </Button>
+            </div>
+            {actionError && (
+              <p className="mt-[var(--grid-2)] type-caption text-destructive" role="alert">
+                {actionError}
+              </p>
+            )}
           </div>
         )}
       </section>

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { LoginCard } from "@/components/shared/login-card";
@@ -17,7 +18,9 @@ export default async function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background font-mono">
-      <LoginCard />
+      <Suspense>
+        <LoginCard />
+      </Suspense>
     </div>
   );
 }

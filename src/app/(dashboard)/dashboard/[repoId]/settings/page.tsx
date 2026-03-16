@@ -20,7 +20,7 @@ export default async function SettingsRoute({
   const [repo, user] = await Promise.all([
     db.repository.findUnique({
       where: { id: repoId, userId: session.user.id },
-      select: { id: true, name: true, fullName: true, scanRoot: true },
+      select: { id: true, name: true, fullName: true, scanRoot: true, actionInstalled: true },
     }),
     db.user.findUnique({
       where: { id: session.user.id },
@@ -35,6 +35,7 @@ export default async function SettingsRoute({
       repoId={repoId}
       repoName={repo.fullName}
       scanRoot={repo.scanRoot}
+      actionInstalled={repo.actionInstalled}
       plan={user?.plan ?? "FREE"}
     />
   );
