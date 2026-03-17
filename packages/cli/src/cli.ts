@@ -42,11 +42,9 @@ import { execSync } from "child_process";
 import { fileURLToPath } from "url";
 import { homedir } from "os";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 let packageVersion = "2.0.0";
 try {
+  const __dirname = dirname(fileURLToPath(import.meta.url));
   const packageJson = JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf-8"));
   packageVersion = packageJson.version;
 } catch {}
@@ -196,6 +194,19 @@ cli
       }
     } catch (error) {
       console.error(pc.red(`\n  ✗ Hook ${action} failed: ${error instanceof Error ? error.message : error}\n`));
+      process.exit(1);
+    }
+  });
+
+// --- mcp command ---
+cli
+  .command("mcp", "Start the hashmark MCP server (stdio transport for Claude Code, Cursor, etc.)")
+  .action(async () => {
+    try {
+      const { startMcpServer } = await import("./mcp-server.js");
+      await startMcpServer();
+    } catch (error) {
+      console.error(pc.red(`\n  ✗ MCP server error: ${error instanceof Error ? error.message : error}\n`));
       process.exit(1);
     }
   });
