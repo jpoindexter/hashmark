@@ -729,4 +729,6 @@ export interface ScanResult {
   aiRecommendations?: AIRecommendations;
   /** GraphQL schemas (optional) */
   graphqlSchemas?: Map<string, ApiSchema>;
+  /** Git log and diff info (optional) */
+  git?: GitInfo | null;
 }

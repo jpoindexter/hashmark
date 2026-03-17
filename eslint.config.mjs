@@ -53,6 +53,14 @@ const eslintConfig = defineConfig([
       "design-system/no-inline-styles": "off",
     },
   },
+  // Marketing landing components use editorial inline styles (not the terminal design system)
+  {
+    files: ["src/components/landing/**/*.{tsx,jsx}", "src/app/(marketing)/**/*.{tsx,jsx}"],
+    rules: {
+      "design-system/no-hardcoded-colors": "off",
+      "design-system/no-inline-styles": "off",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     ".next/**",

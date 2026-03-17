@@ -12,6 +12,7 @@ import * as core from "@actions/core";
 import * as exec from "@actions/exec";
 import * as github from "@actions/github";
 import { join } from "path";
+import { Button } from '@/components/ui/button'
 
 async function run(): Promise<void> {
   try {

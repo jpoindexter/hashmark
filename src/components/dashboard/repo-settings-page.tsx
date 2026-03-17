@@ -4,18 +4,21 @@ import { useState, useTransition } from "react";
 import { updateRepoScanRoot, installGitHubAction } from "@/app/(dashboard)/dashboard/[repoId]/actions";
 import { Input, Button } from "@fabrk/components";
 import { UpgradeGate } from "@/components/shared/upgrade-gate";
+import { FormatToggles } from "@/components/dashboard/format-toggles";
 
 export function RepoSettingsPage({
   repoId,
   repoName,
   scanRoot,
   actionInstalled,
+  enabledFormats,
   plan,
 }: {
   repoId: string;
   repoName: string;
   scanRoot: string | null;
   actionInstalled: boolean;
+  enabledFormats: string[];
   plan: string;
 }) {
   const [value, setValue] = useState(scanRoot ?? "");
@@ -181,6 +184,13 @@ export function RepoSettingsPage({
             )}
           </div>
         )}
+      </section>
+
+      <section>
+        <h2 className="mono-section-title text-muted-foreground">
+          OUTPUT FORMATS
+        </h2>
+        <FormatToggles repoId={repoId} enabledFormats={enabledFormats} />
       </section>
 
       <section>

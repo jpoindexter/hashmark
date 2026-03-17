@@ -163,6 +163,33 @@ export async function updateRepoScanRoot(formData: FormData) {
   revalidatePath(`/dashboard/${repoId}/settings`);
 }
 
+const VALID_FORMAT_IDS = [
+  "agents-md", "claude-md", "cursorrules", "cursor-mdc",
+  "copilot-md", "windsurf-rules", "gemini-md", "cline-rules",
+] as const;
+
+export async function updateEnabledFormats(repoId: string, formats: string[]) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const validated = formats.filter((f) =>
+    (VALID_FORMAT_IDS as readonly string[]).includes(f)
+  );
+
+  const repo = await db.repository.findUnique({
+    where: { id: repoId, userId: session.user.id },
+    select: { id: true },
+  });
+  if (!repo) throw new Error("Repository not found");
+
+  await db.repository.update({
+    where: { id: repo.id },
+    data: { enabledFormats: validated },
+  });
+
+  revalidatePath(`/dashboard/${repoId}/settings`);
+}
+
 export async function triggerRepoScan(formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -194,7 +221,7 @@ export async function triggerRepoScan(formData: FormData) {
 
   const user = await db.user.findUnique({ where: { id: session.user.id }, select: { plan: true } });
   const token = await getGitHubToken(session.user.id);
-  runScan(scan.id, repo.fullName, token, repo.scanRoot, user?.plan ?? "FREE", session.user.id).catch(console.error);
+  runScan(scan.id, repo.fullName, token, repo.scanRoot, user?.plan ?? "FREE", session.user.id, repo.enabledFormats.length > 0 ? repo.enabledFormats : undefined).catch(console.error);
 
   revalidatePath(`/dashboard/${repoId}`);
 }

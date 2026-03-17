@@ -72,6 +72,7 @@ model Repository {
   language        String?
   description     String?
   scanRoot        String?   // Subdirectory to scan (e.g., "web", "apps/frontend")
+  enabledFormats  String[]  // Output formats to generate (empty = all)
   actionInstalled Boolean   @default(false)
   lastScanAt      DateTime?
   createdAt       DateTime  @default(now())

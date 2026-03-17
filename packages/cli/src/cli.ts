@@ -110,7 +110,9 @@ cli
       const formatToUse = options.format || "all";
       const files = formatToUse === "all"
         ? generateAllFormats(scanResult, { generatorOptions: options })
-        : [generateFormat(formatToUse as FormatId, scanResult, { generatorOptions: options })];
+        : formatToUse.split(",").map((f: string) =>
+            generateFormat(f.trim() as FormatId, scanResult, { generatorOptions: options })
+          );
 
       for (const file of files) {
         if (!options.dryRun) {

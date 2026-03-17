@@ -117,7 +117,7 @@ export async function triggerScan(formData: FormData) {
 
   // Fire-and-forget: kick off background scan
   const token = await getGitHubToken(userId);
-  runScan(scan.id, repo.fullName, token, repo.scanRoot, repo.user.plan, userId).catch(console.error);
+  runScan(scan.id, repo.fullName, token, repo.scanRoot, repo.user.plan, userId, repo.enabledFormats.length > 0 ? repo.enabledFormats : undefined).catch(console.error);
 
   revalidatePath("/dashboard/repos");
   revalidatePath(`/dashboard/${repoId}`);

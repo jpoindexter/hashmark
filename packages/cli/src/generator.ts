@@ -192,8 +192,8 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
   lines.push("");
   lines.push("```tsx");
   lines.push("// WRONG");
-  lines.push(`className="bg-blue-500 text-white"`);
-  lines.push(`style={{ color: "#3b82f6" }}`);
+  lines.push(`className="bg-blue-500 text-on-surface"`);
+  lines.push(`style={{"color": "#3b82f6"}}`);
   lines.push("");
   lines.push("// RIGHT");
   lines.push(`className="bg-primary text-primary-foreground"`);
@@ -727,7 +727,7 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
     lines.push("border-border, border-primary, border-destructive");
     lines.push("");
     lines.push("// NEVER USE:");
-    lines.push("// bg-white, bg-black, bg-gray-500, text-gray-600, #ffffff, rgb(...)");
+    lines.push("// bg-surface, bg-on-surface, bg-secondary-container, text-muted-foreground, #ffffff, rgb(...)");
     lines.push("```");
     lines.push("");
 
@@ -1189,7 +1189,7 @@ function generateXmlOutput(result: ScanResult): string {
   lines.push('    </rule>');
   lines.push('    <rule name="use-design-tokens">');
   lines.push('      <description>Never hardcode colors. Use semantic tokens.</description>');
-  lines.push('      <example type="wrong"><![CDATA[className="bg-blue-500 text-white"]]></example>');
+  lines.push('      <example type="wrong"><![CDATA[className="bg-blue-500 text-on-surface"]]></example>');
   lines.push('      <example type="right"><![CDATA[className="bg-primary text-primary-foreground"]]></example>');
   lines.push('    </rule>');
   if (utilities.hasCn) {
@@ -1283,7 +1283,7 @@ function generateXmlOutput(result: ScanResult): string {
     lines.push('    <colors>bg-background, bg-card, bg-muted, bg-primary, bg-secondary, bg-destructive</colors>');
     lines.push('    <text>text-foreground, text-muted-foreground, text-primary-foreground</text>');
     lines.push('    <borders>border-border, border-primary</borders>');
-    lines.push('    <forbidden>bg-white, bg-black, bg-gray-*, #hexvalues</forbidden>');
+    lines.push('    <forbidden>bg-surface, bg-on-surface, bg-gray-*, #hexvalues</forbidden>');
     lines.push('  </design-tokens>');
     lines.push('');
   }

@@ -1,0 +1,2018 @@
+{
+  "version": 1,
+  "generatedAt": "2026-02-20T14:03:29.909Z",
+  "projectRoot": "/Users/jasonpoindexter/Documents/GitHub/_active/hashmark",
+  "fileCount": 100,
+  "files": {
+    "src/middleware.ts": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "middleware",
+          "kind": "function",
+          "signature": "(req: NextRequest)"
+        },
+        {
+          "name": "config",
+          "kind": "const"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 31
+    },
+    "src/app/layout.tsx": {
+      "imports": [
+        "src/components/theme-provider",
+        "src/components/toaster",
+        "src/lib/cn"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "metadata",
+          "kind": "const",
+          "signature": "Metadata"
+        },
+        {
+          "name": "RootLayout",
+          "kind": "default",
+          "signature": "({\n  children,\n}: Readonly<{\n  children: React.ReactNode;\n}>)"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 49
+    },
+    "src/app/opengraph-image.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "runtime",
+          "kind": "const"
+        },
+        {
+          "name": "alt",
+          "kind": "const"
+        },
+        {
+          "name": "size",
+          "kind": "const"
+        },
+        {
+          "name": "contentType",
+          "kind": "const"
+        },
+        {
+          "name": "OGImage",
+          "kind": "default",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 125
+    },
+    "src/app/twitter-image.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "runtime",
+          "kind": "const"
+        },
+        {
+          "name": "alt",
+          "kind": "const"
+        },
+        {
+          "name": "size",
+          "kind": "const"
+        },
+        {
+          "name": "contentType",
+          "kind": "const"
+        },
+        {
+          "name": "TwitterImage",
+          "kind": "default",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 82
+    },
+    "src/config/api-endpoints.ts": {
+      "imports": [],
+      "importedBy": [
+        "src/components/dashboard/connect-repo-dialog.tsx"
+      ],
+      "exports": [
+        {
+          "name": "AUTH_ENDPOINTS",
+          "kind": "const"
+        },
+        {
+          "name": "REPO_ENDPOINTS",
+          "kind": "const"
+        },
+        {
+          "name": "SCAN_ENDPOINTS",
+          "kind": "const"
+        },
+        {
+          "name": "BILLING_ENDPOINTS",
+          "kind": "const"
+        },
+        {
+          "name": "WEBHOOK_ENDPOINTS",
+          "kind": "const"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 28
+    },
+    "src/hooks/use-scan-polling.ts": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "useScanPolling",
+          "kind": "function",
+          "signature": "(\n  repoId: string,\n  scanStatus: string | null | undefined\n)"
+        },
+        {
+          "name": "ScanProgress",
+          "kind": "interface"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 78
+    },
+    "src/hooks/use-scan-stream.ts": {
+      "imports": [],
+      "importedBy": [
+        "src/components/dashboard/intelligence-page.tsx",
+        "src/components/dashboard/repo-card.tsx"
+      ],
+      "exports": [
+        {
+          "name": "useScanStream",
+          "kind": "function",
+          "signature": "(\n  repoId: string,\n  scanStatus: string | null | undefined\n)"
+        },
+        {
+          "name": "ScanProgress",
+          "kind": "interface"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 58
+    },
+    "src/hooks/use-search.ts": {
+      "imports": [],
+      "importedBy": [
+        "src/components/dashboard/search-dialog.tsx"
+      ],
+      "exports": [
+        {
+          "name": "useSearch",
+          "kind": "function",
+          "signature": "(\n  query: string,\n  options?: { repoId?: string; sectionType?: string }\n)"
+        },
+        {
+          "name": "SearchResult",
+          "kind": "interface"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 97
+    },
+    "src/components/theme-provider.tsx": {
+      "imports": [],
+      "importedBy": [
+        "src/app/layout.tsx"
+      ],
+      "exports": [
+        {
+          "name": "ThemeProvider",
+          "kind": "function",
+          "signature": "({ children }: { children: React.ReactNode })"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 16
+    },
+    "src/components/theme-toggle.tsx": {
+      "imports": [],
+      "importedBy": [
+        "src/app/(marketing)/page.tsx",
+        "src/components/dashboard/dashboard-shell-wrapper.tsx"
+      ],
+      "exports": [
+        {
+          "name": "ThemeToggle",
+          "kind": "function",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 53
+    },
+    "src/components/toaster.tsx": {
+      "imports": [],
+      "importedBy": [
+        "src/app/layout.tsx"
+      ],
+      "exports": [
+        {
+          "name": "Toaster",
+          "kind": "function",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 26
+    },
+    "src/lib/auth.ts": {
+      "imports": [
+        "src/lib/db"
+      ],
+      "importedBy": [
+        "src/app/(dashboard)/layout.tsx",
+        "src/app/(dashboard)/dashboard/page.tsx",
+        "src/app/(marketing)/login/page.tsx",
+        "src/app/api/repos/route.ts",
+        "src/app/api/search/route.ts",
+        "src/app/(dashboard)/dashboard/[repoId]/actions.ts",
+        "src/app/(dashboard)/dashboard/[repoId]/layout.tsx",
+        "src/app/(dashboard)/dashboard/[repoId]/page.tsx",
+        "src/app/(dashboard)/dashboard/billing/page.tsx",
+        "src/app/(dashboard)/dashboard/repos/actions-github.ts",
+        "src/app/(dashboard)/dashboard/repos/actions.ts",
+        "src/app/(dashboard)/dashboard/repos/page.tsx",
+        "src/app/(dashboard)/dashboard/settings/actions.ts",
+        "src/app/(dashboard)/dashboard/settings/page.tsx",
+        "src/app/api/auth/[...nextauth]/route.ts",
+        "src/app/api/billing/portal/route.ts",
+        "src/app/api/billing/checkout/route.ts",
+        "src/app/api/scan/[repoId]/route.ts",
+        "src/app/(dashboard)/dashboard/[repoId]/complexity/page.tsx",
+        "src/app/(dashboard)/dashboard/[repoId]/files/page.tsx",
+        "src/app/api/scan/[repoId]/download/route.ts",
+        "src/app/(dashboard)/dashboard/[repoId]/history/page.tsx",
+        "src/app/(dashboard)/dashboard/[repoId]/settings/page.tsx",
+        "src/app/api/scan/[repoId]/latest/route.ts",
+        "src/app/api/scan/[repoId]/stream/route.ts"
+      ],
+      "exports": [
+        {
+          "name": "handlers",
+          "kind": "const"
+        },
+        {
+          "name": "auth",
+          "kind": "const"
+        },
+        {
+          "name": "signIn",
+          "kind": "const"
+        },
+        {
+          "name": "signOut",
+          "kind": "const"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 30
+    },
+    "src/lib/cn.ts": {
+      "imports": [],
+      "importedBy": [
+        "src/app/layout.tsx",
+        "src/components/shared/upgrade-gate.tsx"
+      ],
+      "exports": [
+        {
+          "name": "cn",
+          "kind": "function",
+          "signature": "(...inputs: ClassValue[])"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 6
+    },
+    "src/lib/db.ts": {
+      "imports": [],
+      "importedBy": [
+        "src/app/(dashboard)/layout.tsx",
+        "src/app/(dashboard)/dashboard/page.tsx",
+        "src/app/api/repos/route.ts",
+        "src/app/api/search/route.ts",
+        "src/app/(dashboard)/dashboard/[repoId]/actions.ts",
+        "src/app/(dashboard)/dashboard/[repoId]/layout.tsx",
+        "src/app/(dashboard)/dashboard/[repoId]/page.tsx",
+        "src/app/(dashboard)/dashboard/billing/page.tsx",
+        "src/app/(dashboard)/dashboard/repos/actions-github.ts",
+        "src/app/(dashboard)/dashboard/repos/actions.ts",
+        "src/app/(dashboard)/dashboard/repos/page.tsx",
+        "src/app/(dashboard)/dashboard/settings/actions.ts",
+        "src/app/(dashboard)/dashboard/settings/page.tsx",
+        "src/app/api/billing/portal/route.ts",
+        "src/app/api/billing/webhook/route.ts",
+        "src/app/api/scan/[repoId]/route.ts",
+        "src/app/api/webhooks/github/route.ts",
+        "src/app/(dashboard)/dashboard/[repoId]/complexity/page.tsx",
+        "src/app/(dashboard)/dashboard/[repoId]/files/page.tsx",
+        "src/app/api/scan/[repoId]/download/route.ts",
+        "src/app/(dashboard)/dashboard/[repoId]/history/page.tsx",
+        "src/app/(dashboard)/dashboard/[repoId]/settings/page.tsx",
+        "src/app/api/scan/[repoId]/latest/route.ts",
+        "src/app/api/scan/[repoId]/stream/route.ts"
+      ],
+      "exports": [
+        {
+          "name": "db",
+          "kind": "const"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 13
+    },
+    "src/lib/github.ts": {
+      "imports": [
+        "src/lib/db"
+      ],
+      "importedBy": [
+        "src/app/api/repos/route.ts",
+        "src/app/(dashboard)/dashboard/[repoId]/actions.ts",
+        "src/app/(dashboard)/dashboard/repos/actions-github.ts",
+        "src/app/(dashboard)/dashboard/repos/actions.ts",
+        "src/app/api/scan/[repoId]/route.ts",
+        "src/app/api/webhooks/github/route.ts"
+      ],
+      "exports": [
+        {
+          "name": "getGitHubToken",
+          "kind": "function",
+          "signature": "(userId: string) => Promise<string>"
+        },
+        {
+          "name": "createOctokit",
+          "kind": "function",
+          "signature": "(accessToken: string)"
+        },
+        {
+          "name": "getUserRepos",
+          "kind": "function",
+          "signature": "(accessToken: string)"
+        },
+        {
+          "name": "getRepo",
+          "kind": "function",
+          "signature": "(\n  accessToken: string,\n  owner: string,\n  repo: string\n)"
+        },
+        {
+          "name": "createOrUpdateFile",
+          "kind": "function",
+          "signature": "(\n  accessToken: string,\n  owner: string,\n  repo: string,\n  path: string,\n  content: string,\n  message: string,\n  sha?: string\n)"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 63
+    },
+    "src/lib/mode.ts": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "mode",
+          "kind": "const"
+        },
+        {
+          "name": "Mode",
+          "kind": "type",
+          "signature": "typeof mode"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 100
+    },
+    "src/lib/polar.ts": {
+      "imports": [],
+      "importedBy": [
+        "src/app/api/billing/portal/route.ts",
+        "src/app/api/billing/checkout/route.ts"
+      ],
+      "exports": [
+        {
+          "name": "getPolar",
+          "kind": "function",
+          "signature": "() => Polar"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 15
+    },
+    "src/lib/rate-limit.ts": {
+      "imports": [],
+      "importedBy": [
+        "src/app/api/search/route.ts",
+        "src/app/(dashboard)/dashboard/[repoId]/actions.ts",
+        "src/app/(dashboard)/dashboard/repos/actions.ts",
+        "src/app/api/scan/[repoId]/route.ts",
+        "src/app/api/scan/[repoId]/download/route.ts"
+      ],
+      "exports": [
+        {
+          "name": "checkRateLimit",
+          "kind": "function",
+          "signature": "(\n  identifier: string,\n  bucket: string,\n  options: RateLimitOptions\n)"
+        },
+        {
+          "name": "rateLimitResponse",
+          "kind": "function",
+          "signature": "(\n  identifier: string,\n  bucket: string,\n  options: RateLimitOptions\n)"
+        },
+        {
+          "name": "InMemoryStore",
+          "kind": "class"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 124
+    },
+    "src/lib/scan-detect.ts": {
+      "imports": [
+        "src/lib/scan-utils"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "autoDetectScanRoot",
+          "kind": "function",
+          "signature": "(tmpDir: string) => Promise<string | null>"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 130
+    },
+    "src/lib/scan-error.ts": {
+      "imports": [
+        "src/lib/db"
+      ],
+      "importedBy": [
+        "src/app/api/scan/[repoId]/latest/route.ts"
+      ],
+      "exports": [
+        {
+          "name": "formatScanError",
+          "kind": "function",
+          "signature": "(error: unknown, token?: string) => string"
+        },
+        {
+          "name": "recoverOrphanedScans",
+          "kind": "function",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 69
+    },
+    "src/lib/scan-utils.ts": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "estimateTokens",
+          "kind": "function",
+          "signature": "(content: string) => number"
+        },
+        {
+          "name": "tryReadFile",
+          "kind": "function",
+          "signature": "(path: string) => Promise<string | null>"
+        },
+        {
+          "name": "parseScanIndex",
+          "kind": "function",
+          "signature": "(scanDir: string)"
+        },
+        {
+          "name": "collectFiles",
+          "kind": "function",
+          "signature": "(scanDir: string)"
+        },
+        {
+          "name": "FORMAT_MAP",
+          "kind": "const",
+          "signature": "Record<string, FileFormat>"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 187
+    },
+    "src/lib/scan-worker.ts": {
+      "imports": [
+        "src/lib/db",
+        "src/lib/scan-error",
+        "src/lib/scan-detect",
+        "src/lib/scan-utils"
+      ],
+      "importedBy": [
+        "src/app/(dashboard)/dashboard/[repoId]/actions.ts",
+        "src/app/(dashboard)/dashboard/repos/actions.ts",
+        "src/app/api/scan/[repoId]/route.ts",
+        "src/app/api/webhooks/github/route.ts"
+      ],
+      "exports": [
+        {
+          "name": "runScan",
+          "kind": "function",
+          "signature": "(scanId: string, fullName: string, token: string, scanRoot?: string | null, plan: string = \"\")"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 160
+    },
+    "src/lib/search-chunker.ts": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "chunkAgentsMd",
+          "kind": "function",
+          "signature": "(markdown: string) => ChunkData[]"
+        },
+        {
+          "name": "ChunkData",
+          "kind": "interface"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 161
+    },
+    "src/lib/search-indexer.ts": {
+      "imports": [
+        "src/lib/db",
+        "src/lib/search-chunker"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "indexScanForSearch",
+          "kind": "function",
+          "signature": "(\n  scanId: string,\n  repositoryId: string\n) => Promise<void>"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 39
+    },
+    "src/lib/zip.ts": {
+      "imports": [],
+      "importedBy": [
+        "src/app/api/scan/[repoId]/download/route.ts"
+      ],
+      "exports": [
+        {
+          "name": "buildZip",
+          "kind": "function",
+          "signature": "(entries: ZipEntry[]) => ArrayBuffer"
+        },
+        {
+          "name": "crc32",
+          "kind": "function",
+          "signature": "(data: Uint8Array) => number"
+        },
+        {
+          "name": "ZipEntry",
+          "kind": "interface"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 110
+    },
+    "src/app/(dashboard)/error.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "DashboardError",
+          "kind": "default",
+          "signature": "({\n  error,\n  reset,\n}: {\n  error: Error & { digest?: string };\n  reset: ()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 47
+    },
+    "src/app/(dashboard)/layout.tsx": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/components/dashboard/dashboard-shell-wrapper"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "DashboardLayout",
+          "kind": "default",
+          "signature": "({\n  children,\n}: {\n  children: React.ReactNode;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 27
+    },
+    "src/app/(dashboard)/not-found.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "DashboardNotFound",
+          "kind": "default",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 24
+    },
+    "src/app/(marketing)/layout.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "MarketingLayout",
+          "kind": "default",
+          "signature": "({\n  children,\n}: {\n  children: React.ReactNode;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 7
+    },
+    "src/app/(marketing)/page.tsx": {
+      "imports": [
+        "src/components/landing/hero",
+        "src/components/landing/how-it-works",
+        "src/components/landing/formats",
+        "src/components/landing/pricing-table",
+        "src/components/landing/cli-section",
+        "src/components/landing/footer",
+        "src/components/theme-toggle"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "Home",
+          "kind": "default",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 56
+    },
+    "src/components/landing/cli-section.tsx": {
+      "imports": [],
+      "importedBy": [
+        "src/app/(marketing)/page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "CliSection",
+          "kind": "function",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 28
+    },
+    "src/components/landing/footer.tsx": {
+      "imports": [],
+      "importedBy": [
+        "src/app/(marketing)/page.tsx",
+        "src/app/(marketing)/pricing/page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "Footer",
+          "kind": "function",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 45
+    },
+    "src/components/landing/formats.tsx": {
+      "imports": [],
+      "importedBy": [
+        "src/app/(marketing)/page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "Formats",
+          "kind": "function",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 54
+    },
+    "src/components/landing/hero.tsx": {
+      "imports": [],
+      "importedBy": [
+        "src/app/(marketing)/page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "Hero",
+          "kind": "function",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 91
+    },
+    "src/components/landing/how-it-works.tsx": {
+      "imports": [],
+      "importedBy": [
+        "src/app/(marketing)/page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "HowItWorks",
+          "kind": "function",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 60
+    },
+    "src/components/landing/pricing-table.tsx": {
+      "imports": [],
+      "importedBy": [
+        "src/app/(marketing)/page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "PricingTable",
+          "kind": "function",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 114
+    },
+    "src/components/dashboard/billing-actions.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "UpgradeButton",
+          "kind": "function",
+          "signature": "({ productId }: { productId: string })"
+        },
+        {
+          "name": "ManageSubscriptionButton",
+          "kind": "function",
+          "signature": "()"
+        },
+        {
+          "name": "PlanSelectButton",
+          "kind": "function",
+          "signature": "({\n  productId,\n  isCurrent,\n}: {\n  productId: string;\n  isCurrent: boolean;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 158
+    },
+    "src/components/dashboard/complexity-page.tsx": {
+      "imports": [],
+      "importedBy": [
+        "src/app/(dashboard)/dashboard/[repoId]/complexity/page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "ComplexityPage",
+          "kind": "function",
+          "signature": "({ data, hasScan }: { data: ComplexityData | null; hasScan: boolean })"
+        },
+        {
+          "name": "ComplexityData",
+          "kind": "interface"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 182
+    },
+    "src/components/dashboard/connect-repo-dialog.tsx": {
+      "imports": [
+        "src/app/(dashboard)/dashboard/repos/actions",
+        "src/config/api-endpoints"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "ConnectRepoDialog",
+          "kind": "function",
+          "signature": "({ onClose }: { onClose: ()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 151
+    },
+    "src/components/dashboard/dashboard-breadcrumbs.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "DashboardBreadcrumbs",
+          "kind": "function",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 89
+    },
+    "src/components/dashboard/dashboard-overview-sections.tsx": {
+      "imports": [
+        "src/components/shared/status-badge"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "PlanUsageSection",
+          "kind": "function",
+          "signature": "({\n  repoCount,\n  repoLimit,\n}: PlanUsageSectionProps)"
+        },
+        {
+          "name": "RecentActivitySection",
+          "kind": "function",
+          "signature": "({\n  recentScans,\n}: RecentActivitySectionProps)"
+        },
+        {
+          "name": "ReposQuickView",
+          "kind": "function",
+          "signature": "({ repos }: ReposQuickViewProps)"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 183
+    },
+    "src/components/dashboard/dashboard-shell-wrapper.tsx": {
+      "imports": [
+        "src/components/dashboard/dashboard-breadcrumbs",
+        "src/components/dashboard/search-dialog",
+        "src/components/theme-toggle"
+      ],
+      "importedBy": [
+        "src/app/(dashboard)/layout.tsx"
+      ],
+      "exports": [
+        {
+          "name": "DashboardShellWrapper",
+          "kind": "function",
+          "signature": "({\n  user,\n  children,\n}: {\n  user: {\n    name?: string | null;\n    email?: string | null;\n    image?: string | null;\n    plan: string;\n  };\n  children: React.ReactNode;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 99
+    },
+    "src/components/dashboard/files-page.tsx": {
+      "imports": [],
+      "importedBy": [
+        "src/app/(dashboard)/dashboard/[repoId]/files/page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "FilesPage",
+          "kind": "function",
+          "signature": "({\n  repoId,\n  files,\n  hasScan,\n}: {\n  repoId: string;\n  files: GeneratedFile[];\n  hasScan: boolean;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 154
+    },
+    "src/components/dashboard/intelligence-page.tsx": {
+      "imports": [
+        "src/components/shared/status-badge",
+        "src/app/(dashboard)/dashboard/[repoId]/actions",
+        "src/hooks/use-scan-stream"
+      ],
+      "importedBy": [
+        "src/app/(dashboard)/dashboard/[repoId]/page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "IntelligencePage",
+          "kind": "function",
+          "signature": "({\n  repo,\n  scan,\n}: {\n  repo: Repository;\n  scan: Scan | null;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 259
+    },
+    "src/components/dashboard/repo-card.tsx": {
+      "imports": [
+        "src/components/shared/status-badge",
+        "src/app/(dashboard)/dashboard/repos/actions",
+        "src/hooks/use-scan-stream"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "RepoCard",
+          "kind": "function",
+          "signature": "({\n  repo,\n  plan,\n}: {\n  repo: RepoWithLatestScan;\n  plan: string;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 113
+    },
+    "src/components/dashboard/repo-settings-page.tsx": {
+      "imports": [
+        "src/app/(dashboard)/dashboard/[repoId]/actions",
+        "src/components/shared/upgrade-gate"
+      ],
+      "importedBy": [
+        "src/app/(dashboard)/dashboard/[repoId]/settings/page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "RepoSettingsPage",
+          "kind": "function",
+          "signature": "({\n  repoId,\n  repoName,\n  scanRoot,\n  plan,\n}: {\n  repoId: string;\n  repoName: string;\n  scanRoot: string | null;\n  plan: string;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 163
+    },
+    "src/components/dashboard/repo-sub-nav.tsx": {
+      "imports": [],
+      "importedBy": [
+        "src/app/(dashboard)/dashboard/[repoId]/layout.tsx"
+      ],
+      "exports": [
+        {
+          "name": "RepoSubNav",
+          "kind": "function",
+          "signature": "({ repoId }: { repoId: string })"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 43
+    },
+    "src/components/dashboard/repos-page.tsx": {
+      "imports": [
+        "src/components/dashboard/repo-card",
+        "src/components/dashboard/connect-repo-dialog"
+      ],
+      "importedBy": [
+        "src/app/(dashboard)/dashboard/repos/page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "ReposPage",
+          "kind": "function",
+          "signature": "({\n  repos,\n  plan,\n}: {\n  repos: RepoWithLatestScan[];\n  plan: string;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 90
+    },
+    "src/components/dashboard/rule-card.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "RuleCard",
+          "kind": "function",
+          "signature": "({ rule }: { rule: CustomRule })"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 51
+    },
+    "src/components/dashboard/rule-dialog.tsx": {
+      "imports": [
+        "src/app/(dashboard)/dashboard/settings/actions"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "RuleDialog",
+          "kind": "function",
+          "signature": "({ onClose }: { onClose: ()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 116
+    },
+    "src/components/dashboard/scan-history-page.tsx": {
+      "imports": [
+        "src/components/shared/status-badge",
+        "src/components/shared/upgrade-gate"
+      ],
+      "importedBy": [
+        "src/app/(dashboard)/dashboard/[repoId]/history/page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "ScanHistoryPage",
+          "kind": "function",
+          "signature": "({\n  scans,\n  plan,\n}: {\n  scans: Scan[];\n  plan: string;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 75
+    },
+    "src/components/dashboard/scan-results-tables-parts.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "LatentHooksSection",
+          "kind": "function",
+          "signature": "({\n  hooks,\n}: {\n  hooks: NonNullable<ScanResults[\"\"]>;\n})"
+        },
+        {
+          "name": "PatternsSection",
+          "kind": "function",
+          "signature": "({ patterns }: { patterns: string[] })"
+        },
+        {
+          "name": "AiReadinessSection",
+          "kind": "function",
+          "signature": "({\n  score,\n}: {\n  score: NonNullable<ScanResults[\"\"]>;\n})"
+        },
+        {
+          "name": "ScannerCoverageSection",
+          "kind": "function",
+          "signature": "({\n  scanners,\n}: {\n  scanners: NonNullable<ScanResults[\"\"]>;\n})"
+        },
+        {
+          "name": "ScanResults",
+          "kind": "interface"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 184
+    },
+    "src/components/dashboard/scan-results-tables.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "ScanResultsTables",
+          "kind": "function",
+          "signature": "({ results }: { results: ScanResults })"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 159
+    },
+    "src/components/dashboard/search-dialog.tsx": {
+      "imports": [
+        "src/hooks/use-search"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "SearchDialog",
+          "kind": "function",
+          "signature": "({\n  open,\n  onClose,\n}: {\n  open: boolean;\n  onClose: ()"
+        },
+        {
+          "name": "SearchTrigger",
+          "kind": "function",
+          "signature": "({ onOpen }: { onOpen: ()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 292
+    },
+    "src/components/dashboard/settings-page.tsx": {
+      "imports": [
+        "src/components/dashboard/rule-card",
+        "src/components/dashboard/rule-dialog",
+        "src/components/shared/upgrade-gate"
+      ],
+      "importedBy": [
+        "src/app/(dashboard)/dashboard/settings/page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "SettingsPage",
+          "kind": "function",
+          "signature": "({\n  user,\n  rules,\n}: {\n  user: Pick<User, \"\" | \"\" | \"\" | \"\" | \"\">;\n  rules: CustomRule[];\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 97
+    },
+    "src/components/dashboard/trial-banner.tsx": {
+      "imports": [],
+      "importedBy": [
+        "src/app/(dashboard)/dashboard/page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "TrialBanner",
+          "kind": "function",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 20
+    },
+    "src/components/dashboard/upgrade-success-toast.tsx": {
+      "imports": [],
+      "importedBy": [
+        "src/app/(dashboard)/dashboard/page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "UpgradeSuccessToast",
+          "kind": "function",
+          "signature": "({ show }: { show: boolean })"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 26
+    },
+    "src/components/shared/login-card.tsx": {
+      "imports": [
+        "src/components/shared/oauth-buttons"
+      ],
+      "importedBy": [
+        "src/app/(marketing)/login/page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "LoginCard",
+          "kind": "function",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 38
+    },
+    "src/components/shared/oauth-buttons.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "OAuthButtons",
+          "kind": "function",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 44
+    },
+    "src/components/shared/status-badge.tsx": {
+      "imports": [],
+      "importedBy": [
+        "src/components/dashboard/dashboard-overview-sections.tsx",
+        "src/components/dashboard/intelligence-page.tsx",
+        "src/components/dashboard/repo-card.tsx",
+        "src/components/dashboard/scan-history-page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "StatusBadge",
+          "kind": "function",
+          "signature": "({ status }: { status: ScanStatus })"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 24
+    },
+    "src/components/shared/upgrade-gate.tsx": {
+      "imports": [
+        "src/lib/cn"
+      ],
+      "importedBy": [
+        "src/components/dashboard/repo-settings-page.tsx",
+        "src/components/dashboard/scan-history-page.tsx",
+        "src/components/dashboard/settings-page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "UpgradeGate",
+          "kind": "function",
+          "signature": "({\n  feature,\n  description,\n  requiredPlan,\n  children,\n}: UpgradeGateProps)"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 57
+    },
+    "src/app/(dashboard)/dashboard/error.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "DashboardError",
+          "kind": "default",
+          "signature": "({\n  error,\n  reset,\n}: {\n  error: Error & { digest?: string };\n  reset: ()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 25
+    },
+    "src/app/(dashboard)/dashboard/loading.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "DashboardLoading",
+          "kind": "default",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 53
+    },
+    "src/app/(dashboard)/dashboard/page.tsx": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/components/dashboard/trial-banner",
+        "src/components/dashboard/upgrade-success-toast"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "metadata",
+          "kind": "const"
+        },
+        {
+          "name": "DashboardPage",
+          "kind": "default",
+          "signature": "({\n  searchParams,\n}: {\n  searchParams: Promise<Record<string, string | string[] | undefined>>;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 102
+    },
+    "src/app/(marketing)/login/page.tsx": {
+      "imports": [
+        "src/lib/auth",
+        "src/components/shared/login-card"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "metadata",
+          "kind": "const"
+        },
+        {
+          "name": "LoginPage",
+          "kind": "default",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 21
+    },
+    "src/app/(marketing)/pricing/page.tsx": {
+      "imports": [
+        "src/components/landing/footer"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "metadata",
+          "kind": "const"
+        },
+        {
+          "name": "PricingPage",
+          "kind": "default",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 265
+    },
+    "src/app/api/repos/route.ts": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/lib/github"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 43
+    },
+    "src/app/api/search/route.ts": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/lib/rate-limit"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "signature": "(request: Request) => Promise<NextResponse>"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 113
+    },
+    "src/app/(dashboard)/dashboard/[repoId]/actions.ts": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/lib/github",
+        "src/lib/rate-limit",
+        "src/lib/scan-worker"
+      ],
+      "importedBy": [
+        "src/components/dashboard/intelligence-page.tsx",
+        "src/components/dashboard/repo-settings-page.tsx"
+      ],
+      "exports": [
+        {
+          "name": "updateRepoScanRoot",
+          "kind": "function",
+          "signature": "(formData: FormData)"
+        },
+        {
+          "name": "triggerRepoScan",
+          "kind": "function",
+          "signature": "(formData: FormData)"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 85
+    },
+    "src/app/(dashboard)/dashboard/[repoId]/error.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "RepoError",
+          "kind": "default",
+          "signature": "({\n  error,\n  reset,\n}: {\n  error: Error & { digest?: string };\n  reset: ()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 31
+    },
+    "src/app/(dashboard)/dashboard/[repoId]/layout.tsx": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/components/dashboard/repo-sub-nav"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "RepoLayout",
+          "kind": "default",
+          "signature": "({\n  children,\n  params,\n}: {\n  children: React.ReactNode;\n  params: Promise<{ repoId: string }>;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 43
+    },
+    "src/app/(dashboard)/dashboard/[repoId]/loading.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "RepoLoading",
+          "kind": "default",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 48
+    },
+    "src/app/(dashboard)/dashboard/[repoId]/page.tsx": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/components/dashboard/intelligence-page"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "generateMetadata",
+          "kind": "function",
+          "signature": "({\n  params,\n}: {\n  params: Promise<{ repoId: string }>;\n})"
+        },
+        {
+          "name": "RepoIntelligencePage",
+          "kind": "default",
+          "signature": "({\n  params,\n}: {\n  params: Promise<{ repoId: string }>;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 44
+    },
+    "src/app/(dashboard)/dashboard/billing/error.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "BillingError",
+          "kind": "default",
+          "signature": "({\n  error,\n  reset,\n}: {\n  error: Error & { digest?: string };\n  reset: ()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 25
+    },
+    "src/app/(dashboard)/dashboard/billing/loading.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "BillingLoading",
+          "kind": "default",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 34
+    },
+    "src/app/(dashboard)/dashboard/billing/page.tsx": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "metadata",
+          "kind": "const"
+        },
+        {
+          "name": "BillingPage",
+          "kind": "default",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 229
+    },
+    "src/app/(dashboard)/dashboard/repos/actions-github.ts": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/lib/github"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "installGitHubAction",
+          "kind": "function",
+          "signature": "(formData: FormData)"
+        },
+        {
+          "name": "uninstallGitHubAction",
+          "kind": "function",
+          "signature": "(formData: FormData)"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 152
+    },
+    "src/app/(dashboard)/dashboard/repos/actions.ts": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/lib/github",
+        "src/lib/rate-limit",
+        "src/lib/scan-worker"
+      ],
+      "importedBy": [
+        "src/components/dashboard/connect-repo-dialog.tsx",
+        "src/components/dashboard/repo-card.tsx"
+      ],
+      "exports": [
+        {
+          "name": "connectRepo",
+          "kind": "function",
+          "signature": "(formData: FormData)"
+        },
+        {
+          "name": "disconnectRepo",
+          "kind": "function",
+          "signature": "(formData: FormData)"
+        },
+        {
+          "name": "triggerScan",
+          "kind": "function",
+          "signature": "(formData: FormData)"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 132
+    },
+    "src/app/(dashboard)/dashboard/repos/error.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "ReposError",
+          "kind": "default",
+          "signature": "({\n  error,\n  reset,\n}: {\n  error: Error & { digest?: string };\n  reset: ()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 25
+    },
+    "src/app/(dashboard)/dashboard/repos/loading.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "ReposLoading",
+          "kind": "default",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 42
+    },
+    "src/app/(dashboard)/dashboard/repos/page.tsx": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/components/dashboard/repos-page"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "metadata",
+          "kind": "const"
+        },
+        {
+          "name": "ReposRoute",
+          "kind": "default",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 35
+    },
+    "src/app/(dashboard)/dashboard/settings/actions.ts": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db"
+      ],
+      "importedBy": [
+        "src/components/dashboard/rule-dialog.tsx"
+      ],
+      "exports": [
+        {
+          "name": "createRule",
+          "kind": "function",
+          "signature": "(formData: FormData)"
+        },
+        {
+          "name": "updateRule",
+          "kind": "function",
+          "signature": "(formData: FormData)"
+        },
+        {
+          "name": "toggleRule",
+          "kind": "function",
+          "signature": "(formData: FormData)"
+        },
+        {
+          "name": "deleteRule",
+          "kind": "function",
+          "signature": "(formData: FormData)"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 83
+    },
+    "src/app/(dashboard)/dashboard/settings/error.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "SettingsError",
+          "kind": "default",
+          "signature": "({\n  error,\n  reset,\n}: {\n  error: Error & { digest?: string };\n  reset: ()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 25
+    },
+    "src/app/(dashboard)/dashboard/settings/loading.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "SettingsLoading",
+          "kind": "default",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 39
+    },
+    "src/app/(dashboard)/dashboard/settings/page.tsx": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/components/dashboard/settings-page"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "metadata",
+          "kind": "const"
+        },
+        {
+          "name": "SettingsRoute",
+          "kind": "default",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 24
+    },
+    "src/app/api/auth/[...nextauth]/route.ts": {
+      "imports": [
+        "src/lib/auth"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "GET",
+          "kind": "const"
+        },
+        {
+          "name": "POST",
+          "kind": "const"
+        },
+        {
+          "name": "runtime",
+          "kind": "const"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 5
+    },
+    "src/app/api/billing/portal/route.ts": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/lib/polar"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "POST",
+          "kind": "function",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 32
+    },
+    "src/app/api/billing/checkout/route.ts": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/polar"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "POST",
+          "kind": "function",
+          "signature": "(request: Request)"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 30
+    },
+    "src/app/api/billing/webhook/route.ts": {
+      "imports": [
+        "src/lib/db"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "POST",
+          "kind": "function",
+          "signature": "(request: Request)"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 71
+    },
+    "src/app/api/scan/[repoId]/route.ts": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/lib/github",
+        "src/lib/rate-limit",
+        "src/lib/scan-worker"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "POST",
+          "kind": "function",
+          "signature": "(\n  _request: Request,\n  { params }: { params: Promise<{ repoId: string }> }\n)"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 54
+    },
+    "src/app/api/webhooks/github/route.ts": {
+      "imports": [
+        "src/lib/db",
+        "src/lib/github",
+        "src/lib/scan-worker"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "POST",
+          "kind": "function",
+          "signature": "(request: Request)"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 174
+    },
+    "src/app/(dashboard)/dashboard/[repoId]/complexity/error.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "ComplexityError",
+          "kind": "default",
+          "signature": "({\n  error,\n  reset,\n}: {\n  error: Error & { digest?: string };\n  reset: ()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 29
+    },
+    "src/app/(dashboard)/dashboard/[repoId]/complexity/loading.tsx": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "ComplexityLoading",
+          "kind": "default",
+          "signature": "()"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 71
+    },
+    "src/app/(dashboard)/dashboard/[repoId]/complexity/page.tsx": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/components/dashboard/complexity-page"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "metadata",
+          "kind": "const"
+        },
+        {
+          "name": "ComplexityRoute",
+          "kind": "default",
+          "signature": "({\n  params,\n}: {\n  params: Promise<{ repoId: string }>;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 57
+    },
+    "src/app/(dashboard)/dashboard/[repoId]/files/page.tsx": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/components/dashboard/files-page"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "metadata",
+          "kind": "const"
+        },
+        {
+          "name": "FilesRoute",
+          "kind": "default",
+          "signature": "({\n  params,\n}: {\n  params: Promise<{ repoId: string }>;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 40
+    },
+    "src/app/api/scan/[repoId]/download/route.ts": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/lib/rate-limit",
+        "src/lib/zip"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "signature": "(\n  _request: Request,\n  { params }: { params: Promise<{ repoId: string }> }\n)"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 64
+    },
+    "src/app/(dashboard)/dashboard/[repoId]/history/page.tsx": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/components/dashboard/scan-history-page"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "metadata",
+          "kind": "const"
+        },
+        {
+          "name": "HistoryPage",
+          "kind": "default",
+          "signature": "({\n  params,\n}: {\n  params: Promise<{ repoId: string }>;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 45
+    },
+    "src/app/(dashboard)/dashboard/[repoId]/settings/page.tsx": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/components/dashboard/repo-settings-page"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "metadata",
+          "kind": "const"
+        },
+        {
+          "name": "SettingsRoute",
+          "kind": "default",
+          "signature": "({\n  params,\n}: {\n  params: Promise<{ repoId: string }>;\n})"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 41
+    },
+    "src/app/api/scan/[repoId]/latest/route.ts": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db",
+        "src/lib/scan-error"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "signature": "(\n  _request: Request,\n  { params }: { params: Promise<{ repoId: string }> }\n)"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 39
+    },
+    "src/app/api/scan/[repoId]/stream/route.ts": {
+      "imports": [
+        "src/lib/auth",
+        "src/lib/db"
+      ],
+      "importedBy": [],
+      "exports": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "signature": "(\n  request: Request,\n  { params }: { params: Promise<{ repoId: string }> }\n)"
+        },
+        {
+          "name": "dynamic",
+          "kind": "const"
+        }
+      ],
+      "importUsage": {},
+      "language": "typescript",
+      "size": 69
+    }
+  }
+}
