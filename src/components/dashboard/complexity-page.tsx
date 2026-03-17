@@ -29,16 +29,17 @@ export interface ComplexityData {
 type SortField = "cognitive" | "cyclomatic" | "maintainabilityIndex" | "effort";
 type SortDir = "asc" | "desc";
 
-const MI_COLORS = { good: "text-emerald-400", mid: "text-yellow-400", bad: "text-red-400" } as const;
-function miColor(mi: number) { return mi >= 65 ? MI_COLORS.good : mi >= 20 ? MI_COLORS.mid : MI_COLORS.bad; }
+function miColor(mi: number) {
+  return mi >= 65 ? "text-success" : mi >= 20 ? "text-warning" : "text-destructive";
+}
 
 function LevelBadge({ level }: { level: string }) {
   const cls = level === "high"
-    ? "bg-red-500/20 text-red-400 border-red-500/30"
+    ? "bg-destructive/10 text-destructive border-destructive/30"
     : level === "medium"
-      ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-      : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
-  return <span className={`inline-block border px-[var(--grid-2)] py-0.5 text-[10px] uppercase tracking-wider ${cls}`}>{level}</span>;
+      ? "bg-warning/10 text-warning border-warning/30"
+      : "bg-success/10 text-success border-success/30";
+  return <span className={`inline-block border px-[var(--grid-2)] py-[var(--grid-1)] type-label ${cls}`}>{level}</span>;
 }
 
 function SortTh({ field, current, dir, onSort, children }: {
@@ -124,18 +125,18 @@ export function ComplexityPage({ data, hasScan }: { data: ComplexityData | null;
               <tbody>
                 {sortedFunctions.map((fn, i) => (
                   <tr key={`${fn.file}-${fn.name}-${i}`} className="border-b border-border last:border-0 hover:bg-muted/30">
-                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] font-mono text-sm text-foreground">{fn.name}</td>
-                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] font-mono text-xs text-muted-foreground">{fn.file}:{fn.line}</td>
-                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] text-right font-mono text-sm">{fn.cyclomatic}</td>
-                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] text-right font-mono text-sm">
-                      <span className={fn.cognitive > 25 ? "text-red-400" : fn.cognitive > 10 ? "text-yellow-400" : "text-emerald-400"}>
+                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] type-body text-foreground">{fn.name}</td>
+                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] type-caption text-muted-foreground">{fn.file}:{fn.line}</td>
+                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] text-right type-body">{fn.cyclomatic}</td>
+                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] text-right type-body">
+                      <span className={fn.cognitive > 25 ? "text-destructive" : fn.cognitive > 10 ? "text-warning" : "text-success"}>
                         {fn.cognitive}
                       </span>
                     </td>
-                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] text-right font-mono text-sm">
+                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] text-right type-body">
                       <span className={miColor(fn.maintainabilityIndex)}>{fn.maintainabilityIndex}</span>
                     </td>
-                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] text-right font-mono text-xs text-muted-foreground">
+                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] text-right type-caption text-muted-foreground">
                       {fn.halstead.effort.toLocaleString()}
                     </td>
                   </tr>
@@ -162,10 +163,10 @@ export function ComplexityPage({ data, hasScan }: { data: ComplexityData | null;
               <tbody>
                 {data.fileScores.map((f) => (
                   <tr key={f.path} className="border-b border-border last:border-0 hover:bg-muted/30">
-                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] font-mono text-xs text-muted-foreground">{f.path}</td>
-                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] text-right font-mono text-sm">{f.score}/100</td>
+                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] type-caption text-muted-foreground">{f.path}</td>
+                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] text-right type-body">{f.score}/100</td>
                     <td className="px-[var(--grid-4)] py-[var(--grid-3)] text-center"><LevelBadge level={f.level} /></td>
-                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] text-right font-mono text-sm">
+                    <td className="px-[var(--grid-4)] py-[var(--grid-3)] text-right type-body">
                       {f.maintainabilityIndex != null
                         ? <span className={miColor(f.maintainabilityIndex)}>{f.maintainabilityIndex}</span>
                         : <span className="text-muted-foreground">--</span>}

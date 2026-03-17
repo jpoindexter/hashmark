@@ -77,7 +77,7 @@ export function DashboardShellWrapper({
         image: user.image,
         tier: user.plan.toLowerCase(),
       }}
-      logo={<span className="text-xl font-bold text-accent">#</span>}
+      logo={<span className="type-h3 text-accent">#</span>}
       title="HASHMARK"
       activeItemId={activeItemId}
       onSignOut={() => signOut({ callbackUrl: "/login" })}

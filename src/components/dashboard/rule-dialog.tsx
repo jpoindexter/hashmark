@@ -50,7 +50,7 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 p-[var(--grid-4)]">
+        <form onSubmit={handleSubmit} className="space-y-[var(--grid-4)] p-[var(--grid-4)]">
           <div>
             <label className="mb-[var(--grid-1)] block type-label text-muted-foreground">
               [NAME]
@@ -101,7 +101,7 @@ export function RuleDialog({ onClose }: { onClose: () => void }) {
             </Select>
           </div>
 
-          <div className="flex justify-end gap-[var(--grid-2)] pt-2">
+          <div className="flex justify-end gap-[var(--grid-2)] pt-[var(--grid-2)]">
             <Button type="button" variant="outline" onClick={onClose}>
               CANCEL
             </Button>

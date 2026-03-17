@@ -109,7 +109,7 @@ export function AiReadinessSection({
       <div className="mono-box bg-card">
         <div className="flex flex-col md:flex-row gap-[var(--grid-8)]">
           <div className="flex flex-col items-center justify-center border-r border-border pr-[var(--grid-8)] min-w-[120px]">
-            <span className={`text-5xl font-black ${getScoreColor(score.total)}`}>
+            <span className={`type-h1 ${getScoreColor(score.total)}`}>
               {score.total}
             </span>
             <span className="type-label text-muted-foreground">READY</span>
@@ -133,7 +133,7 @@ export function AiReadinessSection({
             {score.recommendations.length > 0 && (
               <div className="mt-[var(--grid-4)]">
                 <p className="type-label text-accent mb-2">RECOMMENDATIONS:</p>
-                <ul className="space-y-1">
+                <ul className="space-y-[var(--grid-1)]">
                   {score.recommendations.map((rec, i) => (
                     <li
                       key={i}
@@ -170,7 +170,7 @@ export function ScannerCoverageSection({
               {scanner.name}
             </span>
             <span
-              className={`text-xs font-bold ${
+              className={`type-label ${
                 scanner.found > 0 ? "text-accent" : "text-muted-foreground"
               }`}
             >

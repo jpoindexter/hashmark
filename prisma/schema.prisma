@@ -184,3 +184,12 @@ enum RuleScope {
   REPO
   ORG
 }
+
+// Durable dedup store for Polar webhook events.
+// Prevents double plan updates when Polar retries on non-2xx or after cold starts.
+model WebhookEvent {
+  id          String   @id // Polar event ID (globally unique)
+  processedAt DateTime @default(now())
+
+  @@index([processedAt])
+}

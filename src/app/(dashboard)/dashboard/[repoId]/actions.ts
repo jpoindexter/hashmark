@@ -89,7 +89,9 @@ export async function installGitHubAction(repoId: string) {
 
   const token = await getGitHubToken(session.user.id);
   const octokit = createOctokit(token);
-  const [owner, repoName] = repo.fullName.split("/");
+  const parts = repo.fullName.split("/");
+  if (parts.length !== 2) throw new Error("Invalid repository name in database");
+  const [owner, repoName] = parts;
 
   // Check if file already exists (need SHA to update)
   let existingSha: string | undefined;

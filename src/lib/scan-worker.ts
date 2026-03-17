@@ -56,11 +56,18 @@ export async function runScan(scanId: string, fullName: string, token: string, s
   const startTime = Date.now();
 
   try {
-    const updateProgress = (step: string, detail?: string) =>
-      db.scan.update({
-        where: { id: scanId },
-        data: { results: { progress: { step, detail, updatedAt: Date.now() } } },
-      });
+    // Progress updates are non-fatal — a DB blip here must not mark the scan FAILED.
+    // Swallow errors the same way indexScanForSearch does below.
+    const updateProgress = async (step: string, detail?: string) => {
+      try {
+        await db.scan.update({
+          where: { id: scanId },
+          data: { results: { progress: { step, detail, updatedAt: Date.now() } } },
+        });
+      } catch (err) {
+        console.warn(`[scan-worker] Progress update failed (non-fatal) for ${scanId}:`, err);
+      }
+    };
 
     await db.scan.update({ where: { id: scanId }, data: { status: "SCANNING" } });
 

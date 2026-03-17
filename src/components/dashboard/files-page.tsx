@@ -100,7 +100,7 @@ export function FilesPage({
               <li key={file.id}>
                 <Button
                   onClick={() => setSelected(file.id)}
-                  className={`w-full px-[var(--grid-4)] py-[var(--grid-2)] text-left text-xs transition-colors ${
+                  className={`w-full px-[var(--grid-4)] py-[var(--grid-2)] text-left type-caption transition-colors ${
                     selected === file.id
                       ? "bg-accent/10 text-accent"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -110,7 +110,7 @@ export function FilesPage({
                     {FORMAT_LABELS[file.format] ?? file.fileName}
                   </p>
                   {file.tokenCount && (
-                    <p className="mt-[var(--grid-1)] text-[10px]">
+                    <p className="mt-[var(--grid-1)] type-label text-muted-foreground">
                       {file.tokenCount.toLocaleString()} tokens
                     </p>
                   )}
@@ -138,7 +138,7 @@ export function FilesPage({
                   </Button>
                 </div>
               </div>
-              <pre className="max-h-[600px] overflow-auto p-[var(--grid-4)] text-xs leading-relaxed text-muted-foreground">
+              <pre className="max-h-[37.5rem] overflow-auto p-[var(--grid-4)] type-caption leading-relaxed text-muted-foreground">
                 {selectedFile.content}
               </pre>
             </>

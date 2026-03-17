@@ -33,7 +33,7 @@ function ScanProgressSteps({ currentStep }: { currentStep?: string }) {
           <div key={step} className="flex items-center gap-[var(--grid-1)]">
             <div className="flex flex-col items-center gap-[var(--grid-1)]">
               <div
-                className={`h-1.5 w-8 ${
+                className={`h-[var(--grid-1)] w-[var(--grid-8)] ${
                   isActive
                     ? "bg-accent animate-pulse"
                     : isDone
@@ -42,9 +42,9 @@ function ScanProgressSteps({ currentStep }: { currentStep?: string }) {
                 }`}
               />
               <span
-                className={`text-[9px] uppercase tracking-wider ${
+                className={`type-label ${
                   isActive
-                    ? "text-accent font-bold"
+                    ? "text-accent"
                     : isDone
                       ? "text-accent/60"
                       : "text-muted-foreground/50"
@@ -168,19 +168,19 @@ function ArchitecturalFindings({ results }: { results: ScanResults | null }) {
           <div className="mono-box bg-card">
             <div className="flex justify-around items-center h-full min-h-[100px]">
               <div className="text-center">
-                <p className="text-xl font-bold text-destructive">
+                <p className="type-h2 text-destructive">
                   {results.securityAudit.vulnerabilities.critical}
                 </p>
                 <p className="type-label text-muted-foreground">CRITICAL</p>
               </div>
               <div className="text-center">
-                <p className="text-xl font-bold text-warning">
+                <p className="type-h2 text-warning">
                   {results.securityAudit.vulnerabilities.high}
                 </p>
                 <p className="type-label text-muted-foreground">HIGH</p>
               </div>
               <div className="text-center">
-                <p className="text-xl font-bold text-accent">
+                <p className="type-h2 text-accent">
                   {results.securityAudit.vulnerabilities.moderate}
                 </p>
                 <p className="type-label text-muted-foreground">MODERATE</p>

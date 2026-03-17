@@ -107,18 +107,17 @@ cli
       // 4. Report & Generate
       reportFindings(scanResult);
 
-      if (options.format) {
-        const files = options.format === "all" 
-          ? generateAllFormats(scanResult, { generatorOptions: options })
-          : [generateFormat(options.format as FormatId, scanResult, { generatorOptions: options })];
+      const formatToUse = options.format || "all";
+      const files = formatToUse === "all"
+        ? generateAllFormats(scanResult, { generatorOptions: options })
+        : [generateFormat(formatToUse as FormatId, scanResult, { generatorOptions: options })];
 
-        for (const file of files) {
-          if (!options.dryRun) {
-            const filePath = join(targetDir, file.path);
-            if (!existsSync(dirname(filePath))) mkdirSync(dirname(filePath), { recursive: true });
-            writeFileSync(filePath, file.content, "utf-8");
-            console.log(pc.green(`    ✓ ${file.path} — ${file.tool}`));
-          }
+      for (const file of files) {
+        if (!options.dryRun) {
+          const filePath = join(targetDir, file.path);
+          if (!existsSync(dirname(filePath))) mkdirSync(dirname(filePath), { recursive: true });
+          writeFileSync(filePath, file.content, "utf-8");
+          console.log(pc.green(`    ✓ ${file.path} — ${file.tool}`));
         }
       }
 

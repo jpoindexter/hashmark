@@ -82,17 +82,17 @@ function SearchResultItem({
       <Icon className="mt-0.5 size-4 shrink-0 text-accent" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-[var(--grid-2)]">
-          <span className="truncate font-mono text-xs font-bold uppercase text-foreground">
+          <span className="truncate type-label text-foreground">
             {result.sectionHeading}
           </span>
-          <span className="shrink-0 rounded bg-muted px-[var(--grid-1)] py-0.5 font-mono text-[10px] uppercase text-muted-foreground">
+          <span className="shrink-0 bg-muted px-[var(--grid-2)] py-[var(--grid-1)] type-label text-muted-foreground">
             {result.sectionType.replace("_", " ")}
           </span>
         </div>
-        <p className="mt-[var(--grid-1)] line-clamp-2 font-mono text-xs leading-relaxed text-muted-foreground">
+        <p className="mt-[var(--grid-1)] line-clamp-2 type-caption leading-relaxed text-muted-foreground">
           <SnippetText snippet={result.snippet} />
         </p>
-        <span className="mt-[var(--grid-1)] block font-mono text-[10px] text-muted-foreground/60">
+        <span className="mt-[var(--grid-1)] block type-label text-muted-foreground/60">
           {result.repoFullName}
         </span>
       </div>
@@ -182,7 +182,7 @@ export function SearchDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-[var(--grid-16)]"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -214,24 +214,24 @@ export function SearchDialog({
               <X className="size-4" />
             </Button>
           )}
-          <kbd className="hidden rounded border border-border px-[var(--grid-1)].5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
+          <kbd className="hidden border border-border px-[var(--grid-2)] py-[var(--grid-1)] type-label text-muted-foreground sm:inline">
             ESC
           </kbd>
         </div>
 
         <div ref={listRef} className="max-h-[50vh] overflow-y-auto" role="listbox">
           {isLoading && query.length >= 2 && (
-            <div className="px-[var(--grid-4)] py-[var(--grid-8)] text-center font-mono text-xs text-muted-foreground">
+            <div className="px-[var(--grid-4)] py-[var(--grid-8)] text-center type-caption text-muted-foreground">
               SEARCHING...
             </div>
           )}
           {error && (
-            <div className="px-[var(--grid-4)] py-[var(--grid-8)] text-center font-mono text-xs text-destructive">
+            <div className="px-[var(--grid-4)] py-[var(--grid-8)] text-center type-caption text-destructive">
               {error}
             </div>
           )}
           {!isLoading && !error && query.length >= 2 && results.length === 0 && (
-            <div className="px-[var(--grid-4)] py-[var(--grid-8)] text-center font-mono text-xs text-muted-foreground">
+            <div className="px-[var(--grid-4)] py-[var(--grid-8)] text-center type-caption text-muted-foreground">
               NO RESULTS FOR &quot;{query}&quot;
             </div>
           )}
@@ -249,10 +249,10 @@ export function SearchDialog({
 
         {results.length > 0 && (
           <div className="flex items-center justify-between border-t border-border px-[var(--grid-4)] py-[var(--grid-2)]">
-            <span className="font-mono text-[10px] text-muted-foreground">
+            <span className="type-label text-muted-foreground">
               {total} RESULT{total !== 1 ? "S" : ""}
             </span>
-            <div className="flex gap-[var(--grid-2)] font-mono text-[10px] text-muted-foreground">
+            <div className="flex gap-[var(--grid-2)] type-label text-muted-foreground">
               <span>↑↓ NAVIGATE</span>
               <span>↵ SELECT</span>
             </div>
@@ -279,12 +279,12 @@ export function SearchTrigger({ onOpen }: { onOpen: () => void }) {
   return (
     <Button
       onClick={onOpen}
-      className="flex items-center gap-[var(--grid-2)] border border-border bg-muted/50 px-[var(--grid-3)] py-[var(--grid-1)].5 font-mono text-xs text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+      className="flex items-center gap-[var(--grid-2)] border border-border bg-muted/50 px-[var(--grid-3)] py-[var(--grid-2)] type-caption text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
       aria-label="Search codebases"
     >
       <Search className="size-3" />
       <span className="hidden sm:inline">&gt; SEARCH</span>
-      <kbd className="hidden rounded border border-border px-[var(--grid-1)] py-0.5 text-[10px] sm:inline">
+      <kbd className="hidden border border-border px-[var(--grid-2)] py-[var(--grid-1)] type-label sm:inline">
         ⌘K
       </kbd>
     </Button>

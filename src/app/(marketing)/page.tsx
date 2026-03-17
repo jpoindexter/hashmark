@@ -10,13 +10,16 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground font-mono">
-      <nav className="fixed top-0 z-50 w-full border-b border-border bg-background">
+      <nav className="fixed top-0 z-50 w-full border-b-2 border-foreground bg-background">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-[var(--grid-6)]">
-          <Link href="/" className="flex items-center gap-[var(--grid-2)] text-lg font-bold">
-            <span className="text-foreground text-2xl">#</span>
-            <span className="uppercase tracking-wider">Hashmark</span>
+          <Link
+            href="/"
+            className="type-nav text-foreground tracking-widest uppercase"
+          >
+            # HASHMARK
           </Link>
-          <div className="flex items-center gap-[var(--grid-6)]">
+
+          <div className="flex items-center gap-[var(--grid-8)]">
             <a
               href="#pricing"
               className="type-nav text-muted-foreground hover:text-foreground transition-colors"
@@ -31,10 +34,13 @@ export default function Home() {
             >
               CLI
             </a>
+          </div>
+
+          <div className="flex items-center gap-[var(--grid-4)]">
             <ThemeToggle />
             <a
               href="/login"
-              className="border border-border px-[var(--grid-4)] py-[var(--grid-1)].5 type-button hover:bg-muted hover:border-foreground transition-colors"
+              className="border border-foreground px-[var(--grid-4)] py-[var(--grid-2)] type-button text-foreground hover:bg-foreground hover:text-background transition-colors"
             >
               {"> SIGN IN"}
             </a>

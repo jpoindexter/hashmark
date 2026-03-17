@@ -80,7 +80,7 @@ export function RepoSettingsPage({
           />
         ) : (
           <div className="mono-box bg-card">
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-[var(--grid-4)]">
               <div>
                 <label
                   htmlFor="scanRoot"
@@ -187,13 +187,13 @@ export function RepoSettingsPage({
         <h2 className="mono-section-title text-muted-foreground">
           ABOUT SCAN ROOT
         </h2>
-        <div className="mono-box bg-card space-y-3">
+        <div className="mono-box bg-card space-y-[var(--grid-3)]">
           <p className="type-caption text-muted-foreground">
             For monorepos, set the scan root to the subdirectory containing your
             primary application. This tells the scanner where to look for
             components, hooks, API routes, and framework configuration.
           </p>
-          <div className="space-y-1 type-caption text-muted-foreground">
+          <div className="space-y-[var(--grid-1)] type-caption text-muted-foreground">
             <p className="text-foreground font-bold">EXAMPLES:</p>
             <p>
               <span className="text-accent">web</span> — Turborepo/Nx with a

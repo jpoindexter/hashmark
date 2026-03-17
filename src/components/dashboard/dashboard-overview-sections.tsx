@@ -154,7 +154,7 @@ export function ReposQuickView({ repos }: ReposQuickViewProps) {
         </h2>
         <Link
           href="/dashboard/repos"
-          className="text-xs text-accent transition-colors hover:underline"
+          className="type-caption text-accent transition-colors hover:underline"
         >
           {"> VIEW ALL"}
         </Link>

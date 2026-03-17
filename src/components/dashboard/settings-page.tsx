@@ -83,7 +83,7 @@ export function SettingsPage({
             }}
           />
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-[var(--grid-2)]">
             {rules.map((rule) => (
               <RuleCard key={rule.id} rule={rule} />
             ))}

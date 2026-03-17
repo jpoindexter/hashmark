@@ -35,7 +35,7 @@ function DeltaBadge({ delta }: { delta: number | null }) {
   if (delta === null || delta === 0) return null;
   const positive = delta > 0;
   return (
-    <span className={`ml-[var(--grid-1)] text-[10px] font-mono ${positive ? "text-accent" : "text-destructive"}`}>
+    <span className={`ml-[var(--grid-1)] type-label ${positive ? "text-accent" : "text-destructive"}`}>
       {positive ? "+" : ""}{delta.toLocaleString()}
     </span>
   );
@@ -93,7 +93,7 @@ export function ScanHistoryPage({
                 <td className="type-caption text-muted-foreground">
                   {new Date(scan.createdAt).toLocaleString()}
                   {scan.commitSha && (
-                    <span className="ml-[var(--grid-2)] font-mono text-[10px] text-muted-foreground/50">
+                    <span className="ml-[var(--grid-2)] type-label text-muted-foreground/50">
                       {scan.commitSha.slice(0, 7)}
                     </span>
                   )}

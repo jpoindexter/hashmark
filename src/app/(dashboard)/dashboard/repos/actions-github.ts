@@ -50,7 +50,9 @@ export async function installGitHubAction(formData: FormData) {
 
   const token = await getGitHubToken(session.user.id);
   const octokit = createOctokit(token);
-  const [owner, repoName] = repo.fullName.split("/");
+  const parts = repo.fullName.split("/");
+  if (parts.length !== 2) throw new Error("Invalid repository name in database");
+  const [owner, repoName] = parts;
 
   // Check if workflow file already exists
   let existingSha: string | undefined;
@@ -112,7 +114,9 @@ export async function uninstallGitHubAction(formData: FormData) {
 
   const token = await getGitHubToken(session.user.id);
   const octokit = createOctokit(token);
-  const [owner, repoName] = repo.fullName.split("/");
+  const parts = repo.fullName.split("/");
+  if (parts.length !== 2) throw new Error("Invalid repository name in database");
+  const [owner, repoName] = parts;
 
   // Get the file SHA to delete it
   try {

@@ -106,7 +106,7 @@ function ComplexityHotspotsTable({
               </td>
               <td className="text-right">
                 <span
-                  className={`text-xs font-bold ${
+                  className={`type-label ${
                     file.score >= 70
                       ? "text-destructive"
                       : file.score >= 40

@@ -27,5 +27,12 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login"],
+  matcher: [
+    "/dashboard/:path*",
+    "/login",
+    // API routes — cookie check adds a defense-in-depth layer so a newly added
+    // route that accidentally omits auth() doesn't sit fully open.
+    // Webhooks and health are intentionally excluded — they have their own auth.
+    "/api/((?!auth|health|billing/webhook|webhooks).*)",
+  ],
 };

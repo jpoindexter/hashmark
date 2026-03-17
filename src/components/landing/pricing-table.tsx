@@ -50,12 +50,12 @@ const plans = [
 
 export function PricingTable() {
   return (
-    <section id="pricing" className="border-t border-border px-[var(--grid-6)] py-24">
+    <section id="pricing" className="border-t border-border px-[var(--grid-6)] py-[var(--grid-16)]">
       <div className="mx-auto max-w-5xl">
         <h2 className="mb-[var(--grid-4)] text-center type-h2">
           PRICING
         </h2>
-        <p className="mb-16 text-center text-muted-foreground">
+        <p className="mb-[var(--grid-16)] text-center type-body text-muted-foreground">
           Free to start. Pay when you need auto-sync.
         </p>
 
@@ -76,7 +76,7 @@ export function PricingTable() {
                   </span>
                 </div>
                 <div className="mt-[var(--grid-2)] flex items-baseline gap-[var(--grid-1)]">
-                  <span className="text-3xl font-bold">{plan.price}</span>
+                  <span className="type-h1">{plan.price}</span>
                   <span className="type-caption text-muted-foreground">
                     {plan.period}
                   </span>
@@ -86,7 +86,7 @@ export function PricingTable() {
                 </p>
               </div>
 
-              <ul className="mb-[var(--grid-8)] flex-1 space-y-3">
+              <ul className="mb-[var(--grid-8)] flex-1 space-y-[var(--grid-3)]">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-[var(--grid-2)] type-body">
                     <span className="mt-0.5">{"#"}</span>
@@ -97,7 +97,7 @@ export function PricingTable() {
 
               <a
                 href={plan.href}
-                className={`block w-full py-[var(--grid-2)].5 text-center type-button transition-colors ${
+                className={`block w-full px-[var(--grid-6)] py-[var(--grid-3)] text-center type-button transition-colors ${
                   plan.highlighted
                     ? "bg-foreground text-background hover:bg-foreground/90"
                     : "border border-border hover:border-foreground hover:bg-muted"

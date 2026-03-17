@@ -16,13 +16,24 @@ export function formatScanError(error: unknown, token?: string): string {
     return "Scan timed out. This can happen with very large repositories. Try again or contact support.";
   }
 
+  // Non-Error values (strings, etc.) — redact token if present and return as-is
+  if (!(error instanceof Error)) {
+    let raw = String(error);
+    if (token) raw = sanitizeErrorMessage(raw, token);
+    return raw;
+  }
+
   // execFile errors store the actual error in .stderr, not .message
   const stderr = (error as { stderr?: string })?.stderr?.trim();
   const stdout = (error as { stdout?: string })?.stdout?.trim();
-  let msg = stderr || stdout || (error instanceof Error ? error.message : String(error));
+  let msg = stderr || stdout || error.message;
 
   // Strip token and internal paths from any error before further processing
   if (token) msg = sanitizeErrorMessage(msg, token);
+
+  if (!msg) {
+    return "An unexpected error occurred during the scan.";
+  }
 
   if (msg.includes("Authentication failed") || msg.includes("could not read Username")) {
     return "GitHub authentication failed. Your access token may have expired — try signing out and back in.";
@@ -39,15 +50,21 @@ export function formatScanError(error: unknown, token?: string): string {
   if (msg.includes("ENOMEM") || msg.includes("out of memory")) {
     return "Scan ran out of memory. This repository may be too large for the current plan.";
   }
-  if (msg.length > 500) {
-    return msg.slice(0, 500) + "...";
-  }
 
-  return msg || "An unexpected error occurred during the scan.";
+  // No specific pattern matched — truncate and return the sanitized message
+  // (token already redacted above, internal paths stripped)
+  if (msg.length > 500) return msg.slice(0, 500) + "...";
+  return msg;
 }
 
 /** Max age (ms) before an active scan is considered orphaned */
 const ORPHAN_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
+
+// Module-level debounce — prevents a table-scan updateMany on every poll tick.
+// Each serverless instance debounces independently; 60s is a safe lower bound
+// given poll intervals of 1s and typical cold-start frequencies.
+let lastRecoveryAt = 0;
+const RECOVERY_DEBOUNCE_MS = 60 * 1000;
 
 /**
  * Recover orphaned scans that have been stuck in PENDING/SCANNING
@@ -55,6 +72,9 @@ const ORPHAN_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
  * to self-heal without a separate cron job.
  */
 export async function recoverOrphanedScans() {
+  const now = Date.now();
+  if (now - lastRecoveryAt < RECOVERY_DEBOUNCE_MS) return;
+  lastRecoveryAt = now;
   const cutoff = new Date(Date.now() - ORPHAN_THRESHOLD_MS);
   await db.scan.updateMany({
     where: {

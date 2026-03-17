@@ -8,9 +8,13 @@ export async function generateMetadata({
 }: {
   params: Promise<{ repoId: string }>;
 }) {
+  const session = await auth();
+  if (!session?.user?.id) return { title: "Hashmark" };
   const { repoId } = await params;
+  // Scope to session user — without this, any authenticated user can map a
+  // repoId to its owner/repo fullName via the <title> tag before the page auth fires.
   const repo = await db.repository.findUnique({
-    where: { id: repoId },
+    where: { id: repoId, userId: session.user.id },
     select: { fullName: true },
   });
   return { title: `${repo?.fullName ?? "Repo"} — Hashmark` };

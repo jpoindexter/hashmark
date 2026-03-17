@@ -18,6 +18,13 @@ export async function GET(
 
   const { repoId } = await params;
 
+  // Ownership check — every other scan route enforces this; SSE must too
+  const repo = await db.repository.findUnique({
+    where: { id: repoId, userId: session.user.id },
+    select: { id: true },
+  });
+  if (!repo) return new Response("Not found", { status: 404 });
+
   // Set up SSE headers
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
