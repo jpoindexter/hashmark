@@ -33,6 +33,7 @@ import { detectSecrets } from "./utils/secrets.js";
 import { parseSize, splitContent, getSplitFilenames } from "./utils/split.js";
 import { reportFindings } from "./utils/reporter.js";
 import { loadConfig } from "./config.js";
+import { isSetupComplete, runSetup, readSetupConfig } from "./setup.js";
 import { sync } from "./sync.js";
 import { startWatch } from "./watch.js";
 import { installHooks, uninstallHooks } from "./hooks/install.js";
@@ -75,6 +76,21 @@ cli
       const engine = new ScannerEngine();
       const excludePatterns = loadConfig(targetDir).exclude || [];
       const scanResult = await engine.run(targetDir, excludePatterns, options);
+
+      // 2. Interactive setup on first run (skip in --yes / quiet mode)
+      if (!quiet && !isSetupComplete(targetDir)) {
+        const setupConfig = await runSetup(
+          targetDir,
+          scanResult.framework,
+          scanResult.testCoverage?.testFramework
+        );
+        // If setup returned (not cancelled), inject custom rules into scan result
+        if (setupConfig?.customRules?.length) {
+          scanResult.existingContext = scanResult.existingContext ?? {};
+          const existing = (scanResult.existingContext as any).customRules ?? [];
+          (scanResult.existingContext as any).customRules = [...existing, ...setupConfig.customRules];
+        }
+      }
 
       // 2. Parallel Secondary Scanners (Items not yet in single-pass)
       const [
@@ -141,6 +157,39 @@ cli
       } else {
         console.error(pc.red(`\n  ✗ Scan failed: ${msg}\n`));
       }
+      process.exit(1);
+    }
+  });
+
+// --- setup command ---
+cli
+  .command("setup [dir]", "Configure hashmark for your project interactively")
+  .option("--reset", "Re-run setup even if already configured")
+  .action(async (dir: string | undefined, options: { reset?: boolean }) => {
+    const targetDir = dir || process.cwd();
+    try {
+      if (isSetupComplete(targetDir) && !options.reset) {
+        const existing = readSetupConfig(targetDir);
+        console.log(pc.cyan("\n  # hashmark setup\n"));
+        console.log(pc.dim("  Already configured. Run with --reset to reconfigure.\n"));
+        if (existing) {
+          console.log(`  Team size  : ${existing.teamSize}`);
+          console.log(`  AI tools   : ${existing.aiTools.join(", ") || "none"}`);
+          console.log(`  Framework  : ${existing.confirmedStack.framework}`);
+          if (existing.customRules.length) {
+            console.log(`  Rules      : ${existing.customRules.length} custom rule(s)`);
+          }
+          console.log();
+        }
+        return;
+      }
+
+      const engine = new ScannerEngine();
+      const excludePatterns = loadConfig(targetDir).exclude || [];
+      const scanResult = await engine.run(targetDir, excludePatterns, { yes: true });
+      await runSetup(targetDir, scanResult.framework, scanResult.testCoverage?.testFramework);
+    } catch (error) {
+      console.error(pc.red(`\n  ✗ Setup failed: ${error instanceof Error ? error.message : error}\n`));
       process.exit(1);
     }
   });
