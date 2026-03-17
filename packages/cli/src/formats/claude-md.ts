@@ -41,7 +41,9 @@ export function generateClaudeMd(scan: ScanResult, customRules: string[] = []): 
 
   lines.push(`**Stack**: ${stackParts.join(" • ")}`);
   if (stats) {
-    lines.push(`**Codebase**: ${stats.totalFiles} files, ${stats.totalLines.toLocaleString()} lines, ${components.length} components`);
+    const isJs = framework.language === "TypeScript" || framework.language === "JavaScript";
+    const compInfo = isJs && components.length > 0 ? `, ${components.length} components` : "";
+    lines.push(`**Codebase**: ${stats.totalFiles} files, ${stats.totalLines.toLocaleString()} lines${compInfo}`);
   }
   lines.push("");
 
@@ -109,6 +111,40 @@ export function generateClaudeMd(scan: ScanResult, customRules: string[] = []): 
   }
   if (utilities.hasShadcn) {
     lines.push("- **ALWAYS** use CVA variants for component styling");
+  }
+
+  // Python rules
+  if (framework.language === "Python") {
+    lines.push("- **ALWAYS** use type hints on function signatures");
+    lines.push("- **NEVER** use bare `except:` — catch specific exceptions");
+    if (framework.name === "FastAPI") {
+      lines.push("- **ALWAYS** use Pydantic models for request/response schemas");
+    } else if (framework.name === "Django") {
+      lines.push("- **ALWAYS** use Django ORM — avoid raw SQL unless necessary");
+    }
+  }
+
+  // Go rules
+  if (framework.language === "Go") {
+    lines.push("- **NEVER** ignore error return values — handle all errors explicitly");
+    lines.push("- **ALWAYS** pass `context.Context` as the first parameter");
+  }
+
+  // Rust rules
+  if (framework.language === "Rust") {
+    lines.push("- **NEVER** use `.unwrap()` or `.expect()` in production paths — handle Result/Option");
+    lines.push("- **ALWAYS** propagate errors with `?` operator in functions returning Result");
+  }
+
+  // Java/Kotlin rules
+  if (framework.language === "Java" || framework.language === "Kotlin") {
+    if (framework.name === "Spring Boot") {
+      lines.push("- **ALWAYS** use constructor injection over `@Autowired` field injection");
+      lines.push("- **ALWAYS** annotate data-modifying service methods with `@Transactional`");
+    }
+    if (framework.language === "Kotlin") {
+      lines.push("- **NEVER** use `!!` (non-null assertion) — use safe calls or explicit null handling");
+    }
   }
 
   // Custom rules
