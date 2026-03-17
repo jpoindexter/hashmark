@@ -37,7 +37,7 @@ import { sync } from "./sync.js";
 import { startWatch } from "./watch.js";
 import { installHooks, uninstallHooks } from "./hooks/install.js";
 import { writeFileSync, existsSync, rmSync, mkdirSync, readFileSync } from "fs";
-import { join, relative, dirname } from "path";
+import { join, relative, dirname, resolve } from "path";
 import { execSync } from "child_process";
 import { fileURLToPath } from "url";
 import { homedir } from "os";
@@ -55,7 +55,8 @@ const cli = cac("hashmark");
 
 cli
   .command("[dir]", "Generate context files from your codebase")
-  .option("-o, --output <file>", "Output file path", { default: "AGENTS.md" })
+  .option("-o, --output <path>", "Output directory for generated files (defaults to scan directory)")
+  .option("-y, --yes", "Non-interactive mode: accept all defaults, skip prompts")
   .option("--dry-run", "Preview without writing file")
   .option("--force", "Overwrite existing files")
   .option("--compact", "Generate compact output")
@@ -67,8 +68,9 @@ cli
   .action(async (dir: string | undefined, options: any) => {
     let targetDir = dir || process.cwd();
     const scanStart = Date.now();
+    const quiet = options.yes;
 
-    console.log(pc.cyan("\n  # hashmark\n"));
+    if (!quiet) console.log(pc.cyan("\n  # hashmark\n"));
 
     try {
       // 1. Core Engine Execution (Single Pass)
@@ -105,7 +107,9 @@ cli
       });
 
       // 4. Report & Generate
-      reportFindings(scanResult);
+      if (!quiet) reportFindings(scanResult);
+
+      const outputDir = options.output ? resolve(options.output) : targetDir;
 
       const formatToUse = options.format || "all";
       const files = formatToUse === "all"
@@ -114,19 +118,31 @@ cli
             generateFormat(f.trim() as FormatId, scanResult, { generatorOptions: options })
           );
 
+      const written: string[] = [];
       for (const file of files) {
         if (!options.dryRun) {
-          const filePath = join(targetDir, file.path);
+          const filePath = join(outputDir, file.path);
           if (!existsSync(dirname(filePath))) mkdirSync(dirname(filePath), { recursive: true });
           writeFileSync(filePath, file.content, "utf-8");
-          console.log(pc.green(`    ✓ ${file.path} — ${file.tool}`));
+          written.push(filePath);
+          if (!quiet) console.log(pc.green(`    ✓ ${file.path} — ${file.tool}`));
         }
       }
 
-      console.log(pc.dim(`\n  Completed in ${Date.now() - scanStart}ms\n`));
+      if (quiet) {
+        // Machine-readable output for AI tool invocation
+        process.stdout.write(JSON.stringify({ ok: true, files: written, duration: Date.now() - scanStart }) + "\n");
+      } else {
+        console.log(pc.dim(`\n  Completed in ${Date.now() - scanStart}ms\n`));
+      }
 
     } catch (error) {
-      console.error(pc.red(`\n  ✗ Scan failed: ${error instanceof Error ? error.message : error}\n`));
+      const msg = error instanceof Error ? error.message : String(error);
+      if (quiet) {
+        process.stderr.write(JSON.stringify({ ok: false, error: msg }) + "\n");
+      } else {
+        console.error(pc.red(`\n  ✗ Scan failed: ${msg}\n`));
+      }
       process.exit(1);
     }
   });
