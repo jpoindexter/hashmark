@@ -37,6 +37,7 @@ import { isSetupComplete, runSetup, readSetupConfig } from "./setup.js";
 import { sync } from "./sync.js";
 import { startWatch } from "./watch.js";
 import { installHooks, uninstallHooks } from "./hooks/install.js";
+import { login, readCredentials, clearCredentials, pushToCloud, type CloudSyncPayload } from "./auth.js";
 import { writeFileSync, existsSync, rmSync, mkdirSync, readFileSync } from "fs";
 import { join, relative, dirname, resolve } from "path";
 import { execSync } from "child_process";
@@ -64,6 +65,7 @@ cli
   .option("--monorepo", "Enable monorepo mode")
   .option("--include-git-log", "Include recent git commits")
   .option("--format <formats>", "Output formats (all, cursorrules, etc.)")
+  .option("--sync", "Push scan results to hashmark.md cloud dashboard (requires login)")
   .action(async (dir: string | undefined, options: any) => {
     let targetDir = dir || process.cwd();
     const scanStart = Date.now();
@@ -140,6 +142,36 @@ cli
           writeFileSync(filePath, file.content, "utf-8");
           written.push(filePath);
           if (!quiet) console.log(pc.green(`    ✓ ${file.path} — ${file.tool}`));
+        }
+      }
+
+      // Cloud sync (--sync flag)
+      if (options.sync && !options.dryRun) {
+        const syncPayload: CloudSyncPayload = {
+          projectRoot: targetDir,
+          generatedAt: new Date().toISOString(),
+          files: files.map((f: { path: string; content: string; tool: string }) => ({ path: f.path, content: f.content, tool: f.tool })),
+          meta: {
+            framework: scanResult.framework?.name,
+            language: scanResult.framework?.language,
+            fileCount: scanResult.stats?.totalFiles,
+            lineCount: scanResult.stats?.totalLines,
+          },
+        };
+        if (!quiet) process.stdout.write("  Syncing to cloud...");
+        const syncResult = await pushToCloud(syncPayload);
+        if (syncResult.ok) {
+          if (!quiet) {
+            console.log(pc.green(" done"));
+            if (syncResult.url) console.log(pc.dim(`    ${syncResult.url}`));
+          }
+        } else {
+          if (!quiet) {
+            console.log(pc.red(" failed"));
+            console.log(pc.red(`    ${syncResult.error ?? "Unknown error"}`));
+          } else {
+            process.stderr.write(JSON.stringify({ ok: false, error: syncResult.error }) + "\n");
+          }
         }
       }
 
@@ -258,6 +290,48 @@ cli
       console.error(pc.red(`\n  ✗ MCP server error: ${error instanceof Error ? error.message : error}\n`));
       process.exit(1);
     }
+  });
+
+// --- login command ---
+cli
+  .command("login", "Connect to hashmark.md cloud dashboard")
+  .action(async () => {
+    try {
+      const creds = await login();
+      console.log(pc.green(`\n  Logged in as ${creds.email}\n`));
+      console.log(pc.dim(`  Run hashmark --sync to push scan results to your dashboard.\n`));
+    } catch (error) {
+      console.error(pc.red(`\n  ✗ Login failed: ${error instanceof Error ? error.message : error}\n`));
+      process.exit(1);
+    }
+  });
+
+// --- logout command ---
+cli
+  .command("logout", "Disconnect from hashmark.md cloud dashboard")
+  .action(() => {
+    const creds = readCredentials();
+    if (!creds) {
+      console.log(pc.dim("\n  Not logged in.\n"));
+      return;
+    }
+    clearCredentials();
+    console.log(pc.green("\n  Logged out successfully.\n"));
+  });
+
+// --- whoami command ---
+cli
+  .command("whoami", "Show current cloud authentication status")
+  .action(() => {
+    const creds = readCredentials();
+    if (!creds) {
+      console.log(pc.dim("\n  Not logged in. Run hashmark login to connect.\n"));
+      return;
+    }
+    console.log(pc.cyan("\n  # hashmark whoami\n"));
+    console.log(`  Email     : ${creds.email}`);
+    console.log(`  Connected : ${new Date(creds.connectedAt).toLocaleString()}`);
+    console.log();
   });
 
 cli.help();

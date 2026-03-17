@@ -1620,7 +1620,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const lines: string[] = [
           `# File Tree — ${dir}`,
           ``,
-          `**${stats?.totalFiles ?? "?"} files** across ${stats?.totalDirs ?? "?"} directories`,
+          `**${stats?.totalFiles ?? "?"} files**`,
           stats ? `Total lines: ${stats.totalLines.toLocaleString()}` : "",
           ``,
           "```",
