@@ -19,6 +19,7 @@ import { formatImportGraph } from "./scanners/imports.js";
 import { formatTypes } from "./scanners/types.js";
 import { formatAntiPatterns } from "./scanners/anti-patterns.js";
 import { groupComponentsByDirectory, formatDirectoryName } from "./utils/grouping.js";
+import { getStackPatternSections } from "./templates/stack-patterns.js";
 
 /** Returns true for JS/TS stacks where React component and styling patterns apply */
 function isJsStack(framework: Framework): boolean {
@@ -711,6 +712,17 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
       lines.push("  resolver: zodResolver(schema),");
       lines.push("});");
       lines.push("```");
+      lines.push("");
+    }
+  }
+
+  // Non-JS stack patterns (Python / Go / Rust / Java / Kotlin)
+  if (!isJsStack(framework)) {
+    const stackSections = getStackPatternSections(framework);
+    for (const section of stackSections) {
+      lines.push(`## ${section.title}`);
+      lines.push("");
+      lines.push(section.content);
       lines.push("");
     }
   }

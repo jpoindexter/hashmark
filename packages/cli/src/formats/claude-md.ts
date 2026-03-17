@@ -14,6 +14,7 @@
  */
 
 import type { ScanResult } from "../types.js";
+import { getStackPatternSections } from "../templates/stack-patterns.js";
 
 export function generateClaudeMd(scan: ScanResult, customRules: string[] = []): string {
   const { components, framework, hooks, utilities, commands, apiRoutes, envVars, patterns, database, stats, existingContext, barrels, importGraph, variants, latentHooks } = scan;
@@ -277,6 +278,18 @@ export function generateClaudeMd(scan: ScanResult, customRules: string[] = []): 
       lines.push(`- ${pattern}`);
     }
     lines.push("");
+  }
+
+  // Non-JS stack patterns (Python / Go / Rust / Java / Kotlin)
+  const isJs = framework.language === "TypeScript" || framework.language === "JavaScript";
+  if (!isJs) {
+    const stackSections = getStackPatternSections(framework);
+    for (const section of stackSections) {
+      lines.push(`## ${section.title}`);
+      lines.push("");
+      lines.push(section.content);
+      lines.push("");
+    }
   }
 
   // Design tokens (brief)
