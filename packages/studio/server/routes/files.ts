@@ -328,6 +328,31 @@ export function filesRoutes(projectDir: string) {
     }
   });
 
+  app.get("/git/branches", async (c) => {
+    try {
+      const [branchesOut, currentOut] = await Promise.all([
+        execAsync("git", ["branch", "--format=%(refname:short)"], { cwd: projectDir }),
+        execAsync("git", ["branch", "--show-current"], { cwd: projectDir }),
+      ]);
+      const branches = branchesOut.stdout.trim().split("\n").filter(Boolean);
+      const current = currentOut.stdout.trim();
+      return c.json({ branches, current });
+    } catch (err) {
+      return c.json({ branches: [], current: "", error: String(err) });
+    }
+  });
+
+  app.post("/git/checkout", async (c) => {
+    const body = await c.req.json<{ branch: string }>().catch(() => ({ branch: "" }));
+    if (!body.branch?.trim()) return c.json({ error: "branch required" }, 400);
+    try {
+      await execAsync("git", ["checkout", body.branch], { cwd: projectDir });
+      return c.json({ success: true });
+    } catch (err) {
+      return c.json({ error: String(err) }, 500);
+    }
+  });
+
   app.get("/git", async (c) => {
     try {
       const [statusOut, logOut, branchOut] = await Promise.all([
