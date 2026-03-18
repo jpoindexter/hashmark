@@ -513,6 +513,34 @@ cli
     }
   });
 
+// --- import command ---
+cli
+  .command("import <file>", "Import a competitor context file and convert to hashmark MWP format")
+  .option("--format <format>", "Input format: opencode | cursor-rules | copilot | auto", { default: "auto" })
+  .option("--output <file>", "Output file (default: CLAUDE.md in current dir)")
+  .action(async (file: string, opts: { format: string; output?: string }) => {
+    try {
+      const content = readFileSync(file, "utf-8");
+      const { detectFormat, parseContext, convertToMwp } = await import("./formats/import.js");
+      const format = opts.format === "auto"
+        ? detectFormat(content, file)
+        : (opts.format as import("./formats/import.js").ImportFormat);
+      const parsed = parseContext(content, format);
+      const mwp = convertToMwp(parsed);
+      const outFile = opts.output ?? "CLAUDE.md";
+      writeFileSync(outFile, mwp);
+      const mappedLayers = Object.keys(parsed.sections).filter(k => k !== "other" && parsed.sections[k as keyof typeof parsed.sections] !== undefined);
+      console.log(pc.green(`  Imported ${file} (${format}) -> ${outFile}`));
+      console.log(pc.dim(`  Sections mapped: ${mappedLayers.join(", ")}`));
+      if (Object.keys(parsed.sections.other).length > 0) {
+        console.log(pc.dim(`  Unmapped sections (appended to Knowledge): ${Object.keys(parsed.sections.other).join(", ")}`));
+      }
+    } catch (error) {
+      console.error(pc.red(`\n  Import failed: ${error instanceof Error ? error.message : error}\n`));
+      process.exit(1);
+    }
+  });
+
 // --- watch command ---
 cli
   .command("watch [dir]", "Watch for changes and keep relationship index fresh")
