@@ -94,9 +94,8 @@ export default function Layout() {
   const [streaming,     setStreaming]     = useState(false);
   const [terminalCwd,   setTerminalCwd]   = useState("");
 
-  useEffect(() => persist("termOpen",   termOpen),   [termOpen]);
-  useEffect(() => persist("termHeight", termHeight), [termHeight]);
-  useEffect(() => persist("termBig",    termBig),    [termBig]);
+  useEffect(() => persist("termOpen", termOpen), [termOpen]);
+  useEffect(() => persist("termBig",  termBig),  [termBig]);
 
   useEffect(() => {
     if (activeSessionId) localStorage.setItem("studio_active_session_id", activeSessionId);
@@ -215,29 +214,6 @@ export default function Layout() {
     ];
     return () => subs.forEach(unsub => unsub?.());
   }, [navigate]);
-
-  // Terminal drag
-  const dragging = useRef(false);
-  const dragY    = useRef(0);
-  const dragH    = useRef(0);
-
-  const onDragStart = (e: React.MouseEvent) => {
-    dragging.current = true;
-    dragY.current = e.clientY;
-    dragH.current = termHeight;
-    e.preventDefault();
-  };
-
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      if (!dragging.current) return;
-      setTermHeight(Math.max(80, Math.min(600, dragH.current + (dragY.current - e.clientY))));
-    };
-    const onUp = () => { dragging.current = false; };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
-  }, []);
 
   const handleNewSession = () => {
     fetch("/api/sessions", {
@@ -462,69 +438,62 @@ export default function Layout() {
         </div>
 
         {/* Terminal panel */}
-        {termOpen && (
-          <>
-            {!termBig && (
-              <div
-                onMouseDown={onDragStart}
-                style={{ height: 4, background: "var(--border-dim)", cursor: "ns-resize", flexShrink: 0 }}
-                onMouseEnter={e => (e.currentTarget.style.background = "var(--accent)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "var(--border-dim)")}
-              />
-            )}
+        <ResizableDrawer
+          open={termOpen}
+          onToggle={() => setTermOpen(v => !v)}
+          defaultHeight={280}
+        >
+          <div style={{
+            flex: termBig ? 1 : undefined,
+            height: termBig ? "100%" : undefined,
+            display: "flex", flexDirection: "column",
+            background: "var(--bg)", overflow: "hidden",
+          }}>
             <div style={{
-              height: termBig ? "100%" : `${termHeight}px`,
-              flex: termBig ? 1 : undefined,
-              minHeight: 80, background: "var(--bg)", flexShrink: 0,
-              display: "flex", flexDirection: "column",
-              borderTop: "1px solid var(--border-dim)",
+              height: 30, background: "var(--bg-3)",
+              borderBottom: "1px solid var(--border-dim)",
+              display: "flex", alignItems: "stretch", flexShrink: 0,
             }}>
-              <div style={{
-                height: 30, background: "var(--bg-3)",
-                borderBottom: "1px solid var(--border-dim)",
-                display: "flex", alignItems: "stretch", flexShrink: 0,
-              }}>
-                {PANEL_TABS.map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    style={{
-                      background: "none", border: "none", cursor: "pointer",
-                      padding: "0 14px", fontSize: 11, fontFamily: "var(--font)",
-                      color: activeTab === tab ? "var(--text)" : "var(--text-dimmer)",
-                      borderBottom: activeTab === tab ? "1px solid var(--accent)" : "1px solid transparent",
-                      letterSpacing: "0.05em", transition: "color 0.1s",
-                    }}
-                  >
-                    {tab}
-                  </button>
-                ))}
-                <div style={{ flex: 1 }} />
+              {PANEL_TABS.map(tab => (
                 <button
-                  onClick={() => setTermBig(v => !v)}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontSize: 13, padding: "0 10px" }}
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    padding: "0 14px", fontSize: 11, fontFamily: "var(--font)",
+                    color: activeTab === tab ? "var(--text)" : "var(--text-dimmer)",
+                    borderBottom: activeTab === tab ? "1px solid var(--accent)" : "1px solid transparent",
+                    letterSpacing: "0.05em", transition: "color 0.1s",
+                  }}
                 >
-                  {termBig ? "⊡" : "⊞"}
+                  {tab}
                 </button>
-                <button
-                  onClick={() => setTermOpen(false)}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontSize: 14, padding: "0 10px" }}
-                >
-                  ×
-                </button>
-              </div>
-
-              <div style={{ flex: 1, overflow: "hidden", display: activeTab === "TERMINAL" ? "flex" : "none", flexDirection: "column" }}>
-                <TerminalTabs onCwdChange={setTerminalCwd} />
-              </div>
-              {activeTab === "OUTPUT" && (
-                <div style={{ flex: 1, padding: "12px 16px", overflow: "auto", fontSize: 12, color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>
-                  No output yet.
-                </div>
-              )}
+              ))}
+              <div style={{ flex: 1 }} />
+              <button
+                onClick={() => setTermBig(v => !v)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontSize: 13, padding: "0 10px" }}
+              >
+                {termBig ? "⊡" : "⊞"}
+              </button>
+              <button
+                onClick={() => setTermOpen(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontSize: 14, padding: "0 10px" }}
+              >
+                ×
+              </button>
             </div>
-          </>
-        )}
+
+            <div style={{ flex: 1, overflow: "hidden", display: activeTab === "TERMINAL" ? "flex" : "none", flexDirection: "column" }}>
+              <TerminalTabs onCwdChange={setTerminalCwd} />
+            </div>
+            {activeTab === "OUTPUT" && (
+              <div style={{ flex: 1, padding: "12px 16px", overflow: "auto", fontSize: 12, color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>
+                No output yet.
+              </div>
+            )}
+          </div>
+        </ResizableDrawer>
 
       </div>
 
