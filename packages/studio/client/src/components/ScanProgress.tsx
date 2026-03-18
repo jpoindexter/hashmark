@@ -1,7 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 
+export interface ScanDeltaEntry {
+  prev: number;
+  curr: number;
+  delta: number;
+  pct: number;
+}
+
+export type ScanDelta = Record<string, ScanDeltaEntry>;
+
 interface ScanProgressProps {
-  onComplete: (result: ScanResult) => void;
+  onComplete: (result: ScanResult, delta: ScanDelta | null) => void;
   onError: (error: string) => void;
   onCancel: () => void;
 }
@@ -56,7 +65,7 @@ export default function ScanProgress({ onComplete, onError, onCancel }: ScanProg
           if (!line.startsWith("data: ")) continue;
           const raw = line.slice(6).trim();
           if (!raw) continue;
-          let evt: { type: string; message?: string; result?: ScanResult | null };
+          let evt: { type: string; message?: string; result?: ScanResult | null; delta?: ScanDelta | null };
           try { evt = JSON.parse(raw); } catch { continue; }
 
           if (evt.type === "start") {
@@ -70,7 +79,7 @@ export default function ScanProgress({ onComplete, onError, onCancel }: ScanProg
             });
           } else if (evt.type === "complete") {
             setFinished(true);
-            onComplete(evt.result ?? {});
+            onComplete(evt.result ?? {}, evt.delta ?? null);
             return;
           } else if (evt.type === "error") {
             setFinished(true);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import ScanProgress, { type ScanResult } from "../components/ScanProgress";
+import ScanProgress, { type ScanResult, type ScanDelta } from "../components/ScanProgress";
 
 interface Agent {
   id: string;
@@ -32,6 +32,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [scanDelta, setScanDelta] = useState<ScanDelta | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -59,8 +60,9 @@ export default function Home() {
   if (scanning) {
     return (
       <ScanProgress
-        onComplete={(result) => {
+        onComplete={(result, delta) => {
           setScanResult(result);
+          setScanDelta(delta);
           setScanning(false);
         }}
         onError={(err) => {
@@ -176,25 +178,74 @@ export default function Home() {
         )
       )}
 
-      {/* Scan result banner */}
+      {/* Scan result + delta panel */}
       {scanResult && (
         <div style={{
-          background: "var(--accent-bg)",
-          border: "1px solid var(--accent-border)",
+          background: "var(--bg-2)",
+          border: "1px solid var(--border-dim)",
           borderRadius: "var(--radius)",
-          padding: "12px 16px",
           marginBottom: "24px",
-          fontSize: "12px",
-          color: "var(--accent)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          overflow: "hidden",
         }}>
-          <span>✓ Scan complete</span>
-          <button
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontSize: "14px", lineHeight: 1 }}
-            onClick={() => setScanResult(null)}
-          >×</button>
+          {/* Header */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "8px 14px",
+            borderBottom: scanDelta ? "1px solid var(--border-dim)" : "none",
+            background: "var(--accent-bg)",
+          }}>
+            <span style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--font)", letterSpacing: "0.04em" }}>
+              ✓ Scan complete
+            </span>
+            <button
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontSize: "14px", lineHeight: 1 }}
+              onClick={() => { setScanResult(null); setScanDelta(null); }}
+            >×</button>
+          </div>
+
+          {/* Delta grid */}
+          {scanDelta && Object.keys(scanDelta).length > 0 && (
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
+              gap: 1,
+              background: "var(--border-dim)",
+            }}>
+              {Object.entries(scanDelta).map(([label, entry]) => {
+                const isUp = entry.delta > 0;
+                const isDown = entry.delta < 0;
+                // For AI Readiness, up is good. For Lines/Files/Hub Files, up is a mild warning.
+                const isPositiveMetric = label === "AI Readiness";
+                const warnUp = isUp && !isPositiveMetric && Math.abs(entry.pct) > 5;
+                const goodUp = isUp && isPositiveMetric;
+                const deltaColor = isDown
+                  ? (isPositiveMetric ? "var(--red)" : "var(--accent)")
+                  : goodUp ? "var(--accent)"
+                  : warnUp ? "var(--yellow)"
+                  : "var(--text-dimmer)";
+                const sign = entry.delta > 0 ? "+" : "";
+                return (
+                  <div key={label} style={{
+                    background: "var(--bg-2)",
+                    padding: "10px 12px",
+                  }}>
+                    <div style={{ fontSize: 9, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4, fontFamily: "var(--font)" }}>
+                      {label}
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", letterSpacing: "-0.01em", fontFamily: "var(--font)" }}>
+                      {entry.curr.toLocaleString()}
+                    </div>
+                    {entry.delta !== 0 && (
+                      <div style={{ fontSize: 10, color: deltaColor, fontFamily: "var(--font)", marginTop: 2 }}>
+                        {sign}{entry.delta.toLocaleString()} ({sign}{entry.pct}%)
+                        {warnUp && <span style={{ marginLeft: 4, opacity: 0.8 }}>⚠</span>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
