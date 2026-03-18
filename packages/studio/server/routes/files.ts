@@ -7,6 +7,7 @@ import { readdir, stat, readFile } from "fs/promises";
 import { join, relative, extname } from "path";
 import { execFile } from "child_process";
 import { promisify } from "util";
+import { existsSync } from "fs";
 
 const execAsync = promisify(execFile);
 
@@ -21,6 +22,8 @@ export interface FileNode {
   type: "file" | "dir";
   children?: FileNode[];
   ext?: string;
+  size?: number;
+  mtime?: number;
 }
 
 async function buildTree(dir: string, root: string, depth = 0): Promise<FileNode[]> {
@@ -39,7 +42,14 @@ async function buildTree(dir: string, root: string, depth = 0): Promise<FileNode
     if (s.isDirectory()) {
       nodes.push({ name, path: relPath, type: "dir", children: await buildTree(fullPath, root, depth + 1) });
     } else {
-      nodes.push({ name, path: relPath, type: "file", ext: extname(name).slice(1) });
+      nodes.push({
+        name,
+        path: relPath,
+        type: "file",
+        ext: extname(name).slice(1),
+        size: s.size,
+        mtime: s.mtimeMs,
+      });
     }
   }
   nodes.sort((a, b) => (a.type !== b.type ? (a.type === "dir" ? -1 : 1) : a.name.localeCompare(b.name)));
@@ -105,8 +115,15 @@ export function filesRoutes(projectDir: string) {
     if (!relPath) return c.json({ error: "path required" }, 400);
     const fullPath = join(projectDir, relPath);
     if (!fullPath.startsWith(projectDir)) return c.json({ error: "forbidden" }, 403);
+    const stagedParam = c.req.query("staged");
+    const staged = stagedParam === "true" || stagedParam === "1";
     try {
-      const { stdout } = await execAsync("git", ["diff", "HEAD", "--", relPath], { cwd: projectDir });
+      // staged=true  → git diff --cached (index vs HEAD)
+      // staged=false → git diff (working tree vs index)
+      const args = staged
+        ? ["diff", "--cached", "--", relPath]
+        : ["diff", "--", relPath];
+      const { stdout } = await execAsync("git", args, { cwd: projectDir });
       if (!stdout) {
         try {
           const content = await readFile(fullPath, "utf-8");
@@ -200,34 +217,73 @@ export function filesRoutes(projectDir: string) {
     }
   });
 
+  app.get("/complexity", async (c) => {
+    const cachePath = join(projectDir, ".hashmark", "complexity-cache.json");
+    if (!existsSync(cachePath)) return c.json({ data: null });
+    try {
+      const raw = await readFile(cachePath, "utf-8");
+      return c.json({ data: JSON.parse(raw) });
+    } catch {
+      return c.json({ data: null });
+    }
+  });
+
   app.get("/git", async (c) => {
     try {
       const [statusOut, logOut, branchOut] = await Promise.all([
-        execAsync("git", ["status", "--porcelain"], { cwd: projectDir }),
+        execAsync("git", ["status", "--porcelain=v1"], { cwd: projectDir }),
         execAsync("git", ["log", "--oneline", "-10"], { cwd: projectDir }),
         execAsync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: projectDir }),
       ]);
       const branch = branchOut.stdout.trim();
-      const rawFiles = statusOut.stdout.trim().split("\n").filter(Boolean).map((line) => ({
-        status: line.slice(0, 2).trim(),
-        file: line.slice(3).trim(),
-      }));
+
+      // Ahead/behind vs remote tracking branch
+      let ahead = 0;
+      let behind = 0;
+      try {
+        const { stdout: revCount } = await execAsync(
+          "git", ["rev-list", "--left-right", "--count", `${branch}...@{u}`],
+          { cwd: projectDir }
+        );
+        const parts = revCount.trim().split(/\s+/);
+        ahead = parseInt(parts[0]) || 0;
+        behind = parseInt(parts[1]) || 0;
+      } catch { /* no upstream */ }
+
+      // Parse porcelain v1: XY filename
+      // X = staged status, Y = unstaged status
+      const rawFiles = statusOut.stdout.trim().split("\n").filter(Boolean).map((line) => {
+        const xy = line.slice(0, 2);
+        const file = line.slice(3).trim();
+        const x = xy[0]; // staged
+        const y = xy[1]; // unstaged
+        const isUntracked = x === "?" && y === "?";
+        const isStaged = x !== " " && x !== "?";
+        const isUnstaged = !isUntracked && y !== " ";
+        return { status: xy, file, x, y, isStaged, isUnstaged, isUntracked };
+      });
+
       const filesWithStats = await Promise.all(rawFiles.map(async (f) => {
         try {
-          const { stdout } = await execAsync("git", ["diff", "--numstat", "HEAD", "--", f.file], { cwd: projectDir });
+          // For staged files use --cached, for others use HEAD comparison
+          const args = f.isStaged
+            ? ["diff", "--numstat", "--cached", "--", f.file]
+            : ["diff", "--numstat", "HEAD", "--", f.file];
+          const { stdout } = await execAsync("git", args, { cwd: projectDir });
           const parts = stdout.trim().split("\t");
           return { ...f, added: parseInt(parts[0]) || 0, removed: parseInt(parts[1]) || 0 };
         } catch {
           return { ...f, added: 0, removed: 0 };
         }
       }));
+
       const commits = logOut.stdout.trim().split("\n").filter(Boolean).map((line) => {
         const i = line.indexOf(" ");
         return { hash: line.slice(0, i), message: line.slice(i + 1) };
       });
-      return c.json({ branch, files: filesWithStats, commits });
+      return c.json({ branch, ahead, behind, files: filesWithStats, commits });
     } catch {
-      return c.json({ branch: "unknown", files: [], commits: [], error: "not a git repo" });
+      return c.json({ branch: "unknown", ahead: 0, behind: 0, files: [], commits: [], error: "not a git repo" });
     }
   });
 
