@@ -196,7 +196,7 @@ input:focus, textarea:focus, select:focus {
 
 .nav-tooltip {
   position: absolute;
-  left: 48px;
+  left: 56px;
   top: 50%;
   transform: translateY(-50%);
   padding: 4px 8px;

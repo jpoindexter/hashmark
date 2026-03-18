@@ -1,54 +1,97 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
-import { useState, useEffect, useRef, useCallback, Suspense, lazy } from "react";
+import { useState, useEffect, useRef, Suspense, lazy } from "react";
+import { Home, FolderTree, GitBranch, MessageSquare, Bot, Zap, Settings, TerminalSquare, MessageCircle } from "lucide-react";
 import ChatPanel from "./ChatPanel.tsx";
 
 const TerminalPane = lazy(() => import("./Terminal.tsx"));
 
-interface ProjectInfo {
-  projectName: string;
-  projectDir: string;
-}
+interface ProjectInfo { projectName: string; projectDir: string; }
+interface GitStatus { branch: string; files: { status: string }[]; }
 
 const NAV = [
-  { to: "/", label: "HOME", icon: "⌂", title: "Home" },
-  { to: "/files", label: "FILES", icon: "◫", title: "Files" },
-  { to: "/git", label: "GIT", icon: "⎇", title: "Git" },
-  { to: "/sessions", label: "CHAT", icon: "◈", title: "Sessions" },
-  { to: "/agents", label: "AGENTS", icon: "▣", title: "Agents" },
-  { to: "/generate", label: "GEN", icon: "⟳", title: "Generate" },
-  { to: "/settings", label: "SET", icon: "⚙", title: "Settings" },
+  { to: "/",         icon: <Home size={20} />,          title: "Home",     end: true },
+  { to: "/files",    icon: <FolderTree size={20} />,    title: "Explorer"  },
+  { to: "/git",      icon: <GitBranch size={20} />,     title: "Source Control" },
+  { to: "/sessions", icon: <MessageSquare size={20} />, title: "Chat"      },
+  { to: "/agents",   icon: <Bot size={20} />,           title: "Agents"    },
+  { to: "/generate", icon: <Zap size={20} />,           title: "Generate"  },
+  { to: "/settings", icon: <Settings size={20} />,      title: "Settings"  },
 ];
 
-export default function Layout() {
-  const [info, setInfo] = useState<ProjectInfo | null>(null);
-  const [termOpen, setTermOpen] = useState(false);
-  const [termHeight, setTermHeight] = useState(220);
-  const [chatOpen, setChatOpen] = useState(true);
-  const [chatWidth, setChatWidth] = useState(320);
-  const draggingTerm = useRef(false);
-  const draggingChat = useRef(false);
-  const dragStartY = useRef(0);
-  const dragStartH = useRef(0);
-  const dragStartX = useRef(0);
-  const dragStartW = useRef(0);
+const PANEL_TABS = ["TERMINAL", "OUTPUT"] as const;
+type PanelTab = typeof PANEL_TABS[number];
 
+function persist(key: string, val: unknown) {
+  try { localStorage.setItem(`studio:${key}`, JSON.stringify(val)); } catch {}
+}
+function restore<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(`studio:${key}`);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch { return fallback; }
+}
+
+export default function Layout() {
+  const location = useLocation();
+  const [info, setInfo] = useState<ProjectInfo | null>(null);
+  const [git, setGit] = useState<GitStatus | null>(null);
+
+  // Panel state — persisted
+  const [termOpen,   setTermOpen]   = useState(() => restore("termOpen",   false));
+  const [termHeight, setTermHeight] = useState(() => restore("termHeight", 220));
+  const [termBig,    setTermBig]    = useState(() => restore("termBig",    false));
+  const [activeTab,  setActiveTab]  = useState<PanelTab>("TERMINAL");
+  const [chatOpen,   setChatOpen]   = useState(() => restore("chatOpen",   true));
+  const [chatWidth,  setChatWidth]  = useState(() => restore("chatWidth",  320));
+
+  // Persist on change
+  useEffect(() => persist("termOpen",   termOpen),   [termOpen]);
+  useEffect(() => persist("termHeight", termHeight), [termHeight]);
+  useEffect(() => persist("termBig",    termBig),    [termBig]);
+  useEffect(() => persist("chatOpen",   chatOpen),   [chatOpen]);
+  useEffect(() => persist("chatWidth",  chatWidth),  [chatWidth]);
+
+  // Load project info + git branch
   useEffect(() => {
-    fetch("/api/info").then((r) => r.json()).then(setInfo).catch(() => {});
+    fetch("/api/info").then(r => r.json()).then(setInfo).catch(() => {});
+    fetch("/api/files/git").then(r => r.json()).then(setGit).catch(() => {});
   }, []);
 
-  // Terminal drag resize
+  // Keyboard shortcuts
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "`") {
+        e.preventDefault();
+        setTermOpen(v => !v);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "j") {
+        e.preventDefault();
+        setChatOpen(v => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Drag refs
+  const draggingTerm = useRef(false);
+  const draggingChat = useRef(false);
+  const dragStartY   = useRef(0);
+  const dragStartH   = useRef(0);
+  const dragStartX   = useRef(0);
+  const dragStartW   = useRef(0);
+
   const onTermDragStart = (e: React.MouseEvent) => {
     draggingTerm.current = true;
-    dragStartY.current = e.clientY;
-    dragStartH.current = termHeight;
+    dragStartY.current   = e.clientY;
+    dragStartH.current   = termHeight;
     e.preventDefault();
   };
 
-  // Chat panel drag resize
   const onChatDragStart = (e: React.MouseEvent) => {
     draggingChat.current = true;
-    dragStartX.current = e.clientX;
-    dragStartW.current = chatWidth;
+    dragStartX.current   = e.clientX;
+    dragStartW.current   = chatWidth;
     e.preventDefault();
   };
 
@@ -75,248 +118,331 @@ export default function Layout() {
     };
   }, []);
 
+  const changedFiles = git?.files?.length ?? 0;
+
+  // Route label for breadcrumb
+  const routeTitle = NAV.find(n => n.to === location.pathname)?.title
+    ?? location.pathname.slice(1).toUpperCase()
+    ?? "HOME";
+
   return (
     <div style={{
       display: "flex",
+      flexDirection: "column",
       height: "100vh",
       overflow: "hidden",
       background: "var(--bg)",
       WebkitAppRegion: "no-drag",
     } as React.CSSProperties}>
 
-      {/* Activity bar — leftmost narrow strip */}
-      <aside style={{
-        width: "44px",
-        minWidth: "44px",
-        background: "var(--bg-2)",
-        borderRight: "1px solid var(--border-dim)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        paddingTop: "40px", // space for macOS traffic lights
-        overflow: "visible",
-        zIndex: 100,
-      }}>
-        {/* Logo */}
-        <div style={{
-          fontSize: "14px",
-          fontWeight: 900,
-          color: "var(--accent)",
-          marginBottom: "16px",
-          letterSpacing: "-0.02em",
-        }}>
-          #
-        </div>
+      {/* ─── TOP: titlebar + main body ─────────────────────── */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
 
-        {/* Nav icons */}
-        <nav style={{ display: "flex", flexDirection: "column", gap: "2px", width: "100%" }}>
-          {NAV.map((item) => (
-            <div key={item.to} className="nav-tooltip-wrap">
-              <NavLink
-                to={item.to}
-                end={item.to === "/"}
-                style={({ isActive }) => ({
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: "40px",
-                  fontSize: "15px",
-                  color: isActive ? "var(--text)" : "var(--text-dimmer)",
-                  background: isActive ? "var(--accent-bg)" : "transparent",
-                  borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
-                  transition: "all 0.1s",
-                  textDecoration: "none",
-                })}
-              >
-                {item.icon}
-              </NavLink>
-              <span className="nav-tooltip">{item.title}</span>
-            </div>
-          ))}
-        </nav>
-
-        {/* Bottom: terminal toggle */}
-        <div style={{ flex: 1 }} />
-        <div className="nav-tooltip-wrap">
-          <button
-            onClick={() => setTermOpen((v) => !v)}
-            style={{
-              background: "none",
-              border: "none",
-              color: termOpen ? "var(--accent)" : "var(--text-dimmer)",
-              fontSize: "14px",
-              cursor: "pointer",
-              height: "40px",
-              width: "44px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: "4px",
-            }}
-          >
-            ⌨
-          </button>
-          <span className="nav-tooltip">Terminal</span>
-        </div>
-        <button
-          onClick={() => setChatOpen((v) => !v)}
-          title="Toggle Chat Panel"
-          style={{
-            background: "none",
-            border: "none",
-            color: chatOpen ? "var(--accent)" : "var(--text-dimmer)",
-            fontSize: "13px",
-            cursor: "pointer",
-            height: "40px",
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: "8px",
-          }}
-        >
-          ◈
-        </button>
-      </aside>
-
-      {/* Center + right layout */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-
-        {/* Main workspace */}
-        <div style={{
-          flex: 1,
+        {/* ── Activity bar ── */}
+        <aside style={{
+          width: 52,
+          minWidth: 52,
+          background: "var(--bg-2)",
+          borderRight: "1px solid var(--border-dim)",
           display: "flex",
           flexDirection: "column",
-          overflow: "hidden",
-          minWidth: 0,
+          alignItems: "center",
+          paddingTop: 40,
+          overflow: "visible",
+          zIndex: 100,
+          flexShrink: 0,
         }}>
-          {/* Title bar area */}
-          <div style={{
-            height: "38px",
-            minHeight: "38px",
-            background: "var(--bg-2)",
-            borderBottom: "1px solid var(--border-dim)",
-            display: "flex",
-            alignItems: "center",
-            padding: "0 12px",
-            WebkitAppRegion: "drag",
-            gap: "8px",
-          } as React.CSSProperties}>
-            <span style={{
-              fontSize: "11px",
-              color: "var(--text-dimmer)",
-              marginLeft: "60px", // macOS traffic lights
-              fontFamily: "var(--font)",
-            }}>
-              {info?.projectName ?? "loading..."}
-            </span>
-            {info && (
-              <span style={{ fontSize: "10px", color: "var(--text-dimmer)", opacity: 0.5 }}>
-                {info.projectDir.replace(/^\/Users\/[^/]+/, "~")}
-              </span>
-            )}
+          <div style={{ fontSize: 16, fontWeight: 900, color: "var(--accent)", marginBottom: 16, letterSpacing: "-0.02em" }}>
+            #
           </div>
 
-          {/* Content + terminal */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            {/* Main content */}
-            <div style={{ flex: 1, overflow: "auto", minHeight: 0 }}>
+          <nav style={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
+            {NAV.map(item => (
+              <div key={item.to} className="nav-tooltip-wrap">
+                <NavLink
+                  to={item.to}
+                  end={item.end}
+                  style={({ isActive }) => ({
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    height: 44, fontSize: 20, position: "relative",
+                    color: isActive ? "var(--text)" : "var(--text-dimmer)",
+                    background: isActive ? "var(--accent-bg)" : "transparent",
+                    borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
+                    transition: "all 0.1s", textDecoration: "none",
+                  })}
+                >
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{item.icon}</span>
+                  {/* Badge for git changes */}
+                  {item.to === "/git" && changedFiles > 0 && (
+                    <span style={{
+                      position: "absolute", top: 6, right: 4,
+                      background: "var(--accent)", color: "var(--bg)",
+                      fontSize: 9, fontWeight: 700, borderRadius: 8,
+                      padding: "0 4px", minWidth: 14, textAlign: "center", lineHeight: "14px",
+                    }}>
+                      {changedFiles}
+                    </span>
+                  )}
+                </NavLink>
+                <span className="nav-tooltip">{item.title}</span>
+              </div>
+            ))}
+          </nav>
+
+          <div style={{ flex: 1 }} />
+
+          {/* Terminal toggle */}
+          <div className="nav-tooltip-wrap">
+            <button
+              onClick={() => setTermOpen(v => !v)}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: termOpen ? "var(--accent)" : "var(--text-dimmer)",
+                fontSize: 20, height: 44, width: 52,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            ><TerminalSquare size={20} /></button>
+            <span className="nav-tooltip">Terminal  ⌃`</span>
+          </div>
+
+          {/* Chat toggle */}
+          <div className="nav-tooltip-wrap" style={{ marginBottom: 8 }}>
+            <button
+              onClick={() => setChatOpen(v => !v)}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: chatOpen ? "var(--accent)" : "var(--text-dimmer)",
+                fontSize: 20, height: 44, width: 52,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            ><MessageCircle size={20} /></button>
+            <span className="nav-tooltip">Chat  ⌘⇧J</span>
+          </div>
+        </aside>
+
+        {/* ── Main + chat ── */}
+        <div style={{ flex: 1, display: "flex", overflow: "hidden", minWidth: 0 }}>
+
+          {/* ── Workspace ── */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+
+            {/* Titlebar / breadcrumb */}
+            <div style={{
+              height: 38, minHeight: 38,
+              background: "var(--bg-2)",
+              borderBottom: "1px solid var(--border-dim)",
+              display: "flex", alignItems: "center",
+              padding: "0 12px",
+              WebkitAppRegion: "drag",
+              gap: 8, flexShrink: 0,
+            } as React.CSSProperties}>
+              <span style={{ fontSize: 11, color: "var(--text-dimmer)", marginLeft: 60, fontFamily: "var(--font)" }}>
+                {info?.projectName ?? "…"}
+              </span>
+              <span style={{ fontSize: 10, color: "var(--text-dimmer)", opacity: 0.4 }}>›</span>
+              <span style={{ fontSize: 11, color: "var(--text-dim)", fontFamily: "var(--font)" }}>
+                {routeTitle}
+              </span>
+            </div>
+
+            {/* Content */}
+            <div style={{
+              flex: termBig ? 0 : 1,
+              overflow: "auto",
+              minHeight: termBig ? 0 : undefined,
+              display: termBig ? "none" : "block",
+            }}>
               <Outlet />
             </div>
 
-            {/* Terminal panel */}
+            {/* Bottom panel */}
             {termOpen && (
               <>
-                {/* Drag handle */}
-                <div
-                  onMouseDown={onTermDragStart}
-                  style={{
-                    height: "4px",
-                    background: "var(--border-dim)",
-                    cursor: "ns-resize",
-                    flexShrink: 0,
-                    transition: "background 0.1s",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "var(--border-dim)")}
-                />
+                {!termBig && (
+                  <div
+                    onMouseDown={onTermDragStart}
+                    style={{ height: 4, background: "var(--border-dim)", cursor: "ns-resize", flexShrink: 0, transition: "background 0.1s" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "var(--accent)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "var(--border-dim)")}
+                  />
+                )}
                 <div style={{
-                  height: `${termHeight}px`,
-                  minHeight: "80px",
-                  background: "var(--bg)",
+                  height: termBig ? "100%" : `${termHeight}px`,
+                  flex: termBig ? 1 : undefined,
+                  minHeight: 80, background: "var(--bg)", flexShrink: 0,
+                  display: "flex", flexDirection: "column",
                   borderTop: "1px solid var(--border-dim)",
-                  flexShrink: 0,
-                  display: "flex",
-                  flexDirection: "column",
                 }}>
-                  {/* Terminal header */}
+                  {/* Panel tab bar — VSCode style */}
                   <div style={{
-                    height: "28px",
-                    background: "var(--bg-2)",
+                    height: 30, background: "var(--bg-3)",
                     borderBottom: "1px solid var(--border-dim)",
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "0 12px",
-                    gap: "8px",
-                    flexShrink: 0,
+                    display: "flex", alignItems: "stretch",
+                    flexShrink: 0, userSelect: "none",
                   }}>
-                    <span style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                      TERMINAL
-                    </span>
-                    <span style={{ fontSize: "10px", color: "var(--text-dimmer)", opacity: 0.5 }}>
-                      {info?.projectDir.replace(/^\/Users\/[^/]+/, "~")}
-                    </span>
+                    {PANEL_TABS.map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        style={{
+                          background: "none", border: "none", cursor: "pointer",
+                          padding: "0 14px", fontSize: 11, fontFamily: "var(--font)",
+                          color: activeTab === tab ? "var(--text)" : "var(--text-dimmer)",
+                          borderBottom: activeTab === tab ? "1px solid var(--accent)" : "1px solid transparent",
+                          letterSpacing: "0.05em", transition: "color 0.1s",
+                        }}
+                      >
+                        {tab}
+                      </button>
+                    ))}
                     <div style={{ flex: 1 }} />
+                    {/* Big terminal mode — like Conductor */}
+                    <button
+                      onClick={() => setTermBig(v => !v)}
+                      title={termBig ? "Restore panel" : "Maximize panel"}
+                      style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        color: termBig ? "var(--accent)" : "var(--text-dimmer)",
+                        fontSize: 13, padding: "0 10px",
+                        transition: "color 0.1s",
+                      }}
+                    >
+                      {termBig ? "⊡" : "⊞"}
+                    </button>
                     <button
                       onClick={() => setTermOpen(false)}
-                      style={{ background: "none", border: "none", color: "var(--text-dimmer)", cursor: "pointer", fontSize: "14px", lineHeight: 1 }}
+                      style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        color: "var(--text-dimmer)", fontSize: 14,
+                        padding: "0 10px", lineHeight: 1,
+                      }}
                     >
                       ×
                     </button>
                   </div>
-                  <div style={{ flex: 1, overflow: "hidden" }}>
+
+                  <div style={{ flex: 1, overflow: "hidden", display: activeTab === "TERMINAL" ? "flex" : "none", flexDirection: "column" }}>
                     <Suspense fallback={null}>
                       <TerminalPane />
                     </Suspense>
                   </div>
+
+                  {activeTab === "OUTPUT" && (
+                    <div style={{
+                      flex: 1, padding: "12px 16px", overflow: "auto",
+                      fontSize: 12, color: "var(--text-dimmer)", fontFamily: "var(--font)",
+                    }}>
+                      No output yet.
+                    </div>
+                  )}
                 </div>
               </>
             )}
           </div>
-        </div>
 
-        {/* Chat panel — right side, always present */}
-        {chatOpen && (
-          <>
-            {/* Chat drag handle */}
-            <div
-              onMouseDown={onChatDragStart}
-              style={{
-                width: "4px",
-                background: "var(--border-dim)",
-                cursor: "ew-resize",
-                flexShrink: 0,
-                transition: "background 0.1s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--border-dim)")}
-            />
-            <div style={{
-              width: `${chatWidth}px`,
-              minWidth: "240px",
-              maxWidth: "600px",
-              background: "var(--bg-2)",
-              borderLeft: "1px solid var(--border-dim)",
-              display: "flex",
-              flexDirection: "column",
-              flexShrink: 0,
-              overflow: "hidden",
-            }}>
-              <ChatPanel />
-            </div>
-          </>
-        )}
+          {/* ── Chat panel ── */}
+          {chatOpen && (
+            <>
+              <div
+                onMouseDown={onChatDragStart}
+                style={{ width: 4, background: "var(--border-dim)", cursor: "ew-resize", flexShrink: 0, transition: "background 0.1s" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "var(--accent)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "var(--border-dim)")}
+              />
+              <div style={{
+                width: chatWidth, minWidth: 240, maxWidth: 600,
+                background: "var(--bg-2)",
+                borderLeft: "1px solid var(--border-dim)",
+                display: "flex", flexDirection: "column",
+                flexShrink: 0, overflow: "hidden",
+              }}>
+                <ChatPanel />
+              </div>
+            </>
+          )}
+        </div>
       </div>
+
+      {/* ─── STATUS BAR (VSCode-style) ────────────────────── */}
+      <div style={{
+        height: 22, minHeight: 22,
+        background: "#0d1f17",
+        borderTop: "1px solid #0a1910",
+        display: "flex", alignItems: "center",
+        padding: "0 8px", gap: 0,
+        fontSize: 11, fontFamily: "var(--font)",
+        flexShrink: 0, userSelect: "none",
+        WebkitAppRegion: "no-drag",
+        zIndex: 200,
+      } as React.CSSProperties}>
+        {/* Git branch */}
+        <StatusItem
+          onClick={() => { window.location.hash = "/git"; }}
+          title="Source Control"
+        >
+          <GitBranch size={12} style={{ opacity: 0.7 }} />
+          {git?.branch ?? "—"}
+          {changedFiles > 0 && (
+            <span style={{ marginLeft: 4, opacity: 0.8 }}>+{changedFiles}</span>
+          )}
+        </StatusItem>
+
+        <div style={{ flex: 1 }} />
+
+        {/* Project name */}
+        <StatusItem>
+          {info?.projectName ?? "hashmark studio"}
+        </StatusItem>
+
+        {/* Ln/Col placeholder */}
+        <StatusItem>
+          Ln 1, Col 1
+        </StatusItem>
+
+        {/* Spaces */}
+        <StatusItem>
+          Spaces: 2
+        </StatusItem>
+
+        {/* UTF-8 */}
+        <StatusItem>
+          UTF-8
+        </StatusItem>
+
+        {/* TypeScript indicator */}
+        <StatusItem>
+          TS
+        </StatusItem>
+      </div>
+    </div>
+  );
+}
+
+function StatusItem({
+  children,
+  onClick,
+  title,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  title?: string;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      title={title}
+      style={{
+        display: "flex", alignItems: "center", gap: 4,
+        padding: "0 8px", height: "100%",
+        color: "rgba(16,185,129,0.75)",
+        cursor: onClick ? "pointer" : "default",
+        transition: "background 0.1s",
+        whiteSpace: "nowrap",
+      }}
+      onMouseEnter={e => { if (onClick) (e.currentTarget as HTMLDivElement).style.background = "rgba(16,185,129,0.12)"; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+    >
+      {children}
     </div>
   );
 }
