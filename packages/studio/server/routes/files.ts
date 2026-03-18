@@ -228,6 +228,106 @@ export function filesRoutes(projectDir: string) {
     }
   });
 
+  // Rich commit log with numstat for the Git history page
+  app.get("/git/log", async (c) => {
+    try {
+      // Parse format: hash|shortHash|subject|author|isoDate
+      const { stdout: logRaw } = await execAsync(
+        "git",
+        ["log", "--format=%H|%h|%s|%an|%ai", "-50"],
+        { cwd: projectDir, maxBuffer: 4 * 1024 * 1024 }
+      );
+
+      const commitLines = logRaw.trim().split("\n").filter(Boolean);
+
+      // Get numstat separately — one pass per commit is expensive; use --numstat with log
+      // Each block: commit line, blank, numstat lines, blank
+      const { stdout: numstatRaw } = await execAsync(
+        "git",
+        ["log", "--format=COMMIT:%H", "--numstat", "-50"],
+        { cwd: projectDir, maxBuffer: 8 * 1024 * 1024 }
+      );
+
+      // Build map: hash -> { filesChanged, insertions, deletions, files: string[] }
+      const statsMap: Record<string, { filesChanged: number; insertions: number; deletions: number; files: string[] }> = {};
+      let currentHash = "";
+      for (const line of numstatRaw.split("\n")) {
+        if (line.startsWith("COMMIT:")) {
+          currentHash = line.slice(7).trim();
+          statsMap[currentHash] = { filesChanged: 0, insertions: 0, deletions: 0, files: [] };
+        } else if (currentHash && line.trim()) {
+          const parts = line.split("\t");
+          if (parts.length === 3) {
+            const ins = parseInt(parts[0]) || 0;
+            const del = parseInt(parts[1]) || 0;
+            const file = parts[2].trim();
+            statsMap[currentHash].insertions += ins;
+            statsMap[currentHash].deletions += del;
+            statsMap[currentHash].filesChanged += 1;
+            statsMap[currentHash].files.push(file);
+          }
+        }
+      }
+
+      // Get branch names for commits
+      const { stdout: branchRaw } = await execAsync(
+        "git",
+        ["branch", "-v", "--no-abbrev"],
+        { cwd: projectDir }
+      ).catch(() => ({ stdout: "" }));
+
+      const branchMap: Record<string, string[]> = {};
+      for (const line of branchRaw.split("\n").filter(Boolean)) {
+        const isCurrent = line.startsWith("*");
+        const parts = line.slice(2).trim().split(/\s+/);
+        const bname = parts[0];
+        const bhash = parts[1];
+        if (bhash) {
+          if (!branchMap[bhash]) branchMap[bhash] = [];
+          branchMap[bhash].push(isCurrent ? `*${bname}` : bname);
+        }
+      }
+
+      const commits = commitLines.map((line) => {
+        const [hash, shortHash, subject, author, date] = line.split("|");
+        const stats = statsMap[hash] ?? { filesChanged: 0, insertions: 0, deletions: 0, files: [] };
+        return {
+          hash,
+          shortHash,
+          subject,
+          author,
+          date,
+          filesChanged: stats.filesChanged,
+          insertions: stats.insertions,
+          deletions: stats.deletions,
+          files: stats.files,
+          branches: branchMap[hash] ?? [],
+        };
+      });
+
+      return c.json({ commits });
+    } catch (err) {
+      return c.json({ commits: [], error: String(err) });
+    }
+  });
+
+  // Diff for a specific file at a specific commit
+  app.get("/git/commit-diff", async (c) => {
+    const hash = c.req.query("hash");
+    const file = c.req.query("file");
+    if (!hash || !file) return c.json({ error: "hash and file required" }, 400);
+    try {
+      const { stdout } = await execAsync(
+        "git",
+        ["show", "--format=", `${hash}`, "--", file],
+        { cwd: projectDir, maxBuffer: 4 * 1024 * 1024 }
+      );
+      return c.json({ diff: stdout, file, hash });
+    } catch (err) {
+      return c.json({ diff: "", file, hash, error: String(err) });
+    }
+  });
+
   app.get("/git", async (c) => {
     try {
       const [statusOut, logOut, branchOut] = await Promise.all([
