@@ -26,6 +26,12 @@
   --font: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
   --radius: 2px;
   --sidebar-w: 200px;
+  --border-focus: rgba(16, 185, 129, 0.4);
+}
+
+/* Ensure layout doesn't overlap status bar */
+#root {
+  padding-bottom: 22px;
 }
 
 html, body, #root {

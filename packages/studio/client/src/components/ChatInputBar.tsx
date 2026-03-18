@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Plus, Send, Square } from "lucide-react";
 
 interface Session {
   id: string;
@@ -16,9 +17,9 @@ interface ChatInputBarProps {
 }
 
 const MODELS = [
-  { id: "claude-opus-4-6", label: "Opus 4.6", note: "1M ctx" },
-  { id: "claude-sonnet-4-6", label: "Sonnet 4.6", note: "default" },
-  { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5", note: "fast" },
+  { id: "claude-opus-4-6",           label: "Opus 4.6",   note: "1M ctx" },
+  { id: "claude-sonnet-4-6",         label: "Sonnet 4.6", note: "default" },
+  { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5",  note: "fast" },
 ];
 
 function persist(key: string, val: unknown) {
@@ -31,113 +32,58 @@ function restore<T>(key: string, fallback: T): T {
   } catch { return fallback; }
 }
 
-function ToggleButton({
-  active, onClick, children,
-}: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        background: active ? "rgba(16,185,129,0.12)" : "none",
-        border: `1px solid ${active ? "var(--accent)" : "var(--border-dim)"}`,
-        color: active ? "var(--accent)" : "var(--text-dimmer)",
-        fontFamily: "var(--font)",
-        fontSize: "10px",
-        padding: "2px 8px",
-        cursor: "pointer",
-        letterSpacing: "0.04em",
-        flexShrink: 0,
-        transition: "all 0.1s",
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
-function ModelSelector({
-  selected, onChange,
-}: { selected: string; onChange: (id: string) => void }) {
+function ModelPill({ selected, onChange }: { selected: string; onChange: (id: string) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const current = MODELS.find((m) => m.id === selected) ?? MODELS[1];
+  const current = MODELS.find(m => m.id === selected) ?? MODELS[1];
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
   }, [open]);
 
   return (
-    <div ref={ref} style={{ position: "relative", flexShrink: 0 }}>
+    <div ref={ref} style={{ position: "relative" }}>
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(v => !v)}
         style={{
-          background: "none",
-          border: "1px solid var(--border-dim)",
-          color: "var(--text-dimmer)",
-          fontFamily: "var(--font)",
-          fontSize: "10px",
-          padding: "2px 8px",
-          cursor: "pointer",
-          letterSpacing: "0.04em",
-          transition: "all 0.1s",
+          display: "flex", alignItems: "center", gap: 5,
+          padding: "3px 8px", background: "none", border: "none", borderRadius: 4,
+          color: "var(--text-dim)", fontSize: 11, fontFamily: "var(--font)",
+          cursor: "pointer", transition: "background 0.1s, color 0.1s", whiteSpace: "nowrap",
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "var(--accent)";
-          e.currentTarget.style.color = "var(--accent)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = "var(--border-dim)";
-          e.currentTarget.style.color = "var(--text-dimmer)";
-        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text)"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "none"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim)"; }}
       >
-        ▾ {current.label}
+        <span style={{ color: "var(--accent)", fontSize: 13 }}>✸</span>
+        {current.label}
       </button>
+
       {open && (
         <div style={{
-          position: "absolute",
-          top: "calc(100% + 4px)",
-          left: 0,
-          zIndex: 200,
-          background: "var(--bg-3)",
-          border: "1px solid var(--border)",
-          minWidth: "160px",
+          position: "absolute", bottom: "calc(100% + 4px)", left: 0, zIndex: 300,
+          background: "var(--bg-3)", border: "1px solid var(--border)", borderRadius: 6,
+          minWidth: 180, boxShadow: "0 -4px 16px rgba(0,0,0,0.4)", overflow: "hidden",
         }}>
-          {MODELS.map((m) => (
+          {MODELS.map(m => (
             <button
               key={m.id}
               onClick={() => { onChange(m.id); setOpen(false); }}
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                width: "100%",
-                padding: "6px 10px",
-                background: "none",
-                border: "none",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                width: "100%", padding: "7px 12px", background: "none", border: "none",
                 borderLeft: m.id === selected ? "2px solid var(--accent)" : "2px solid transparent",
                 color: m.id === selected ? "var(--accent)" : "var(--text-dim)",
-                fontFamily: "var(--font)",
-                fontSize: "11px",
-                cursor: "pointer",
-                textAlign: "left",
+                fontFamily: "var(--font)", fontSize: 12, cursor: "pointer", textAlign: "left",
                 transition: "background 0.1s",
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--bg-4)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "none";
-              }}
+              onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)"}
+              onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "none"}
             >
               <span>{m.label}</span>
-              <span style={{ color: "var(--text-dimmer)", fontSize: "10px" }}>{m.note}</span>
+              <span style={{ color: "var(--text-dimmer)", fontSize: 10 }}>{m.note}</span>
             </button>
           ))}
         </div>
@@ -146,24 +92,48 @@ function ModelSelector({
   );
 }
 
+function ToolbarToggle({
+  active, onClick, icon, label,
+}: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      style={{
+        display: "flex", alignItems: "center", gap: 4,
+        padding: "3px 8px",
+        background: active ? "rgba(16,185,129,0.1)" : "none",
+        border: "none", borderRadius: 4,
+        color: active ? "var(--accent)" : "var(--text-dimmer)",
+        fontSize: 11, fontFamily: "var(--font)",
+        cursor: "pointer", transition: "background 0.1s, color 0.1s", whiteSpace: "nowrap",
+      }}
+      onMouseEnter={e => {
+        if (!active) {
+          (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
+          (e.currentTarget as HTMLButtonElement).style.color = "var(--text)";
+        }
+      }}
+      onMouseLeave={e => {
+        if (!active) {
+          (e.currentTarget as HTMLButtonElement).style.background = "none";
+          (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)";
+        }
+      }}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
 export default function ChatInputBar({
-  sessionId,
-  onNewSession,
-  onSessionCreated,
-  onStreamText,
-  onStreamingChange,
-  streaming,
+  sessionId, onNewSession, onSessionCreated, onStreamText, onStreamingChange, streaming,
 }: ChatInputBarProps) {
   const [input, setInput] = useState("");
-  const [sessionTitle, setSessionTitle] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState(() => restore("model", "claude-sonnet-4-6"));
   const [thinking, setThinking] = useState(() => restore("thinking", false));
   const [planMode, setPlanMode] = useState(() => restore("plan_mode", false));
-  const [contextInfo, setContextInfo] = useState<{
-    available: boolean;
-    charCount: number;
-    source: string | null;
-  } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
 
@@ -171,28 +141,20 @@ export default function ChatInputBar({
   useEffect(() => persist("thinking", thinking), [thinking]);
   useEffect(() => persist("plan_mode", planMode), [planMode]);
 
+  // ⌘L focus shortcut
   useEffect(() => {
-    fetch("/api/scan/context")
-      .then((r) => r.json())
-      .then((d: { available: boolean; charCount: number; source: string | null }) => setContextInfo(d))
-      .catch(() => setContextInfo({ available: false, charCount: 0, source: null }));
+    const h = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "l") { e.preventDefault(); textareaRef.current?.focus(); }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
   }, []);
-
-  useEffect(() => {
-    if (!sessionId) { setSessionTitle(null); return; }
-    fetch(`/api/sessions/${sessionId}`)
-      .then((r) => r.json())
-      .then((d: { session: Session }) => setSessionTitle(d.session?.title ?? null))
-      .catch(() => setSessionTitle(null));
-  }, [sessionId]);
 
   const sendMessage = async () => {
     if (!input.trim() || streaming) return;
     const text = input.trim();
     setInput("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
 
     let sid = sessionId;
     if (!sid) {
@@ -203,7 +165,6 @@ export default function ChatInputBar({
       });
       const data = await res.json() as { session: Session };
       sid = data.session.id;
-      setSessionTitle(data.session.title);
       onSessionCreated?.(sid);
     }
 
@@ -224,10 +185,7 @@ export default function ChatInputBar({
       }),
     });
 
-    if (!res.ok || !res.body) {
-      onStreamingChange(false);
-      return;
-    }
+    if (!res.ok || !res.body) { onStreamingChange(false); return; }
 
     const reader = res.body.getReader();
     const dec = new TextDecoder();
@@ -263,173 +221,121 @@ export default function ChatInputBar({
       abortRef.current = null;
       onStreamingChange(false);
       onStreamText("");
-      if (sid) {
-        fetch(`/api/sessions/${sid}`)
-          .then((r) => r.json())
-          .then((d: { session: Session }) => setSessionTitle(d.session?.title ?? null))
-          .catch(() => {});
-      }
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Tab" && e.shiftKey) {
-      e.preventDefault();
-      setPlanMode((v) => !v);
-      return;
-    }
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      void sendMessage();
-    }
+    if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); setPlanMode(v => !v); return; }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendMessage(); }
   };
 
   const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
     const el = e.currentTarget;
     el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
   };
 
   return (
-    <div style={{
-      borderTop: "1px solid var(--border-dim)",
-      background: "var(--bg-2)",
-      flexShrink: 0,
-    }}>
-      {/* Session meta row */}
-      <div style={{
-        display: "flex", alignItems: "center",
-        padding: "6px 12px 0",
-        gap: "6px",
-      }}>
-        <ModelSelector selected={selectedModel} onChange={setSelectedModel} />
-        <ToggleButton active={thinking} onClick={() => setThinking((v) => !v)}>
-          🧠 Thinking{thinking ? " ●" : ""}
-        </ToggleButton>
-        <ToggleButton active={planMode} onClick={() => setPlanMode((v) => !v)}>
-          📋 Plan
-        </ToggleButton>
-        {contextInfo !== null && (
-          <span
-            title={
-              contextInfo.available
-                ? `${contextInfo.charCount.toLocaleString()} chars of project context loaded (${contextInfo.source})`
-                : "No scan context. Run a scan first."
-            }
-            style={{
-              fontSize: "10px",
-              color: contextInfo.available ? "var(--accent)" : "var(--text-dimmer)",
-              fontFamily: "var(--font)",
-              flexShrink: 0,
-              cursor: "default",
-              letterSpacing: "0.04em",
-            }}
-          >
-            {contextInfo.available ? "◉ ctx" : "○ ctx"}
-          </span>
-        )}
-        <div style={{
-          fontSize: "10px", color: "var(--text-dimmer)", fontFamily: "var(--font)",
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          flex: 1,
-        }}>
-          {sessionTitle
-            ? <span>◈ {sessionTitle}</span>
-            : <span>no active session</span>
-          }
-          {streaming && (
-            <span style={{ color: "var(--accent)", marginLeft: "8px" }}>● responding</span>
-          )}
-        </div>
-        <button
-          onClick={onNewSession}
-          style={{
-            background: "none",
-            border: "1px solid var(--border-dim)",
-            color: "var(--text-dimmer)",
-            fontFamily: "var(--font)",
-            fontSize: "9px",
-            padding: "2px 7px",
-            cursor: "pointer",
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
-            flexShrink: 0,
-            transition: "border-color 0.1s, color 0.1s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "var(--accent)";
-            e.currentTarget.style.color = "var(--accent)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "var(--border-dim)";
-            e.currentTarget.style.color = "var(--text-dimmer)";
-          }}
-        >
-          + NEW
-        </button>
-      </div>
-
-      {/* Input row */}
-      <div style={{ padding: "6px 12px 10px" }}>
-        {streaming && (
-          <button
-            onClick={() => abortRef.current?.()}
-            style={{
-              width: "100%",
-              marginBottom: "6px",
-              background: "none",
-              border: "1px solid var(--red)",
-              color: "var(--red)",
-              padding: "4px",
-              fontSize: "10px",
-              cursor: "pointer",
-              fontFamily: "var(--font)",
-              letterSpacing: "0.05em",
-              textTransform: "uppercase",
-            }}
-          >
-            ■ STOP
-          </button>
-        )}
-        <div style={{
-          display: "flex", gap: "8px", alignItems: "flex-end",
-          background: "var(--bg-3)",
-          border: "1px solid var(--border)",
-          padding: "7px 10px",
-        }}>
+    <div style={{ background: "var(--bg)", borderTop: "1px solid var(--border-dim)", flexShrink: 0, padding: "12px 16px 10px" }}>
+      <div
+        style={{
+          background: "var(--bg-2)", border: "1px solid var(--border)",
+          borderRadius: 8, overflow: "hidden", transition: "border-color 0.15s",
+        }}
+        onFocusCapture={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(16,185,129,0.4)"}
+        onBlurCapture={e => (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border)"}
+      >
+        {/* Textarea */}
+        <div style={{ padding: "10px 14px 2px" }}>
           <textarea
             ref={textareaRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             onInput={handleInput}
-            placeholder={streaming ? "Waiting for response..." : "Ask Claude  (↵ send · ⇧↵ newline · ⇧⇥ plan)"}
+            placeholder={streaming ? "" : "Ask to make changes, @mention files, run /commands"}
             disabled={streaming}
             rows={1}
             style={{
-              flex: 1,
-              background: "none",
-              border: "none",
-              outline: "none",
-              color: "var(--text)",
-              fontSize: "12px",
-              fontFamily: "var(--font)",
-              resize: "none",
-              maxHeight: "120px",
-              overflowY: "auto",
-              lineHeight: "1.5",
+              width: "100%", background: "none", border: "none", outline: "none",
+              color: "var(--text)", fontSize: 13, fontFamily: "var(--font)",
+              resize: "none", maxHeight: 140, overflowY: "auto", lineHeight: 1.5, display: "block",
             }}
           />
+        </div>
+
+        {/* Streaming line */}
+        {streaming && (
+          <div style={{ padding: "0 14px 6px", fontSize: 11, color: "var(--accent)", display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", animation: "stream-pulse 1s ease-in-out infinite" }} />
+            Claude is responding...
+          </div>
+        )}
+
+        {/* Toolbar */}
+        <div style={{
+          display: "flex", alignItems: "center", padding: "4px 6px 6px", gap: 0,
+          borderTop: "1px solid var(--border-dim)",
+        }}>
+          <ModelPill selected={selectedModel} onChange={setSelectedModel} />
+          <ToolbarToggle active={thinking} onClick={() => setThinking(v => !v)} icon={<span style={{ fontSize: 13, lineHeight: 1 }}>◐</span>} label="Thinking" />
+          <ToolbarToggle active={planMode} onClick={() => setPlanMode(v => !v)} icon={<span style={{ fontSize: 11, lineHeight: 1 }}>▦</span>} label="Plan" />
+
+          <div style={{ flex: 1 }} />
+
+          {!streaming && !input && (
+            <span style={{ fontSize: 10, color: "var(--text-dimmer)", marginRight: 8, opacity: 0.4 }}>⌘L to focus</span>
+          )}
+
+          {/* New */}
           <button
-            className="btn btn-primary"
-            onClick={() => void sendMessage()}
-            disabled={streaming || !input.trim()}
-            style={{ padding: "5px 14px", fontSize: "11px", flexShrink: 0 }}
+            onClick={onNewSession}
+            title="New conversation"
+            style={{
+              width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
+              background: "none", border: "none", borderRadius: 4,
+              color: "var(--text-dimmer)", cursor: "pointer", transition: "background 0.1s, color 0.1s",
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "none"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)"; }}
           >
-            &gt; SEND
+            <Plus size={14} />
           </button>
+
+          {/* Stop / Send */}
+          {streaming ? (
+            <button
+              onClick={() => abortRef.current?.()}
+              title="Stop"
+              style={{
+                width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
+                background: "rgba(239,68,68,0.12)", border: "none", borderRadius: 4,
+                color: "#ef4444", cursor: "pointer",
+              }}
+            >
+              <Square size={12} />
+            </button>
+          ) : (
+            <button
+              onClick={() => void sendMessage()}
+              disabled={!input.trim()}
+              title="Send (Enter)"
+              style={{
+                width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
+                background: input.trim() ? "var(--accent)" : "rgba(255,255,255,0.06)",
+                border: "none", borderRadius: 4,
+                color: input.trim() ? "#000" : "var(--text-dimmer)",
+                cursor: input.trim() ? "pointer" : "default",
+                transition: "all 0.15s",
+              }}
+            >
+              <Send size={12} />
+            </button>
+          )}
         </div>
       </div>
+
+      <style>{`@keyframes stream-pulse { 0%,100%{opacity:.4;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }`}</style>
     </div>
   );
 }

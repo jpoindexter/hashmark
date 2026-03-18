@@ -126,15 +126,15 @@ function AvatarBadge({ role }: { role: "user" | "assistant" }) {
   const isUser = role === "user";
   return (
     <div style={{
-      width: "24px", height: "24px",
-      background: isUser ? "var(--bg-3)" : "var(--accent-bg)",
-      border: `1px solid ${isUser ? "var(--border)" : "var(--accent)"}`,
+      width: 28, height: 28, borderRadius: "50%",
+      background: isUser ? "var(--bg-4)" : "rgba(16,185,129,0.12)",
+      border: `1px solid ${isUser ? "var(--border)" : "rgba(16,185,129,0.3)"}`,
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: "8px", color: isUser ? "var(--text-dim)" : "var(--accent)",
+      fontSize: 10, color: isUser ? "var(--text-dim)" : "var(--accent)",
       flexShrink: 0, fontFamily: "var(--font)", letterSpacing: "0.05em",
       fontWeight: 700,
     }}>
-      {isUser ? "YOU" : "AI"}
+      {isUser ? "U" : "✸"}
     </div>
   );
 }
@@ -143,33 +143,41 @@ function MessageBubble({ msg }: { msg: Message }) {
   const isUser = msg.role === "user";
   return (
     <div style={{
-      display: "flex", gap: "10px", alignItems: "flex-start",
-      flexDirection: isUser ? "row-reverse" : "row",
+      display: "flex", gap: 10, alignItems: "flex-start",
+      animation: "fadeIn 0.2s ease forwards",
     }}>
       <AvatarBadge role={msg.role} />
-      <div style={{ flex: 1, maxWidth: "85%" }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4,
+        }}>
+          <span style={{
+            fontSize: 12, fontWeight: 600,
+            color: isUser ? "var(--text-dim)" : "var(--accent)",
+          }}>
+            {isUser ? "You" : "Claude"}
+          </span>
+          <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>
+            {fmtTime(msg.created_at)}
+          </span>
+          {msg.output_tokens != null && msg.output_tokens > 0 && (
+            <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>
+              {fmtTokens(msg.output_tokens)} tok
+            </span>
+          )}
+        </div>
         {isUser ? (
           <div style={{
-            background: "var(--bg-3)", border: "1px solid var(--border)",
-            padding: "7px 10px", fontSize: "12px", color: "var(--text)",
-            lineHeight: "1.6", whiteSpace: "pre-wrap", fontFamily: "var(--font)",
+            fontSize: 13, color: "var(--text)", lineHeight: 1.6,
+            whiteSpace: "pre-wrap", fontFamily: "var(--font)",
           }}>
             {msg.content}
           </div>
         ) : (
-          <div style={{ fontSize: "12px", color: "var(--text)", lineHeight: "1.6", fontFamily: "var(--font)" }}>
+          <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6, fontFamily: "var(--font)" }}>
             <AssistantContent text={msg.content} />
           </div>
         )}
-        <div style={{
-          marginTop: "3px", fontSize: "10px", color: "var(--text-dimmer)",
-          display: "flex", gap: "8px", justifyContent: isUser ? "flex-end" : "flex-start",
-        }}>
-          <span>{fmtTime(msg.created_at)}</span>
-          {msg.output_tokens != null && msg.output_tokens > 0 && (
-            <span>{fmtTokens(msg.output_tokens)} tok</span>
-          )}
-        </div>
       </div>
     </div>
   );
@@ -224,11 +232,16 @@ export default function ChatMessages({ sessionId, streamText, streaming }: ChatM
     return (
       <div style={{
         flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-        justifyContent: "center", color: "var(--text-dimmer)", fontSize: "12px",
-        gap: "10px",
+        justifyContent: "center", color: "var(--text-dimmer)",
+        gap: 12, padding: 32,
       }}>
-        <div style={{ fontSize: "22px", color: "var(--accent-dim)" }}>◌</div>
-        <div>Ask Claude anything about your codebase.</div>
+        <div style={{ fontSize: 32, color: "var(--accent)", opacity: 0.3, lineHeight: 1 }}>✸</div>
+        <div style={{ fontSize: 14, color: "var(--text-dim)", fontWeight: 500 }}>
+          How can I help?
+        </div>
+        <div style={{ fontSize: 12, color: "var(--text-dimmer)", textAlign: "center", maxWidth: 320, lineHeight: 1.6 }}>
+          Ask about your codebase, request changes, or run /commands.
+        </div>
       </div>
     );
   }
@@ -244,31 +257,31 @@ export default function ChatMessages({ sessionId, streamText, streaming }: ChatM
       ))}
 
       {streaming && (
-        <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
           <AvatarBadge role="assistant" />
-          <div style={{ flex: 1, paddingTop: "2px" }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)" }}>Claude</span>
+              <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>typing...</span>
+            </div>
             {streamText ? (
-              <div style={{ fontSize: "12px", color: "var(--text)", lineHeight: "1.6", fontFamily: "var(--font)" }}>
+              <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6, fontFamily: "var(--font)" }}>
                 <AssistantContent text={streamText} />
+                <span style={{
+                  display: "inline-block", width: 7, height: 13,
+                  background: "var(--accent)", verticalAlign: "text-bottom",
+                  marginLeft: 2, animation: "cursor-blink 1s step-end infinite",
+                }} />
               </div>
             ) : (
-              <div style={{ display: "flex", gap: "4px", alignItems: "center", paddingTop: "6px" }}>
-                {[0, 1, 2].map((i) => (
+              <div style={{ display: "flex", gap: 4, alignItems: "center", paddingTop: 4 }}>
+                {[0, 1, 2].map(i => (
                   <span key={i} style={{
-                    width: "5px", height: "5px",
-                    background: "var(--accent)",
-                    borderRadius: "50%",
+                    width: 5, height: 5, background: "var(--accent)", borderRadius: "50%",
                     animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
                   }} />
                 ))}
               </div>
-            )}
-            {streamText && (
-              <span style={{
-                display: "inline-block", width: "7px", height: "13px",
-                background: "var(--accent)", verticalAlign: "text-bottom",
-                marginLeft: "2px", animation: "cursor-blink 1s step-end infinite",
-              }} />
             )}
           </div>
         </div>
