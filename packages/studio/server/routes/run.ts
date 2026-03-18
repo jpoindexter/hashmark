@@ -89,10 +89,11 @@ export function runRoutes(projectDir: string) {
       return c.json({ error: "A run is already in progress" }, 409);
     }
 
-    const body = await c.req.json<{ task: string; agentId?: string }>();
+    const body = await c.req.json<{ task: string; agentId?: string; mode?: "plan" | "build" }>();
     if (!body.task?.trim()) {
       return c.json({ error: "task is required" }, 400);
     }
+    const mode = body.mode === "plan" ? "plan" : "build";
 
     const claudeBin = findClaudeBin(projectDir);
     const runId = randomUUID().slice(0, 8);
@@ -133,7 +134,11 @@ export function runRoutes(projectDir: string) {
             ? `You are operating as the agent defined below. Follow its instructions exactly.\n\n---AGENT DEFINITION---\n${agentDef.content}\n---END AGENT DEFINITION---\n\n`
             : "";
 
-          const prompt = `${agentContext}${body.task}\n\nWork in the current directory. Make the necessary code changes, create or modify files as needed.`;
+          const planPrefix = mode === "plan"
+            ? `You are operating in PLAN MODE. You may read files, analyze code, and produce reports. You MUST NOT write or modify any files, run git commands, or execute shell commands that modify state. Provide a detailed analysis and action plan instead.\n\n`
+            : "";
+
+          const prompt = `${planPrefix}${agentContext}${body.task}\n\nWork in the current directory. Make the necessary code changes, create or modify files as needed.`;
 
           // Spawn claude and stream output
           await new Promise<void>((resolve) => {
@@ -162,8 +167,19 @@ export function runRoutes(projectDir: string) {
             });
           });
 
-          // Commit if there are changes
+          // In plan mode, skip commit + merge entirely
           let hasChanges = false;
+          if (mode === "plan") {
+            send({ type: "complete", hasChanges: false, mode: "plan" });
+            activeRun = false;
+            controller.close();
+            // Cleanup worktree
+            try { await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: projectDir }); } catch {}
+            try { await execFile("git", ["branch", "-D", branchName], { cwd: projectDir }); } catch {}
+            return;
+          }
+
+          // Commit if there are changes
           try {
             const { stdout: statusOut } = await execFile("git", ["status", "--porcelain"], { cwd: worktreeDir });
             hasChanges = statusOut.trim().length > 0;
@@ -205,7 +221,7 @@ export function runRoutes(projectDir: string) {
             } catch {}
           }
 
-          send({ type: "complete", hasChanges });
+          send({ type: "complete", hasChanges, mode: "build" });
           activeRun = false;
           controller.close();
         }

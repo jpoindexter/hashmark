@@ -8,9 +8,12 @@ interface AgentDef {
 
 type RunPhase = "idle" | "running" | "done";
 
+type RunMode = "plan" | "build";
+
 interface RunResult {
   hasChanges: boolean;
   conflictBranch?: string;
+  mode?: RunMode;
 }
 
 export default function Run() {
@@ -18,6 +21,7 @@ export default function Run() {
   const [agentId, setAgentId] = useState<string>("");
   const [agents, setAgents] = useState<AgentDef[]>([]);
   const [phase, setPhase] = useState<RunPhase>("idle");
+  const [mode, setMode] = useState<RunMode>("build");
   const [status, setStatus] = useState("");
   const [output, setOutput] = useState("");
   const [result, setResult] = useState<RunResult | null>(null);
@@ -50,7 +54,7 @@ export default function Run() {
       const res = await fetch("/api/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task, agentId: agentId || undefined }),
+        body: JSON.stringify({ task, agentId: agentId || undefined, mode }),
       });
 
       if (!res.ok) {
@@ -110,7 +114,7 @@ export default function Run() {
         break;
       case "complete":
         setStatus("Done");
-        if (!result) setResult({ hasChanges: event.hasChanges as boolean });
+        if (!result) setResult({ hasChanges: event.hasChanges as boolean, mode: event.mode as RunMode | undefined });
         setPhase("done");
         break;
       case "error":
@@ -204,6 +208,35 @@ export default function Run() {
               ))}
             </select>
 
+            {/* Mode toggle */}
+            <div style={{ display: "flex", border: "1px solid var(--border-dim)", borderRadius: "var(--radius)", overflow: "hidden" }}>
+              {(["plan", "build"] as RunMode[]).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setMode(m)}
+                  style={{
+                    padding: "5px 10px",
+                    fontSize: 10,
+                    fontFamily: "var(--font)",
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    border: "none",
+                    borderRight: m === "plan" ? "1px solid var(--border-dim)" : "none",
+                    background: mode === m
+                      ? m === "plan" ? "rgba(6,182,212,0.15)" : "rgba(16,185,129,0.15)"
+                      : "var(--bg-2)",
+                    color: mode === m
+                      ? m === "plan" ? "#06b6d4" : "var(--accent)"
+                      : "var(--text-dimmer)",
+                    fontWeight: mode === m ? 700 : 400,
+                  }}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+
             <button
               className="btn btn-primary"
               onClick={handleRun}
@@ -273,6 +306,18 @@ export default function Run() {
                 {selectedAgent.name}
               </span>
             )}
+            <span style={{
+              fontSize: 9,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              color: mode === "plan" ? "#06b6d4" : "var(--accent)",
+              border: `1px solid ${mode === "plan" ? "#06b6d4" : "var(--accent)"}`,
+              padding: "1px 5px",
+              borderRadius: "var(--radius)",
+              flexShrink: 0,
+            }}>
+              {mode}
+            </span>
           </div>
           <div style={{ fontSize: 10, color: busy ? "var(--accent)" : "var(--text-dimmer)", letterSpacing: "0.05em" }}>
             {status}
@@ -349,7 +394,15 @@ export default function Run() {
         <div style={{
           padding: "14px 16px",
           background: "var(--bg-2)",
-          border: `1px solid ${result.conflictBranch ? "var(--yellow)" : result.hasChanges ? "var(--accent)" : "var(--border-dim)"}`,
+          border: `1px solid ${
+            result.mode === "plan"
+              ? "#06b6d4"
+              : result.conflictBranch
+                ? "var(--yellow)"
+                : result.hasChanges
+                  ? "var(--accent)"
+                  : "var(--border-dim)"
+          }`,
           borderRadius: "var(--radius)",
           display: "flex",
           alignItems: "center",
@@ -357,17 +410,31 @@ export default function Run() {
         }}>
           <span style={{
             width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
-            background: result.conflictBranch ? "var(--yellow)" : result.hasChanges ? "var(--accent)" : "var(--border-dim)",
+            background: result.mode === "plan"
+              ? "#06b6d4"
+              : result.conflictBranch
+                ? "var(--yellow)"
+                : result.hasChanges
+                  ? "var(--accent)"
+                  : "var(--border-dim)",
           }} />
           <span style={{
             fontSize: 12,
-            color: result.conflictBranch ? "var(--yellow)" : result.hasChanges ? "var(--accent)" : "var(--text-dimmer)",
+            color: result.mode === "plan"
+              ? "#06b6d4"
+              : result.conflictBranch
+                ? "var(--yellow)"
+                : result.hasChanges
+                  ? "var(--accent)"
+                  : "var(--text-dimmer)",
           }}>
-            {result.conflictBranch
-              ? `Merge conflict — branch ${result.conflictBranch} preserved`
-              : result.hasChanges
-                ? "Changes merged to main"
-                : "No changes made"}
+            {result.mode === "plan"
+              ? "Plan complete — review output above"
+              : result.conflictBranch
+                ? `Merge conflict — branch ${result.conflictBranch} preserved`
+                : result.hasChanges
+                  ? "Changes merged to main"
+                  : "No changes made"}
           </span>
           <span style={{ flex: 1 }} />
           <button
