@@ -13,8 +13,48 @@
  * @module formats/claude-md
  */
 
-import type { ScanResult } from "../types.js";
+import type { ScanResult, ComplexityDelta } from "../types.js";
 import { getStackPatternSections } from "../templates/stack-patterns.js";
+
+/** Returns a rationale annotation for a hub file based on heuristics. */
+function hubRationale(file: string, importedByCount: number, scan: ScanResult): string {
+  if (/auth|session|jwt|clerk/i.test(file)) return " — ⚠ Security-sensitive — changes need human review";
+  if (/billing|stripe|payment|webhook/i.test(file)) return " — ⚠ Security-sensitive — changes need human review";
+
+  if (scan.stats?.largestFiles) {
+    const found = scan.stats.largestFiles.find(f => f.path === file || f.path.endsWith(file));
+    if (found && found.lines > 500) return " — ⚠ High blast radius — keep edits focused";
+  }
+
+  if (scan.aiRecommendations?.complexFiles) {
+    const cf = scan.aiRecommendations.complexFiles.find(f => f.path === file || f.path.endsWith(file));
+    if (cf) {
+      const funcs = cf.functions ?? [];
+      if (funcs.some(fn => fn.cyclomatic > 15)) return " — ⚠ Complex branching — read full function before modifying";
+      if ((cf.maintainabilityIndex ?? 100) < 40) return " — ⚠ Hard to reason about — prefer additive changes over rewrites";
+    }
+  }
+
+  if (importedByCount > 10) return ` — ⚠ Changes here break ${importedByCount} downstream files`;
+  return "";
+}
+
+/** Render complexity delta lines for embedding in the Complexity section. */
+function renderComplexityDelta(delta: ComplexityDelta): string[] {
+  const arrow = delta.trend === "degrading" ? "↑" : delta.trend === "improving" ? "↓" : "→";
+  const cyclomaticSign = delta.avgCyclomaticDelta >= 0 ? "+" : "";
+  const miSign = delta.maintainabilityDelta >= 0 ? "+" : "";
+  const lines: string[] = [];
+  lines.push(`Trend: ${arrow} ${delta.trend} (${cyclomaticSign}${delta.avgCyclomaticDelta} avg cyclomatic, ${miSign}${delta.maintainabilityDelta} MI)`);
+  if (delta.topRegressions.length > 0) {
+    const regList = delta.topRegressions
+      .slice(0, 3)
+      .map(r => `\`${r.file}\` (+${r.delta} ${r.metric})`)
+      .join(", ");
+    lines.push(`Top regressions: ${regList}`);
+  }
+  return lines;
+}
 
 /** Infer a risk class for the project based on what it handles */
 function inferRiskClass(scan: ScanResult): "LOW" | "MEDIUM" | "HIGH" {
@@ -53,7 +93,7 @@ function buildRoutingTable(scan: ScanResult): string[] {
 /** Non-delegation zones: operations that must NOT be autonomously changed by an AI agent */
 function buildNonDelegationZones(scan: ScanResult): string[] {
   const zones: string[] = [];
-  const { apiRoutes, envVars } = scan;
+  const { apiRoutes, envVars, importGraph, stats } = scan;
 
   const hasMultiTenant = envVars.some(e => /org|tenant|team/i.test(e.name)) ||
     apiRoutes.some(r => /org|tenant/i.test(r.path));
@@ -72,6 +112,58 @@ function buildNonDelegationZones(scan: ScanResult): string[] {
   zones.push("- **Database migrations** — never run destructive migrations (`DROP`, `TRUNCATE`, column removal) without confirmation");
   zones.push("- **Secrets & credentials** — never log, expose, or commit env vars, API keys, or tokens");
   zones.push("- **Infrastructure config** — never change deployment configs, CI/CD pipelines, or domain settings unilaterally");
+
+  // High-impact files from import graph (>10 dependents)
+  if (importGraph && importGraph.hubFiles.length > 0) {
+    const criticalHubs = importGraph.hubFiles.filter(h => h.importedByCount > 10);
+    for (const hub of criticalHubs.slice(0, 4)) {
+      zones.push(`- \`${hub.file}\` — ${hub.importedByCount} dependents, changes cascade widely`);
+    }
+  }
+
+  // Path-pattern files from largest files list
+  const sensitivePatterns = /auth|billing|payment|stripe|migration|seed|\.env/i;
+  const knownPaths = new Set<string>();
+
+  // Check API routes for sensitive path patterns
+  for (const route of apiRoutes) {
+    if (sensitivePatterns.test(route.path)) {
+      const segment = route.path.split("/").filter(Boolean).slice(0, 3).join("/");
+      if (!knownPaths.has(segment)) {
+        knownPaths.add(segment);
+        zones.push(`- \`${segment}/\` — sensitive route, verify auth guards and side effects`);
+      }
+    }
+  }
+
+  // Check largest files for sensitive names
+  if (stats.largestFiles) {
+    for (const f of stats.largestFiles) {
+      if (sensitivePatterns.test(f.path) && !knownPaths.has(f.path)) {
+        knownPaths.add(f.path);
+        zones.push(`- \`${f.path}\` — sensitive file (${f.lines} lines), review changes carefully`);
+      }
+    }
+  }
+
+  return zones;
+}
+
+/** Delegation-safe zones: low blast-radius areas suitable for autonomous agent edits */
+function buildDelegationSafeZones(scan: ScanResult): string[] {
+  const zones: string[] = [];
+  const { components, patterns, database } = scan;
+
+  if (components.length > 0) {
+    zones.push("- `src/components/` — UI components, low blast radius, easy to review");
+  }
+  if (patterns.hasVitest || patterns.hasJest || patterns.hasPlaywright) {
+    zones.push("- `**/__tests__/`, `**/*.test.*`, `**/*.spec.*` — test files");
+  }
+  zones.push("- `docs/`, `*.md` — documentation");
+  if (database) {
+    zones.push("- `src/lib/` (non-auth utilities) — helpers and utilities with low coupling");
+  }
 
   return zones;
 }
@@ -153,6 +245,15 @@ export function generateClaudeMdRouter(scan: ScanResult, customRules: string[] =
     lines.push("");
   }
 
+  // Delegation-safe zones (compact)
+  const safeZones = buildDelegationSafeZones(scan);
+  if (safeZones.length > 0) {
+    lines.push("## Delegation-Safe Zones");
+    lines.push("");
+    for (const zone of safeZones) lines.push(zone);
+    lines.push("");
+  }
+
   // Critical rules (compact — top 6 max)
   lines.push("## Critical Rules");
   lines.push("");
@@ -222,9 +323,37 @@ export function generateContextMd(scan: ScanResult): string {
     lines.push("Changes to these files affect many dependents — edit carefully:");
     lines.push("");
     for (const hub of importGraph.hubFiles.slice(0, 6)) {
-      lines.push(`- \`${hub.file}\` (${hub.importedByCount} dependents)`);
+      const rationale = hubRationale(hub.file, hub.importedByCount, scan);
+      lines.push(`- \`${hub.file}\` (${hub.importedByCount} dependents)${rationale}`);
     }
     lines.push("");
+  }
+
+  // Complexity section (with delta if available)
+  if (scan.aiRecommendations?.complexFiles && scan.aiRecommendations.complexFiles.length > 0) {
+    const hasCompl = scan.aiRecommendations.complexFiles.some(
+      f => (f.functions ?? []).some(fn => fn.cyclomatic > 10 || fn.cognitive > 15)
+    );
+    if (hasCompl) {
+      const deltaTitle = scan.complexityDelta ? " (vs last scan)" : "";
+      lines.push(`## Complexity${deltaTitle}`);
+      lines.push("");
+      if (scan.complexityDelta) {
+        for (const l of renderComplexityDelta(scan.complexityDelta)) lines.push(l);
+        lines.push("");
+      }
+      const topComplex = scan.aiRecommendations.complexFiles.slice(0, 5);
+      for (const cf of topComplex) {
+        const funcs = cf.functions ?? [];
+        const maxCC = funcs.reduce((m, fn) => Math.max(m, fn.cyclomatic), 0);
+        const mi = cf.maintainabilityIndex ?? 100;
+        let rationale = "";
+        if (funcs.some(fn => fn.cyclomatic > 15)) rationale = " — ⚠ Complex branching — read full function before modifying";
+        else if (mi < 40) rationale = " — ⚠ Hard to reason about — prefer additive changes over rewrites";
+        lines.push(`- \`${cf.path}\` (CC: ${maxCC}, MI: ${Math.round(mi)})${rationale}`);
+      }
+      lines.push("");
+    }
   }
 
   // Components
@@ -451,6 +580,19 @@ export function generateClaudeMd(scan: ScanResult, customRules: string[] = []): 
     lines.push("");
   }
 
+  // Delegation-safe zones
+  const safeZones = buildDelegationSafeZones(scan);
+  if (safeZones.length > 0) {
+    lines.push("### Delegation-Safe Zones");
+    lines.push("");
+    lines.push("Low blast radius — agents can edit freely:");
+    lines.push("");
+    for (const zone of safeZones) {
+      lines.push(zone);
+    }
+    lines.push("");
+  }
+
   // Critical Rules — Claude Code responds well to direct, imperative rules
   lines.push("## Critical Rules");
   lines.push("");
@@ -571,9 +713,37 @@ export function generateClaudeMd(scan: ScanResult, customRules: string[] = []): 
     lines.push("Changes to these files affect many dependents — edit carefully:");
     lines.push("");
     for (const hub of importGraph.hubFiles.slice(0, 6)) {
-      lines.push(`- \`${hub.file}\` (${hub.importedByCount} dependents)`);
+      const rationale = hubRationale(hub.file, hub.importedByCount, scan);
+      lines.push(`- \`${hub.file}\` (${hub.importedByCount} dependents)${rationale}`);
     }
     lines.push("");
+  }
+
+  // Complexity section (with delta if available)
+  if (scan.aiRecommendations?.complexFiles && scan.aiRecommendations.complexFiles.length > 0) {
+    const hasCompl = scan.aiRecommendations.complexFiles.some(
+      f => (f.functions ?? []).some(fn => fn.cyclomatic > 10 || fn.cognitive > 15)
+    );
+    if (hasCompl) {
+      const deltaTitle = scan.complexityDelta ? " (vs last scan)" : "";
+      lines.push(`### Complexity${deltaTitle}`);
+      lines.push("");
+      if (scan.complexityDelta) {
+        for (const l of renderComplexityDelta(scan.complexityDelta)) lines.push(l);
+        lines.push("");
+      }
+      const topComplex = scan.aiRecommendations.complexFiles.slice(0, 5);
+      for (const cf of topComplex) {
+        const funcs = cf.functions ?? [];
+        const maxCC = funcs.reduce((m, fn) => Math.max(m, fn.cyclomatic), 0);
+        const mi = cf.maintainabilityIndex ?? 100;
+        let rationale = "";
+        if (funcs.some(fn => fn.cyclomatic > 15)) rationale = " — ⚠ Complex branching — read full function before modifying";
+        else if (mi < 40) rationale = " — ⚠ Hard to reason about — prefer additive changes over rewrites";
+        lines.push(`- \`${cf.path}\` (CC: ${maxCC}, MI: ${Math.round(mi)})${rationale}`);
+      }
+      lines.push("");
+    }
   }
 
   // Components list (compact)
