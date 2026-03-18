@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import AgentCard from "../components/AgentCard.tsx";
 
 interface Agent {
@@ -33,6 +33,8 @@ export default function Agents() {
   const [runModel, setRunModel] = useState("claude-sonnet-4-6");
   const [running, setRunning] = useState(false);
   const [output, setOutput] = useState("");
+  const [runStatus, setRunStatus] = useState<"idle" | "running" | "done" | "error" | "stopped">("idle");
+  const [runMeta, setRunMeta] = useState<{ startedAt: number; durationMs?: number; wordCount?: number } | null>(null);
   const [modelOpen, setModelOpen] = useState(false);
   const modelRef = useRef<HTMLDivElement>(null);
   const outputRef = useRef<HTMLDivElement>(null);
@@ -109,9 +111,11 @@ export default function Agents() {
 
     setRunning(true);
     setOutput("");
+    setRunStatus("running");
+    const startedAt = Date.now();
+    setRunMeta({ startedAt });
 
     try {
-      // Create session
       const sessRes = await fetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -120,7 +124,6 @@ export default function Agents() {
       const sessData = await sessRes.json() as { session: { id: string } };
       const sid = sessData.session.id;
 
-      // Start chat with agent content as system prompt
       const chatRes = await fetch(`/api/sessions/${sid}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -133,6 +136,8 @@ export default function Agents() {
 
       if (!chatRes.ok || !chatRes.body) {
         setOutput("Error: failed to start agent run.");
+        setRunStatus("error");
+        setRunMeta(prev => prev ? { ...prev, durationMs: Date.now() - startedAt } : null);
         setRunning(false);
         return;
       }
@@ -141,8 +146,10 @@ export default function Agents() {
       const dec = new TextDecoder();
       let buf = "";
       let assembled = "";
+      let stopped = false;
 
       abortRef.current = () => {
+        stopped = true;
         reader.cancel().catch(() => {});
       };
 
@@ -158,10 +165,14 @@ export default function Agents() {
             const raw = line.slice(6).trim();
             if (!raw) continue;
             try {
-              const evt = JSON.parse(raw) as { type: string; text?: string };
+              const evt = JSON.parse(raw) as { type: string; text?: string; success?: boolean };
               if (evt.type === "text" && evt.text) {
                 assembled += evt.text;
                 setOutput(assembled);
+              } else if (evt.type === "done") {
+                const status = stopped ? "stopped" : (evt.success ? "done" : "error");
+                setRunStatus(status);
+                setRunMeta({ startedAt, durationMs: Date.now() - startedAt, wordCount: assembled.trim().split(/\s+/).length });
               }
             } catch {}
           }
@@ -169,9 +180,15 @@ export default function Agents() {
       } finally {
         abortRef.current = null;
         setRunning(false);
+        if (runStatus === "running") {
+          setRunStatus(stopped ? "stopped" : "done");
+          setRunMeta(prev => prev ? { ...prev, durationMs: Date.now() - startedAt, wordCount: assembled.trim().split(/\s+/).length } : null);
+        }
       }
     } catch {
       setOutput("Error: agent run failed.");
+      setRunStatus("error");
+      setRunMeta(prev => prev ? { ...prev, durationMs: Date.now() - Date.now() } : null);
       setRunning(false);
     }
   }
@@ -181,6 +198,109 @@ export default function Agents() {
   }
 
   const currentModel = MODELS.find((m) => m.id === runModel) ?? MODELS[1];
+
+  // Parse output into typed segments for structured rendering
+  type Segment =
+    | { type: "h1" | "h2" | "h3"; text: string }
+    | { type: "code"; lang: string; content: string }
+    | { type: "list"; items: string[] }
+    | { type: "para"; text: string };
+
+  const segments = useMemo((): Segment[] => {
+    if (!output) return [];
+    const result: Segment[] = [];
+    const lines = output.split("\n");
+    let i = 0;
+
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // Code block
+      if (line.startsWith("```")) {
+        const lang = line.slice(3).trim() || "text";
+        const contentLines: string[] = [];
+        i++;
+        while (i < lines.length && !lines[i].startsWith("```")) {
+          contentLines.push(lines[i]);
+          i++;
+        }
+        result.push({ type: "code", lang, content: contentLines.join("\n") });
+        i++;
+        continue;
+      }
+
+      // Headings
+      const h3 = line.match(/^###\s+(.*)/);
+      if (h3) { result.push({ type: "h3", text: h3[1] }); i++; continue; }
+      const h2 = line.match(/^##\s+(.*)/);
+      if (h2) { result.push({ type: "h2", text: h2[1] }); i++; continue; }
+      const h1 = line.match(/^#\s+(.*)/);
+      if (h1) { result.push({ type: "h1", text: h1[1] }); i++; continue; }
+
+      // List block — collect consecutive list items
+      if (line.match(/^[-*]\s+/) || line.match(/^\d+\.\s+/)) {
+        const items: string[] = [];
+        while (i < lines.length && (lines[i].match(/^[-*]\s+/) || lines[i].match(/^\d+\.\s+/))) {
+          items.push(lines[i].replace(/^[-*\d.]+\s+/, ""));
+          i++;
+        }
+        result.push({ type: "list", items });
+        continue;
+      }
+
+      // Blank line — skip
+      if (!line.trim()) { i++; continue; }
+
+      // Paragraph — collect consecutive non-special lines
+      const paraLines: string[] = [];
+      while (
+        i < lines.length &&
+        lines[i].trim() &&
+        !lines[i].startsWith("#") &&
+        !lines[i].startsWith("```") &&
+        !lines[i].match(/^[-*]\s+/) &&
+        !lines[i].match(/^\d+\.\s+/)
+      ) {
+        paraLines.push(lines[i]);
+        i++;
+      }
+      if (paraLines.length) result.push({ type: "para", text: paraLines.join(" ") });
+    }
+
+    return result;
+  }, [output]);
+
+  function renderInline(text: string) {
+    // Render bold and inline code
+    const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g);
+    return parts.map((part, idx) => {
+      if (part.startsWith("`") && part.endsWith("`")) {
+        return (
+          <code key={idx} style={{
+            background: "var(--bg-3)",
+            border: "1px solid var(--border-dim)",
+            borderRadius: 2,
+            padding: "0 4px",
+            fontSize: 11,
+            fontFamily: "var(--font)",
+            color: "var(--accent)",
+          }}>{part.slice(1, -1)}</code>
+        );
+      }
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return <strong key={idx} style={{ color: "var(--text)", fontWeight: 600 }}>{part.slice(2, -2)}</strong>;
+      }
+      return <span key={idx}>{part}</span>;
+    });
+  }
+
+  const STATUS_BADGE: Record<string, { label: string; color: string }> = {
+    done: { label: "DONE", color: "var(--accent)" },
+    error: { label: "ERROR", color: "var(--red)" },
+    stopped: { label: "STOPPED", color: "var(--yellow)" },
+    running: { label: "RUNNING", color: "var(--blue)" },
+    idle: { label: "IDLE", color: "var(--text-dimmer)" },
+  };
 
   return (
     <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
@@ -485,34 +605,150 @@ export default function Agents() {
                 style={{
                   flex: 1,
                   overflow: "auto",
-                  padding: "16px 20px",
                   background: "var(--bg)",
+                  display: "flex",
+                  flexDirection: "column",
                 }}
               >
-                {running && !output && (
-                  <div style={{ color: "var(--text-dimmer)", fontSize: "11px" }}>
-                    <span style={{ color: "var(--accent)" }}>●</span> Running...
-                  </div>
-                )}
-                {output && (
-                  <pre style={{
-                    margin: 0,
-                    fontSize: "12px",
-                    lineHeight: "1.6",
-                    color: "var(--text)",
+                {/* Run meta strip */}
+                {runMeta && (
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "6px 16px",
+                    borderBottom: "1px solid var(--border-dim)",
+                    fontSize: 10,
                     fontFamily: "var(--font)",
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
+                    color: "var(--text-dimmer)",
+                    background: "var(--bg-2)",
+                    flexShrink: 0,
                   }}>
-                    {output}
-                    {running && <span style={{ color: "var(--accent)", animation: "none" }}>▋</span>}
-                  </pre>
-                )}
-                {!running && !output && (
-                  <div style={{ color: "var(--text-dimmer)", fontSize: "11px" }}>
-                    Output will appear here.
+                    <span style={{
+                      color: STATUS_BADGE[runStatus]?.color ?? "var(--text-dimmer)",
+                      fontWeight: 600,
+                      letterSpacing: "0.08em",
+                    }}>
+                      {STATUS_BADGE[runStatus]?.label}
+                    </span>
+                    <span>·</span>
+                    <span>{currentModel.label}</span>
+                    {runMeta.durationMs != null && (
+                      <>
+                        <span>·</span>
+                        <span>{(runMeta.durationMs / 1000).toFixed(1)}s</span>
+                      </>
+                    )}
+                    {runMeta.wordCount != null && (
+                      <>
+                        <span>·</span>
+                        <span>{runMeta.wordCount.toLocaleString()} words</span>
+                      </>
+                    )}
+                    {running && (
+                      <span style={{ color: "var(--accent)", marginLeft: "auto" }}>
+                        ● streaming
+                      </span>
+                    )}
                   </div>
                 )}
+
+                {/* Structured output */}
+                <div style={{ flex: 1, padding: "16px 20px", overflow: "auto" }}>
+                  {running && !output && (
+                    <div style={{ color: "var(--text-dimmer)", fontSize: "11px" }}>
+                      <span style={{ color: "var(--accent)" }}>●</span> Running...
+                    </div>
+                  )}
+
+                  {segments.length > 0 && segments.map((seg, idx) => {
+                    if (seg.type === "h1") return (
+                      <div key={idx} style={{
+                        fontSize: 15, fontWeight: 700, color: "var(--text)",
+                        marginBottom: 8, marginTop: idx > 0 ? 20 : 0,
+                        paddingBottom: 6, borderBottom: "1px solid var(--border-dim)",
+                        fontFamily: "var(--font-ui, var(--font))",
+                      }}>{seg.text}</div>
+                    );
+                    if (seg.type === "h2") return (
+                      <div key={idx} style={{
+                        fontSize: 12, fontWeight: 600, color: "var(--text)",
+                        marginBottom: 6, marginTop: idx > 0 ? 16 : 0,
+                        textTransform: "uppercase", letterSpacing: "0.06em",
+                        fontFamily: "var(--font)",
+                      }}>{seg.text}</div>
+                    );
+                    if (seg.type === "h3") return (
+                      <div key={idx} style={{
+                        fontSize: 11, fontWeight: 600, color: "var(--accent)",
+                        marginBottom: 4, marginTop: idx > 0 ? 12 : 0,
+                        fontFamily: "var(--font)",
+                      }}>{seg.text}</div>
+                    );
+                    if (seg.type === "code") return (
+                      <div key={idx} style={{
+                        background: "var(--bg-3)",
+                        border: "1px solid var(--border-dim)",
+                        borderRadius: 2,
+                        margin: "10px 0",
+                      }}>
+                        {seg.lang !== "text" && (
+                          <div style={{
+                            padding: "3px 10px",
+                            fontSize: 9,
+                            color: "var(--text-dimmer)",
+                            borderBottom: "1px solid var(--border-dim)",
+                            fontFamily: "var(--font)",
+                            letterSpacing: "0.06em",
+                            textTransform: "uppercase",
+                          }}>{seg.lang}</div>
+                        )}
+                        <pre style={{
+                          margin: 0, padding: "10px 12px",
+                          fontSize: 11, lineHeight: "1.55",
+                          color: "var(--text)", fontFamily: "var(--font)",
+                          whiteSpace: "pre-wrap", wordBreak: "break-word",
+                          overflowX: "auto",
+                        }}>{seg.content}</pre>
+                      </div>
+                    );
+                    if (seg.type === "list") return (
+                      <ul key={idx} style={{
+                        margin: "6px 0", paddingLeft: 0, listStyle: "none",
+                      }}>
+                        {seg.items.map((item, ii) => (
+                          <li key={ii} style={{
+                            display: "flex", gap: 8, alignItems: "flex-start",
+                            fontSize: 12, lineHeight: "1.55",
+                            color: "var(--text-dim)", fontFamily: "var(--font-ui, var(--font))",
+                            marginBottom: 3,
+                          }}>
+                            <span style={{ color: "var(--accent)", flexShrink: 0, marginTop: 2 }}>›</span>
+                            <span>{renderInline(item)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                    if (seg.type === "para") return (
+                      <p key={idx} style={{
+                        margin: "0 0 8px",
+                        fontSize: 12, lineHeight: "1.65",
+                        color: "var(--text-dim)", fontFamily: "var(--font-ui, var(--font))",
+                      }}>{renderInline(seg.text)}</p>
+                    );
+                    return null;
+                  })}
+
+                  {running && output && (
+                    <span style={{ color: "var(--accent)", fontSize: 12 }}>▋</span>
+                  )}
+
+                  {!running && !output && runStatus === "idle" && (
+                    <div style={{ color: "var(--text-dimmer)", fontSize: "11px" }}>
+                      Output will appear here.
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
