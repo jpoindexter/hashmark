@@ -296,6 +296,35 @@ export function agentsRoutes(projectDir: string) {
     return c.json({ agents });
   });
 
+  // POST /api/agents — create a new agent file
+  app.post("/", async (c) => {
+    const body = await c.req.json<{ name: string; description: string; department: string; content: string }>();
+    if (!body.name?.trim()) return c.json({ error: "name required" }, 400);
+
+    const dept = body.department?.trim() || "general";
+    const slug = body.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const agentsDir = join(projectDir, ".claude", "agents", dept);
+
+    // mkdir -p equivalent
+    const { mkdirSync } = await import("fs");
+    try { mkdirSync(agentsDir, { recursive: true }); } catch {}
+
+    const filePath = join(agentsDir, `${slug}.md`);
+    const content = body.content ?? `---\nname: ${body.name.trim()}\ndescription: ${body.description?.trim() ?? ""}\n---\n`;
+    writeFileSync(filePath, content, "utf-8");
+
+    const relativePath = `${dept}/${slug}.md`;
+    const agent: AgentFile = {
+      id: `${dept}-${slug}`,
+      name: body.name.trim(),
+      description: body.description?.trim() ?? "",
+      department: dept,
+      path: relativePath,
+      content,
+    };
+    return c.json({ agent }, 201);
+  });
+
   // GET /api/agents/effectiveness — all agents' stats
   app.get("/effectiveness", (c) => {
     try {

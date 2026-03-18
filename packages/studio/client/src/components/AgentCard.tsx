@@ -7,9 +7,17 @@ interface Agent {
   content?: string;
 }
 
+interface AgentStats {
+  totalRuns: number;
+  successRate: number;
+  lastRun: number | null;
+}
+
 interface AgentCardProps {
   agent: Agent;
+  stats?: AgentStats;
   onClick?: () => void;
+  onRun?: (e: React.MouseEvent) => void;
   streaming?: boolean;
 }
 
@@ -24,7 +32,45 @@ const DEPT_COLORS: Record<string, string> = {
   general: "#71717a",
 };
 
-export default function AgentCard({ agent, onClick, streaming }: AgentCardProps) {
+function fmtRelative(ts: number): string {
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60_000);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d}d ago`;
+  return new Date(ts).toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+function StatusDot({ stats }: { stats?: AgentStats }) {
+  if (!stats || stats.totalRuns === 0) {
+    return (
+      <span title="Never run" style={{
+        display: "inline-block",
+        width: 6, height: 6,
+        borderRadius: "50%",
+        background: "var(--text-dimmer)",
+        flexShrink: 0,
+      }} />
+    );
+  }
+  const recentSuccess = stats.successRate >= 0.8;
+  const color = recentSuccess ? "var(--accent)" : "var(--red)";
+  const label = recentSuccess ? "Recently succeeded" : "Recent failures";
+  return (
+    <span title={label} style={{
+      display: "inline-block",
+      width: 6, height: 6,
+      borderRadius: "50%",
+      background: color,
+      flexShrink: 0,
+      boxShadow: `0 0 4px ${color}`,
+    }} />
+  );
+}
+
+export default function AgentCard({ agent, stats, onClick, onRun, streaming }: AgentCardProps) {
   const color = DEPT_COLORS[agent.department] ?? DEPT_COLORS.general;
 
   return (
@@ -37,60 +83,65 @@ export default function AgentCard({ agent, onClick, streaming }: AgentCardProps)
         borderRadius: "var(--radius)",
         padding: "12px 14px",
         cursor: onClick ? "pointer" : "default",
-        transition: "border-color 0.1s, background 0.1s",
+        transition: "border-color 0.12s, background 0.12s, box-shadow 0.12s",
         position: "relative",
         overflow: "hidden",
       }}
       onMouseEnter={(e) => {
-        if (onClick) {
-          (e.currentTarget as HTMLDivElement).style.borderColor = "var(--accent)";
-          (e.currentTarget as HTMLDivElement).style.background = "var(--accent-bg)";
-        }
+        if (!onClick) return;
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.borderColor = "var(--accent)";
+        el.style.background = "var(--accent-bg)";
+        el.style.boxShadow = "0 4px 16px rgba(0,0,0,0.3)";
+        el.style.transform = "translateY(-1px)";
       }}
       onMouseLeave={(e) => {
-        if (onClick) {
-          (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border-dim)";
-          (e.currentTarget as HTMLDivElement).style.background = "var(--bg-2)";
-        }
+        if (!onClick) return;
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.borderColor = "var(--border-dim)";
+        el.style.background = "var(--bg-2)";
+        el.style.boxShadow = "none";
+        el.style.transform = "none";
       }}
     >
       {/* Left accent bar */}
       <div style={{
         position: "absolute",
-        left: 0,
-        top: 0,
-        bottom: 0,
+        left: 0, top: 0, bottom: 0,
         width: "2px",
         background: color,
       }} />
 
       <div style={{ paddingLeft: "6px" }}>
-        {/* Dept badge */}
+        {/* Top row: dept badge + status dot */}
         <div style={{
           display: "flex",
           alignItems: "center",
-          gap: "8px",
+          justifyContent: "space-between",
           marginBottom: "6px",
         }}>
-          <span style={{
-            fontSize: "9px",
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            color: color,
-            fontWeight: 600,
-          }}>
-            {agent.department}
-          </span>
-          {streaming && (
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{
               fontSize: "9px",
-              color: "var(--accent)",
               textTransform: "uppercase",
-              letterSpacing: "0.05em",
+              letterSpacing: "0.08em",
+              color,
+              fontWeight: 600,
             }}>
-              generating<span className="cursor" style={{ height: "9px", width: "5px" }} />
+              {agent.department}
             </span>
-          )}
+            {streaming && (
+              <span style={{
+                fontSize: "9px",
+                color: "var(--accent)",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+              }}>
+                generating<span className="cursor" style={{ height: "9px", width: "5px" }} />
+              </span>
+            )}
+          </div>
+          <StatusDot stats={stats} />
         </div>
 
         {/* Name */}
@@ -112,18 +163,68 @@ export default function AgentCard({ agent, onClick, streaming }: AgentCardProps)
           WebkitLineClamp: 2,
           WebkitBoxOrient: "vertical",
           overflow: "hidden",
+          marginBottom: "10px",
         }}>
           {agent.description || "No description"}
         </div>
 
-        {/* Path */}
+        {/* Footer: stats + run button */}
         <div style={{
-          marginTop: "8px",
-          fontSize: "10px",
-          color: "var(--text-dimmer)",
-          fontFamily: "var(--font)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "8px",
         }}>
-          .claude/agents/{agent.path}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "10px", color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>
+            {stats && stats.totalRuns > 0 ? (
+              <>
+                <span title="Total runs">{stats.totalRuns} run{stats.totalRuns !== 1 ? "s" : ""}</span>
+                <span style={{ opacity: 0.4 }}>·</span>
+                <span title="Success rate">{Math.round(stats.successRate * 100)}%</span>
+                {stats.lastRun && (
+                  <>
+                    <span style={{ opacity: 0.4 }}>·</span>
+                    <span title={new Date(stats.lastRun).toLocaleString()}>{fmtRelative(stats.lastRun)}</span>
+                  </>
+                )}
+              </>
+            ) : (
+              <span style={{ fontStyle: "italic", opacity: 0.5 }}>never run</span>
+            )}
+          </div>
+
+          {onRun && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onRun(e); }}
+              style={{
+                padding: "2px 8px",
+                fontSize: "9px",
+                fontFamily: "var(--font)",
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                background: "var(--accent-bg)",
+                border: "1px solid var(--accent-border)",
+                borderRadius: "var(--radius-sm)",
+                color: "var(--accent)",
+                cursor: "pointer",
+                flexShrink: 0,
+                transition: "background 0.1s, border-color 0.1s",
+              }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget;
+                el.style.background = "rgba(63,185,80,0.18)";
+                el.style.borderColor = "var(--accent)";
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget;
+                el.style.background = "var(--accent-bg)";
+                el.style.borderColor = "var(--accent-border)";
+              }}
+            >
+              &gt; Run
+            </button>
+          )}
         </div>
       </div>
     </div>

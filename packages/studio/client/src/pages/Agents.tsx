@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useMemo, useReducer } from "react";
+import { useState, useEffect, useRef, useMemo, useReducer, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import AgentCard from "../components/AgentCard.tsx";
 
 // ---------------------------------------------------------------------------
@@ -56,6 +57,13 @@ interface Agent {
 }
 
 const ALL_DEPTS = "all";
+type SortKey = "name" | "lastRun" | "runCount";
+
+interface AgentStats {
+  totalRuns: number;
+  successRate: number;
+  lastRun: number | null;
+}
 
 const MODELS = [
   { id: "claude-opus-4-6", label: "Opus 4.6", note: "1M ctx" },
@@ -64,6 +72,7 @@ const MODELS = [
 ];
 
 export default function Agents() {
+  const navigate = useNavigate();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Agent | null>(null);
@@ -71,6 +80,18 @@ export default function Agents() {
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState(ALL_DEPTS);
   const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+
+  // Bulk effectiveness stats keyed by agent id
+  const [allStats, setAllStats] = useState<Record<string, AgentStats>>({});
+
+  // Create form
+  const [showCreate, setShowCreate] = useState(false);
+  const [createName, setCreateName] = useState("");
+  const [createDesc, setCreateDesc] = useState("");
+  const [createDept, setCreateDept] = useState("engineering");
+  const [createTask, setCreateTask] = useState("");
+  const [creating, setCreating] = useState(false);
 
   // Run mode state
   const [tab, setTab] = useState<"edit" | "run" | "gov">("edit");
@@ -122,6 +143,53 @@ export default function Agents() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Fetch bulk effectiveness once agents load
+  useEffect(() => {
+    if (agents.length === 0) return;
+    fetch("/api/agents/effectiveness")
+      .then((r) => r.json())
+      .then((d: { stats: Array<{ agentId: string; totalRuns: number; successRate: number; lastRun: number | null }> }) => {
+        const map: Record<string, AgentStats> = {};
+        for (const s of d.stats ?? []) {
+          map[s.agentId] = { totalRuns: s.totalRuns, successRate: s.successRate, lastRun: s.lastRun };
+        }
+        setAllStats(map);
+      })
+      .catch(() => {});
+  }, [agents.length]);
+
+  const handleCreate = useCallback(async () => {
+    if (!createName.trim()) return;
+    setCreating(true);
+    const frontmatter = `---\nname: ${createName.trim()}\ndescription: ${createDesc.trim()}\n---\n\n${createTask.trim()}`;
+    try {
+      // POST to /api/agents — server may or may not support this yet;
+      // fall back to writing via PUT if needed
+      const res = await fetch("/api/agents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: createName.trim(),
+          description: createDesc.trim(),
+          department: createDept,
+          content: frontmatter,
+        }),
+      });
+      if (res.ok) {
+        const d = await res.json() as { agent?: Agent };
+        if (d.agent) setAgents((prev) => [...prev, d.agent!]);
+      }
+    } catch { /* server stub may not exist yet */ }
+    setShowCreate(false);
+    setCreateName(""); setCreateDesc(""); setCreateDept("engineering"); setCreateTask("");
+    // Refresh agent list
+    fetch("/api/agents")
+      .then((r) => r.json())
+      .then((d) => setAgents(d.agents ?? []))
+      .catch(() => {});
+    setCreating(false);
+  }, [createName, createDesc, createDept, createTask]);
+
   // Close model dropdown on outside click
   useEffect(() => {
     if (!modelOpen) return;
@@ -143,13 +211,30 @@ export default function Agents() {
 
   const departments = [ALL_DEPTS, ...Array.from(new Set(agents.map((a) => a.department))).sort()];
 
-  const filtered = agents.filter((a) => {
-    const matchDept = filter === ALL_DEPTS || a.department === filter;
-    const matchSearch = !search ||
-      a.name.toLowerCase().includes(search.toLowerCase()) ||
-      a.description.toLowerCase().includes(search.toLowerCase());
-    return matchDept && matchSearch;
-  });
+  const filtered = useMemo(() => {
+    const base = agents.filter((a) => {
+      const matchDept = filter === ALL_DEPTS || a.department === filter;
+      const matchSearch = !search ||
+        a.name.toLowerCase().includes(search.toLowerCase()) ||
+        a.description.toLowerCase().includes(search.toLowerCase());
+      return matchDept && matchSearch;
+    });
+
+    return [...base].sort((a, b) => {
+      if (sortKey === "name") return (a.name || a.id).localeCompare(b.name || b.id);
+      if (sortKey === "lastRun") {
+        const aLast = allStats[a.id]?.lastRun ?? 0;
+        const bLast = allStats[b.id]?.lastRun ?? 0;
+        return bLast - aLast;
+      }
+      if (sortKey === "runCount") {
+        const aC = allStats[a.id]?.totalRuns ?? 0;
+        const bC = allStats[b.id]?.totalRuns ?? 0;
+        return bC - aC;
+      }
+      return 0;
+    });
+  }, [agents, filter, search, sortKey, allStats]);
 
   const grouped: Record<string, Agent[]> = {};
   for (const agent of filtered) {
@@ -658,7 +743,7 @@ export default function Agents() {
         borderRight: selected ? "1px solid var(--border-dim)" : "none",
       }}>
         {/* Header */}
-        <div style={{ marginBottom: "20px", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <div style={{ marginBottom: "20px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
           <div>
             <h1 style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: "4px" }}>
               Agent Company
@@ -667,14 +752,23 @@ export default function Agents() {
               {agents.length} agents across {departments.length - 1} departments
             </div>
           </div>
-          <button
-            className="btn"
-            onClick={() => void runSecurityScan()}
-            disabled={secScanRunning}
-            style={{ fontSize: "10px", padding: "4px 12px", flexShrink: 0 }}
-          >
-            {secScanRunning ? "Scanning..." : "⚑ Security Scan"}
-          </button>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flexShrink: 0 }}>
+            <button
+              className="btn"
+              onClick={() => void runSecurityScan()}
+              disabled={secScanRunning}
+              style={{ fontSize: "10px", padding: "4px 12px" }}
+            >
+              {secScanRunning ? "Scanning..." : "⚑ Security Scan"}
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => setShowCreate(true)}
+              style={{ fontSize: "10px", padding: "4px 12px" }}
+            >
+              + New Agent
+            </button>
+          </div>
         </div>
 
         {/* Security scan results */}
@@ -735,15 +829,15 @@ export default function Agents() {
           </div>
         )}
 
-        {/* Filters */}
-        <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
+        {/* Filters + sort */}
+        <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
           <input
             placeholder="Search agents..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ flex: "1", minWidth: "160px", maxWidth: "280px" }}
+            style={{ flex: "1", minWidth: "160px", maxWidth: "240px" }}
           />
-          <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", flex: 1 }}>
             {departments.map((d) => (
               <button
                 key={d}
@@ -768,6 +862,30 @@ export default function Agents() {
                     {agents.filter((a) => a.department === d).length}
                   </span>
                 )}
+              </button>
+            ))}
+          </div>
+          {/* Sort controls */}
+          <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
+            {(["name", "lastRun", "runCount"] as SortKey[]).map((k) => (
+              <button
+                key={k}
+                onClick={() => setSortKey(k)}
+                style={{
+                  padding: "4px 8px",
+                  fontSize: "9px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  border: "1px solid",
+                  borderColor: sortKey === k ? "var(--blue)" : "var(--border-dim)",
+                  borderRadius: "var(--radius-sm)",
+                  background: sortKey === k ? "var(--blue-bg)" : "var(--bg-3)",
+                  color: sortKey === k ? "var(--blue)" : "var(--text-dimmer)",
+                  cursor: "pointer",
+                  transition: "all 0.1s",
+                }}
+              >
+                {k === "name" ? "Name" : k === "lastRun" ? "Last Run" : "Run Count"}
               </button>
             ))}
           </div>
@@ -797,7 +915,9 @@ export default function Agents() {
                   <AgentCard
                     key={agent.id}
                     agent={agent}
+                    stats={allStats[agent.id]}
                     onClick={() => openAgent(agent)}
+                    onRun={() => navigate(`/run?agent=${agent.id}`)}
                   />
                 ))}
               </div>
@@ -805,6 +925,89 @@ export default function Agents() {
           ))
         )}
       </div>
+
+      {/* Create agent modal */}
+      {showCreate && (
+        <div
+          onClick={() => setShowCreate(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 400,
+            background: "rgba(0,0,0,0.6)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="fade-in"
+            style={{
+              background: "var(--bg-2)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-lg)",
+              width: "440px",
+              padding: "24px",
+              display: "flex", flexDirection: "column", gap: "16px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "-0.01em" }}>New Agent</span>
+              <button onClick={() => setShowCreate(false)} style={{ color: "var(--text-dimmer)", fontSize: "14px", lineHeight: 1 }}>✕</button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <span style={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>Name *</span>
+                <input
+                  value={createName}
+                  onChange={(e) => setCreateName(e.target.value)}
+                  placeholder="e.g. Frontend Reviewer"
+                  autoFocus
+                />
+              </label>
+
+              <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <span style={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>Description</span>
+                <input
+                  value={createDesc}
+                  onChange={(e) => setCreateDesc(e.target.value)}
+                  placeholder="What does this agent do?"
+                />
+              </label>
+
+              <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <span style={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>Department</span>
+                <select value={createDept} onChange={(e) => setCreateDept(e.target.value)}>
+                  {["engineering", "product", "design", "marketing", "sales", "operations", "pr", "general"].map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <span style={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>Task Template</span>
+                <textarea
+                  value={createTask}
+                  onChange={(e) => setCreateTask(e.target.value)}
+                  placeholder="Describe what this agent should do when run..."
+                  rows={4}
+                  style={{ resize: "vertical" }}
+                />
+              </label>
+            </div>
+
+            <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+              <button className="btn" onClick={() => setShowCreate(false)}>Cancel</button>
+              <button
+                className="btn btn-primary"
+                onClick={() => void handleCreate()}
+                disabled={creating || !createName.trim()}
+                style={{ fontSize: "11px" }}
+              >
+                {creating ? "Creating..." : "> Create Agent"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Agent detail panel */}
       {selected && (

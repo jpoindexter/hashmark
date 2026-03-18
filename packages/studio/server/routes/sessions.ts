@@ -183,15 +183,17 @@ export function sessionsRoutes(projectDir: string) {
     return c.json({ results });
   });
 
-  // GET /api/sessions
+  // GET /api/sessions?archived=true
   app.get("/", (c) => {
     const db = getDb(dataDir);
+    const archived = c.req.query("archived") === "true" ? 1 : 0;
     const sessions = db.prepare(`
       SELECT s.*,
         (SELECT COUNT(*) FROM session_messages WHERE session_id = s.id) as message_count
       FROM sessions s
+      WHERE s.archived = ?
       ORDER BY s.updated_at DESC
-    `).all();
+    `).all(archived);
     return c.json({ sessions });
   });
 
@@ -240,13 +242,18 @@ export function sessionsRoutes(projectDir: string) {
 
   // PATCH /api/sessions/:id
   app.patch("/:id", async (c) => {
-    const body = await c.req.json<{ title?: string }>();
+    const body = await c.req.json<{ title?: string; archived?: boolean }>();
     const db = getDb(dataDir);
-    if (body.title) {
+    const id = c.req.param("id");
+    if (body.title !== undefined) {
       db.prepare("UPDATE sessions SET title = ?, updated_at = ? WHERE id = ?")
-        .run(body.title, Date.now(), c.req.param("id"));
+        .run(body.title, Date.now(), id);
     }
-    const session = db.prepare("SELECT * FROM sessions WHERE id = ?").get(c.req.param("id"));
+    if (body.archived !== undefined) {
+      db.prepare("UPDATE sessions SET archived = ?, updated_at = ? WHERE id = ?")
+        .run(body.archived ? 1 : 0, Date.now(), id);
+    }
+    const session = db.prepare("SELECT * FROM sessions WHERE id = ?").get(id);
     return c.json({ session });
   });
 

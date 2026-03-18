@@ -55,6 +55,15 @@ function migrate(db: Database.Database) {
     );
 
     CREATE INDEX IF NOT EXISTS idx_messages_session ON session_messages(session_id, created_at);
+  `);
+
+  // Additive migrations — safe to run on existing DBs
+  const cols = (db.pragma("table_info(sessions)") as Array<{ name: string }>).map(r => r.name);
+  if (!cols.includes("archived")) {
+    db.exec("ALTER TABLE sessions ADD COLUMN archived INTEGER NOT NULL DEFAULT 0");
+  }
+
+  db.exec(`
 
     CREATE TABLE IF NOT EXISTS issues (
       id TEXT PRIMARY KEY,
