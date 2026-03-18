@@ -291,10 +291,10 @@ function FileRow({ file }: { file: GitFile }) {
           fontFamily: "var(--font)",
         }}>
           {file.added > 0 && (
-            <span style={{ color: "#10b981" }}>+{file.added}</span>
+            <span style={{ color: "var(--accent)" }}>+{file.added}</span>
           )}
           {file.removed > 0 && (
-            <span style={{ color: "#ef4444" }}>-{file.removed}</span>
+            <span style={{ color: "var(--red)" }}>-{file.removed}</span>
           )}
         </div>
       )}

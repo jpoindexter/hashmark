@@ -27,7 +27,7 @@ function FileBadge({ status }: { status: string }) {
       display: "inline-flex", alignItems: "center", justifyContent: "center",
       width: 16, height: 16, fontSize: 10, fontWeight: 700,
       color: STATUS_COLOR[char] ?? "var(--text-dimmer)",
-      background: "var(--bg-3)", borderRadius: 2, flexShrink: 0,
+      background: "var(--bg-3)", borderRadius: "var(--radius-sm)", flexShrink: 0,
       fontFamily: "var(--font)",
     }}>
       {char}
@@ -64,7 +64,7 @@ function FileActionBtn({
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        borderRadius: 2,
+        borderRadius: "var(--radius-sm)",
         flexShrink: 0,
         padding: 0,
         transition: "background 0.1s",
@@ -309,8 +309,8 @@ export default function SourceControlPage() {
           <div style={{ padding: "6px 12px", borderBottom: "1px solid var(--border-dim)", flexShrink: 0 }}>
             <span style={{
               fontSize: 11, fontFamily: "var(--font)",
-              color: "var(--accent)", background: "rgba(16,185,129,0.08)",
-              padding: "2px 6px", borderRadius: 2,
+              color: "var(--accent)", background: "var(--accent-bg)",
+              padding: "2px 6px", borderRadius: "var(--radius-sm)",
             }}>
               {data.branch}
             </span>
@@ -363,8 +363,8 @@ export default function SourceControlPage() {
                     </span>
                     {(f.added || f.removed) ? (
                       <span style={{ fontFamily: "var(--font)", fontSize: 10, display: "flex", gap: 4 }}>
-                        {f.added ? <span style={{ color: "#10b981" }}>+{f.added}</span> : null}
-                        {f.removed ? <span style={{ color: "#ef4444" }}>-{f.removed}</span> : null}
+                        {f.added ? <span style={{ color: "var(--accent)" }}>+{f.added}</span> : null}
+                        {f.removed ? <span style={{ color: "var(--red)" }}>-{f.removed}</span> : null}
                       </span>
                     ) : null}
                   </div>

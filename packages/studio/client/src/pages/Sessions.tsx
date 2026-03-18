@@ -332,18 +332,18 @@ export default function Sessions() {
       {/* Claude CLI warning banner */}
       {claudeAvailable === false && (
         <div style={{
-          background: "#7c2d12",
-          borderBottom: "1px solid #b91c1c",
+          background: "var(--red-bg)",
+          borderBottom: "1px solid rgba(248,81,73,0.25)",
           padding: "8px 16px",
           fontSize: "11px",
-          color: "#fca5a5",
+          color: "var(--text-dim)",
           display: "flex",
           alignItems: "center",
           gap: "8px",
           flexShrink: 0,
         }}>
-          <span style={{ color: "#f87171", fontWeight: 700 }}>✗ claude CLI not found.</span>
-          Install Claude Code: <code style={{ background: "rgba(0,0,0,0.3)", padding: "1px 5px" }}>npm install -g @anthropic-ai/claude-code</code>
+          <span style={{ color: "var(--red)", fontWeight: 700 }}>✗ claude CLI not found.</span>
+          Install Claude Code: <code style={{ background: "var(--bg-3)", padding: "1px 5px", borderRadius: "var(--radius-sm)" }}>npm install -g @anthropic-ai/claude-code</code>
         </div>
       )}
 
@@ -475,8 +475,8 @@ export default function Sessions() {
                 className="btn"
                 onClick={interrupt}
                 style={{
-                  borderColor: "#ef4444",
-                  color: "#ef4444",
+                  borderColor: "var(--red)",
+                  color: "var(--red)",
                   fontSize: "10px",
                   padding: "4px 10px",
                 }}

@@ -207,7 +207,7 @@ export default function CommandPalette({ open, onClose }: Props) {
           maxHeight: 480,
           background: "var(--bg-2)",
           border: "1px solid var(--border)",
-          borderRadius: 6,
+          borderRadius: "var(--radius-lg)",
           boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
           overflow: "hidden",
           display: "flex",
@@ -278,7 +278,7 @@ export default function CommandPalette({ open, onClose }: Props) {
                         alignItems: "center",
                         gap: 10,
                         cursor: "pointer",
-                        background: isActive ? "rgba(63,185,80,0.08)" : "transparent",
+                        background: isActive ? "var(--accent-bg)" : "transparent",
                         borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
                         transition: "background 0.05s",
                       }}

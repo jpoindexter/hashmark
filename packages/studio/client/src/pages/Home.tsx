@@ -202,7 +202,7 @@ export default function Home() {
       {scanError && (
         <div style={{
           background: "var(--red-bg)",
-          border: "1px solid rgba(239,68,68,0.2)",
+          border: "1px solid rgba(248,81,73,0.25)",
           borderRadius: "var(--radius)",
           padding: "12px 16px",
           marginBottom: "24px",

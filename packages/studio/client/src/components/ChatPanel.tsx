@@ -188,7 +188,7 @@ export default function ChatPanel() {
             </div>
             <div style={{ flex: 1, maxWidth: "90%", fontSize: "11px", color: "var(--text)", lineHeight: 1.6 }}>
               {msg.role === "user"
-                ? <div style={{ background: "var(--bg-3)", border: "1px solid var(--border)", padding: "6px 8px", whiteSpace: "pre-wrap", fontFamily: "var(--font)" }}>{msg.content}</div>
+                ? <div style={{ background: "var(--bg-3)", border: "1px solid var(--border)", padding: "6px 8px", whiteSpace: "pre-wrap", fontFamily: "var(--font)", borderRadius: "var(--radius)" }}>{msg.content}</div>
                 : <AssistantText text={msg.content} />
               }
             </div>
@@ -208,11 +208,11 @@ export default function ChatPanel() {
 
       <div style={{ padding: "8px", borderTop: "1px solid var(--border-dim)", flexShrink: 0 }}>
         {streaming && (
-          <button onClick={() => abortRef.current?.()} style={{ width: "100%", marginBottom: "6px", background: "none", border: "1px solid #ef4444", color: "#ef4444", padding: "4px", fontSize: "10px", cursor: "pointer", fontFamily: "var(--font)" }}>
+          <button onClick={() => abortRef.current?.()} style={{ width: "100%", marginBottom: "6px", background: "none", border: "1px solid var(--red)", color: "var(--red)", padding: "4px", fontSize: "10px", cursor: "pointer", fontFamily: "var(--font-ui)", borderRadius: "var(--radius)" }}>
             ■ STOP
           </button>
         )}
-        <div style={{ display: "flex", gap: "6px", alignItems: "flex-end", background: "var(--bg-3)", border: "1px solid var(--border)", padding: "6px 8px" }}>
+        <div style={{ display: "flex", gap: "6px", alignItems: "flex-end", background: "var(--bg-3)", border: "1px solid var(--border)", padding: "6px 8px", borderRadius: "var(--radius)" }}>
           <textarea
             ref={textareaRef}
             value={input}

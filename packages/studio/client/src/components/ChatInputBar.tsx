@@ -51,7 +51,7 @@ function ModelPill({ selected, onChange }: { selected: string; onChange: (id: st
         style={{
           display: "flex", alignItems: "center", gap: 5,
           padding: "3px 8px", background: "none", border: "none", borderRadius: 4,
-          color: "var(--text-dim)", fontSize: 11, fontFamily: "var(--font)",
+          color: "var(--text-dim)", fontSize: 11, fontFamily: "var(--font-ui)",
           cursor: "pointer", transition: "background 0.1s, color 0.1s", whiteSpace: "nowrap",
         }}
         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text)"; }}
@@ -64,7 +64,7 @@ function ModelPill({ selected, onChange }: { selected: string; onChange: (id: st
       {open && (
         <div style={{
           position: "absolute", bottom: "calc(100% + 4px)", left: 0, zIndex: 300,
-          background: "var(--bg-3)", border: "1px solid var(--border)", borderRadius: 6,
+          background: "var(--bg-3)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)",
           minWidth: 180, boxShadow: "0 -4px 16px rgba(0,0,0,0.4)", overflow: "hidden",
         }}>
           {MODELS.map(m => (
@@ -102,10 +102,10 @@ function ToolbarToggle({
       style={{
         display: "flex", alignItems: "center", gap: 4,
         padding: "3px 8px",
-        background: active ? "rgba(16,185,129,0.1)" : "none",
+        background: active ? "var(--accent-bg)" : "none",
         border: "none", borderRadius: 4,
         color: active ? "var(--accent)" : "var(--text-dimmer)",
-        fontSize: 11, fontFamily: "var(--font)",
+        fontSize: 11, fontFamily: "var(--font-ui)",
         cursor: "pointer", transition: "background 0.1s, color 0.1s", whiteSpace: "nowrap",
       }}
       onMouseEnter={e => {
@@ -240,9 +240,9 @@ export default function ChatInputBar({
       <div
         style={{
           background: "var(--bg-2)", border: "1px solid var(--border)",
-          borderRadius: 8, overflow: "hidden", transition: "border-color 0.15s",
+          borderRadius: "var(--radius-lg)", overflow: "hidden", transition: "border-color 0.15s",
         }}
-        onFocusCapture={e => (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(16,185,129,0.4)"}
+        onFocusCapture={e => (e.currentTarget as HTMLDivElement).style.borderColor = "var(--accent-border)"}
         onBlurCapture={e => (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border)"}
       >
         {/* Textarea */}
@@ -309,8 +309,8 @@ export default function ChatInputBar({
               title="Stop"
               style={{
                 width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
-                background: "rgba(239,68,68,0.12)", border: "none", borderRadius: 4,
-                color: "#ef4444", cursor: "pointer",
+                background: "var(--red-bg)", border: "none", borderRadius: 4,
+                color: "var(--red)", cursor: "pointer",
               }}
             >
               <Square size={12} />

@@ -298,7 +298,7 @@ export default function Agents() {
             </div>
             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
               {/* Tabs */}
-              <div style={{ display: "flex", border: "1px solid var(--border-dim)" }}>
+              <div style={{ display: "flex", border: "1px solid var(--border-dim)", borderRadius: "var(--radius)", overflow: "hidden" }}>
                 {(["edit", "run"] as const).map((t) => (
                   <button
                     key={t}
@@ -411,7 +411,9 @@ export default function Agents() {
                         zIndex: 200,
                         background: "var(--bg-3)",
                         border: "1px solid var(--border)",
+                        borderRadius: "var(--radius)",
                         minWidth: "160px",
+                        overflow: "hidden",
                       }}>
                         {MODELS.map((m) => (
                           <button

@@ -48,8 +48,8 @@ export default function ProjectPicker() {
       alignItems: "center",
       justifyContent: "center",
       height: "100vh",
-      background: "#09090b",
-      fontFamily: "var(--font)",
+      background: "var(--bg)",
+      fontFamily: "var(--font-ui)",
       WebkitAppRegion: "drag" as React.CSSProperties["WebkitAppRegion"],
     }}>
 
@@ -68,7 +68,7 @@ export default function ProjectPicker() {
         <div style={{
           fontSize: 15,
           fontWeight: 700,
-          color: "rgba(255,255,255,0.85)",
+          color: "var(--text)",
           letterSpacing: "0.04em",
           textTransform: "uppercase",
         }}>
@@ -97,7 +97,7 @@ export default function ProjectPicker() {
       {!isElectron && (
         <div style={{
           fontSize: 12,
-          color: "rgba(255,255,255,0.3)",
+          color: "var(--text-dimmer)",
           textAlign: "center",
           letterSpacing: "0.03em",
         }}>
@@ -116,7 +116,7 @@ export default function ProjectPicker() {
         }}>
           <div style={{
             fontSize: 10,
-            color: "rgba(255,255,255,0.25)",
+            color: "var(--text-dimmer)",
             letterSpacing: "0.1em",
             textTransform: "uppercase",
             marginBottom: 10,
@@ -138,7 +138,7 @@ export default function ProjectPicker() {
                   padding: "9px 14px",
                   background: "transparent",
                   border: "1px solid transparent",
-                  borderRadius: 6,
+                  borderRadius: "var(--radius)",
                   cursor: "pointer",
                   textAlign: "left",
                   width: "100%",
@@ -146,8 +146,8 @@ export default function ProjectPicker() {
                   opacity: openingPath === path ? 0.5 : 1,
                 }}
                 onMouseEnter={e => {
-                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.08)";
+                  (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-3)";
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-dim)";
                 }}
                 onMouseLeave={e => {
                   (e.currentTarget as HTMLButtonElement).style.background = "transparent";
@@ -159,7 +159,7 @@ export default function ProjectPicker() {
                   <div style={{
                     fontSize: 12,
                     fontWeight: 600,
-                    color: "rgba(255,255,255,0.75)",
+                    color: "var(--text-dim)",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -168,7 +168,7 @@ export default function ProjectPicker() {
                   </div>
                   <div style={{
                     fontSize: 10,
-                    color: "rgba(255,255,255,0.3)",
+                    color: "var(--text-dimmer)",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -178,7 +178,7 @@ export default function ProjectPicker() {
                   </div>
                 </div>
                 {openingPath === path && (
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>opening...</div>
+                  <div style={{ fontSize: 10, color: "var(--text-dimmer)" }}>opening...</div>
                 )}
               </button>
             ))}
@@ -227,30 +227,30 @@ function ActionCard({ icon, label, sublabel, onClick, disabled, loading }: Actio
         gap: 10,
         width: 160,
         height: 110,
-        background: hovered ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.04)",
-        border: `1px solid ${hovered ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.07)"}`,
-        borderRadius: 10,
+        background: hovered ? "var(--bg-3)" : "var(--bg-2)",
+        border: `1px solid ${hovered ? "var(--border)" : "var(--border-dim)"}`,
+        borderRadius: "var(--radius-lg)",
         cursor: disabled ? "not-allowed" : "pointer",
         opacity: disabled ? 0.6 : 1,
         transition: "background 0.15s, border-color 0.15s",
         padding: 0,
       }}
     >
-      <div style={{ color: loading ? "var(--accent)" : "rgba(255,255,255,0.6)", transition: "color 0.15s" }}>
+      <div style={{ color: loading ? "var(--accent)" : "var(--text-dim)", transition: "color 0.15s" }}>
         {icon}
       </div>
       <div>
         <div style={{
           fontSize: 12,
           fontWeight: 600,
-          color: "rgba(255,255,255,0.8)",
+          color: "var(--text)",
           marginBottom: 2,
         }}>
           {loading ? "Opening..." : label}
         </div>
         <div style={{
           fontSize: 10,
-          color: "rgba(255,255,255,0.35)",
+          color: "var(--text-dimmer)",
         }}>
           {sublabel}
         </div>
@@ -269,7 +269,7 @@ function FolderIcon() {
 
 function FolderSmallIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-dimmer)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
       <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
     </svg>
   );
