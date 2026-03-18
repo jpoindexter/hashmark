@@ -992,6 +992,20 @@ cli
     }
   });
 
+// --- init command ---
+cli
+  .command("init", "Initialize hashmark in the current project")
+  .option("-y, --yes", "Skip prompts, use defaults")
+  .action(async (opts: { yes?: boolean }) => {
+    try {
+      const { runInit } = await import("./commands/init.js");
+      await runInit(process.cwd(), { yes: opts.yes });
+    } catch (error) {
+      console.error(pc.red(`\n  init failed: ${error instanceof Error ? error.message : error}\n`));
+      process.exit(1);
+    }
+  });
+
 // --- doctor command ---
 cli
   .command("doctor", "Run a 9-point health check on the project")
