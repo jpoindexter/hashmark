@@ -701,6 +701,27 @@ export interface GitInfo {
   remoteUrl?: string;
 }
 
+/** Rule compliance report aggregated from custom rules */
+export interface RuleCompliance {
+  /** Total number of configured custom rules */
+  totalRules: number;
+  /** Number of rules that triggered violations */
+  failed: number;
+  /** Number of rules with no violations */
+  passed: number;
+  /** Per-rule violation details */
+  violations: Array<{
+    /** Rule text (truncated if long) */
+    ruleName: string;
+    /** Inferred severity from rule text */
+    severity: "error" | "warning" | "info";
+    /** Files where the violation was detected (empty if not detected) */
+    matchedFiles: string[];
+    /** Violation count */
+    count: number;
+  }>;
+}
+
 /** Complete scan result containing all analysis data */
 export interface ScanResult {
   /** React components */
@@ -770,4 +791,6 @@ export interface ScanResult {
   freshnessStoreCount?: number;
   /** Source file path of a merged existing context (e.g., "CLAUDE.md") */
   mergedContextSource?: string;
+  /** Rule compliance report — populated when custom rules are configured */
+  ruleCompliance?: RuleCompliance;
 }

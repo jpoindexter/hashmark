@@ -41,6 +41,7 @@ import { installHooks, uninstallHooks } from "./hooks/install.js";
 import { login, readCredentials, clearCredentials, pushToCloud, type CloudSyncPayload } from "./auth.js";
 import { loadExistingContext, mergeContexts } from "./lib/context-merge.js";
 import { loadFreshnessStore, saveFreshnessStore, computeFreshness, updateFreshnessStore } from "./lib/freshness.js";
+import { loadMtimeCache, saveMtimeCache, filterChangedFiles } from "./lib/file-cache.js";
 import { generateClaudeMd } from "./formats/claude-md.js";
 import { writeFileSync, existsSync, rmSync, mkdirSync, readFileSync } from "fs";
 import { join, relative, dirname, resolve } from "path";
@@ -72,6 +73,7 @@ cli
   .option("--merge", "Merge with existing CLAUDE.md/AGENTS.md if found", { default: true })
   .option("--no-merge", "Skip merging with existing context files")
   .option("--sync", "Push scan results to hashmark.md cloud dashboard (requires login)")
+  .option("--rescan-only-changed", "Only re-scan files changed since last scan")
   .action(async (dir: string | undefined, options: any) => {
     let targetDir = dir || process.cwd();
     const scanStart = Date.now();
@@ -83,7 +85,40 @@ cli
       // 1. Core Engine Execution (Single Pass)
       const engine = new ScannerEngine();
       const excludePatterns = loadConfig(targetDir).exclude || [];
-      const scanResult = await engine.run(targetDir, excludePatterns, options);
+
+      // Incremental mode: collect all files, filter to changed ones only
+      let incrementalMeta: { unchangedCount: number; changedCount: number } | null = null;
+      const engineOptions = { ...options };
+
+      if (options.rescanOnlyChanged) {
+        const cache = loadMtimeCache(targetDir);
+        // Collect the same file set the visitor would use (fast-glob, relative)
+        const fg = (await import("fast-glob")).default;
+        const allFiles = await fg(
+          [
+            "**/*.{ts,tsx,js,jsx,json,md,py,go,rs,prisma,graphql,yml,yaml}",
+            "!**/node_modules/**",
+            "!**/.next/**",
+            "!**/dist/**",
+            "!**/build/**",
+            "!**/.git/**",
+            "!**/pnpm-lock.yaml",
+            "!**/package-lock.json",
+            "!**/*.zip",
+            "!**/*.tar.gz",
+            ...excludePatterns.map((p: string) => `!${p}`),
+          ],
+          { cwd: targetDir, absolute: false, followSymbolicLinks: false }
+        );
+        const { changedFiles, unchangedCount } = filterChangedFiles(allFiles, targetDir, cache);
+        engineOptions.changedFilesOnly = changedFiles;
+        incrementalMeta = { changedCount: changedFiles.length, unchangedCount };
+        if (!quiet) {
+          console.log(pc.dim(`  Incremental mode: ${changedFiles.length} changed, ${unchangedCount} unchanged`));
+        }
+      }
+
+      const scanResult = await engine.run(targetDir, excludePatterns, engineOptions);
 
       // 2. Interactive setup on first run (skip in --yes / quiet mode)
       if (!quiet && !isSetupComplete(targetDir)) {
@@ -144,7 +179,56 @@ cli
         // non-fatal — validation failure should never abort the scan
       }
 
-      // 6. Freshness tracking — compute section staleness vs last scan
+      // 6. Rule compliance — aggregate custom rules into a compliance report
+      try {
+        const configRules: string[] = loadConfig(targetDir).rules ?? [];
+        const setupRules: string[] = (scanResult.existingContext as any)?.customRules ?? [];
+        const allRules = [...new Set([...configRules, ...setupRules])];
+
+        if (allRules.length > 0) {
+          const antiWarnings: string[] = scanResult.antiPatterns?.warnings ?? [];
+
+          const violations = allRules.map(ruleText => {
+            // Infer severity from rule phrasing
+            const severity: "error" | "warning" | "info" =
+              /^never\b|\bforbid|\bprohibited|\bmust not\b/i.test(ruleText)
+                ? "error"
+                : /^always\b|\bmust\b/i.test(ruleText)
+                ? "warning"
+                : "info";
+
+            // Check if any anti-pattern warning overlaps with keywords from this rule
+            const ruleKeywords = ruleText
+              .toLowerCase()
+              .replace(/[^a-z0-9\s]/g, " ")
+              .split(/\s+/)
+              .filter(w => w.length > 4);
+
+            const matchedWarnings = antiWarnings.filter(w =>
+              ruleKeywords.some(kw => w.toLowerCase().includes(kw))
+            );
+
+            return {
+              ruleName: ruleText.length > 80 ? ruleText.slice(0, 77) + "..." : ruleText,
+              severity,
+              matchedFiles: [] as string[],
+              count: matchedWarnings.length,
+            };
+          });
+
+          const failed = violations.filter(v => v.count > 0).length;
+          scanResult.ruleCompliance = {
+            totalRules: allRules.length,
+            failed,
+            passed: allRules.length - failed,
+            violations,
+          };
+        }
+      } catch {
+        // non-fatal
+      }
+
+      // 7. Freshness tracking — compute section staleness vs last scan
       try {
         const freshnessStore = loadFreshnessStore(targetDir);
         // Generate raw CLAUDE.md (no freshness) to extract section content for hashing
@@ -238,6 +322,36 @@ cli
         } catch {
           // non-fatal — snapshot failure should never abort the scan
         }
+      }
+
+      // Save mtime cache for incremental rescans
+      if (!options.dryRun) {
+        try {
+          const fg2 = (await import("fast-glob")).default;
+          const allFilesForCache = await fg2(
+            [
+              "**/*.{ts,tsx,js,jsx,json,md,py,go,rs,prisma,graphql,yml,yaml}",
+              "!**/node_modules/**",
+              "!**/.next/**",
+              "!**/dist/**",
+              "!**/build/**",
+              "!**/.git/**",
+              "!**/pnpm-lock.yaml",
+              "!**/package-lock.json",
+              "!**/*.zip",
+              "!**/*.tar.gz",
+              ...(loadConfig(targetDir).exclude || []).map((p: string) => `!${p}`),
+            ],
+            { cwd: targetDir, absolute: false, followSymbolicLinks: false }
+          );
+          saveMtimeCache(targetDir, allFilesForCache);
+        } catch {
+          // non-fatal
+        }
+      }
+
+      if (incrementalMeta && !quiet) {
+        console.log(pc.dim(`  Re-scanned ${incrementalMeta.changedCount} changed files, reused ${incrementalMeta.unchangedCount} from cache`));
       }
 
       // Cloud sync (--sync flag)
