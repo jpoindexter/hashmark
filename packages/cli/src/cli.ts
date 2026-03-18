@@ -42,6 +42,7 @@ import { login, readCredentials, clearCredentials, pushToCloud, type CloudSyncPa
 import { loadExistingContext, mergeContexts } from "./lib/context-merge.js";
 import { loadFreshnessStore, saveFreshnessStore, computeFreshness, updateFreshnessStore } from "./lib/freshness.js";
 import { loadMtimeCache, saveMtimeCache, filterChangedFiles } from "./lib/file-cache.js";
+import { trimToBudget } from "./lib/token-budget.js";
 import { generateClaudeMd } from "./formats/claude-md.js";
 import { writeFileSync, existsSync, rmSync, mkdirSync, readFileSync } from "fs";
 import { join, relative, dirname, resolve } from "path";
@@ -74,6 +75,7 @@ cli
   .option("--no-merge", "Skip merging with existing context files")
   .option("--sync", "Push scan results to hashmark.md cloud dashboard (requires login)")
   .option("--rescan-only-changed", "Only re-scan files changed since last scan")
+  .option("--max-tokens <n>", "Trim CLAUDE.md to fit within this token budget (drops low-priority sections first)")
   .action(async (dir: string | undefined, options: any) => {
     let targetDir = dir || process.cwd();
     const scanStart = Date.now();
@@ -272,6 +274,26 @@ cli
         }
         scanResult.mergedContextSource = existingCtx.source;
         if (!quiet) console.log(pc.dim(`  ↳ merged ${existingCtx.sections.size} sections from ${existingCtx.source}`));
+      }
+
+      // Token budget trim — applied after merge, before write
+      if (options.maxTokens) {
+        const budget = parseInt(String(options.maxTokens), 10);
+        if (!isNaN(budget) && budget > 0) {
+          for (const file of files) {
+            if (/CLAUDE\.md/i.test(file.path)) {
+              const result = trimToBudget(file.content, budget);
+              if (result.dropped.length > 0) {
+                file.content = result.trimmed;
+                const origK = (result.originalTokens / 1000).toFixed(1);
+                const finalK = (result.finalTokens / 1000).toFixed(1);
+                if (!quiet) {
+                  console.log(pc.yellow(`  Trimmed to budget: dropped [${result.dropped.join(", ")}] — ${origK}k → ${finalK}k tokens`));
+                }
+              }
+            }
+          }
+        }
       }
 
       const written: string[] = [];
@@ -777,6 +799,58 @@ cli
     console.log(`  Email     : ${creds.email}`);
     console.log(`  Connected : ${new Date(creds.connectedAt).toLocaleString()}`);
     console.log();
+  });
+
+// --- compact command ---
+cli
+  .command("compact <file>", "Compress a session export by stripping tool noise and summarizing early context")
+  .option("--output <file>", "Write compacted JSON to file instead of stdout")
+  .option("--format <format>", "Output format: json (default) or text (print summary only)", { default: "json" })
+  .option("--threshold <n>", "Tool output truncation threshold in chars", { default: "500" })
+  .action(async (file: string, opts: { output?: string; format: string; threshold: string }) => {
+    try {
+      const { compactMessages } = await import("./commands/compact.js");
+      const raw = readFileSync(file, "utf-8");
+      let messages: unknown;
+      try {
+        messages = JSON.parse(raw);
+      } catch {
+        console.error(pc.red(`\n  compact: invalid JSON in ${file}\n`));
+        process.exit(1);
+      }
+      if (!Array.isArray(messages)) {
+        console.error(pc.red("\n  compact: input must be a JSON array of {role, content} messages\n"));
+        process.exit(1);
+      }
+
+      const result = compactMessages(messages as any, {
+        output: opts.output,
+        format: opts.format as "json" | "text",
+        threshold: parseInt(opts.threshold, 10),
+      });
+
+      const out = opts.format === "text"
+        ? (result.summary || "(no early context to summarize)")
+        : JSON.stringify(result.messages, null, 2);
+
+      if (opts.output) {
+        const outPath = resolve(opts.output);
+        if (!existsSync(dirname(outPath))) mkdirSync(dirname(outPath), { recursive: true });
+        writeFileSync(outPath, out, "utf-8");
+        console.error(pc.green(`  Wrote ${outPath}`));
+      } else {
+        process.stdout.write(out + "\n");
+      }
+
+      console.error(
+        pc.dim(
+          `  ${result.originalTokens.toLocaleString()} tokens → ${result.compactedTokens.toLocaleString()} tokens  (${result.reductionPct}% reduction)`
+        )
+      );
+    } catch (error) {
+      console.error(pc.red(`\n  compact failed: ${error instanceof Error ? error.message : error}\n`));
+      process.exit(1);
+    }
   });
 
 // --- studio command ---
