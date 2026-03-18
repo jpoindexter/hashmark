@@ -633,6 +633,35 @@ export interface FileASTComplexity {
   loc: number;
 }
 
+/** Per-file complexity snapshot for persistence */
+export interface PersistedFileComplexity {
+  path: string;
+  avgCyclomatic: number;
+  avgCognitive: number;
+  avgMaintainability: number;
+}
+
+/** Persisted complexity state written to .hashmark/last-complexity.json */
+export interface PersistedComplexity {
+  generatedAt: string;
+  files: PersistedFileComplexity[];
+  avgCyclomatic: number;
+  avgCognitive: number;
+  avgMaintainability: number;
+}
+
+/** Delta between current and previous scan complexity */
+export interface ComplexityDelta {
+  /** positive = got more complex */
+  avgCyclomaticDelta: number;
+  /** positive = got more complex */
+  avgCognitiveDelta: number;
+  /** positive = improved (MI goes up when simpler) */
+  maintainabilityDelta: number;
+  trend: "improving" | "stable" | "degrading";
+  topRegressions: Array<{ file: string; metric: string; delta: number }>;
+}
+
 /** AI-Readiness Score results */
 export interface AiReadinessScore {
   total: number; // 0-100
@@ -731,4 +760,6 @@ export interface ScanResult {
   graphqlSchemas?: Map<string, ApiSchema>;
   /** Git log and diff info (optional) */
   git?: GitInfo | null;
+  /** Complexity delta vs last scan (optional) */
+  complexityDelta?: ComplexityDelta | null;
 }

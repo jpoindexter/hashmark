@@ -23,7 +23,7 @@ import { scanSecurity, formatSecurityAudit } from "./scanners/security.js";
 import { detectMonorepo, formatMonorepoOverview } from "./scanners/monorepo.js";
 import { scanGraphQL } from "./scanners/graphql.js";
 import { scanLatentHooks } from "./scanners/latent-hooks.js";
-import { analyzeComplexity } from "./scanners/complexity.js";
+import { analyzeComplexity, loadPreviousComplexity, saveComplexitySnapshot, computeComplexityDelta } from "./scanners/complexity.js";
 import { generateAgentsMd } from "./generator.js";
 import { generateAgentsIndex } from "./json-generator.js";
 import { generateAllFormats, generateFormat, FORMAT_REGISTRY, type FormatId } from "./formats/index.js";
@@ -122,7 +122,16 @@ cli
         antiPatterns: generateAntiPatterns(scanResult.framework, scanResult.utilities, scanResult.tokens, scanResult.components, scanResult.utilities.hasMode)
       });
 
-      // 4. Report & Generate
+      // 4. Complexity delta vs last scan
+      if (scanResult.aiRecommendations) {
+        const prevComplexity = loadPreviousComplexity(targetDir);
+        if (prevComplexity) {
+          scanResult.complexityDelta = computeComplexityDelta(scanResult.aiRecommendations, prevComplexity);
+        }
+        saveComplexitySnapshot(targetDir, scanResult.aiRecommendations);
+      }
+
+      // 5. Report & Generate
       if (!quiet) reportFindings(scanResult);
 
       const outputDir = options.output ? resolve(options.output) : targetDir;
