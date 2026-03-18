@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import ScanProgress, { type ScanResult, type ScanDelta } from "../components/ScanProgress";
-import { SkeletonCard, SkeletonLine } from "../components/Skeleton";
+import { Zap, Play, GitBranch, History, Bot, FileText, Clock, CheckCircle, XCircle, Loader } from "lucide-react";
+import { SkeletonCard, SkeletonLine, SkeletonBlock } from "../components/Skeleton";
 
 interface Agent {
   id: string;
@@ -16,6 +16,31 @@ interface ProjectInfo {
   projectDir: string;
 }
 
+interface ScanSnapshot {
+  scannedAt: number;
+  totalFiles: number;
+  totalLines: number;
+  componentCount: number;
+  apiRouteCount: number;
+  aiReadiness: number | null;
+  hubFileCount: number;
+}
+
+interface Run {
+  id: string;
+  task: string;
+  status: string;
+  created_at: number;
+  worktree_branch: string | null;
+}
+
+interface Staleness {
+  exists: boolean;
+  generatedAt: string | null;
+  commitsSince: number | null;
+  daysStale: number | null;
+}
+
 const DEPT_COLORS: Record<string, string> = {
   engineering: "var(--blue)",
   product: "#8b5cf6",
@@ -26,361 +51,35 @@ const DEPT_COLORS: Record<string, string> = {
   pr: "#06b6d4",
 };
 
-export default function Home() {
-  const navigate = useNavigate();
-  const [info, setInfo] = useState<ProjectInfo | null>(null);
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [scanning, setScanning] = useState(false);
-  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
-  const [scanDelta, setScanDelta] = useState<ScanDelta | null>(null);
-  const [scanError, setScanError] = useState<string | null>(null);
-  const [staleness, setStaleness] = useState<{
-    exists: boolean;
-    generatedAt: string | null;
-    commitsSince: number | null;
-    daysStale: number | null;
-  } | null>(null);
-  const [staleDismissed, setStaleDismissed] = useState(false);
-
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/info").then((r) => r.json()),
-      fetch("/api/agents").then((r) => r.json()),
-    ])
-      .then(([infoData, agentsData]) => {
-        setInfo(infoData);
-        setAgents(agentsData.agents ?? []);
-      })
-      .finally(() => setLoading(false));
-
-    fetch("/api/scan/staleness")
-      .then((r) => r.json())
-      .then((d) => setStaleness(d))
-      .catch(() => {});
-  }, []);
-
-  // Group agents by department
-  const byDept = agents.reduce<Record<string, Agent[]>>((acc, a) => {
-    if (!acc[a.department]) acc[a.department] = [];
-    acc[a.department].push(a);
-    return acc;
-  }, {});
-
-  const depts = Object.entries(byDept).sort((a, b) => b[1].length - a[1].length);
-  const hasAgents = agents.length > 0;
-
-  if (scanning) {
-    return (
-      <ScanProgress
-        onComplete={(result, delta) => {
-          setScanResult(result);
-          setScanDelta(delta);
-          setScanning(false);
-        }}
-        onError={(err) => {
-          setScanError(err);
-          setScanning(false);
-        }}
-        onCancel={() => setScanning(false)}
-      />
-    );
-  }
-
-  return (
-    <div style={{ padding: "32px", maxWidth: "900px" }}>
-      {/* Header */}
-      <div style={{ marginBottom: "32px" }}>
-        <div style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "6px" }}>
-          hashmark studio
-        </div>
-        <h1 style={{ fontSize: "22px", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>
-          {loading ? <SkeletonLine width={180} height={22} /> : (info?.projectName ?? "Project")}
-        </h1>
-        {info && (
-          <div style={{ fontSize: "11px", color: "var(--text-dimmer)", marginTop: "6px" }}>
-            {info.projectDir}
-          </div>
-        )}
-      </div>
-
-      {/* Stats row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "32px" }}>
-        <StatCard label="Total Agents" value={loading ? "—" : String(agents.length)} accent />
-        <StatCard label="Departments" value={loading ? "—" : String(depts.length)} />
-        <StatCard label="Status" value={hasAgents ? "ACTIVE" : "EMPTY"} color={hasAgents ? "var(--accent)" : "var(--text-dimmer)"} />
-      </div>
-
-      {/* Department breakdown — skeleton while loading */}
-      {loading ? (
-        <>
-          <div style={{
-            fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase",
-            letterSpacing: "0.1em", marginBottom: "12px", paddingBottom: "8px",
-            borderBottom: "1px solid var(--border-dim)",
-          }}>
-            Agent Company
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "12px", marginBottom: "32px" }}>
-            {[0, 1, 2, 3].map(i => <SkeletonCard key={i} />)}
-          </div>
-        </>
-      ) : hasAgents ? (
-        <>
-          <SectionHeader>Agent Company</SectionHeader>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "12px", marginBottom: "32px" }}>
-            {depts.map(([dept, deptAgents]) => (
-              <div
-                key={dept}
-                onClick={() => navigate("/agents")}
-                style={{
-                  background: "var(--bg-2)",
-                  border: "1px solid var(--border-dim)",
-                  borderRadius: "var(--radius)",
-                  padding: "14px",
-                  cursor: "pointer",
-                  transition: "border-color 0.1s",
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = DEPT_COLORS[dept] ?? "var(--accent)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border-dim)"; }}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-                  <span style={{
-                    fontSize: "10px",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                    fontWeight: 600,
-                    color: DEPT_COLORS[dept] ?? "var(--text-dim)",
-                  }}>
-                    {dept}
-                  </span>
-                  <span style={{ fontSize: "18px", fontWeight: 700, color: "var(--text)" }}>
-                    {deptAgents.length}
-                  </span>
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-                  {deptAgents.slice(0, 4).map((a) => (
-                    <span key={a.id} style={{
-                      fontSize: "10px",
-                      color: "var(--text-dimmer)",
-                      padding: "2px 6px",
-                      background: "var(--bg-4)",
-                      borderRadius: "var(--radius)",
-                    }}>
-                      {a.name || a.id}
-                    </span>
-                  ))}
-                  {deptAgents.length > 4 && (
-                    <span style={{ fontSize: "10px", color: "var(--text-dimmer)", padding: "2px 6px" }}>
-                      +{deptAgents.length - 4} more
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      ) : (
-        !loading && (
-          <div style={{
-            background: "var(--bg-2)",
-            border: "1px dashed var(--border)",
-            borderRadius: "var(--radius)",
-            padding: "40px",
-            textAlign: "center",
-            marginBottom: "24px",
-          }}>
-            <div style={{ fontSize: "28px", marginBottom: "12px" }}>▣</div>
-            <div style={{ fontSize: "14px", color: "var(--text-dim)", marginBottom: "6px" }}>
-              No agents found
-            </div>
-            <div style={{ fontSize: "12px", color: "var(--text-dimmer)", marginBottom: "20px" }}>
-              .claude/agents/ is empty or doesn't exist
-            </div>
-            <button className="btn btn-primary" onClick={() => navigate("/generate")}>
-              ⟳ Generate Agents
-            </button>
-          </div>
-        )
-      )}
-
-      {/* Scan result + delta panel */}
-      {scanResult && (
-        <div style={{
-          background: "var(--bg-2)",
-          border: "1px solid var(--border-dim)",
-          borderRadius: "var(--radius)",
-          marginBottom: "24px",
-          overflow: "hidden",
-        }}>
-          {/* Header */}
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "8px 14px",
-            borderBottom: scanDelta ? "1px solid var(--border-dim)" : "none",
-            background: "var(--accent-bg)",
-          }}>
-            <span style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--font)", letterSpacing: "0.04em" }}>
-              ✓ Scan complete
-            </span>
-            <button
-              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontSize: "14px", lineHeight: 1 }}
-              onClick={() => { setScanResult(null); setScanDelta(null); }}
-            >×</button>
-          </div>
-
-          {/* Delta grid */}
-          {scanDelta && Object.keys(scanDelta).length > 0 && (
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
-              gap: 1,
-              background: "var(--border-dim)",
-            }}>
-              {Object.entries(scanDelta).map(([label, entry]) => {
-                const isUp = entry.delta > 0;
-                const isDown = entry.delta < 0;
-                // For AI Readiness, up is good. For Lines/Files/Hub Files, up is a mild warning.
-                const isPositiveMetric = label === "AI Readiness";
-                const warnUp = isUp && !isPositiveMetric && Math.abs(entry.pct) > 5;
-                const goodUp = isUp && isPositiveMetric;
-                const deltaColor = isDown
-                  ? (isPositiveMetric ? "var(--red)" : "var(--accent)")
-                  : goodUp ? "var(--accent)"
-                  : warnUp ? "var(--yellow)"
-                  : "var(--text-dimmer)";
-                const sign = entry.delta > 0 ? "+" : "";
-                return (
-                  <div key={label} style={{
-                    background: "var(--bg-2)",
-                    padding: "10px 12px",
-                  }}>
-                    <div style={{ fontSize: 9, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4, fontFamily: "var(--font)" }}>
-                      {label}
-                    </div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", letterSpacing: "-0.01em", fontFamily: "var(--font)" }}>
-                      {entry.curr.toLocaleString()}
-                    </div>
-                    {entry.delta !== 0 && (
-                      <div style={{ fontSize: 10, color: deltaColor, fontFamily: "var(--font)", marginTop: 2 }}>
-                        {sign}{entry.delta.toLocaleString()} ({sign}{entry.pct}%)
-                        {warnUp && <span style={{ marginLeft: 4, opacity: 0.8 }}>⚠</span>}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* CLAUDE.md staleness warning */}
-      {staleness?.exists && !staleDismissed && (
-        (staleness.commitsSince != null && staleness.commitsSince >= 5) ||
-        (staleness.daysStale != null && staleness.daysStale >= 14)
-      ) && (
-        <div style={{
-          background: "rgba(210,153,34,0.08)",
-          border: "1px solid rgba(210,153,34,0.25)",
-          borderRadius: "var(--radius)",
-          padding: "10px 14px",
-          marginBottom: "16px",
-          fontSize: 11,
-          fontFamily: "var(--font)",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-        }}>
-          <span style={{ color: "var(--yellow)" }}>⚠</span>
-          <span style={{ color: "var(--text-dim)", flex: 1 }}>
-            <span style={{ color: "var(--yellow)", fontWeight: 600 }}>CLAUDE.md may be stale</span>
-            {" — "}
-            {staleness.commitsSince != null && staleness.commitsSince > 0
-              ? `${staleness.commitsSince} commits since last scan`
-              : staleness.daysStale != null
-              ? `generated ${staleness.daysStale} days ago`
-              : "re-run scan to refresh"}
-            {". "}
-            <button
-              onClick={() => { setStaleDismissed(false); setScanResult(null); setScanError(null); setScanning(true); }}
-              style={{ background: "none", border: "none", color: "var(--yellow)", cursor: "pointer", padding: 0, textDecoration: "underline", fontFamily: "var(--font)", fontSize: 11 }}
-            >
-              Run scan now
-            </button>
-          </span>
-          <button
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontSize: 14, lineHeight: 1, padding: 0 }}
-            onClick={() => setStaleDismissed(true)}
-          >×</button>
-        </div>
-      )}
-
-      {/* Scan error banner */}
-      {scanError && (
-        <div style={{
-          background: "var(--red-bg)",
-          border: "1px solid rgba(248,81,73,0.25)",
-          borderRadius: "var(--radius)",
-          padding: "12px 16px",
-          marginBottom: "24px",
-          fontSize: "12px",
-          color: "var(--red)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}>
-          <span>✕ {scanError}</span>
-          <button
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--red)", fontSize: "14px", lineHeight: 1 }}
-            onClick={() => setScanError(null)}
-          >×</button>
-        </div>
-      )}
-
-      {/* Quick actions */}
-      <SectionHeader>Quick Actions</SectionHeader>
-      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-        <button className="btn btn-primary" onClick={() => navigate("/generate")}>
-          ⟳ Generate Agents
-        </button>
-        <button className="btn" onClick={() => navigate("/agents")}>
-          ▣ View Agents
-        </button>
-        <button className="btn" onClick={() => { setScanResult(null); setScanError(null); setScanning(true); }}>
-          ◎ Run Scan
-        </button>
-      </div>
-    </div>
-  );
+function formatRelativeTime(ms: number): string {
+  const diff = Date.now() - ms;
+  const mins = Math.floor(diff / 60_000);
+  const hours = Math.floor(diff / 3_600_000);
+  const days = Math.floor(diff / 86_400_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  return `${days}d ago`;
 }
 
-function StatCard({ label, value, accent, color }: {
-  label: string;
-  value: string;
-  accent?: boolean;
-  color?: string;
-}) {
-  return (
-    <div style={{
-      background: "var(--bg-2)",
-      border: "1px solid var(--border-dim)",
-      borderRadius: "var(--radius)",
-      padding: "14px 16px",
-    }}>
-      <div style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "6px" }}>
-        {label}
-      </div>
-      <div style={{
-        fontSize: "24px",
-        fontWeight: 700,
-        color: color ?? (accent ? "var(--accent)" : "var(--text)"),
-        letterSpacing: "-0.02em",
-      }}>
-        {value}
-      </div>
-    </div>
-  );
+function formatDuration(startMs: number): string {
+  const diff = Math.floor((Date.now() - startMs) / 1000);
+  if (diff < 60) return `${diff}s`;
+  return `${Math.floor(diff / 60)}m ${diff % 60}s`;
+}
+
+function StatusDot({ status }: { status: string }) {
+  const color =
+    status === "complete" ? "var(--accent)" :
+    status === "error" ? "var(--red)" :
+    status === "running" ? "var(--blue)" :
+    "var(--text-dimmer)";
+  const icon =
+    status === "complete" ? <CheckCircle size={12} /> :
+    status === "error" ? <XCircle size={12} /> :
+    status === "running" ? <Loader size={12} style={{ animation: "spin 1s linear infinite" }} /> :
+    <Clock size={12} />;
+  return <span style={{ color, display: "flex", alignItems: "center" }}>{icon}</span>;
 }
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
@@ -395,6 +94,462 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
       borderBottom: "1px solid var(--border-dim)",
     }}>
       {children}
+    </div>
+  );
+}
+
+function FreshnessTag({ staleness }: { staleness: Staleness | null }) {
+  if (!staleness?.exists) {
+    return <span className="badge badge-zinc">NO SCAN</span>;
+  }
+  const isStale =
+    (staleness.commitsSince != null && staleness.commitsSince >= 5) ||
+    (staleness.daysStale != null && staleness.daysStale >= 14);
+  if (isStale) return <span className="badge badge-yellow">STALE</span>;
+  return <span className="badge badge-green">FRESH</span>;
+}
+
+export default function Home() {
+  const navigate = useNavigate();
+  const [info, setInfo] = useState<ProjectInfo | null>(null);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [runs, setRuns] = useState<Run[]>([]);
+  const [snapshot, setSnapshot] = useState<ScanSnapshot | null>(null);
+  const [staleness, setStaleness] = useState<Staleness | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [runsLoading, setRunsLoading] = useState(true);
+
+  const fetchData = useCallback(() => {
+    Promise.all([
+      fetch("/api/info").then((r) => r.json()),
+      fetch("/api/agents").then((r) => r.json()),
+      fetch("/api/scan/history").then((r) => r.json()),
+      fetch("/api/scan/staleness").then((r) => r.json()).catch(() => null),
+    ]).then(([infoData, agentsData, historyData, stalenessData]) => {
+      setInfo(infoData);
+      setAgents(agentsData.agents ?? []);
+      const snaps: ScanSnapshot[] = historyData.snapshots ?? [];
+      setSnapshot(snaps[0] ?? null);
+      setStaleness(stalenessData);
+    }).finally(() => setLoading(false));
+
+    fetch("/api/runs")
+      .then((r) => r.json())
+      .then((d) => setRuns((d.runs ?? []).slice(0, 5)))
+      .catch(() => {})
+      .finally(() => setRunsLoading(false));
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Group agents by department
+  const byDept = agents.reduce<Record<string, Agent[]>>((acc, a) => {
+    if (!acc[a.department]) acc[a.department] = [];
+    acc[a.department].push(a);
+    return acc;
+  }, {});
+  const depts = Object.entries(byDept).sort((a, b) => b[1].length - a[1].length);
+
+  const lastRunAt = runs[0]?.created_at ?? null;
+  const lastScanAt = snapshot?.scannedAt ?? null;
+
+  // Compute avg complexity score placeholder — aiReadiness as proxy
+  const avgComplexity = snapshot?.aiReadiness != null ? `${snapshot.aiReadiness}%` : "—";
+
+  return (
+    <div style={{ padding: "32px", maxWidth: "1040px" }}>
+      {/* Header */}
+      <div style={{ marginBottom: "28px" }}>
+        <div style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "6px" }}>
+          hashmark studio
+        </div>
+        <h1 style={{ fontSize: "22px", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>
+          {loading ? <SkeletonLine width={180} height={22} /> : (info?.projectName ?? "Project")}
+        </h1>
+        {info && (
+          <div style={{ fontSize: "11px", color: "var(--text-dimmer)", marginTop: "4px", fontFamily: "var(--font)" }}>
+            {info.projectDir}
+          </div>
+        )}
+      </div>
+
+      {/* Top row — 3 stat cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "24px" }}>
+        {/* Context health */}
+        <div style={{
+          background: "var(--bg-2)",
+          border: "1px solid var(--border-dim)",
+          borderRadius: "var(--radius)",
+          padding: "16px",
+        }}>
+          <div style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>
+            Context Health
+          </div>
+          {loading ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <SkeletonLine width={80} height={20} />
+              <SkeletonLine width={120} height={11} />
+              <SkeletonLine width={100} height={11} />
+            </div>
+          ) : (
+            <>
+              <div style={{ marginBottom: "8px" }}>
+                <FreshnessTag staleness={staleness} />
+              </div>
+              <div style={{ fontSize: "12px", color: "var(--text-dim)", marginBottom: "4px", fontFamily: "var(--font)" }}>
+                {snapshot
+                  ? `~${Math.round((snapshot.totalLines * 5) / 1000)}k tokens est.`
+                  : "No scan yet"}
+              </div>
+              <div style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
+                {lastScanAt
+                  ? `Last scanned ${formatRelativeTime(lastScanAt)}`
+                  : "Never scanned"}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Recent activity */}
+        <div style={{
+          background: "var(--bg-2)",
+          border: "1px solid var(--border-dim)",
+          borderRadius: "var(--radius)",
+          padding: "16px",
+        }}>
+          <div style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>
+            Recent Activity
+          </div>
+          {runsLoading ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <SkeletonLine width="90%" height={13} />
+              <SkeletonLine width={80} height={11} />
+            </div>
+          ) : runs.length > 0 ? (
+            <>
+              <div style={{ fontSize: "13px", color: "var(--text)", marginBottom: "6px", lineHeight: 1.4 }}>
+                <span style={{ fontFamily: "var(--font)", fontSize: "12px" }}>
+                  {runs[0].task.length > 60 ? runs[0].task.slice(0, 60) + "…" : runs[0].task}
+                </span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <StatusDot status={runs[0].status} />
+                <span style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
+                  {formatRelativeTime(runs[0].created_at)}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: "12px", color: "var(--text-dimmer)" }}>No runs yet</div>
+          )}
+          {lastRunAt && (
+            <div style={{ marginTop: "8px" }}>
+              <button
+                onClick={() => navigate("/history")}
+                style={{ background: "none", border: "none", color: "var(--blue)", fontSize: "11px", cursor: "pointer", padding: 0 }}
+              >
+                View all runs →
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Project size */}
+        <div style={{
+          background: "var(--bg-2)",
+          border: "1px solid var(--border-dim)",
+          borderRadius: "var(--radius)",
+          padding: "16px",
+        }}>
+          <div style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>
+            Project Size
+          </div>
+          {loading ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <SkeletonLine width={100} height={20} />
+              <SkeletonLine width={80} height={11} />
+              <SkeletonLine width={110} height={11} />
+            </div>
+          ) : snapshot ? (
+            <>
+              <div style={{ fontSize: "22px", fontWeight: 700, color: "var(--text)", letterSpacing: "-0.02em", marginBottom: "6px" }}>
+                {snapshot.totalFiles.toLocaleString()}
+                <span style={{ fontSize: "12px", fontWeight: 400, color: "var(--text-dimmer)", marginLeft: "6px" }}>files</span>
+              </div>
+              <div style={{ fontSize: "12px", color: "var(--text-dim)", marginBottom: "4px", fontFamily: "var(--font)" }}>
+                {snapshot.totalLines.toLocaleString()} lines
+              </div>
+              <div style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
+                AI Readiness: <span style={{ color: "var(--accent)", fontWeight: 600 }}>{avgComplexity}</span>
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: "12px", color: "var(--text-dimmer)" }}>Run a scan to see stats</div>
+          )}
+        </div>
+      </div>
+
+      {/* Quick actions bar */}
+      <div style={{ marginBottom: "28px" }}>
+        <SectionHeader>Quick Actions</SectionHeader>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          <QuickAction
+            icon={<Zap size={13} />}
+            label="Scan project"
+            shortcut="⌘S"
+            primary
+            onClick={() => navigate("/generate")}
+          />
+          <QuickAction
+            icon={<Play size={13} />}
+            label="Run agent"
+            shortcut="⌘R"
+            onClick={() => navigate("/run")}
+          />
+          <QuickAction
+            icon={<GitBranch size={13} />}
+            label="Launch swarm"
+            shortcut="⌘W"
+            onClick={() => navigate("/swarm")}
+          />
+          <QuickAction
+            icon={<History size={13} />}
+            label="View history"
+            shortcut="⌘H"
+            onClick={() => navigate("/history")}
+          />
+        </div>
+      </div>
+
+      {/* Bottom split: recent runs + agent roster */}
+      <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: "20px" }}>
+        {/* Recent runs — left 60% */}
+        <div>
+          <SectionHeader>Recent Runs</SectionHeader>
+          {runsLoading ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[0, 1, 2].map((i) => (
+                <SkeletonBlock key={i} height={48} style={{ borderRadius: "var(--radius)" }} />
+              ))}
+            </div>
+          ) : runs.length === 0 ? (
+            <EmptyState
+              icon={<History size={22} />}
+              title="No runs yet"
+              body="Start a run from the Run Agent page."
+              action="Run agent"
+              onAction={() => navigate("/run")}
+            />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              {runs.map((run) => (
+                <RunRow key={run.id} run={run} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Agent roster — right 40% */}
+        <div>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "12px",
+            paddingBottom: "8px",
+            borderBottom: "1px solid var(--border-dim)",
+          }}>
+            <span style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+              Agent Roster
+            </span>
+            <button
+              onClick={() => navigate("/agents")}
+              style={{ background: "none", border: "none", color: "var(--blue)", fontSize: "11px", cursor: "pointer", padding: 0 }}
+            >
+              View all →
+            </button>
+          </div>
+
+          {loading ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[0, 1, 2, 3].map((i) => <SkeletonBlock key={i} height={42} style={{ borderRadius: "var(--radius)" }} />)}
+            </div>
+          ) : depts.length === 0 ? (
+            <EmptyState
+              icon={<Bot size={22} />}
+              title="No agents found"
+              body=".claude/agents/ is empty."
+              action="Generate agents"
+              onAction={() => navigate("/generate")}
+            />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              {depts.map(([dept, deptAgents]) => (
+                <DeptRow
+                  key={dept}
+                  dept={dept}
+                  agents={deptAgents}
+                  onClick={() => navigate("/agents")}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Sub-components ─────────────────────────────────────────────────────────────
+
+function QuickAction({
+  icon,
+  label,
+  shortcut,
+  primary,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  shortcut: string;
+  primary?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className={primary ? "btn btn-primary" : "btn"}
+      onClick={onClick}
+      style={{ gap: "6px", paddingRight: "10px" }}
+    >
+      {icon}
+      <span>{label}</span>
+      <span style={{
+        fontSize: "10px",
+        opacity: 0.55,
+        marginLeft: "2px",
+        fontFamily: "var(--font)",
+      }}>
+        {shortcut}
+      </span>
+    </button>
+  );
+}
+
+function RunRow({ run }: { run: Run }) {
+  const durationMs = run.created_at;
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "10px",
+      padding: "10px 12px",
+      background: "var(--bg-2)",
+      border: "1px solid var(--border-dim)",
+      borderRadius: "var(--radius)",
+      marginBottom: "2px",
+    }}>
+      <StatusDot status={run.status} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontSize: "12px",
+          color: "var(--text)",
+          fontFamily: "var(--font)",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}>
+          {run.task || "(no task)"}
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, flexShrink: 0 }}>
+        <span style={{ fontSize: "10px", color: "var(--text-dimmer)" }}>
+          {formatRelativeTime(durationMs)}
+        </span>
+        <span style={{ fontSize: "10px", color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>
+          {run.id}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function DeptRow({
+  dept,
+  agents,
+  onClick,
+}: {
+  dept: string;
+  agents: { id: string; name: string }[];
+  onClick: () => void;
+}) {
+  const color = DEPT_COLORS[dept] ?? "var(--text-dim)";
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "9px 12px",
+        background: "var(--bg-2)",
+        border: "1px solid var(--border-dim)",
+        borderRadius: "var(--radius)",
+        cursor: "pointer",
+        marginBottom: "2px",
+        transition: "border-color 0.1s",
+      }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = color; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border-dim)"; }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Bot size={12} style={{ color }} />
+        <span style={{ fontSize: "12px", fontWeight: 600, color, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          {dept}
+        </span>
+      </div>
+      <span style={{
+        fontSize: "11px",
+        fontWeight: 600,
+        color: "var(--text-dim)",
+        background: "var(--bg-4)",
+        border: "1px solid var(--border)",
+        borderRadius: "100px",
+        padding: "1px 7px",
+        fontFamily: "var(--font)",
+      }}>
+        {agents.length}
+      </span>
+    </div>
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  body,
+  action,
+  onAction,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+  action: string;
+  onAction: () => void;
+}) {
+  return (
+    <div style={{
+      background: "var(--bg-2)",
+      border: "1px dashed var(--border)",
+      borderRadius: "var(--radius)",
+      padding: "28px 20px",
+      textAlign: "center",
+    }}>
+      <div style={{ color: "var(--text-dimmer)", marginBottom: "10px", display: "flex", justifyContent: "center" }}>
+        {icon}
+      </div>
+      <div style={{ fontSize: "13px", color: "var(--text-dim)", marginBottom: "4px" }}>{title}</div>
+      <div style={{ fontSize: "11px", color: "var(--text-dimmer)", marginBottom: "14px" }}>{body}</div>
+      <button className="btn btn-primary" onClick={onAction}>{action}</button>
     </div>
   );
 }
