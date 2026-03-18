@@ -3,7 +3,11 @@ import { Terminal } from "xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
 
-export default function TerminalPane() {
+interface TerminalProps {
+  tabId?: string;
+}
+
+export default function TerminalPane({ tabId }: TerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -53,7 +57,9 @@ export default function TerminalPane() {
     fitRef.current = fit;
 
     // Connect WebSocket
-    const wsUrl = `ws://localhost:3200/api/terminal/ws`;
+    const wsUrl = tabId
+      ? `ws://localhost:3200/api/terminal/ws?tab=${tabId}`
+      : `ws://localhost:3200/api/terminal/ws`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

@@ -1,11 +1,12 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
-import { useState, useEffect, useRef, Suspense, lazy } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Home, FolderTree, GitBranch, MessageSquare, Bot, Zap, Settings, TerminalSquare, Play } from "lucide-react";
 import WorkspaceSidebar from "./WorkspaceSidebar.tsx";
 import ChatMessages from "./ChatMessages.tsx";
 import ChatInputBar from "./ChatInputBar.tsx";
+import { ContextBar } from "./ContextBar.tsx";
 
-const TerminalPane = lazy(() => import("./Terminal.tsx"));
+import TerminalTabs from "./TerminalTabs.tsx";
 
 interface ProjectInfo { projectName: string; projectDir: string; }
 interface GitStatus { branch: string; files: { status: string }[]; }
@@ -394,9 +395,7 @@ export default function Layout() {
                 </div>
 
                 <div style={{ flex: 1, overflow: "hidden", display: activeTab === "TERMINAL" ? "flex" : "none", flexDirection: "column" }}>
-                  <Suspense fallback={null}>
-                    <TerminalPane />
-                  </Suspense>
+                  <TerminalTabs />
                 </div>
 
                 {activeTab === "OUTPUT" && (
@@ -410,6 +409,9 @@ export default function Layout() {
               </div>
             </>
           )}
+
+          {/* Context usage indicator */}
+          <ContextBar sessionId={activeSessionId} streaming={streaming} />
 
           {/* Bottom chat input bar — always visible */}
           <ChatInputBar

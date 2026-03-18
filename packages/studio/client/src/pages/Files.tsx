@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { CodeViewer } from "../components/CodeViewer";
 
 interface FileNode {
   name: string;
@@ -116,31 +117,32 @@ export default function FilesPage() {
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+      <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
         {!selected && (
-          <div style={{ color: "#3f3f46", fontFamily: "monospace", fontSize: 13 }}>
+          <div style={{ padding: "16px 20px", color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 13 }}>
             Select a file to view its contents.
           </div>
         )}
         {loading && (
-          <div style={{ color: "#52525b", fontFamily: "monospace", fontSize: 13 }}>Loading...</div>
+          <div style={{ padding: "16px 20px", color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 13 }}>Loading...</div>
         )}
         {content !== null && !loading && (
-          <>
+          <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
             <div style={{
-              fontFamily: "monospace", fontSize: 11, color: "#52525b",
-              marginBottom: 12, paddingBottom: 8, borderBottom: "1px solid #18181b",
+              fontFamily: "var(--font)", fontSize: 11, color: "var(--text-dimmer)",
+              marginBottom: 0, padding: "8px 20px", borderBottom: "1px solid var(--border-dim)",
+              flexShrink: 0,
             }}>
               {selected}
             </div>
-            <pre style={{
-              fontFamily: "monospace", fontSize: 12, color: "#d4d4d8",
-              whiteSpace: "pre-wrap", wordBreak: "break-all", margin: 0,
-              lineHeight: 1.6,
-            }}>
-              {content}
-            </pre>
-          </>
+            <div style={{ flex: 1, overflow: "hidden" }}>
+              <CodeViewer
+                content={content}
+                ext={selected?.split(".").pop() ?? ""}
+                path={selected ?? undefined}
+              />
+            </div>
+          </div>
         )}
       </div>
     </div>
