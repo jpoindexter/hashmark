@@ -1,10 +1,16 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+
+interface AgentDef {
+  id: string;
+  name: string;
+  description: string;
+}
 
 interface Subtask {
   id: number;
   title: string;
   description: string;
-  agentType: "frontend" | "backend" | "testing" | "analysis";
+  agentId: string;
 }
 
 type Phase = "idle" | "planning" | "planned" | "running" | "merging" | "done";
@@ -13,9 +19,9 @@ type WorkerStatus = "pending" | "running" | "done" | "error" | "conflict";
 interface WorkerState {
   id: number;
   title: string;
-  agentType: string;
+  agentId: string;
+  agentName: string;
   status: WorkerStatus;
-  chunks: string[];
   output: string;
   error?: string;
 }
@@ -26,28 +32,189 @@ interface MergeResult {
   skipped: number[];
 }
 
-const AGENT_COLORS: Record<string, string> = {
-  frontend: "var(--blue)",
-  backend: "var(--accent)",
-  testing: "var(--yellow)",
-  analysis: "#a855f7",
+const STATUS_COLORS: Record<WorkerStatus, string> = {
+  pending:  "var(--text-dimmer)",
+  running:  "var(--accent)",
+  done:     "var(--accent)",
+  error:    "var(--red)",
+  conflict: "var(--yellow)",
 };
+
+const STATUS_LABELS: Record<WorkerStatus, string> = {
+  pending:  "WAITING",
+  running:  "RUNNING",
+  done:     "DONE",
+  error:    "FAILED",
+  conflict: "CONFLICT",
+};
+
+function AgentBadge({ name }: { name: string }) {
+  return (
+    <span style={{
+      fontSize: 9,
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+      color: "var(--accent)",
+      border: "1px solid var(--accent)",
+      padding: "1px 5px",
+      borderRadius: "var(--radius)",
+      opacity: 0.8,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      maxWidth: 120,
+    }}>
+      {name}
+    </span>
+  );
+}
+
+function WorkerCard({ worker, isExpanded, onToggle }: {
+  worker: WorkerState;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const outputRef = useRef<HTMLDivElement>(null);
+  const wasRunning = useRef(false);
+
+  // Auto-scroll to bottom while running
+  useEffect(() => {
+    if (worker.status === "running") {
+      wasRunning.current = true;
+      if (outputRef.current) {
+        outputRef.current.scrollTop = outputRef.current.scrollHeight;
+      }
+    }
+  }, [worker.output, worker.status]);
+
+  const color = STATUS_COLORS[worker.status];
+
+  return (
+    <div style={{
+      background: "var(--bg-2)",
+      border: `1px solid ${isExpanded ? "var(--accent)" : worker.status === "running" ? "var(--accent)" : "var(--border-dim)"}`,
+      borderRadius: "var(--radius)",
+      overflow: "hidden",
+      display: "flex",
+      flexDirection: "column",
+      transition: "border-color 0.15s",
+    }}>
+      {/* Card header */}
+      <div
+        onClick={onToggle}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "10px 12px",
+          cursor: "pointer",
+          borderBottom: isExpanded ? "1px solid var(--border-dim)" : "none",
+          background: isExpanded ? "var(--bg-3)" : "transparent",
+          userSelect: "none",
+        }}
+      >
+        {/* Status dot */}
+        <span style={{
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          background: color,
+          flexShrink: 0,
+          ...(worker.status === "running" ? { animation: "swarm-pulse 1s ease-in-out infinite" } : {}),
+        }} />
+
+        {/* Agent badge */}
+        <AgentBadge name={worker.agentName} />
+
+        {/* Title */}
+        <span style={{
+          flex: 1,
+          fontSize: 11,
+          fontWeight: 600,
+          color: "var(--text)",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}>
+          {worker.title}
+        </span>
+
+        {/* Status label */}
+        <span style={{ fontSize: 9, color, letterSpacing: "0.05em", flexShrink: 0 }}>
+          {STATUS_LABELS[worker.status]}
+        </span>
+
+        {/* Toggle icon */}
+        <span style={{ fontSize: 10, color: "var(--text-dimmer)", flexShrink: 0 }}>
+          {isExpanded ? "▴" : "▾"}
+        </span>
+      </div>
+
+      {/* Output */}
+      {isExpanded && (
+        <div
+          ref={outputRef}
+          style={{
+            padding: "10px 12px",
+            fontFamily: "var(--font)",
+            fontSize: 10,
+            lineHeight: 1.6,
+            color: "var(--text-dim)",
+            maxHeight: 220,
+            overflowY: "auto",
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+            flex: 1,
+          }}
+        >
+          {worker.error ? (
+            <span style={{ color: "var(--red)" }}>{worker.error}</span>
+          ) : worker.output ? (
+            <>
+              {worker.output}
+              {worker.status === "running" && (
+                <span style={{
+                  display: "inline-block",
+                  width: 5,
+                  height: 11,
+                  background: "var(--accent)",
+                  verticalAlign: "text-bottom",
+                  marginLeft: 2,
+                  animation: "cursor-blink 1s step-end infinite",
+                }} />
+              )}
+            </>
+          ) : (
+            <span style={{ color: "var(--text-dimmer)" }}>Waiting for output...</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Company() {
   const [task, setTask] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [plan, setPlan] = useState<Subtask[]>([]);
   const [workers, setWorkers] = useState<Map<number, WorkerState>>(new Map());
-  const [expandedWorker, setExpandedWorker] = useState<number | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const [mergeResult, setMergeResult] = useState<MergeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const outputRef = useRef<HTMLDivElement>(null);
+  const [availableAgents, setAvailableAgents] = useState<AgentDef[]>([]);
 
+  // Load available agents for preview
   useEffect(() => {
-    if (outputRef.current) {
-      outputRef.current.scrollTop = outputRef.current.scrollHeight;
-    }
-  }, [workers, expandedWorker]);
+    fetch("/api/company/agents")
+      .then(r => r.json())
+      .then((d: { agents: AgentDef[] }) => setAvailableAgents(d.agents ?? []))
+      .catch(() => {});
+  }, []);
+
+  const agentName = useCallback((agentId: string): string => {
+    const a = availableAgents.find(x => x.id === agentId);
+    return a?.name ?? agentId.split("-").pop() ?? agentId;
+  }, [availableAgents]);
 
   async function handlePlan() {
     if (!task.trim()) return;
@@ -55,6 +222,7 @@ export default function Company() {
     setError(null);
     setPlan([]);
     setWorkers(new Map());
+    setExpandedIds(new Set());
     setMergeResult(null);
 
     try {
@@ -64,15 +232,8 @@ export default function Company() {
         body: JSON.stringify({ task }),
       });
       const data = await res.json() as { plan?: Subtask[]; error?: string };
-      if (data.error) {
-        setError(data.error);
-        setPhase("idle");
-        return;
-      }
-      if (data.plan) {
-        setPlan(data.plan);
-        setPhase("planned");
-      }
+      if (data.error) { setError(data.error); setPhase("idle"); return; }
+      if (data.plan) { setPlan(data.plan); setPhase("planned"); }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setPhase("idle");
@@ -85,19 +246,20 @@ export default function Company() {
     setError(null);
     setMergeResult(null);
 
-    // Initialize worker states
     const initial = new Map<number, WorkerState>();
     for (const s of plan) {
       initial.set(s.id, {
         id: s.id,
         title: s.title,
-        agentType: s.agentType,
+        agentId: s.agentId,
+        agentName: agentName(s.agentId),
         status: "pending",
-        chunks: [],
         output: "",
       });
     }
+    // Auto-expand all workers when run starts
     setWorkers(initial);
+    setExpandedIds(new Set(plan.map(s => s.id)));
 
     try {
       const res = await fetch("/api/company/run", {
@@ -105,12 +267,7 @@ export default function Company() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task, plan }),
       });
-
-      if (!res.body) {
-        setError("No response stream");
-        setPhase("planned");
-        return;
-      }
+      if (!res.body) { setError("No stream"); setPhase("planned"); return; }
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -119,11 +276,9 @@ export default function Company() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
         buffer = lines.pop() ?? "";
-
         for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
           try {
@@ -140,26 +295,25 @@ export default function Company() {
   function handleEvent(event: Record<string, unknown>) {
     switch (event.type) {
       case "worker_start":
-        setWorkers((prev) => {
+        setWorkers(prev => {
           const next = new Map(prev);
           const w = next.get(event.id as number);
           if (w) next.set(w.id, { ...w, status: "running" });
           return next;
         });
-        if (expandedWorker === null) setExpandedWorker(event.id as number);
         break;
 
       case "worker_chunk":
-        setWorkers((prev) => {
+        setWorkers(prev => {
           const next = new Map(prev);
           const w = next.get(event.id as number);
-          if (w) next.set(w.id, { ...w, chunks: [...w.chunks, event.text as string] });
+          if (w) next.set(w.id, { ...w, output: w.output + (event.text as string) });
           return next;
         });
         break;
 
       case "worker_done":
-        setWorkers((prev) => {
+        setWorkers(prev => {
           const next = new Map(prev);
           const w = next.get(event.id as number);
           if (w) next.set(w.id, { ...w, status: "done", output: event.output as string });
@@ -168,7 +322,7 @@ export default function Company() {
         break;
 
       case "worker_error":
-        setWorkers((prev) => {
+        setWorkers(prev => {
           const next = new Map(prev);
           const w = next.get(event.id as number);
           if (w) next.set(w.id, { ...w, status: "error", error: event.error as string });
@@ -177,13 +331,12 @@ export default function Company() {
         break;
 
       case "phase":
-        if ((event.phase as string) === "merging") setPhase("merging");
+        if (event.phase === "merging") setPhase("merging");
         break;
 
       case "merge_result":
         setMergeResult(event as unknown as MergeResult);
-        // Update worker statuses based on merge
-        setWorkers((prev) => {
+        setWorkers(prev => {
           const next = new Map(prev);
           for (const id of (event.conflicts as number[]) ?? []) {
             const w = next.get(id);
@@ -209,53 +362,69 @@ export default function Company() {
     setPhase("idle");
     setPlan([]);
     setWorkers(new Map());
-    setExpandedWorker(null);
+    setExpandedIds(new Set());
     setMergeResult(null);
     setError(null);
   }
 
-  const statusIcon = (status: WorkerStatus) => {
-    switch (status) {
-      case "pending": return { text: "PENDING", color: "var(--text-dimmer)" };
-      case "running": return { text: "RUNNING", color: "var(--accent)" };
-      case "done": return { text: "DONE", color: "var(--accent)" };
-      case "error": return { text: "ERROR", color: "var(--red)" };
-      case "conflict": return { text: "CONFLICT", color: "var(--yellow)" };
-    }
-  };
+  function toggleExpanded(id: number) {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const workerList = [...workers.values()];
+  const runningCount = workerList.filter(w => w.status === "running").length;
+  const doneCount = workerList.filter(w => w.status === "done").length;
+  const busy = phase === "planning" || phase === "running" || phase === "merging";
+
+  // Determine grid columns based on worker count
+  const cols = workerList.length <= 2 ? workerList.length : workerList.length <= 4 ? 2 : Math.min(3, workerList.length);
 
   return (
-    <div style={{ padding: "28px", maxWidth: 960 }}>
+    <div style={{ padding: "24px 28px", maxWidth: 1100, display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <h1 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 4, color: "var(--text)" }}>
-            COMPANY MODE
+          <h1 style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text)", marginBottom: 4 }}>
+            SWARM
           </h1>
           <div style={{ fontSize: 11, color: "var(--text-dimmer)" }}>
-            Multi-agent orchestrator -- decompose tasks, run parallel agents in worktrees, merge results
+            Decompose tasks, run agents in parallel git worktrees, merge results
           </div>
         </div>
-        {phase !== "idle" && (
-          <button className="btn" onClick={handleClear} style={{ fontSize: 11 }}>
-            CLEAR
-          </button>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* Available agents preview */}
+          {availableAgents.length > 0 && phase === "idle" && (
+            <div style={{ display: "flex", gap: 4, flexWrap: "wrap", maxWidth: 400, justifyContent: "flex-end" }}>
+              {availableAgents.slice(0, 6).map(a => (
+                <AgentBadge key={a.id} name={a.name} />
+              ))}
+              {availableAgents.length > 6 && (
+                <span style={{ fontSize: 9, color: "var(--text-dimmer)" }}>+{availableAgents.length - 6} more</span>
+              )}
+            </div>
+          )}
+          {phase !== "idle" && (
+            <button className="btn" onClick={handleClear} style={{ fontSize: 11 }}>CLEAR</button>
+          )}
+        </div>
       </div>
 
       {/* Task input */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-          Describe what you want to build:
-        </div>
+      <div>
         <textarea
           value={task}
           onChange={(e) => setTask(e.target.value)}
-          placeholder="e.g. Add user authentication with JWT, login/register pages, and protected routes..."
-          disabled={phase === "planning" || phase === "running" || phase === "merging"}
+          onKeyDown={(e) => { if (e.key === "Enter" && e.metaKey) void handlePlan(); }}
+          placeholder="Describe what to build — e.g. Add OAuth2 login with GitHub provider, protect API routes, and add a user profile page..."
+          disabled={busy}
+          rows={3}
           style={{
             width: "100%",
-            minHeight: 80,
             padding: "12px 14px",
             background: "var(--bg-2)",
             border: "1px solid var(--border-dim)",
@@ -266,27 +435,31 @@ export default function Company() {
             lineHeight: 1.6,
             resize: "vertical",
             outline: "none",
+            display: "block",
           }}
-          onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; }}
-          onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border-dim)"; }}
+          onFocus={e => { e.currentTarget.style.borderColor = "var(--accent)"; }}
+          onBlur={e => { e.currentTarget.style.borderColor = "var(--border-dim)"; }}
         />
-
-        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>
           <button
             className="btn btn-primary"
             onClick={handlePlan}
-            disabled={!task.trim() || phase === "planning" || phase === "running" || phase === "merging"}
+            disabled={!task.trim() || busy}
           >
             {phase === "planning" ? "PLANNING..." : "> PLAN"}
           </button>
-          {plan.length > 0 && phase !== "running" && phase !== "merging" && (
-            <button
-              className="btn btn-primary"
-              onClick={handleRun}
-            >
-              {"> RUN"}
+          {plan.length > 0 && !busy && (
+            <button className="btn btn-primary" onClick={handleRun}>
+              {`> RUN ${plan.length} AGENTS`}
             </button>
           )}
+          {(phase === "running" || phase === "merging") && (
+            <span style={{ fontSize: 11, color: "var(--text-dim)" }}>
+              {phase === "merging" ? "Merging..." : `${runningCount} running · ${doneCount}/${workerList.length} done`}
+            </span>
+          )}
+          <span style={{ flex: 1 }} />
+          <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>⌘↵ to plan</span>
         </div>
       </div>
 
@@ -298,219 +471,117 @@ export default function Company() {
           border: "1px solid var(--red)",
           borderRadius: "var(--radius)",
           color: "var(--red)",
-          fontSize: 12,
-          marginBottom: 20,
+          fontSize: 11,
           fontFamily: "var(--font)",
+          whiteSpace: "pre-wrap",
         }}>
           {error}
         </div>
       )}
 
-      {/* Planning spinner */}
-      {phase === "planning" && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "16px 0", color: "var(--text-dim)", fontSize: 12 }}>
-          <span style={{
-            display: "inline-block",
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            background: "var(--accent)",
-            animation: "blink 1s step-end infinite",
-          }} />
-          Decomposing task...
-        </div>
-      )}
-
-      {/* Plan cards */}
-      {plan.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <div style={{
-            fontSize: 10,
-            color: "var(--text-dimmer)",
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            marginBottom: 12,
-            paddingBottom: 8,
-            borderBottom: "1px solid var(--border-dim)",
-          }}>
-            PLAN -- {plan.length} subtasks
+      {/* Plan preview (before running) */}
+      {plan.length > 0 && phase === "planned" && (
+        <div>
+          <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10, paddingBottom: 6, borderBottom: "1px solid var(--border-dim)" }}>
+            PLAN — {plan.length} parallel subtasks
           </div>
-
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${Math.min(plan.length, 4)}, 1fr)`,
-            gap: 10,
-          }}>
-            {plan.map((subtask) => {
-              const worker = workers.get(subtask.id);
-              const status = worker?.status ?? "pending";
-              const si = statusIcon(status);
-              const isExpanded = expandedWorker === subtask.id;
-              const agentColor = AGENT_COLORS[subtask.agentType] ?? "var(--text-dim)";
-
-              return (
-                <div
-                  key={subtask.id}
-                  onClick={() => setExpandedWorker(isExpanded ? null : subtask.id)}
-                  style={{
-                    padding: "14px",
-                    background: isExpanded ? "var(--bg-3)" : "var(--bg-2)",
-                    border: "1px solid",
-                    borderColor: isExpanded ? "var(--accent)" : status === "running" ? agentColor : "var(--border-dim)",
-                    borderRadius: "var(--radius)",
-                    cursor: "pointer",
-                    transition: "all 0.15s",
-                  }}
-                >
-                  {/* Subtask ID + title */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                    <span style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      color: "var(--bg)",
-                      background: agentColor,
-                      padding: "1px 5px",
-                      borderRadius: "var(--radius)",
-                    }}>
-                      {subtask.id}
-                    </span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {subtask.title}
-                    </span>
-                  </div>
-
-                  {/* Agent type badge */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                    <span style={{
-                      fontSize: 9,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      color: agentColor,
-                      border: `1px solid ${agentColor}`,
-                      padding: "1px 5px",
-                      borderRadius: "var(--radius)",
-                    }}>
-                      {subtask.agentType}
-                    </span>
-                  </div>
-
-                  {/* Status */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    {status === "running" && (
-                      <span style={{
-                        display: "inline-block",
-                        width: 6,
-                        height: 6,
-                        borderRadius: "50%",
-                        background: "var(--accent)",
-                        animation: "blink 1s step-end infinite",
-                        flexShrink: 0,
-                      }} />
-                    )}
-                    <span style={{ fontSize: 10, color: si.color, letterSpacing: "0.05em" }}>
-                      {si.text}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Expanded worker output */}
-      {expandedWorker !== null && workers.has(expandedWorker) && (() => {
-        const w = workers.get(expandedWorker)!;
-        const agentColor = AGENT_COLORS[w.agentType] ?? "var(--text-dim)";
-        return (
-          <div style={{ marginBottom: 24 }}>
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 8,
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text)", textTransform: "uppercase" }}>
-                  Agent {w.id}: {w.title}
-                </span>
-                <span style={{
-                  fontSize: 9,
-                  textTransform: "uppercase",
-                  color: agentColor,
-                  border: `1px solid ${agentColor}`,
-                  padding: "1px 5px",
-                  borderRadius: "var(--radius)",
-                }}>
-                  {w.agentType}
-                </span>
-              </div>
-              <button
-                className="btn"
-                onClick={(e) => { e.stopPropagation(); setExpandedWorker(null); }}
-                style={{ fontSize: 10, padding: "2px 8px" }}
-              >
-                COLLAPSE
-              </button>
-            </div>
-            <div
-              ref={outputRef}
-              style={{
-                background: "var(--bg)",
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {plan.map(s => (
+              <div key={s.id} style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 10,
+                padding: "10px 12px",
+                background: "var(--bg-2)",
                 border: "1px solid var(--border-dim)",
                 borderRadius: "var(--radius)",
-                padding: 14,
-                fontFamily: "var(--font)",
-                fontSize: 11,
-                lineHeight: 1.6,
-                color: "var(--text-dim)",
-                maxHeight: 300,
-                overflowY: "auto",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-              }}
-            >
-              {w.chunks.length > 0 ? w.chunks.join("") : w.output || (w.error ? w.error : "Waiting for output...")}
-              {w.status === "running" && <span className="cursor" />}
-            </div>
+              }}>
+                <span style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  background: "var(--accent-bg)",
+                  color: "var(--accent)",
+                  border: "1px solid var(--accent)",
+                  padding: "1px 6px",
+                  borderRadius: "var(--radius)",
+                  flexShrink: 0,
+                  lineHeight: "1.6",
+                }}>
+                  {s.id}
+                </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text)" }}>{s.title}</span>
+                    <AgentBadge name={agentName(s.agentId)} />
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--text-dim)", lineHeight: 1.5 }}>{s.description}</div>
+                </div>
+              </div>
+            ))}
           </div>
-        );
-      })()}
-
-      {/* Merging indicator */}
-      {phase === "merging" && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 0", color: "var(--text-dim)", fontSize: 12 }}>
-          <span style={{
-            display: "inline-block",
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            background: "var(--accent)",
-            animation: "blink 1s step-end infinite",
-          }} />
-          Merging results...
         </div>
       )}
 
-      {/* Merge results */}
-      {mergeResult && phase === "done" && (
-        <div style={{
-          padding: "14px",
-          background: "var(--bg-2)",
-          border: "1px solid var(--border-dim)",
-          borderRadius: "var(--radius)",
-          marginBottom: 20,
-        }}>
+      {/* Swarm grid — always-visible output during/after run */}
+      {workerList.length > 0 && (phase === "running" || phase === "merging" || phase === "done") && (
+        <div>
           <div style={{
             fontSize: 10,
             color: "var(--text-dimmer)",
             textTransform: "uppercase",
             letterSpacing: "0.1em",
             marginBottom: 10,
+            paddingBottom: 6,
+            borderBottom: "1px solid var(--border-dim)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
           }}>
+            <span>AGENTS</span>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button
+                onClick={() => setExpandedIds(new Set(workerList.map(w => w.id)))}
+                style={{ background: "none", border: "none", color: "var(--text-dimmer)", cursor: "pointer", fontSize: 9 }}
+              >
+                EXPAND ALL
+              </button>
+              <button
+                onClick={() => setExpandedIds(new Set())}
+                style={{ background: "none", border: "none", color: "var(--text-dimmer)", cursor: "pointer", fontSize: 9 }}
+              >
+                COLLAPSE ALL
+              </button>
+            </div>
+          </div>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${cols}, 1fr)`,
+            gap: 10,
+          }}>
+            {workerList.map(worker => (
+              <WorkerCard
+                key={worker.id}
+                worker={worker}
+                isExpanded={expandedIds.has(worker.id)}
+                onToggle={() => toggleExpanded(worker.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Merge results */}
+      {mergeResult && phase === "done" && (
+        <div style={{
+          padding: "14px 16px",
+          background: "var(--bg-2)",
+          border: "1px solid var(--border-dim)",
+          borderRadius: "var(--radius)",
+        }}>
+          <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>
             MERGE RESULTS
           </div>
-          <div style={{ display: "flex", gap: 16, fontSize: 12 }}>
+          <div style={{ display: "flex", gap: 16, fontSize: 12, flexWrap: "wrap" }}>
             {mergeResult.merged.length > 0 && (
               <span style={{ color: "var(--accent)" }}>
                 Merged: {mergeResult.merged.join(", ")}
@@ -518,17 +589,22 @@ export default function Company() {
             )}
             {mergeResult.conflicts.length > 0 && (
               <span style={{ color: "var(--yellow)" }}>
-                Conflicts: {mergeResult.conflicts.join(", ")} (manual merge required)
+                Conflicts: {mergeResult.conflicts.join(", ")} — manual merge required
               </span>
             )}
             {mergeResult.skipped.length > 0 && (
               <span style={{ color: "var(--text-dimmer)" }}>
-                Skipped: {mergeResult.skipped.join(", ")} (no changes)
+                No changes: {mergeResult.skipped.join(", ")}
               </span>
             )}
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes swarm-pulse { 0%,100%{opacity:.5;transform:scale(.8)} 50%{opacity:1;transform:scale(1.3)} }
+        @keyframes cursor-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+      `}</style>
     </div>
   );
 }
