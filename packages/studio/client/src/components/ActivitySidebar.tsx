@@ -30,7 +30,7 @@ interface WorkspaceEntry {
 }
 
 const INITIAL = (name: string) => name.charAt(0).toUpperCase();
-const INITIAL_COLORS = ["#3b82f6","#10b981","#f59e0b","#8b5cf6","#ef4444","#06b6d4","#ec4899"];
+const INITIAL_COLORS = ["var(--blue)","var(--accent)","var(--yellow)","#8b5cf6","var(--red)","#06b6d4","#ec4899"];
 const nameColor = (name: string) => INITIAL_COLORS[name.charCodeAt(0) % INITIAL_COLORS.length];
 
 export default function ActivitySidebar() {
@@ -83,7 +83,7 @@ export default function ActivitySidebar() {
       height: "100%",
       background: "var(--bg-2)",
       borderRight: "1px solid var(--border-dim)",
-      fontFamily: "var(--font)",
+      fontFamily: "var(--font-ui)",
       userSelect: "none",
     }}>
       {/* Activity header */}
@@ -367,7 +367,7 @@ function AgentRow({
         width: 6,
         height: 6,
         borderRadius: "50%",
-        background: active ? "var(--accent)" : "#f59e0b",
+        background: active ? "var(--accent)" : "var(--yellow)",
         flexShrink: 0,
         boxShadow: active ? "0 0 6px var(--accent)" : undefined,
       }} />

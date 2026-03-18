@@ -27,9 +27,9 @@ interface MergeResult {
 }
 
 const AGENT_COLORS: Record<string, string> = {
-  frontend: "#3b82f6",
-  backend: "#10b981",
-  testing: "#f59e0b",
+  frontend: "var(--blue)",
+  backend: "var(--accent)",
+  testing: "var(--yellow)",
   analysis: "#a855f7",
 };
 
