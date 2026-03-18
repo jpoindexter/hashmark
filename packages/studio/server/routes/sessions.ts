@@ -413,32 +413,86 @@ export function sessionsRoutes(projectDir: string) {
           });
 
         } else {
-          // ── Claude CLI fallback path ────────────────────────────────────────
+          // ── Claude CLI streaming JSON agent path ────────────────────────────
           const claudeBin = findClaudeBin(projectDir);
           const mcpConfigPath = resolveMcpConfig(projectDir);
 
-          const claudeArgs = mcpConfigPath
-            ? ["--mcp-config", mcpConfigPath, "--print", fullPrompt]
-            : ["--print", fullPrompt];
+          const claudeArgs: string[] = [
+            "--output-format", "stream-json",
+            "--verbose",
+            "--no-interactive",
+          ];
+          if (mcpConfigPath) {
+            claudeArgs.unshift("--mcp-config", mcpConfigPath);
+          }
 
           const proc = spawn(claudeBin, claudeArgs, {
             cwd: projectDir,
-            stdio: ["ignore", "pipe", "pipe"],
+            stdio: ["pipe", "pipe", "pipe"],
             env: { ...process.env, CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS: "1" },
           });
 
           activeProcesses.set(sessionId, { kill: () => proc.kill("SIGTERM") });
 
+          // Send prompt via stdin
+          proc.stdin.write(fullPrompt + "\n");
+          proc.stdin.end();
+
           let fullText = "";
-          let buffer = "";
+          let jsonBuffer = "";
 
           proc.stdout.on("data", (chunk: Buffer) => {
-            const text = chunk.toString();
-            buffer += text;
-            fullText += text;
-            send({ type: "text", text });
-            if (claudeSections.length > 0) {
-              updateAnalytics(dataDir, sessionId, text, claudeSections).catch(() => {});
+            jsonBuffer += chunk.toString();
+            const lines = jsonBuffer.split("\n");
+            jsonBuffer = lines.pop() ?? "";
+
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              try {
+                const event = JSON.parse(line) as {
+                  type: string;
+                  message?: {
+                    content?: Array<{
+                      type: string;
+                      text?: string;
+                      name?: string;
+                      input?: unknown;
+                      content?: unknown;
+                    }>;
+                  };
+                  total_cost_usd?: number;
+                  usage?: unknown;
+                };
+
+                if (event.type === "assistant" && event.message?.content) {
+                  for (const block of event.message.content) {
+                    if (block.type === "text" && block.text) {
+                      fullText += block.text;
+                      send({ type: "text", text: block.text });
+                      if (claudeSections.length > 0) {
+                        updateAnalytics(dataDir, sessionId, block.text, claudeSections).catch(() => {});
+                      }
+                    }
+                    if (block.type === "tool_use") {
+                      send({ type: "tool_use", tool: block.name, input: block.input });
+                    }
+                    if (block.type === "tool_result") {
+                      send({ type: "tool_result", content: block.content });
+                    }
+                  }
+                }
+
+                if (event.type === "result") {
+                  const cost = event.total_cost_usd ?? 0;
+                  const usage = event.usage ?? {};
+                  send({ type: "done", cost, usage });
+                }
+              } catch {
+                // Not JSON — could be a plain-text progress line; emit as progress
+                if (line.trim()) {
+                  send({ type: "progress", message: line });
+                }
+              }
             }
           });
 
@@ -453,8 +507,7 @@ export function sessionsRoutes(projectDir: string) {
             activeProcesses.delete(sessionId);
 
             const killed = code === null || code === 130 || code === 143;
-            const finalText = fullText.trim();
-            const savedText = finalText || (killed ? "[interrupted]" : "[no response]");
+            const savedText = fullText.trim() || (killed ? "[interrupted]" : "[no response]");
             const msgInputEstimate = Math.ceil(body.message.length / 4);
             const msgOutputEstimate = Math.ceil(savedText.length / 4);
 
@@ -472,7 +525,12 @@ export function sessionsRoutes(projectDir: string) {
               WHERE id = ?
             `).run(msgInputEstimate, msgOutputEstimate, Date.now(), sessionId);
 
-            send({ type: "done", success: code === 0 || killed });
+            // Only send done here if we haven't already sent it from a 'result' event
+            if (code !== 0 && !killed) {
+              send({ type: "done", success: false });
+            } else if (killed) {
+              send({ type: "done", success: false, interrupted: true });
+            }
             controller.close();
           });
 
