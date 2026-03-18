@@ -427,6 +427,28 @@ export default function Agents() {
     });
   }
 
+  // #66 — skill effectiveness delta tracker
+  type RecentTrend = "improving" | "stable" | "degrading" | "insufficient_data";
+  interface EffectivenessData {
+    agentId: string;
+    totalRuns: number;
+    successRate: number;
+    recentTrend: RecentTrend;
+    recentSuccessRate: number;
+    avgOutputLength: number;
+    lastRun: number | null;
+  }
+  const [effectiveness, setEffectiveness] = useState<EffectivenessData | null>(null);
+
+  useEffect(() => {
+    if (!selected) return;
+    setEffectiveness(null);
+    fetch(`/api/agents/${selected.id}/effectiveness`)
+      .then(r => r.json())
+      .then(d => setEffectiveness(d as EffectivenessData))
+      .catch(() => {});
+  }, [selected?.id]);
+
   // #32 — quality guardrails for agent skill definitions
   type CheckStatus = "pass" | "warn" | "error";
   type SkillCheck = { id: string; label: string; status: CheckStatus; detail: string };
@@ -968,6 +990,94 @@ export default function Agents() {
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+              {/* Effectiveness panel (#66) */}
+              {effectiveness && (
+                <div style={{
+                  borderTop: "1px solid var(--border-dim)",
+                  background: "var(--bg-2)",
+                  flexShrink: 0,
+                  padding: "8px 14px",
+                }}>
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 6,
+                  }}>
+                    <span style={{
+                      fontSize: 9,
+                      fontFamily: "var(--font)",
+                      fontWeight: 700,
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      color: "var(--text-dimmer)",
+                    }}>
+                      Effectiveness
+                    </span>
+                    {effectiveness.totalRuns === 0 ? (
+                      <span style={{ fontSize: 10, fontFamily: "var(--font)", color: "var(--text-dimmer)", fontStyle: "italic" }}>
+                        No runs yet
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 10, fontFamily: "var(--font)", color: "var(--text-dimmer)" }}>
+                        {effectiveness.totalRuns} run{effectiveness.totalRuns !== 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </div>
+                  {effectiveness.totalRuns > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                      {/* Success rate bar */}
+                      <div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                          <span style={{ fontSize: 9, fontFamily: "var(--font)", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dimmer)" }}>
+                            Success Rate
+                          </span>
+                          <span style={{ fontSize: 9, fontFamily: "var(--font)", color: "var(--accent)" }}>
+                            {Math.round(effectiveness.successRate * 100)}%
+                          </span>
+                        </div>
+                        <div style={{
+                          height: 4,
+                          background: "var(--bg-3)",
+                          borderRadius: 2,
+                          overflow: "hidden",
+                        }}>
+                          <div style={{
+                            height: "100%",
+                            width: `${Math.round(effectiveness.successRate * 100)}%`,
+                            background: "var(--accent)",
+                            borderRadius: 2,
+                            transition: "width 0.3s ease",
+                          }} />
+                        </div>
+                      </div>
+                      {/* Trend */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 9, fontFamily: "var(--font)", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dimmer)" }}>
+                          Trend
+                        </span>
+                        {effectiveness.recentTrend === "insufficient_data" ? (
+                          <span style={{ fontSize: 10, fontFamily: "var(--font)", color: "var(--text-dimmer)" }}>—</span>
+                        ) : (
+                          <span style={{
+                            fontSize: 10,
+                            fontFamily: "var(--font)",
+                            fontWeight: 600,
+                            color: effectiveness.recentTrend === "improving"
+                              ? "var(--accent)"
+                              : effectiveness.recentTrend === "degrading"
+                              ? "var(--red)"
+                              : "var(--yellow)",
+                          }}>
+                            {effectiveness.recentTrend === "improving" ? "↑" : effectiveness.recentTrend === "degrading" ? "↓" : "→"}{" "}
+                            {effectiveness.recentTrend}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
