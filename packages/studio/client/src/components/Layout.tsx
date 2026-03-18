@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Home, FolderTree, GitBranch, Bot, Zap, Settings, TerminalSquare, Play, Building2, ChevronRight, AlertTriangle, Shield, PlayCircle } from "lucide-react";
 import CommandPalette from "./CommandPalette.tsx";
 import ActivitySidebar from "./ActivitySidebar.tsx";
@@ -7,6 +7,7 @@ import ChatMessages from "./ChatMessages.tsx";
 import ChatInputBar from "./ChatInputBar.tsx";
 import { ContextBar } from "./ContextBar.tsx";
 import TerminalTabs from "./TerminalTabs.tsx";
+import ResizableDrawer from "./ResizableDrawer.tsx";
 
 interface ProjectInfo { projectName: string; projectDir: string; }
 interface GitStatus { branch: string; files: { status: string }[]; }
@@ -76,10 +77,15 @@ export default function Layout() {
   const [driftDismissed, setDriftDismissed] = useState<boolean>(isDismissed);
 
   const [cmdOpen, setCmdOpen] = useState(false);
-  const [termOpen,   setTermOpen]   = useState(() => restore("termOpen",   false));
-  const [termHeight, setTermHeight] = useState(() => restore("termHeight", 220));
-  const [termBig,    setTermBig]    = useState(() => restore("termBig",    false));
-  const [activeTab,  setActiveTab]  = useState<PanelTab>("TERMINAL");
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const shortcutsOpenRef = useRef(false);
+  const lastKeyRef = useRef<string | null>(null);
+  const lastKeyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => { shortcutsOpenRef.current = shortcutsOpen; }, [shortcutsOpen]);
+  const [termOpen,  setTermOpen]  = useState(() => restore("termOpen",  false));
+  const [termBig,   setTermBig]   = useState(() => restore("termBig",   false));
+  const [activeTab, setActiveTab] = useState<PanelTab>("TERMINAL");
 
   const [activeSessionId, setActiveSessionId] = useState<string | null>(() =>
     localStorage.getItem("studio_active_session_id") ?? null
@@ -118,14 +124,69 @@ export default function Layout() {
       .catch(() => {});
   }, []);
 
+  const clearLastKey = useCallback(() => {
+    lastKeyRef.current = null;
+    if (lastKeyTimer.current) { clearTimeout(lastKeyTimer.current); lastKeyTimer.current = null; }
+  }, []);
+
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "`") { e.preventDefault(); setTermOpen(v => !v); }
-      if ((e.metaKey || e.ctrlKey) && (e.key === "k" || (e.key === "p" && e.shiftKey))) { e.preventDefault(); setCmdOpen(v => !v); }
+    const G_NAV: Record<string, string> = {
+      s: "/",
+      r: "/run",
+      c: "/company",
+      a: "/agents",
+      g: "/git",
+      f: "/files",
     };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return;
+
+      const mod = e.metaKey || e.ctrlKey;
+
+      if (mod && e.key === "`") { e.preventDefault(); setTermOpen(v => !v); return; }
+      if (mod && e.key === "j") { e.preventDefault(); setTermOpen(v => !v); return; }
+      if (mod && (e.key === "k" || (e.key === "p" && e.shiftKey))) { e.preventDefault(); setCmdOpen(v => !v); return; }
+
+      // ? → toggle shortcuts overlay
+      if (!mod && e.key === "?") {
+        e.preventDefault();
+        setShortcutsOpen(v => !v);
+        clearLastKey();
+        return;
+      }
+
+      // Esc → close shortcuts overlay
+      if (e.key === "Escape" && shortcutsOpenRef.current) {
+        setShortcutsOpen(false);
+        clearLastKey();
+        return;
+      }
+
+      // g then X navigation
+      if (!mod && lastKeyRef.current === "g") {
+        const dest = G_NAV[e.key.toLowerCase()];
+        if (dest) {
+          e.preventDefault();
+          navigate(dest);
+          clearLastKey();
+          return;
+        }
+      }
+
+      if (!mod && e.key.toLowerCase() === "g") {
+        lastKeyRef.current = "g";
+        if (lastKeyTimer.current) clearTimeout(lastKeyTimer.current);
+        lastKeyTimer.current = setTimeout(clearLastKey, 1000);
+        return;
+      }
+
+      clearLastKey();
+    };
+
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [navigate, clearLastKey]);
 
   // Listen for sidebar session switches
   useEffect(() => {
@@ -503,6 +564,7 @@ export default function Layout() {
       </div>
 
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
+      {shortcutsOpen && <ShortcutsHelp onClose={() => setShortcutsOpen(false)} />}
     </div>
   );
 }
@@ -595,6 +657,80 @@ function StatusItem({ children, title, onClick }: { children: React.ReactNode; t
       onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
     >
       {children}
+    </div>
+  );
+}
+
+function ShortcutsHelp({ onClose }: { onClose: () => void }) {
+  const rows: [string, string][] = [
+    ["g s", "Sessions"],
+    ["g r", "Run"],
+    ["g c", "Company"],
+    ["g a", "Agents"],
+    ["g g", "Git"],
+    ["g f", "Files"],
+  ];
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 10000,
+        background: "rgba(0,0,0,0.55)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: "var(--bg-2)",
+          border: "1px solid var(--border)",
+          borderRadius: 4,
+          padding: "20px 28px",
+          minWidth: 280,
+          fontFamily: "var(--font)",
+          fontSize: 12,
+          color: "var(--text-dim)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        }}
+      >
+        <div style={{ fontSize: 10, letterSpacing: "0.1em", color: "var(--text-dimmer)", marginBottom: 16 }}>
+          KEYBOARD SHORTCUTS
+        </div>
+
+        <div style={{ fontSize: 10, letterSpacing: "0.08em", color: "var(--text-dimmer)", marginBottom: 8 }}>
+          NAVIGATION
+        </div>
+        <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: 16 }}>
+          <tbody>
+            {rows.map(([keys, label]) => (
+              <tr key={keys}>
+                <td style={{ padding: "3px 16px 3px 0", color: "var(--accent)", whiteSpace: "nowrap" }}>{keys}</td>
+                <td style={{ padding: "3px 0", color: "var(--text-dim)" }}>{label}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div style={{ fontSize: 10, letterSpacing: "0.08em", color: "var(--text-dimmer)", marginBottom: 8 }}>
+          ACTIONS
+        </div>
+        <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: 20 }}>
+          <tbody>
+            <tr>
+              <td style={{ padding: "3px 16px 3px 0", color: "var(--accent)", whiteSpace: "nowrap" }}>⌘K</td>
+              <td style={{ padding: "3px 0", color: "var(--text-dim)" }}>Command palette</td>
+            </tr>
+            <tr>
+              <td style={{ padding: "3px 16px 3px 0", color: "var(--accent)", whiteSpace: "nowrap" }}>?</td>
+              <td style={{ padding: "3px 0", color: "var(--text-dim)" }}>This help</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style={{ fontSize: 10, color: "var(--text-dimmer)" }}>
+          Press <span style={{ color: "var(--accent)" }}>Esc</span> or <span style={{ color: "var(--accent)" }}>?</span> to close
+        </div>
+      </div>
     </div>
   );
 }
