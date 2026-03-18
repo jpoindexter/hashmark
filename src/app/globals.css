@@ -35,9 +35,11 @@
     line-height: inherit;
   }
 
-  /* Swiss Reset — 0px border-radius everywhere */
-  * { border-radius: 0 !important; }
-  .rounded-full, input[type="checkbox"], input[type="radio"] {
+  /* Terminal UI reset — scoped to dashboard shell only */
+  .terminal-ui * { border-radius: 0 !important; }
+  .terminal-ui .rounded-full,
+  .terminal-ui input[type="checkbox"],
+  .terminal-ui input[type="radio"] {
     border-radius: 9999px !important;
   }
 
@@ -75,12 +77,12 @@
   }
 
   /* Scrollbar */
-  ::-webkit-scrollbar { height: var(--mono-line-height); width: 10px; }
+  ::-webkit-scrollbar { height: 6px; width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: oklch(var(--foreground) / 0.25); }
-  ::-webkit-scrollbar-thumb:hover { background: oklch(var(--foreground) / 0.4); }
+  ::-webkit-scrollbar-thumb { background: oklch(var(--foreground) / 0.18); border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: oklch(var(--foreground) / 0.32); }
   ::-webkit-scrollbar-corner { background: transparent; }
-  * { scrollbar-width: thin; scrollbar-color: oklch(var(--foreground) / 0.25) transparent; }
+  * { scrollbar-width: thin; scrollbar-color: oklch(var(--foreground) / 0.18) transparent; }
 
   /* Autofill styling */
   input:-webkit-autofill,
@@ -129,11 +131,79 @@ button:active:not(:disabled),
   transform: translate(2px, 2px);
 }
 
-/* Kill FABRK CRT scanline/glow pseudo-elements
-   (except our noise overlay on body::before) */
-*:not(body)::before,
-*:not(body)::after {
+/* Marketing insight card hover */
+.insight-card {
+  transition: box-shadow 0.5s, transform 0.5s;
+}
+.insight-card:hover {
+  box-shadow: 0 20px 50px rgba(0,0,0,0.08) !important;
+  transform: translateY(-4px);
+}
+
+/* Scroll-driven reveal animations (marketing page) */
+@keyframes hashmark-reveal {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.marketing-page .scroll-reveal {
+  animation: hashmark-reveal linear both;
+  animation-timeline: view();
+  animation-range: entry 0% entry 32%;
+}
+.marketing-page .scroll-reveal-2 {
+  animation: hashmark-reveal linear both;
+  animation-timeline: view();
+  animation-range: entry 5% entry 37%;
+}
+.marketing-page .scroll-reveal-3 {
+  animation: hashmark-reveal linear both;
+  animation-timeline: view();
+  animation-range: entry 10% entry 42%;
+}
+@supports not (animation-timeline: view()) {
+  .marketing-page .scroll-reveal,
+  .marketing-page .scroll-reveal-2,
+  .marketing-page .scroll-reveal-3 { opacity: 1; transform: none; animation: none; }
+}
+
+/* FAQ accordion */
+.marketing-page details summary { list-style: none; cursor: pointer; }
+.marketing-page details summary::-webkit-details-marker { display: none; }
+.marketing-page details .faq-icon { transition: transform 0.3s; }
+.marketing-page details[open] .faq-icon { transform: rotate(45deg); }
+.marketing-page details .faq-chevron { transition: transform 0.2s; }
+.marketing-page details[open] .faq-chevron { transform: rotate(180deg); }
+
+/* Marketing page — reset terminal-ui monospace overrides */
+.marketing-page .border   { border-width: 1px !important; }
+.marketing-page .border-t { border-top-width: 1px !important; }
+.marketing-page .border-b { border-bottom-width: 1px !important; }
+.marketing-page .border-l { border-left-width: 1px !important; }
+.marketing-page .border-r { border-right-width: 1px !important; }
+.marketing-page h1, .marketing-page h2,
+.marketing-page h3, .marketing-page h4 {
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.marketing-page button {
+  text-transform: none;
+}
+.marketing-page button:active:not(:disabled) {
+  transform: none;
+}
+
+/* Kill FABRK CRT scanline/glow pseudo-elements in terminal UI only */
+.terminal-ui *:not(body)::before,
+.terminal-ui *:not(body)::after {
   background-image: none !important;
+}
+
+/* Kill FABRK backdrop-blur in terminal UI only */
+.terminal-ui [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: oklch(var(--background) / 0.8) !important;
 }
 
 /* ============================================
@@ -163,13 +233,8 @@ aside img[alt] { width: 2rem; height: 2rem; min-width: 2rem; min-height: 2rem; o
 aside nav a:hover, aside nav button:hover { background: oklch(var(--muted)) !important; }
 
 /* ============================================
-   DIALOG OVERLAY
+   DIALOG OVERLAY — scoped to terminal UI
    ============================================ */
-[class*="backdrop-blur"] {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  background: oklch(var(--background) / 0.8) !important;
-}
 
 /* ============================================
    NOISE TEXTURE OVERLAY
@@ -203,6 +268,12 @@ body::before {
 /* ============================================
    ANIMATIONS
    ============================================ */
+@keyframes cloud-drift-slow { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(40px); } }
+@keyframes cloud-drift-mid  { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-32px); } }
+@keyframes cloud-drift-fast { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(24px); } }
+.cloud-a { animation: cloud-drift-slow 50s ease-in-out infinite; }
+.cloud-b { animation: cloud-drift-mid  38s ease-in-out infinite; }
+.cloud-c { animation: cloud-drift-fast 28s ease-in-out infinite; }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 @keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 .terminal-cursor::after { content: '_'; animation: cursor-blink 1s step-end infinite; margin-left: 2px; }

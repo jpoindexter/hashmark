@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Footer } from "@/components/landing/footer";
+import { PLANS, FEATURE_ROWS, FAQ_ITEMS, CheckIcon, FeatureCell } from "@/components/landing/pricing-helpers";
 
 export const metadata = {
   title: "Pricing — Hashmark",
@@ -7,199 +8,105 @@ export const metadata = {
     "Simple pricing for AI context file generation. Free to start, Pro for unlimited repos and auto-sync.",
 };
 
-const PLANS = [
-  {
-    name: "FREE",
-    price: "$0",
-    period: "",
-    description: "Try it out",
-    features: [
-      "1 connected repository",
-      "Manual scan via web UI",
-      "All 8 output formats",
-      "Download all format files",
-      "Basic intelligence dashboard",
-    ],
-    cta: "> GET STARTED",
-    href: "/login?plan=free",
-    highlighted: false,
-  },
-  {
-    name: "PRO",
-    price: "$19",
-    period: "/mo",
-    description: "For individuals",
-    features: [
-      "Unlimited repositories",
-      "Auto-sync via GitHub Action",
-      "Full codebase intelligence dashboard",
-      "Custom rules engine",
-      "Scan history with diffs",
-    ],
-    cta: "> UPGRADE TO PRO",
-    href: "/login?plan=pro",
-    highlighted: true,
-  },
-  {
-    name: "TEAM",
-    price: "$29",
-    period: "/seat/mo",
-    description: "For teams",
-    features: [
-      "Everything in Pro",
-      "Shared team billing",
-      "Priority support",
-      "Early access to new features",
-    ],
-    cta: "> UPGRADE TO TEAM",
-    href: "/login?plan=team",
-    highlighted: false,
-  },
-];
-
-const FEATURES = [
-  { name: "Connected repositories", free: "1", pro: "Unlimited", team: "Unlimited" },
-  { name: "Manual scan via web UI", free: true, pro: true, team: true },
-  { name: "All 8 output formats", free: true, pro: true, team: true },
-  { name: "Download format files", free: true, pro: true, team: true },
-  { name: "Auto-sync (GitHub Action)", free: false, pro: true, team: true },
-  { name: "Intelligence dashboard", free: "Basic", pro: "Full", team: "Full" },
-  { name: "Custom rules", free: false, pro: true, team: true },
-  { name: "Scan history + diffs", free: false, pro: true, team: true },
-  { name: "Shared team billing", free: false, pro: false, team: true },
-  { name: "Priority support", free: false, pro: false, team: true },
-  { name: "Early access to new features", free: false, pro: false, team: true },
-];
-
-const FAQ = [
-  {
-    question: "What happens when I hit my repo limit?",
-    answer:
-      "On the Free plan, you can connect 1 repository. To connect more, upgrade to Pro for unlimited repos. Your existing data is preserved when you upgrade.",
-  },
-  {
-    question: "Can I cancel anytime?",
-    answer:
-      "Yes. Cancel anytime from your billing dashboard. You'll keep access until the end of your current billing period. No lock-in, no penalties.",
-  },
-  {
-    question: "Do you store my source code?",
-    answer:
-      "No. We clone your repo to a temporary directory, run the scanner, generate context files, and immediately delete the clone. Only the scan results (metadata like component names, API routes, stats) and generated context files are stored.",
-  },
-  {
-    question: "Which AI tools are supported?",
-    answer:
-      "Hashmark generates 8 formats covering all major AI coding tools: AGENTS.md (universal), CLAUDE.md (Claude Code), .cursorrules and .cursor/rules/*.mdc (Cursor), copilot-instructions.md (GitHub Copilot), .windsurfrules (Windsurf), GEMINI.md (Google Gemini CLI), and .clinerules (Cline/Roo Code).",
-  },
-  {
-    question: "How does auto-sync work?",
-    answer:
-      "Pro and Team plans include a GitHub Action that runs on every push to your default branch. It scans your codebase and auto-commits updated context files — so your AI tools always have current, accurate context. Zero maintenance.",
-  },
-  {
-    question: "What scanners do you use?",
-    answer:
-      "Hashmark runs 27 specialized scanners covering components, API routes, database models, design tokens, hooks, utilities, anti-patterns, complexity metrics, file structure, environment variables, and more. A typical scan of a 1,500-file codebase completes in 5-15 seconds.",
-  },
-];
-
-function FeatureCell({ value }: { value: boolean | string }) {
-  if (typeof value === "string") {
-    return <span className="type-body">{value}</span>;
-  }
-  if (value) {
-    return <span className="type-body text-foreground">#</span>;
-  }
-  return <span className="type-body text-muted-foreground">—</span>;
-}
+const TH = {
+  fontFamily: "var(--font-montserrat), sans-serif",
+  fontSize: "11px",
+  fontWeight: 600,
+  letterSpacing: "0.1em",
+  textTransform: "uppercase" as const,
+};
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-background font-mono text-foreground">
+    <div
+      className="marketing-page min-h-screen"
+      style={{ fontFamily: "var(--font-crimson), Georgia, serif", backgroundColor: "var(--background)", color: "var(--foreground)" }}
+    >
       {/* Nav */}
-      <nav className="fixed top-0 z-50 w-full border-b border-border bg-background">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-[var(--grid-6)]">
-          <Link
-            href="/"
-            className="flex items-center gap-[var(--grid-2)] type-button"
-          >
-            <span className="text-xl text-foreground">#</span>
-            <span>Hashmark</span>
-          </Link>
-          <div className="flex items-center gap-[var(--grid-6)]">
-            <Link
-              href="/#pricing"
-              className="type-nav text-muted-foreground transition-colors hover:text-foreground"
-            >
-              PRICING
+      <nav
+        className="fixed top-0 w-full z-50"
+        style={{ backgroundColor: "rgba(var(--background-rgb, 253,252,249),0.92)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(26,26,26,0.06)" }}
+      >
+        <div className="max-w-6xl mx-auto px-6 lg:px-12">
+          <div className="flex justify-between items-center h-12">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-6 h-6 flex items-center justify-center rounded-md bg-foreground text-background flex-shrink-0">
+                <span className="font-bold text-xs leading-none" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>#</span>
+              </div>
+              <span className="text-sm font-semibold tracking-tight" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Hashmark</span>
             </Link>
             <Link
               href="/login"
-              className="border border-border px-[var(--grid-4)] py-[var(--grid-1)].5 type-button transition-colors hover:bg-muted hover:border-foreground"
+              className="px-4 py-1.5 rounded-full text-xs transition-all hover:bg-foreground hover:text-background"
+              style={{ fontFamily: "var(--font-montserrat), sans-serif", border: "1px solid rgba(26,26,26,0.15)" }}
             >
-              {"> SIGN IN"}
+              Connect repo
             </Link>
           </div>
         </div>
       </nav>
 
-      <main className="mx-auto max-w-5xl px-[var(--grid-6)] pb-24 pt-28">
+      <main className="max-w-5xl mx-auto px-6 lg:px-12 pt-28 pb-24">
         {/* Header */}
-        <div className="mb-16 text-center">
-          <h1 className="type-h1 text-4xl">
-            SIMPLE PRICING
+        <div className="text-center mb-20">
+          <p className="text-xs tracking-widest uppercase mb-4" style={{ fontFamily: "var(--font-montserrat), sans-serif", color: "rgba(26,26,26,0.4)" }}>
+            Pricing
+          </p>
+          <h1 className="text-5xl font-light tracking-tight mb-4" style={{ letterSpacing: "-0.02em" }}>
+            Simple, honest pricing
           </h1>
-          <p className="mt-[var(--grid-4)] text-lg text-muted-foreground">
-            One price. All formats. Every scan.
+          <p className="text-lg" style={{ color: "rgba(26,26,26,0.55)" }}>
+            Free to start. Pay when you need auto-sync.
           </p>
         </div>
 
-        {/* Plan Cards */}
-        <div className="mb-24 mono-grid-3 gap-[var(--grid-6)]">
+        {/* Plan cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24">
           {PLANS.map((plan) => (
             <div
               key={plan.name}
-              className={`flex flex-col border p-[var(--grid-6)] ${
-                plan.highlighted
-                  ? "border-foreground bg-card"
-                  : "border-border"
-              }`}
+              className="flex flex-col p-8"
+              style={{
+                background: plan.highlighted ? "var(--foreground)" : "white",
+                color: plan.highlighted ? "var(--background)" : "var(--foreground)",
+                border: plan.highlighted ? "none" : "1px solid rgba(26,26,26,0.1)",
+              }}
             >
-              <div className="mb-[var(--grid-6)]">
-                <span className="type-label text-muted-foreground">
-                  [{plan.name}]
-                </span>
-                <div className="mt-[var(--grid-2)] flex items-baseline gap-[var(--grid-1)]">
-                  <span className="text-3xl font-bold">{plan.price}</span>
-                  <span className="type-caption text-muted-foreground">
-                    {plan.period}
-                  </span>
+              <div className="mb-6">
+                <p className="text-xs tracking-widest uppercase mb-3" style={{ fontFamily: "var(--font-montserrat), sans-serif", color: plan.highlighted ? "rgba(253,252,249,0.5)" : "rgba(26,26,26,0.4)" }}>
+                  {plan.name}
+                </p>
+                <div className="flex items-baseline gap-1 mb-2">
+                  <span className="text-4xl font-light">{plan.price}</span>
+                  <span className="text-sm" style={{ color: plan.highlighted ? "rgba(253,252,249,0.5)" : "rgba(26,26,26,0.4)" }}>{plan.period}</span>
                 </div>
-                <p className="mt-[var(--grid-1)] type-body text-muted-foreground">
+                <p className="text-sm" style={{ color: plan.highlighted ? "rgba(253,252,249,0.6)" : "rgba(26,26,26,0.5)" }}>
                   {plan.description}
                 </p>
               </div>
 
-              <ul className="mb-[var(--grid-8)] flex-1 space-y-3">
+              <ul className="flex-1 space-y-3 mb-8">
                 {plan.features.map((feature) => (
-                  <li
-                    key={feature}
-                    className="flex items-start gap-[var(--grid-2)] type-body"
-                  >
-                    <span className="mt-0.5 text-foreground">#</span>
-                    <span>{feature}</span>
+                  <li key={feature} className="flex items-start gap-2.5 text-sm">
+                    <CheckIcon inverted={plan.highlighted} />
+                    <span style={{ color: plan.highlighted ? "rgba(253,252,249,0.85)" : "rgba(26,26,26,0.8)" }}>
+                      {feature}
+                    </span>
                   </li>
                 ))}
               </ul>
 
               <a
                 href={plan.href}
-                className={`block w-full py-[var(--grid-2)].5 text-center type-button transition-colors ${
-                  plan.highlighted
-                    ? "bg-foreground text-background hover:bg-foreground/90"
-                    : "border border-border hover:border-foreground hover:bg-muted"
-                }`}
+                className="block w-full py-3 text-center text-sm transition-all"
+                style={{
+                  fontFamily: "var(--font-montserrat), sans-serif",
+                  fontWeight: 500,
+                  letterSpacing: "0.05em",
+                  background: plan.highlighted ? "var(--background)" : "transparent",
+                  color: "var(--foreground)",
+                  border: plan.highlighted ? "none" : "1px solid rgba(26,26,26,0.2)",
+                }}
               >
                 {plan.cta}
               </a>
@@ -207,28 +114,28 @@ export default function PricingPage() {
           ))}
         </div>
 
-        {/* Feature Comparison Table */}
+        {/* Feature comparison */}
         <section className="mb-24">
-          <h2 className="mb-[var(--grid-8)] text-center type-label text-muted-foreground">
-            FEATURE COMPARISON
-          </h2>
+          <p className="text-xs tracking-widest uppercase text-center mb-10" style={{ fontFamily: "var(--font-montserrat), sans-serif", color: "rgba(26,26,26,0.35)" }}>
+            Feature comparison
+          </p>
           <div className="overflow-x-auto">
-            <table className="mono-table">
+            <table className="w-full" style={{ borderCollapse: "collapse" }}>
               <thead>
-                <tr className="bg-muted">
-                  <th className="type-label text-muted-foreground">FEATURE</th>
-                  <th className="text-center type-label text-muted-foreground">FREE</th>
-                  <th className="text-center type-label text-foreground">PRO</th>
-                  <th className="text-center type-label text-muted-foreground">TEAM</th>
+                <tr style={{ borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
+                  <th className="text-left py-3 pr-8" style={{ ...TH, color: "rgba(26,26,26,0.4)", width: "50%" }}>Feature</th>
+                  <th className="text-center py-3 px-4" style={{ ...TH, color: "rgba(26,26,26,0.4)" }}>Free</th>
+                  <th className="text-center py-3 px-4" style={{ ...TH, color: "var(--foreground)" }}>Pro</th>
+                  <th className="text-center py-3 px-4" style={{ ...TH, color: "rgba(26,26,26,0.4)" }}>Team</th>
                 </tr>
               </thead>
               <tbody>
-                {FEATURES.map((feature) => (
-                  <tr key={feature.name}>
-                    <td className="type-body">{feature.name}</td>
-                    <td className="text-center"><FeatureCell value={feature.free} /></td>
-                    <td className="text-center"><FeatureCell value={feature.pro} /></td>
-                    <td className="text-center"><FeatureCell value={feature.team} /></td>
+                {FEATURE_ROWS.map((row) => (
+                  <tr key={row.name} style={{ borderBottom: "1px solid rgba(26,26,26,0.05)" }}>
+                    <td className="py-3 pr-8 text-sm" style={{ color: "rgba(26,26,26,0.7)" }}>{row.name}</td>
+                    <td className="py-3 px-4 text-center"><FeatureCell value={row.free} /></td>
+                    <td className="py-3 px-4 text-center"><FeatureCell value={row.pro} /></td>
+                    <td className="py-3 px-4 text-center"><FeatureCell value={row.team} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -238,25 +145,39 @@ export default function PricingPage() {
 
         {/* FAQ */}
         <section>
-          <h2 className="mb-[var(--grid-8)] text-center type-label text-muted-foreground">
-            FREQUENTLY ASKED QUESTIONS
-          </h2>
-          <div className="mono-stack-sm">
-            {FAQ.map((item) => (
-              <details
-                key={item.question}
-                className="mono-details"
-              >
-                <summary className="type-button">
-                  {item.question}
+          <p className="text-xs tracking-widest uppercase text-center mb-10" style={{ fontFamily: "var(--font-montserrat), sans-serif", color: "rgba(26,26,26,0.35)" }}>
+            Questions
+          </p>
+          <div className="max-w-2xl mx-auto space-y-0">
+            {FAQ_ITEMS.map((item) => (
+              <details key={item.q} style={{ borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
+                <summary className="py-5 text-base cursor-pointer flex items-center justify-between list-none" style={{ fontWeight: 400 }}>
+                  {item.q}
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="faq-chevron flex-shrink-0 ml-4" style={{ color: "rgba(26,26,26,0.35)" }}>
+                    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 </summary>
-                <div className="type-body text-muted-foreground">
-                  {item.answer}
+                <div className="pb-5 text-base leading-relaxed" style={{ color: "rgba(26,26,26,0.55)" }}>
+                  {item.a}
                 </div>
               </details>
             ))}
           </div>
         </section>
+
+        {/* CTA */}
+        <div className="mt-20 text-center">
+          <p className="text-lg mb-6" style={{ color: "rgba(26,26,26,0.55)" }}>
+            Ready to keep your AI tools in sync?
+          </p>
+          <Link
+            href="/login"
+            className="inline-block px-8 py-3 text-sm transition-all hover:opacity-80"
+            style={{ fontFamily: "var(--font-montserrat), sans-serif", fontWeight: 500, letterSpacing: "0.05em", background: "var(--foreground)", color: "var(--background)" }}
+          >
+            Connect your first repo — free
+          </Link>
+        </div>
       </main>
 
       <Footer />

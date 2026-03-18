@@ -1,24 +1,33 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@fabrk/components";
+
 const plans = [
   {
     name: "FREE",
-    price: "$0",
-    period: "",
-    description: "Try it out",
+    label: "Individual",
+    monthly: "$0",
+    yearly: "$0",
+    period: "/mo",
+    description: "For open-source maintainers and solo devs.",
     features: [
       "1 connected repo",
       "Manual scan via web UI",
       "Download all 7 formats",
       "Basic dashboard",
     ],
-    cta: "> GET STARTED",
+    cta: "Get Started",
     href: "/login",
     highlighted: false,
   },
   {
     name: "PRO",
-    price: "$19",
+    label: "Pro",
+    monthly: "$19",
+    yearly: "$15",
     period: "/mo",
-    description: "For individuals",
+    description: "For individuals who ship fast.",
     features: [
       "Unlimited repos",
       "Auto-sync via GitHub Action",
@@ -26,81 +35,101 @@ const plans = [
       "Custom rules",
       "Scan history with diffs",
     ],
-    cta: "> UPGRADE TO PRO",
+    cta: "Start Trial",
     href: "/login",
     highlighted: true,
   },
   {
     name: "TEAM",
-    price: "$29",
+    label: "Team",
+    monthly: "$29",
+    yearly: "$23",
     period: "/seat/mo",
-    description: "For teams",
+    description: "For teams building at scale.",
     features: [
       "Everything in Pro",
       "Org-wide rules across all repos",
-      "Team dashboard (all repos in one view)",
+      "Team dashboard",
       "Invite team members",
       "Shared custom rules library",
     ],
-    cta: "> CONTACT US",
+    cta: "Contact Us",
     href: "mailto:hello@theft.studio",
     highlighted: false,
   },
 ];
 
 export function PricingTable() {
-  return (
-    <section id="pricing" className="border-t border-border px-[var(--grid-6)] py-[var(--grid-16)]">
-      <div className="mx-auto max-w-5xl">
-        <h2 className="mb-[var(--grid-4)] text-center type-h2">
-          PRICING
-        </h2>
-        <p className="mb-[var(--grid-16)] text-center type-body text-muted-foreground">
-          Free to start. Pay when you need auto-sync.
-        </p>
+  const [yearly, setYearly] = useState(false);
 
-        <div className="mono-grid-3 gap-[var(--grid-6)]">
+  return (
+    <section id="pricing" className="py-24 border-t border-zinc-800/50">
+      <div className="mx-auto max-w-5xl px-6">
+        <div className="text-center mb-16">
+          <p className="text-xs font-mono text-zinc-500 tracking-widest uppercase mb-4">
+            &mdash; PRICING
+          </p>
+          <h2 className="text-4xl font-bold mb-4">Scalable Precision</h2>
+          <p className="text-zinc-400 mb-8">Free to start. Pay when you need auto-sync.</p>
+
+          {/* Toggle */}
+          <div className="inline-flex p-1 bg-zinc-800 rounded-lg border border-zinc-700">
+            <Button onClick={() => setYearly(false)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                !yearly ? "bg-zinc-700 text-on-surface" : "text-zinc-400 hover:text-on-surface"
+              }`}>
+              Monthly
+            </Button>
+            <Button onClick={() => setYearly(true)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                yearly ? "bg-zinc-700 text-on-surface" : "text-zinc-400 hover:text-on-surface"
+              }`}>
+              Yearly <span className="text-emerald-500">(-20%)</span></Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`flex flex-col border p-[var(--grid-6)] ${
+              className={`p-8 rounded-2xl flex flex-col ${
                 plan.highlighted
-                  ? "border-foreground bg-card"
-                  : "border-border"
+                  ? "bg-zinc-800/50 border-2 border-emerald-500/50 relative shadow-[0_0_30px_rgba(16,185,129,0.1)]"
+                  : "bg-zinc-800/20 border border-zinc-700/50"
               }`}
             >
-              <div className="mb-[var(--grid-6)]">
-                <div className="flex items-baseline gap-[var(--grid-1)]">
-                  <span className="type-label text-muted-foreground">
-                    [{plan.name}]
-                  </span>
+              {plan.highlighted && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-zinc-900 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+                  Most Popular
                 </div>
-                <div className="mt-[var(--grid-2)] flex items-baseline gap-[var(--grid-1)]">
-                  <span className="type-h1">{plan.price}</span>
-                  <span className="type-caption text-muted-foreground">
-                    {plan.period}
-                  </span>
-                </div>
-                <p className="mt-[var(--grid-1)] type-body text-muted-foreground">
-                  {plan.description}
-                </p>
-              </div>
+              )}
 
-              <ul className="mb-[var(--grid-8)] flex-1 space-y-[var(--grid-3)]">
+              <h3 className="text-zinc-400 font-medium mb-2">{plan.label}</h3>
+              <div className="flex items-baseline gap-1 mb-2">
+                <span className="text-4xl font-bold">
+                  {yearly ? plan.yearly : plan.monthly}
+                </span>
+                <span className="text-zinc-500 text-sm">{plan.period}</span>
+              </div>
+              <p className="text-zinc-400 text-sm mb-8">{plan.description}</p>
+
+              <ul className="space-y-3 mb-8 flex-1">
                 {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-[var(--grid-2)] type-body">
-                    <span className="mt-0.5">{"#"}</span>
-                    <span>{feature}</span>
+                  <li key={feature} className="flex items-center gap-3 text-sm text-zinc-300">
+                    <svg className="w-4 h-4 text-emerald-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
+                    </svg>
+                    {feature}
                   </li>
                 ))}
               </ul>
 
               <a
                 href={plan.href}
-                className={`block w-full px-[var(--grid-6)] py-[var(--grid-3)] text-center type-button transition-colors ${
+                className={`block w-full py-3 rounded-lg text-center font-medium transition-colors ${
                   plan.highlighted
-                    ? "bg-foreground text-background hover:bg-foreground/90"
-                    : "border border-border hover:border-foreground hover:bg-muted"
+                    ? "bg-emerald-500 text-zinc-900 font-bold hover:bg-emerald-400"
+                    : "border border-zinc-700 hover:bg-zinc-800 text-on-surface"
                 }`}
               >
                 {plan.cta}

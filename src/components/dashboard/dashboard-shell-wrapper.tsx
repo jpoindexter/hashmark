@@ -69,6 +69,7 @@ export function DashboardShellWrapper({
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
+    <div className="terminal-ui" style={{ display: "contents" }}>
     <DashboardShell
       sidebarItems={SIDEBAR_ITEMS}
       user={{
@@ -95,5 +96,6 @@ export function DashboardShellWrapper({
       </div>
       <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
     </DashboardShell>
+    </div>
   );
 }

@@ -1,70 +1,54 @@
 export function Footer() {
   return (
-    <footer className="border-t-2 border-foreground px-[var(--grid-6)] py-[var(--grid-16)]">
-      <div className="mx-auto max-w-5xl">
-        <div className="grid grid-cols-1 gap-[var(--grid-12)] sm:grid-cols-3">
+    <footer
+      className="py-4"
+      style={{ borderTop: "1px solid rgba(232,228,217,0.6)" }}
+    >
+      <div className="max-w-6xl mx-auto px-6 lg:px-12">
+        <div className="flex flex-row justify-between items-center gap-4">
 
-          {/* Col 1: Wordmark + tagline */}
-          <div className="flex flex-col gap-[var(--grid-4)]">
-            <span className="type-h3 text-foreground"># HASHMARK</span>
-            <p className="type-body text-muted-foreground">
-              One scan. Every format.
-            </p>
+          <div className="flex items-center gap-2" style={{ opacity: 0.45 }}>
+            <div className="w-5 h-5 flex items-center justify-center rounded-md bg-foreground">
+              <span className="text-background font-bold text-[10px] leading-none">#</span>
+            </div>
+            <span
+              style={{
+                fontFamily: "var(--font-montserrat), sans-serif",
+                fontSize: "10px",
+                fontWeight: 600,
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+                color: "var(--foreground)",
+              }}
+            >
+              Hashmark &copy; {new Date().getFullYear()}
+            </span>
           </div>
 
-          {/* Col 2: Navigation links */}
-          <div className="flex flex-col gap-[var(--grid-3)]">
-            <p className="type-label text-muted-foreground tracking-widest mb-[var(--grid-2)]">
-              LINKS
-            </p>
-            <a
-              href="https://github.com/jpoindexter/hashmark"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="type-body text-muted-foreground hover:text-foreground transition-colors"
-            >
-              GitHub
-            </a>
-            <a
-              href="https://github.com/jpoindexter/hashmark#cli"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="type-body text-muted-foreground hover:text-foreground transition-colors"
-            >
-              CLI
-            </a>
-            <a
-              href="#pricing"
-              className="type-body text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Pricing
-            </a>
-            <a
-              href="https://theft.studio"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="type-body text-muted-foreground hover:text-foreground transition-colors"
-            >
-              theft.studio
-            </a>
-          </div>
-
-          {/* Col 3: Copyright */}
-          <div className="flex flex-col justify-end gap-[var(--grid-2)]">
-            <p className="type-caption text-muted-foreground">
-              &copy; {new Date().getFullYear()} theft.studio
-            </p>
-            <p className="type-caption text-muted-foreground">
-              Built by{" "}
+          <div className="flex gap-8">
+            {[
+              { label: "GitHub", href: "https://github.com/jpoindexter/hashmark" },
+              { label: "theft.studio", href: "https://theft.studio" },
+              { label: "Privacy", href: "/privacy" },
+            ].map((link) => (
               <a
-                href="https://theft.studio"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:underline underline-offset-4"
+                key={link.label}
+                href={link.href}
+                target={link.href.startsWith("http") ? "_blank" : undefined}
+                rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                className="transition-colors hover:text-foreground"
+                style={{
+                  fontFamily: "var(--font-montserrat), sans-serif",
+                  fontSize: "10px",
+                  letterSpacing: "0.15em",
+                  textTransform: "uppercase",
+                  color: "rgba(26,26,26,0.35)",
+                  textDecoration: "none",
+                }}
               >
-                theft.studio
+                {link.label}
               </a>
-            </p>
+            ))}
           </div>
 
         </div>
