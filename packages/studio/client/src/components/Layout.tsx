@@ -415,21 +415,20 @@ export default function Layout() {
           </>
         )}
 
-        {/* Context usage bar */}
-        <ContextBar sessionId={activeSessionId} streaming={streaming} />
-
-        {/* Chat input — always visible on home, shown on all routes */}
-        <ChatInputBar
-          sessionId={activeSessionId}
-          onNewSession={handleNewSession}
-          onSessionCreated={setActiveSessionId}
-          onStreamText={setStreamText}
-          onStreamingChange={setStreaming}
-          streaming={streaming}
-        />
       </div>
 
       </div>{/* end main body row */}
+
+      {/* ── Full-width chat bar ──────────────────────────────────────── */}
+      <ContextBar sessionId={activeSessionId} streaming={streaming} />
+      <ChatInputBar
+        sessionId={activeSessionId}
+        onNewSession={handleNewSession}
+        onSessionCreated={setActiveSessionId}
+        onStreamText={setStreamText}
+        onStreamingChange={setStreaming}
+        streaming={streaming}
+      />
 
       {/* ── Status bar ───────────────────────────────────────────────── */}
       <div style={{
