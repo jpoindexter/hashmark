@@ -39,6 +39,9 @@ import { sync } from "./sync.js";
 import { startWatch } from "./watch.js";
 import { installHooks, uninstallHooks } from "./hooks/install.js";
 import { login, readCredentials, clearCredentials, pushToCloud, type CloudSyncPayload } from "./auth.js";
+import { loadExistingContext, mergeContexts } from "./lib/context-merge.js";
+import { loadFreshnessStore, saveFreshnessStore, computeFreshness, updateFreshnessStore } from "./lib/freshness.js";
+import { generateClaudeMd } from "./formats/claude-md.js";
 import { writeFileSync, existsSync, rmSync, mkdirSync, readFileSync } from "fs";
 import { join, relative, dirname, resolve } from "path";
 import { execSync } from "child_process";
@@ -66,6 +69,8 @@ cli
   .option("--monorepo", "Enable monorepo mode")
   .option("--include-git-log", "Include recent git commits")
   .option("--format <formats>", "Output formats (all, cursorrules, etc.)")
+  .option("--merge", "Merge with existing CLAUDE.md/AGENTS.md if found", { default: true })
+  .option("--no-merge", "Skip merging with existing context files")
   .option("--sync", "Push scan results to hashmark.md cloud dashboard (requires login)")
   .action(async (dir: string | undefined, options: any) => {
     let targetDir = dir || process.cwd();
@@ -150,6 +155,18 @@ cli
         : formatToUse.split(",").map((f: string) =>
             generateFormat(f.trim() as FormatId, scanResult, { generatorOptions: options })
           );
+
+      // Context merge — inject human-authored sections into generated outputs
+      const existingCtx = options.merge !== false ? loadExistingContext(targetDir) : null;
+      if (existingCtx) {
+        for (const file of files) {
+          if (/CLAUDE\.md|AGENTS\.md/i.test(file.path)) {
+            file.content = mergeContexts(file.content, existingCtx);
+          }
+        }
+        scanResult.mergedContextSource = existingCtx.source;
+        if (!quiet) console.log(pc.dim(`  ↳ merged ${existingCtx.sections.size} sections from ${existingCtx.source}`));
+      }
 
       const written: string[] = [];
       for (const file of files) {

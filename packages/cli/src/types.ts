@@ -764,4 +764,10 @@ export interface ScanResult {
   complexityDelta?: ComplexityDelta | null;
   /** Context validation results (TypeScript, lint, build, tests) */
   contextValidation?: import("./scanners/context-validator.js").ContextValidation;
+  /** Section-level freshness info from freshness tracker */
+  sectionFreshness?: import("./lib/freshness.js").SectionFreshness[];
+  /** Current scan count from freshness store (used for freshness summary) */
+  freshnessStoreCount?: number;
+  /** Source file path of a merged existing context (e.g., "CLAUDE.md") */
+  mergedContextSource?: string;
 }
