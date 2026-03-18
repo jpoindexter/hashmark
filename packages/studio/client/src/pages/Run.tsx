@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { DiffPanel } from "../components/DiffPanel.tsx";
 
 interface AgentDef {
   id: string;
@@ -14,25 +15,132 @@ interface RunResult {
   hasChanges: boolean;
   conflictBranch?: string;
   mode?: RunMode;
+  runId?: string;
+  worktreeBranch?: string;
 }
 
+// ─── Department colors (mirrors AgentCard) ────────────────────────────────────
+
+const DEPT_COLORS: Record<string, string> = {
+  engineering: "#3b82f6",
+  product:     "#8b5cf6",
+  design:      "#ec4899",
+  marketing:   "#f59e0b",
+  sales:       "#10b981",
+  operations:  "#6366f1",
+  pr:          "#06b6d4",
+  general:     "#71717a",
+};
+
+function deptFromId(id: string): string {
+  // id format: "department-agentname" or "agentname"
+  const seg = id.split("-")[0].toLowerCase();
+  return DEPT_COLORS[seg] ? seg : "general";
+}
+
+function deptColor(id: string): string {
+  return DEPT_COLORS[deptFromId(id)] ?? DEPT_COLORS.general;
+}
+
+// ─── Recent tasks (localStorage) ─────────────────────────────────────────────
+
+const RECENT_KEY = "studio:run:recent-tasks";
+const MAX_RECENT = 10;
+
+function loadRecent(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]") as string[];
+  } catch { return []; }
+}
+
+function saveRecent(task: string) {
+  const prev = loadRecent().filter((t) => t !== task);
+  const next = [task, ...prev].slice(0, MAX_RECENT);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+}
+
+// ─── Token estimate ───────────────────────────────────────────────────────────
+
+function estimateTokens(text: string): number {
+  // rough: ~4 chars per token
+  return Math.max(0, Math.round(text.length / 4));
+}
+
+// ─── Elapsed timer ────────────────────────────────────────────────────────────
+
+function useElapsed(active: boolean) {
+  const [elapsed, setElapsed] = useState(0);
+  const startRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (active) {
+      startRef.current = Date.now();
+      setElapsed(0);
+      const id = setInterval(() => {
+        setElapsed(Math.floor((Date.now() - (startRef.current ?? Date.now())) / 1000));
+      }, 1000);
+      return () => clearInterval(id);
+    } else {
+      startRef.current = null;
+    }
+  }, [active]);
+
+  return elapsed;
+}
+
+function formatElapsed(s: number): string {
+  if (s < 60) return `${s}s`;
+  return `${Math.floor(s / 60)}m ${s % 60}s`;
+}
+
+// ─── Agent grouping ───────────────────────────────────────────────────────────
+
+function groupAgents(agents: AgentDef[]): Map<string, AgentDef[]> {
+  const map = new Map<string, AgentDef[]>();
+  for (const a of agents) {
+    const dept = deptFromId(a.id);
+    const label = dept.charAt(0).toUpperCase() + dept.slice(1);
+    if (!map.has(label)) map.set(label, []);
+    map.get(label)!.push(a);
+  }
+  return map;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function Run() {
-  const [task, setTask] = useState("");
-  const [agentId, setAgentId] = useState<string>("");
-  const [agents, setAgents] = useState<AgentDef[]>([]);
-  const [phase, setPhase] = useState<RunPhase>("idle");
-  const [mode, setMode] = useState<RunMode>("build");
-  const [status, setStatus] = useState("");
-  const [output, setOutput] = useState("");
-  const [result, setResult] = useState<RunResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const outputRef = useRef<HTMLDivElement>(null);
+  const [task, setTask]         = useState("");
+  const [agentId, setAgentId]   = useState<string>("");
+  const [agents, setAgents]     = useState<AgentDef[]>([]);
+  const [phase, setPhase]       = useState<RunPhase>("idle");
+  const [mode, setMode]         = useState<RunMode>("build");
+  const [status, setStatus]     = useState("");
+  const [output, setOutput]     = useState("");
+  const [result, setResult]     = useState<RunResult | null>(null);
+  const [error, setError]       = useState<string | null>(null);
+  const [showDiff, setShowDiff] = useState(false);
+  const [diff, setDiff]         = useState<string>("");
+  const [diffLoading, setDiffLoading] = useState(false);
+  const [showRecent, setShowRecent]   = useState(false);
+  const [recentTasks, setRecentTasks] = useState<string[]>([]);
+  const [copied, setCopied]     = useState(false);
+
+  const outputRef     = useRef<HTMLDivElement>(null);
+  const textareaRef   = useRef<HTMLTextAreaElement>(null);
+  const recentRef     = useRef<HTMLDivElement>(null);
+  const resultRef     = useRef<RunResult | null>(null);
+
+  const elapsed = useElapsed(phase === "running");
+
+  // Keep resultRef in sync (avoids stale closure in handleEvent)
+  useEffect(() => { resultRef.current = result; }, [result]);
 
   useEffect(() => {
     fetch("/api/company/agents")
       .then((r) => r.json())
       .then((d: { agents: AgentDef[] }) => setAgents(d.agents ?? []))
       .catch(() => {});
+    setRecentTasks(loadRecent());
   }, []);
 
   // Auto-scroll output while running
@@ -42,13 +150,38 @@ export default function Run() {
     }
   }, [output, phase]);
 
+  // Auto-resize textarea
+  function resizeTextarea() {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
+  }
+
+  // Close recent dropdown on outside click
+  useEffect(() => {
+    if (!showRecent) return;
+    function onDown(e: MouseEvent) {
+      if (recentRef.current && !recentRef.current.contains(e.target as Node)) {
+        setShowRecent(false);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [showRecent]);
+
   async function handleRun() {
     if (!task.trim() || phase === "running") return;
+    saveRecent(task.trim());
+    setRecentTasks(loadRecent());
     setPhase("running");
     setStatus("Running...");
     setOutput("");
     setResult(null);
+    resultRef.current = null;
     setError(null);
+    setShowDiff(false);
+    setDiff("");
 
     try {
       const res = await fetch("/api/run", {
@@ -94,7 +227,7 @@ export default function Run() {
     }
   }
 
-  function handleEvent(event: Record<string, unknown>) {
+  const handleEvent = useCallback((event: Record<string, unknown>) => {
     switch (event.type) {
       case "start":
         setStatus("Running...");
@@ -110,18 +243,49 @@ export default function Run() {
         break;
       case "merge_conflict":
         setStatus("Merge conflict");
-        setResult({ hasChanges: true, conflictBranch: event.branch as string });
+        setResult((prev) => ({ ...prev, hasChanges: true, conflictBranch: event.branch as string }));
         break;
-      case "complete":
+      case "complete": {
         setStatus("Done");
-        if (!result) setResult({ hasChanges: event.hasChanges as boolean, mode: event.mode as RunMode | undefined });
+        const r: RunResult = {
+          hasChanges: event.hasChanges as boolean,
+          mode: event.mode as RunMode | undefined,
+          runId: event.runId as string | undefined,
+          worktreeBranch: event.branch as string | undefined,
+        };
+        if (!resultRef.current) setResult(r);
         setPhase("done");
         break;
+      }
       case "error":
         setError(event.error as string);
         setPhase("done");
         break;
     }
+  }, []);
+
+  async function handleViewDiff() {
+    const rid = result?.runId;
+    if (!rid) return;
+    setDiffLoading(true);
+    setShowDiff(true);
+    try {
+      const res = await fetch(`/api/runs/${rid}/diff`);
+      const data = await res.json() as { diff: string };
+      setDiff(data.diff ?? "");
+    } catch {
+      setDiff("");
+    } finally {
+      setDiffLoading(false);
+    }
+  }
+
+  async function handleCancel() {
+    try {
+      await fetch("/api/run", { method: "DELETE" });
+    } catch {}
+    setPhase("done");
+    setStatus("Cancelled");
   }
 
   function handleReset() {
@@ -131,14 +295,37 @@ export default function Run() {
     setStatus("");
     setOutput("");
     setResult(null);
+    resultRef.current = null;
     setError(null);
+    setShowDiff(false);
+    setDiff("");
+  }
+
+  function handleRunAgain() {
+    const currentTask = task;
+    handleReset();
+    // Restore task so user can re-run immediately
+    setTimeout(() => {
+      setTask(currentTask);
+      setTimeout(resizeTextarea, 0);
+    }, 0);
+  }
+
+  function handleShare() {
+    navigator.clipboard.writeText(task).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }).catch(() => {});
   }
 
   const selectedAgent = agents.find((a) => a.id === agentId);
   const busy = phase === "running";
+  const tokenEst = estimateTokens(task);
+  const grouped = groupAgents(agents);
 
   return (
-    <div style={{ padding: "24px 28px", maxWidth: 900, display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{ padding: "24px 28px", maxWidth: showDiff ? "none" : 900, display: "flex", flexDirection: "column", gap: 20 }}>
+
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
@@ -156,296 +343,490 @@ export default function Run() {
         )}
       </div>
 
-      {/* Input form — shown when idle or as reference during/after run */}
-      {phase === "idle" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <textarea
-            value={task}
-            onChange={(e) => setTask(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && e.metaKey) void handleRun(); }}
-            placeholder="Describe the task — e.g. Add input validation to the signup form..."
-            rows={4}
-            style={{
-              width: "100%",
+      {/* Main layout: form + diff side by side when diff is open */}
+      <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
+
+          {/* Input form — shown when idle */}
+          {phase === "idle" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+
+              {/* Textarea with recent dropdown */}
+              <div style={{ position: "relative" }} ref={recentRef}>
+                <textarea
+                  ref={textareaRef}
+                  value={task}
+                  onChange={(e) => { setTask(e.target.value); resizeTextarea(); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && e.metaKey) void handleRun(); }}
+                  onFocus={() => {
+                    if (recentTasks.length > 0) setShowRecent(true);
+                    if (textareaRef.current) textareaRef.current.style.borderColor = "var(--accent)";
+                  }}
+                  onBlur={(e) => {
+                    if (textareaRef.current) textareaRef.current.style.borderColor = "var(--border-dim)";
+                    // delay so click on dropdown registers
+                    setTimeout(() => {
+                      if (!recentRef.current?.contains(document.activeElement)) setShowRecent(false);
+                    }, 150);
+                    void e;
+                  }}
+                  placeholder="Describe the task — e.g. Add input validation to the signup form..."
+                  style={{
+                    width: "100%",
+                    minHeight: 80,
+                    padding: "12px 14px",
+                    background: "var(--bg-2)",
+                    border: "1px solid var(--border-dim)",
+                    borderRadius: "var(--radius)",
+                    color: "var(--text)",
+                    fontFamily: "var(--font)",
+                    fontSize: 12,
+                    lineHeight: 1.6,
+                    resize: "none",
+                    outline: "none",
+                    display: "block",
+                    boxSizing: "border-box",
+                    overflow: "hidden",
+                  }}
+                />
+
+                {/* Recent tasks dropdown */}
+                {showRecent && recentTasks.length > 0 && (
+                  <div style={{
+                    position: "absolute",
+                    top: "calc(100% + 4px)",
+                    left: 0,
+                    right: 0,
+                    background: "var(--bg-3)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--radius)",
+                    zIndex: 50,
+                    overflow: "hidden",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+                  }}>
+                    <div style={{
+                      padding: "4px 10px",
+                      fontSize: 9,
+                      color: "var(--text-dimmer)",
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      borderBottom: "1px solid var(--border-dim)",
+                    }}>
+                      Recent tasks
+                    </div>
+                    {recentTasks.map((t, i) => (
+                      <button
+                        key={i}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setTask(t);
+                          setShowRecent(false);
+                          setTimeout(resizeTextarea, 0);
+                        }}
+                        style={{
+                          display: "block",
+                          width: "100%",
+                          textAlign: "left",
+                          padding: "7px 10px",
+                          background: "none",
+                          border: "none",
+                          borderBottom: i < recentTasks.length - 1 ? "1px solid var(--border-dim)" : "none",
+                          color: "var(--text-dim)",
+                          fontFamily: "var(--font)",
+                          fontSize: 11,
+                          cursor: "pointer",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-4)"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Token estimate + shortcut hint */}
+              <div style={{ display: "flex", justifyContent: "space-between", paddingLeft: 2 }}>
+                <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>
+                  {task.length > 0 ? `~${tokenEst} tokens` : ""}
+                </span>
+                <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>Cmd+Enter to run</span>
+              </div>
+
+              {/* Controls row */}
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                {/* Agent selector */}
+                <select
+                  value={agentId}
+                  onChange={(e) => setAgentId(e.target.value)}
+                  style={{
+                    padding: "6px 10px",
+                    background: "var(--bg-2)",
+                    border: "1px solid var(--border-dim)",
+                    borderRadius: "var(--radius)",
+                    color: agentId ? "var(--text)" : "var(--text-dimmer)",
+                    fontFamily: "var(--font)",
+                    fontSize: 11,
+                    outline: "none",
+                    cursor: "pointer",
+                    minWidth: 160,
+                  }}
+                >
+                  <option value="">No specific agent</option>
+                  {Array.from(grouped.entries()).map(([dept, deptAgents]) => (
+                    <optgroup key={dept} label={dept}>
+                      {deptAgents.map((a) => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+
+                {/* Department color dot for selected agent */}
+                {agentId && (
+                  <span style={{
+                    width: 8, height: 8, borderRadius: "50%",
+                    background: deptColor(agentId),
+                    flexShrink: 0,
+                  }} />
+                )}
+
+                <button
+                  className="btn btn-primary"
+                  onClick={handleRun}
+                  disabled={!task.trim()}
+                >
+                  {"> RUN AGENT"}
+                </button>
+              </div>
+
+              {/* Agent description */}
+              {selectedAgent?.description && (
+                <div style={{ fontSize: 11, color: "var(--text-dimmer)", paddingLeft: 2 }}>
+                  {selectedAgent.description}
+                </div>
+              )}
+
+              {/* Mode cards */}
+              <div style={{ display: "flex", gap: 10, marginTop: 2 }}>
+                {([
+                  { value: "plan" as RunMode, icon: "🔍", label: "Explore", sub: "Read-only analysis, no file changes" },
+                  { value: "build" as RunMode, icon: "⚡", label: "Execute", sub: "Write files, commit changes" },
+                ] as const).map(({ value, icon, label, sub }) => (
+                  <button
+                    key={value}
+                    onClick={() => setMode(value)}
+                    style={{
+                      flex: 1,
+                      padding: "12px 14px",
+                      background: mode === value ? "rgba(63,185,80,0.07)" : "var(--bg-2)",
+                      border: `1.5px solid ${mode === value ? "var(--accent)" : "var(--border-dim)"}`,
+                      borderRadius: "var(--radius)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      transition: "border-color 0.12s, background 0.12s",
+                    }}
+                  >
+                    <div style={{ fontSize: 13, marginBottom: 3 }}>
+                      <span style={{ marginRight: 6 }}>{icon}</span>
+                      <span style={{
+                        fontFamily: "var(--font-ui)",
+                        fontWeight: 600,
+                        color: mode === value ? "var(--accent)" : "var(--text)",
+                        fontSize: 12,
+                        letterSpacing: "0.01em",
+                      }}>
+                        {label}
+                      </span>
+                    </div>
+                    <div style={{
+                      fontSize: 10,
+                      color: "var(--text-dimmer)",
+                      fontFamily: "var(--font-ui)",
+                      lineHeight: 1.4,
+                    }}>
+                      {sub}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Run header (during/after run) */}
+          {phase !== "idle" && (
+            <div style={{
               padding: "12px 14px",
               background: "var(--bg-2)",
               border: "1px solid var(--border-dim)",
               borderRadius: "var(--radius)",
-              color: "var(--text)",
-              fontFamily: "var(--font)",
-              fontSize: 12,
-              lineHeight: 1.6,
-              resize: "vertical",
-              outline: "none",
-              display: "block",
-              boxSizing: "border-box",
-            }}
-            onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border-dim)"; }}
-          />
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {busy && (
+                  <span style={{
+                    width: 6, height: 6, borderRadius: "50%",
+                    background: "var(--accent)",
+                    flexShrink: 0,
+                    animation: "run-pulse 1s ease-in-out infinite",
+                  }} />
+                )}
+                {!busy && phase === "done" && !error && (
+                  <span style={{
+                    width: 6, height: 6, borderRadius: "50%",
+                    background: result?.conflictBranch ? "var(--yellow)" : "var(--accent)",
+                    flexShrink: 0,
+                  }} />
+                )}
+                {error && (
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--red)", flexShrink: 0 }} />
+                )}
+                <span style={{ fontSize: 12, color: "var(--text)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {task}
+                </span>
+                {selectedAgent && (
+                  <span style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                    <span style={{
+                      width: 6, height: 6, borderRadius: "50%",
+                      background: deptColor(agentId),
+                      flexShrink: 0,
+                    }} />
+                    <span style={{
+                      fontSize: 9,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      color: "var(--accent)",
+                      border: "1px solid var(--accent)",
+                      padding: "1px 5px",
+                      borderRadius: "var(--radius)",
+                      opacity: 0.8,
+                    }}>
+                      {selectedAgent.name}
+                    </span>
+                  </span>
+                )}
+                <span style={{
+                  fontSize: 9,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  color: mode === "plan" ? "#06b6d4" : "var(--accent)",
+                  border: `1px solid ${mode === "plan" ? "#06b6d4" : "var(--accent)"}`,
+                  padding: "1px 5px",
+                  borderRadius: "var(--radius)",
+                  flexShrink: 0,
+                }}>
+                  {mode}
+                </span>
+              </div>
 
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {/* Agent selector */}
-            <select
-              value={agentId}
-              onChange={(e) => setAgentId(e.target.value)}
-              style={{
-                padding: "6px 10px",
-                background: "var(--bg-2)",
-                border: "1px solid var(--border-dim)",
-                borderRadius: "var(--radius)",
-                color: agentId ? "var(--text)" : "var(--text-dimmer)",
-                fontFamily: "var(--font)",
-                fontSize: 11,
-                outline: "none",
-                cursor: "pointer",
-                minWidth: 160,
-              }}
-            >
-              <option value="">No specific agent</option>
-              {agents.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
-
-            {/* Mode toggle */}
-            <div style={{ display: "flex", border: "1px solid var(--border-dim)", borderRadius: "var(--radius)", overflow: "hidden" }}>
-              {(["plan", "build"] as RunMode[]).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setMode(m)}
-                  style={{
-                    padding: "5px 10px",
-                    fontSize: 10,
-                    fontFamily: "var(--font)",
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    cursor: "pointer",
-                    border: "none",
-                    borderRight: m === "plan" ? "1px solid var(--border-dim)" : "none",
-                    background: mode === m
-                      ? m === "plan" ? "rgba(6,182,212,0.15)" : "rgba(16,185,129,0.15)"
-                      : "var(--bg-2)",
-                    color: mode === m
-                      ? m === "plan" ? "#06b6d4" : "var(--accent)"
-                      : "var(--text-dimmer)",
-                    fontWeight: mode === m ? 700 : 400,
-                  }}
-                >
-                  {m}
-                </button>
-              ))}
+              {/* Status + elapsed + cancel */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 10, color: busy ? "var(--accent)" : "var(--text-dimmer)", letterSpacing: "0.05em", flex: 1 }}>
+                  {status}
+                </span>
+                {busy && (
+                  <>
+                    <span style={{ fontSize: 10, color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>
+                      {formatElapsed(elapsed)}
+                    </span>
+                    <button
+                      className="btn"
+                      onClick={handleCancel}
+                      style={{ fontSize: 10, padding: "2px 8px", color: "var(--red)", borderColor: "var(--red)" }}
+                    >
+                      CANCEL
+                    </button>
+                  </>
+                )}
+                {result?.worktreeBranch && (
+                  <span style={{ fontSize: 9, color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>
+                    {result.worktreeBranch}
+                  </span>
+                )}
+              </div>
             </div>
+          )}
 
-            <button
-              className="btn btn-primary"
-              onClick={handleRun}
-              disabled={!task.trim()}
-            >
-              {"> RUN AGENT"}
-            </button>
+          {/* Error */}
+          {error && (
+            <div style={{
+              padding: "10px 14px",
+              background: "rgba(239,68,68,0.08)",
+              border: "1px solid var(--red)",
+              borderRadius: "var(--radius)",
+              color: "var(--red)",
+              fontSize: 11,
+              fontFamily: "var(--font)",
+              whiteSpace: "pre-wrap",
+            }}>
+              {error}
+            </div>
+          )}
 
-            <span style={{ flex: 1 }} />
-            <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>⌘↵ to run</span>
-          </div>
+          {/* Live output terminal */}
+          {(phase === "running" || (phase === "done" && output)) && (
+            <div style={{
+              background: "var(--bg-2)",
+              border: "1px solid var(--border-dim)",
+              borderRadius: "var(--radius)",
+              overflow: "hidden",
+            }}>
+              <div style={{
+                padding: "6px 12px",
+                borderBottom: "1px solid var(--border-dim)",
+                background: "var(--bg-3)",
+                fontSize: 9,
+                color: "var(--text-dimmer)",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}>
+                OUTPUT
+              </div>
+              <div
+                ref={outputRef}
+                style={{
+                  padding: "10px 12px",
+                  fontFamily: "var(--font)",
+                  fontSize: 11,
+                  lineHeight: 1.6,
+                  color: "var(--text-dim)",
+                  maxHeight: 420,
+                  overflowY: "auto",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                }}
+              >
+                {output || <span style={{ color: "var(--text-dimmer)" }}>Waiting for output...</span>}
+                {phase === "running" && (
+                  <span style={{
+                    display: "inline-block",
+                    width: 5, height: 11,
+                    background: "var(--accent)",
+                    verticalAlign: "text-bottom",
+                    marginLeft: 2,
+                    animation: "cursor-blink 1s step-end infinite",
+                  }} />
+                )}
+              </div>
+            </div>
+          )}
 
-          {/* Agent description */}
-          {selectedAgent?.description && (
-            <div style={{ fontSize: 11, color: "var(--text-dimmer)", paddingLeft: 2 }}>
-              {selectedAgent.description}
+          {/* Done banner */}
+          {phase === "done" && result && !error && (
+            <div style={{
+              padding: "14px 16px",
+              background: "var(--bg-2)",
+              border: `1px solid ${
+                result.mode === "plan"
+                  ? "#06b6d4"
+                  : result.conflictBranch
+                    ? "var(--yellow)"
+                    : result.hasChanges
+                      ? "var(--accent)"
+                      : "var(--border-dim)"
+              }`,
+              borderRadius: "var(--radius)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{
+                  width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                  background: result.mode === "plan"
+                    ? "#06b6d4"
+                    : result.conflictBranch
+                      ? "var(--yellow)"
+                      : result.hasChanges
+                        ? "var(--accent)"
+                        : "var(--border-dim)",
+                }} />
+                <span style={{
+                  fontSize: 12,
+                  color: result.mode === "plan"
+                    ? "#06b6d4"
+                    : result.conflictBranch
+                      ? "var(--yellow)"
+                      : result.hasChanges
+                        ? "var(--accent)"
+                        : "var(--text-dimmer)",
+                  flex: 1,
+                }}>
+                  {result.mode === "plan"
+                    ? "Plan complete — review output above"
+                    : result.conflictBranch
+                      ? `Merge conflict — branch ${result.conflictBranch} preserved`
+                      : result.hasChanges
+                        ? "Changes merged to main"
+                        : "No changes made"}
+                </span>
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {result.hasChanges && result.mode !== "plan" && (
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleViewDiff}
+                    disabled={diffLoading}
+                    style={{ fontSize: 11 }}
+                  >
+                    {diffLoading ? "Loading..." : "> VIEW DIFF"}
+                  </button>
+                )}
+                <button
+                  className="btn"
+                  onClick={handleRunAgain}
+                  style={{ fontSize: 11 }}
+                >
+                  {"> RUN AGAIN"}
+                </button>
+                <button
+                  className="btn"
+                  onClick={handleShare}
+                  style={{ fontSize: 11, color: copied ? "var(--accent)" : undefined, borderColor: copied ? "var(--accent)" : undefined }}
+                >
+                  {copied ? "COPIED!" : "> SHARE"}
+                </button>
+                <span style={{ flex: 1 }} />
+                <button
+                  className="btn"
+                  onClick={handleReset}
+                  style={{ fontSize: 11 }}
+                >
+                  {"> NEW RUN"}
+                </button>
+              </div>
             </div>
           )}
         </div>
-      )}
 
-      {/* Run header (during/after run) */}
-      {phase !== "idle" && (
-        <div style={{
-          padding: "12px 14px",
-          background: "var(--bg-2)",
-          border: "1px solid var(--border-dim)",
-          borderRadius: "var(--radius)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {busy && (
-              <span style={{
-                width: 6, height: 6, borderRadius: "50%",
-                background: "var(--accent)",
-                flexShrink: 0,
-                animation: "run-pulse 1s ease-in-out infinite",
-              }} />
-            )}
-            {!busy && phase === "done" && !error && (
-              <span style={{
-                width: 6, height: 6, borderRadius: "50%",
-                background: result?.conflictBranch ? "var(--yellow)" : "var(--accent)",
-                flexShrink: 0,
-              }} />
-            )}
-            {error && (
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--red)", flexShrink: 0 }} />
-            )}
-            <span style={{ fontSize: 12, color: "var(--text)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {task}
-            </span>
-            {selectedAgent && (
-              <span style={{
-                fontSize: 9,
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-                color: "var(--accent)",
-                border: "1px solid var(--accent)",
-                padding: "1px 5px",
-                borderRadius: "var(--radius)",
-                opacity: 0.8,
-                flexShrink: 0,
-              }}>
-                {selectedAgent.name}
-              </span>
-            )}
-            <span style={{
-              fontSize: 9,
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              color: mode === "plan" ? "#06b6d4" : "var(--accent)",
-              border: `1px solid ${mode === "plan" ? "#06b6d4" : "var(--accent)"}`,
-              padding: "1px 5px",
-              borderRadius: "var(--radius)",
-              flexShrink: 0,
-            }}>
-              {mode}
-            </span>
-          </div>
-          <div style={{ fontSize: 10, color: busy ? "var(--accent)" : "var(--text-dimmer)", letterSpacing: "0.05em" }}>
-            {status}
-          </div>
-        </div>
-      )}
-
-      {/* Error */}
-      {error && (
-        <div style={{
-          padding: "10px 14px",
-          background: "rgba(239,68,68,0.08)",
-          border: "1px solid var(--red)",
-          borderRadius: "var(--radius)",
-          color: "var(--red)",
-          fontSize: 11,
-          fontFamily: "var(--font)",
-          whiteSpace: "pre-wrap",
-        }}>
-          {error}
-        </div>
-      )}
-
-      {/* Live output terminal */}
-      {(phase === "running" || (phase === "done" && output)) && (
-        <div style={{
-          background: "var(--bg-2)",
-          border: "1px solid var(--border-dim)",
-          borderRadius: "var(--radius)",
-          overflow: "hidden",
-        }}>
+        {/* Diff panel */}
+        {showDiff && (
           <div style={{
-            padding: "6px 12px",
-            borderBottom: "1px solid var(--border-dim)",
-            background: "var(--bg-3)",
-            fontSize: 9,
-            color: "var(--text-dimmer)",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
+            width: "clamp(320px, 40vw, 680px)",
+            flexShrink: 0,
+            height: "auto",
+            minHeight: 300,
+            border: "1px solid var(--border-dim)",
+            borderRadius: "var(--radius)",
+            overflow: "hidden",
           }}>
-            OUTPUT
+            <DiffPanel
+              diff={diff}
+              filename={result?.worktreeBranch ?? "diff"}
+              onClose={() => setShowDiff(false)}
+              fullWidth
+            />
           </div>
-          <div
-            ref={outputRef}
-            style={{
-              padding: "10px 12px",
-              fontFamily: "var(--font)",
-              fontSize: 11,
-              lineHeight: 1.6,
-              color: "var(--text-dim)",
-              maxHeight: 420,
-              overflowY: "auto",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-            }}
-          >
-            {output || <span style={{ color: "var(--text-dimmer)" }}>Waiting for output...</span>}
-            {phase === "running" && (
-              <span style={{
-                display: "inline-block",
-                width: 5, height: 11,
-                background: "var(--accent)",
-                verticalAlign: "text-bottom",
-                marginLeft: 2,
-                animation: "cursor-blink 1s step-end infinite",
-              }} />
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Done banner */}
-      {phase === "done" && result && !error && (
-        <div style={{
-          padding: "14px 16px",
-          background: "var(--bg-2)",
-          border: `1px solid ${
-            result.mode === "plan"
-              ? "#06b6d4"
-              : result.conflictBranch
-                ? "var(--yellow)"
-                : result.hasChanges
-                  ? "var(--accent)"
-                  : "var(--border-dim)"
-          }`,
-          borderRadius: "var(--radius)",
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-        }}>
-          <span style={{
-            width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
-            background: result.mode === "plan"
-              ? "#06b6d4"
-              : result.conflictBranch
-                ? "var(--yellow)"
-                : result.hasChanges
-                  ? "var(--accent)"
-                  : "var(--border-dim)",
-          }} />
-          <span style={{
-            fontSize: 12,
-            color: result.mode === "plan"
-              ? "#06b6d4"
-              : result.conflictBranch
-                ? "var(--yellow)"
-                : result.hasChanges
-                  ? "var(--accent)"
-                  : "var(--text-dimmer)",
-          }}>
-            {result.mode === "plan"
-              ? "Plan complete — review output above"
-              : result.conflictBranch
-                ? `Merge conflict — branch ${result.conflictBranch} preserved`
-                : result.hasChanges
-                  ? "Changes merged to main"
-                  : "No changes made"}
-          </span>
-          <span style={{ flex: 1 }} />
-          <button
-            className="btn btn-primary"
-            onClick={handleReset}
-            style={{ fontSize: 11 }}
-          >
-            {"> RUN ANOTHER"}
-          </button>
-        </div>
-      )}
+        )}
+      </div>
 
       <style>{`
         @keyframes run-pulse { 0%,100%{opacity:.5;transform:scale(.8)} 50%{opacity:1;transform:scale(1.3)} }

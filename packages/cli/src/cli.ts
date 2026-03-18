@@ -1005,6 +1005,25 @@ cli
     }
   });
 
+// --- changelog command ---
+cli
+  .command("changelog", "Generate a CHANGELOG from conventional commits")
+  .option("--from <ref>", "Start ref (default: last tag or first commit)")
+  .option("--to <ref>", "End ref (default: HEAD)")
+  .option("--output <file>", "Write to file instead of stdout")
+  .option("--format <fmt>", "Output format: md or json")
+  .option("--no-scope", "Don't group by scope")
+  .option("--update", "Prepend new section into existing CHANGELOG.md")
+  .action(async (opts: { from?: string; to?: string; output?: string; format?: string; scope?: boolean; update?: boolean }) => {
+    try {
+      const { runChangelog } = await import("./commands/changelog.js");
+      await runChangelog(process.cwd(), opts as Parameters<typeof runChangelog>[1]);
+    } catch (error) {
+      console.error(pc.red(`\n  changelog failed: ${error instanceof Error ? error.message : error}\n`));
+      process.exit(1);
+    }
+  });
+
 // --- studio command ---
 cli
   .command("studio", "Open the visual agent studio in your browser")
