@@ -90,6 +90,31 @@ export default function Agents() {
   const [pendingApproval, setPendingApproval] = useState<{ tools: string[] } | null>(null);
   const pendingApprovalResolveRef = useRef<((approved: boolean) => void) | null>(null);
 
+  // Security scanner (#49 + #59)
+  type SecurityFinding = {
+    agentId: string; agentName: string;
+    severity: "critical" | "high" | "medium";
+    category: "secret" | "tracking" | "prompt-injection" | "exfiltration";
+    message: string; line: number; snippet: string;
+  };
+  const [secScanRunning, setSecScanRunning] = useState(false);
+  const [secFindings, setSecFindings] = useState<SecurityFinding[] | null>(null);
+  const [secDismissed, setSecDismissed] = useState(false);
+
+  async function runSecurityScan() {
+    setSecScanRunning(true);
+    setSecDismissed(false);
+    try {
+      const r = await fetch("/api/agents/security-scan");
+      const d = await r.json() as { findings: SecurityFinding[] };
+      setSecFindings(d.findings);
+    } catch {
+      setSecFindings([]);
+    } finally {
+      setSecScanRunning(false);
+    }
+  }
+
   useEffect(() => {
     fetch("/api/agents")
       .then((r) => r.json())
@@ -533,14 +558,82 @@ export default function Agents() {
         borderRight: selected ? "1px solid var(--border-dim)" : "none",
       }}>
         {/* Header */}
-        <div style={{ marginBottom: "20px" }}>
-          <h1 style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: "4px" }}>
-            Agent Company
-          </h1>
-          <div style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
-            {agents.length} agents across {departments.length - 1} departments
+        <div style={{ marginBottom: "20px", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+          <div>
+            <h1 style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: "4px" }}>
+              Agent Company
+            </h1>
+            <div style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
+              {agents.length} agents across {departments.length - 1} departments
+            </div>
           </div>
+          <button
+            className="btn"
+            onClick={() => void runSecurityScan()}
+            disabled={secScanRunning}
+            style={{ fontSize: "10px", padding: "4px 12px", flexShrink: 0 }}
+          >
+            {secScanRunning ? "Scanning..." : "⚑ Security Scan"}
+          </button>
         </div>
+
+        {/* Security scan results */}
+        {secFindings !== null && !secDismissed && (
+          <div style={{
+            background: secFindings.length === 0 ? "rgba(63,185,80,0.06)" : "rgba(248,81,73,0.06)",
+            border: `1px solid ${secFindings.length === 0 ? "rgba(63,185,80,0.25)" : "rgba(248,81,73,0.25)"}`,
+            borderRadius: "var(--radius)",
+            marginBottom: "20px",
+            overflow: "hidden",
+          }}>
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "8px 12px",
+              borderBottom: secFindings.length > 0 ? "1px solid var(--border-dim)" : "none",
+            }}>
+              <span style={{ fontSize: 11, fontFamily: "var(--font)", fontWeight: 600, color: secFindings.length === 0 ? "var(--accent)" : "var(--red)" }}>
+                {secFindings.length === 0 ? "✓ No security issues found" : `✕ ${secFindings.length} issue${secFindings.length !== 1 ? "s" : ""} found`}
+              </span>
+              <button
+                onClick={() => setSecDismissed(true)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontSize: 14, lineHeight: 1, padding: 0 }}
+              >×</button>
+            </div>
+            {secFindings.length > 0 && (
+              <div style={{ maxHeight: 240, overflowY: "auto" }}>
+                {secFindings.map((f, i) => (
+                  <div
+                    key={i}
+                    onClick={() => { const a = agents.find((ag) => ag.id === f.agentId); if (a) openAgent(a); }}
+                    style={{
+                      padding: "8px 12px",
+                      borderBottom: i < secFindings.length - 1 ? "1px solid var(--border-dim)" : "none",
+                      cursor: "pointer",
+                      display: "flex", gap: 10, alignItems: "flex-start",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-3)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+                  >
+                    <span style={{
+                      fontSize: 9, fontFamily: "var(--font)", fontWeight: 700, letterSpacing: "0.06em",
+                      padding: "2px 5px", borderRadius: 2, flexShrink: 0, marginTop: 1,
+                      background: f.severity === "critical" ? "rgba(248,81,73,0.15)" : f.severity === "high" ? "rgba(210,153,34,0.15)" : "rgba(56,139,253,0.1)",
+                      color: f.severity === "critical" ? "var(--red)" : f.severity === "high" ? "var(--yellow)" : "var(--blue)",
+                    }}>
+                      {f.severity.toUpperCase()}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 11, color: "var(--text)", marginBottom: 2 }}>{f.message}</div>
+                      <div style={{ fontSize: 10, color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>
+                        {f.agentName} · line {f.line} · <span style={{ opacity: 0.7 }}>{f.snippet}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Filters */}
         <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
