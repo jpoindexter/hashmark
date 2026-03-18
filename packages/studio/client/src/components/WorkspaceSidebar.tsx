@@ -20,11 +20,11 @@ interface ProjectInfo {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  M:  "#f59e0b",
-  A:  "#10b981",
-  D:  "#ef4444",
-  R:  "#3b82f6",
-  "?": "#52525b",
+  M:   "var(--yellow)",
+  A:   "var(--accent)",
+  D:   "var(--red)",
+  R:   "var(--blue)",
+  "?": "var(--text-dimmer)",
 };
 
 const sectionLabel: React.CSSProperties = {
