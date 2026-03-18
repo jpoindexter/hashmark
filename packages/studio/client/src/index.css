@@ -29,10 +29,6 @@
   --border-focus: rgba(16, 185, 129, 0.4);
 }
 
-/* Ensure layout doesn't overlap status bar */
-#root {
-  padding-bottom: 22px;
-}
 
 html, body, #root {
   height: 100%;

@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
-import { Plus, HelpCircle, Settings } from "lucide-react";
+import { Plus, HelpCircle, Settings, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+interface ChatSession {
+  id: string;
+  title: string;
+  message_count: number;
+  updated_at: number;
+}
 
 interface Agent {
   id: string;
@@ -30,6 +37,21 @@ export default function ActivitySidebar() {
   const navigate = useNavigate();
   const [workspace, setWorkspace] = useState<WorkspaceEntry | null>(null);
   const [activeSession, setActiveSession] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(
+    () => localStorage.getItem("studio_active_session_id") ?? null
+  );
+
+  useEffect(() => {
+    const load = () => {
+      fetch("/api/sessions").then(r => r.json()).then((d: { sessions: ChatSession[] }) => {
+        setSessions((d.sessions ?? []).slice(0, 8));
+      }).catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 8000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     const load = () => {
@@ -104,7 +126,7 @@ export default function ActivitySidebar() {
         </SidebarIconBtn>
       </div>
 
-      {/* Workspace entries */}
+      {/* Workspace entries + sessions */}
       <div style={{ flex: 1, overflow: "auto" }}>
         {workspace && (
           <WorkspaceItem
@@ -117,13 +139,28 @@ export default function ActivitySidebar() {
         )}
 
         {!workspace && (
-          <div style={{
-            padding: "20px 14px",
-            fontSize: 11,
-            color: "var(--text-dimmer)",
-            textAlign: "center",
-          }}>
+          <div style={{ padding: "20px 14px", fontSize: 11, color: "var(--text-dimmer)", textAlign: "center" }}>
             loading...
+          </div>
+        )}
+
+        {/* Chat history section */}
+        {sessions.length > 0 && (
+          <div style={{ marginTop: 8 }}>
+            <SectionHeader label="Recent Chats" />
+            {sessions.map(s => (
+              <SessionRow
+                key={s.id}
+                session={s}
+                active={s.id === activeSessionId}
+                onClick={() => {
+                  localStorage.setItem("studio_active_session_id", s.id);
+                  setActiveSessionId(s.id);
+                  navigate("/");
+                  window.dispatchEvent(new CustomEvent("studio:switch-session", { detail: s.id }));
+                }}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -411,5 +448,51 @@ function SidebarIconBtn({
     >
       {children}
     </button>
+  );
+}
+
+function SectionHeader({ label }: { label: string }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 6,
+      padding: "0 10px 0 14px", height: 26, flexShrink: 0,
+    }}>
+      <span style={{ flex: 1, fontSize: 11, fontWeight: 600, color: "var(--text-dim)" }}>{label}</span>
+    </div>
+  );
+}
+
+function SessionRow({
+  session, active, onClick,
+}: { session: ChatSession; active: boolean; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "5px 14px 5px 16px",
+        cursor: "pointer",
+        background: active ? "rgba(16,185,129,0.08)" : hovered ? "rgba(255,255,255,0.04)" : "transparent",
+        borderLeft: active ? "2px solid var(--accent)" : "2px solid transparent",
+        transition: "background 0.1s",
+      }}
+    >
+      <MessageSquare size={12} style={{ color: active ? "var(--accent)" : "var(--text-dimmer)", flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontSize: 11, color: active ? "var(--text)" : "var(--text-dim)",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
+          {session.title || "Untitled"}
+        </div>
+        <div style={{ fontSize: 10, color: "var(--text-dimmer)" }}>
+          {session.message_count} msgs
+        </div>
+      </div>
+    </div>
   );
 }

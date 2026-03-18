@@ -248,10 +248,14 @@ export default function ChatMessages({ sessionId, streamText, streaming }: ChatM
 
   return (
     <div style={{
-      flex: 1, overflow: "auto", padding: "16px 20px",
-      display: "flex", flexDirection: "column", gap: "16px",
+      flex: 1, overflow: "auto",
       fontFamily: "var(--font)",
     }}>
+      <div style={{
+        maxWidth: 760, margin: "0 auto",
+        padding: "20px 24px",
+        display: "flex", flexDirection: "column", gap: 20,
+      }}>
       {messages.map((msg) => (
         <MessageBubble key={msg.id} msg={msg} />
       ))}
@@ -288,9 +292,11 @@ export default function ChatMessages({ sessionId, streamText, streaming }: ChatM
       )}
 
       <div ref={messagesEndRef} />
+      </div>{/* end inner max-width */}
       <style>{`
         @keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
         @keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
     </div>
   );

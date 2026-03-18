@@ -81,6 +81,16 @@ export default function Layout() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Listen for sidebar session switches
+  useEffect(() => {
+    const h = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (id) setActiveSessionId(id);
+    };
+    window.addEventListener("studio:switch-session", h);
+    return () => window.removeEventListener("studio:switch-session", h);
+  }, []);
+
   // Terminal drag
   const dragging = useRef(false);
   const dragY    = useRef(0);
@@ -119,12 +129,16 @@ export default function Layout() {
   return (
     <div style={{
       display: "flex",
+      flexDirection: "column",
       height: "100vh",
       overflow: "hidden",
       background: "var(--bg)",
       WebkitAppRegion: "no-drag",
       fontFamily: "var(--font)",
     } as React.CSSProperties}>
+
+      {/* Main body row */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
 
       {/* ── Left: narrow icon rail ─────────────────────────────────── */}
       <aside style={{
@@ -269,6 +283,34 @@ export default function Layout() {
           )}
         </div>
 
+        {/* Tab bar (home view only) */}
+        {isHome && (
+          <div style={{
+            height: 34, minHeight: 34, flexShrink: 0,
+            background: "var(--bg-2)",
+            borderBottom: "1px solid var(--border-dim)",
+            display: "flex", alignItems: "stretch",
+            WebkitAppRegion: "no-drag",
+            paddingLeft: 2,
+          } as React.CSSProperties}>
+            <MainTab active icon="◎" label="Chat" />
+            <button
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 30, background: "none", border: "none",
+                color: "var(--text-dimmer)", cursor: "pointer",
+                borderRight: "1px solid var(--border-dim)",
+                fontSize: 16, transition: "color 0.1s",
+              }}
+              title="New tab"
+              onMouseEnter={e => (e.currentTarget.style.color = "var(--text)")}
+              onMouseLeave={e => (e.currentTarget.style.color = "var(--text-dimmer)")}
+            >
+              +
+            </button>
+          </div>
+        )}
+
         {/* Content area: chat or page */}
         <div style={{
           flex: termBig ? 0 : 1,
@@ -365,18 +407,19 @@ export default function Layout() {
         />
       </div>
 
+      </div>{/* end main body row */}
+
       {/* ── Status bar ───────────────────────────────────────────────── */}
       <div style={{
-        position: "fixed",
-        bottom: 0, left: 0, right: 0,
-        height: 22, zIndex: 200,
+        height: 22, minHeight: 22, flexShrink: 0,
         background: "#0d1f17",
         borderTop: "1px solid #0a1910",
         display: "flex", alignItems: "center",
-        padding: "0 8px", gap: 0,
+        padding: "0 8px",
         fontSize: 11, fontFamily: "var(--font)",
         userSelect: "none",
         WebkitAppRegion: "no-drag",
+        zIndex: 10,
       } as React.CSSProperties}>
         <StatusItem title="Branch">
           <GitBranch size={11} style={{ opacity: 0.7 }} />
@@ -385,9 +428,26 @@ export default function Layout() {
         </StatusItem>
         <div style={{ flex: 1 }} />
         <StatusItem>{info?.projectName ?? "hashmark studio"}</StatusItem>
-        <StatusItem>UTF-8</StatusItem>
-        <StatusItem>TS</StatusItem>
       </div>
+    </div>
+  );
+}
+
+function MainTab({ active, icon, label }: { active?: boolean; icon: string; label: string }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 6,
+      padding: "0 14px",
+      fontSize: 12,
+      color: active ? "var(--text)" : "var(--text-dimmer)",
+      borderBottom: active ? "2px solid var(--accent)" : "2px solid transparent",
+      borderRight: "1px solid var(--border-dim)",
+      cursor: "default",
+      userSelect: "none",
+      whiteSpace: "nowrap",
+    }}>
+      <span style={{ color: active ? "var(--accent)" : "var(--text-dimmer)", fontSize: 11 }}>{icon}</span>
+      {label}
     </div>
   );
 }
