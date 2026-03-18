@@ -1,0 +1,218 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #09090b;
+  --bg-2: #111113;
+  --bg-3: #18181b;
+  --bg-4: #27272a;
+  --border: #3f3f46;
+  --border-dim: #27272a;
+  --text: #fafafa;
+  --text-dim: #a1a1aa;
+  --text-dimmer: #52525b;
+  --accent: #10b981;
+  --accent-dim: #059669;
+  --accent-bg: rgba(16, 185, 129, 0.08);
+  --accent-border: rgba(16, 185, 129, 0.2);
+  --red: #ef4444;
+  --red-bg: rgba(239, 68, 68, 0.08);
+  --yellow: #f59e0b;
+  --font: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --radius: 2px;
+  --sidebar-w: 200px;
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-dimmer); }
+
+a { color: inherit; text-decoration: none; }
+
+button {
+  font-family: var(--font);
+  font-size: 12px;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input, textarea, select {
+  font-family: var(--font);
+  font-size: 12px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  outline: none;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--accent);
+}
+
+/* Utility classes */
+.mono { font-family: var(--font); }
+.dim { color: var(--text-dim); }
+.dimmer { color: var(--text-dimmer); }
+.accent { color: var(--accent); }
+.uppercase { text-transform: uppercase; letter-spacing: 0.05em; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 11px;
+  font-family: var(--font);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  background: var(--bg-3);
+  color: var(--text-dim);
+  transition: border-color 0.1s, color 0.1s, background 0.1s;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--accent-bg);
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent-dim);
+  color: var(--bg);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.card {
+  background: var(--bg-2);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: var(--radius);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.badge-green {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+}
+
+.badge-zinc {
+  background: var(--bg-4);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+
+.badge-yellow {
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--yellow);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* Animations */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.fade-in { animation: fadeIn 0.2s ease forwards; }
+.slide-in { animation: slideIn 0.15s ease forwards; }
+
+.cursor {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  background: var(--accent);
+  animation: blink 1s step-end infinite;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+/* Activity bar tooltips */
+.nav-tooltip-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.nav-tooltip {
+  position: absolute;
+  left: 48px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 4px 8px;
+  background: var(--bg-4);
+  border: 1px solid var(--border-dim);
+  color: var(--text);
+  font-size: 11px;
+  font-family: var(--font);
+  white-space: nowrap;
+  border-radius: var(--radius);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s;
+  z-index: 9999;
+}
+
+.nav-tooltip-wrap:hover .nav-tooltip {
+  opacity: 1;
+}

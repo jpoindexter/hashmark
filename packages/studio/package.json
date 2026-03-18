@@ -1,0 +1,50 @@
+{
+  "name": "hashmark-studio",
+  "version": "0.1.0",
+  "description": "Visual agent orchestration UI for hashmark",
+  "type": "module",
+  "bin": {
+    "hashmark-studio": "dist/bin.js"
+  },
+  "main": "dist/electron/main.js",
+  "scripts": {
+    "build:server": "tsup bin.ts server/index.ts --format esm --out-dir dist --no-splitting && tsup electron/main.ts --format esm --out-dir dist/electron --no-splitting --external electron --external better-sqlite3 --external node-pty && tsup electron/preload.ts --format cjs --out-dir dist/electron --no-splitting --external electron",
+    "build:client": "vite build client --outDir ../dist/public",
+    "build": "npm run build:server && npm run build:client",
+    "dev:server": "tsup bin.ts server/index.ts --format esm --out-dir dist --watch",
+    "dev:client": "vite client",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "electron": "lsof -ti :3200 | xargs kill -9 2>/dev/null; sleep 0.5; NODE_ENV=development electron dist/electron/main.js",
+    "electron:dev": "concurrently \"npm run dev:server\" \"npm run dev:client\" \"wait-on http://localhost:3200 && electron dist/electron/main.js\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.79.0",
+    "@hono/node-server": "^1.13.7",
+    "@types/ws": "^8.18.1",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-web-links": "^0.12.0",
+    "better-sqlite3": "^12.8.0",
+    "hono": "^4.6.17",
+    "open": "^10.1.0",
+    "ws": "^8.19.0",
+    "xterm": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "electron": "^41.0.3",
+    "electron-builder": "^26.8.1",
+    "node-pty": "^1.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.1.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.1.0"
+  }
+}

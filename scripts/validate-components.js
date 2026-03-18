@@ -26,7 +26,7 @@ function getStagedFiles() {
     return output
       .trim()
       .split("\n")
-      .filter((f) => /src\/(app|components)\/.*\.(tsx|jsx)$/.test(f))
+      .filter((f) => /^src\/(app|components)\/.*\.(tsx|jsx)$/.test(f))
       .filter(Boolean);
   } catch {
     return [];

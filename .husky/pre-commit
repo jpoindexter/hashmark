@@ -24,5 +24,8 @@ pnpm lint-staged
 echo "[hook] Running tests..."
 pnpm test
 
-# kern-hook
-kern check --staged --strict
+# kern-hook (skip packages/studio — standalone Electron app, not Next.js)
+STAGED_NON_STUDIO=$(git diff --cached --name-only --diff-filter=ACM | grep -v "^packages/studio/")
+if [ -n "$STAGED_NON_STUDIO" ]; then
+  kern check --staged --strict
+fi
