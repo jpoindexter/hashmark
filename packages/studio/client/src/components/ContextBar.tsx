@@ -1,5 +1,21 @@
 import { useState, useEffect } from "react";
-import { ChevronUp, ChevronDown, Zap } from "lucide-react";
+import { ChevronUp, ChevronDown, Zap, AlertTriangle } from "lucide-react";
+
+type LoopStatus = "clean" | "watch" | "loop";
+
+interface LoopFinding {
+  pattern: string;
+  severity: "warning" | "critical";
+  label: string;
+  description: string;
+  snippet?: string;
+}
+
+interface LoopAnalysis {
+  status: LoopStatus;
+  findings: LoopFinding[];
+  messageCount: number;
+}
 
 interface TokenInfo {
   inputTokens: number;
@@ -27,6 +43,7 @@ function fmt(n: number) {
 
 export function ContextBar({ sessionId, streaming }: ContextBarProps) {
   const [info, setInfo] = useState<TokenInfo | null>(null);
+  const [loopAnalysis, setLoopAnalysis] = useState<LoopAnalysis | null>(null);
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
@@ -35,10 +52,14 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
       .then(r => r.json())
       .then((d: TokenInfo) => setInfo(d))
       .catch(() => {});
+    fetch(`/api/sessions/${sessionId}/loop-analysis`)
+      .then(r => r.json())
+      .then((d: LoopAnalysis) => setLoopAnalysis(d))
+      .catch(() => {});
   }, [sessionId, streaming]);
 
   // Reset expanded when session changes
-  useEffect(() => { setExpanded(false); }, [sessionId]);
+  useEffect(() => { setExpanded(false); setLoopAnalysis(null); }, [sessionId]);
 
   if (!info || !sessionId || info.total === 0) return null;
 
@@ -87,6 +108,15 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
             <span style={{ color: wasteColor, display: "flex", alignItems: "center", gap: 2 }}>
               <Zap size={9} />
               ~{wasteEstimatePct}% est. waste
+            </span>
+          )}
+          {loopAnalysis && loopAnalysis.status !== "clean" && (
+            <span style={{
+              color: loopAnalysis.status === "loop" ? "var(--red)" : "var(--yellow)",
+              display: "flex", alignItems: "center", gap: 2,
+            }}>
+              <AlertTriangle size={9} />
+              {loopAnalysis.status === "loop" ? "loop detected" : "watch"}
             </span>
           )}
         </span>
@@ -194,6 +224,50 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
               Typical distribution per Pichay (2603.09023), 857 sessions
             </div>
           </div>
+
+          {/* Loop analysis */}
+          {loopAnalysis && loopAnalysis.findings.length > 0 && (
+            <div style={{
+              background: "var(--bg-3)",
+              border: `1px solid ${loopAnalysis.status === "loop" ? "rgba(248,81,73,0.3)" : "rgba(226,197,65,0.3)"}`,
+              padding: "6px 8px",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+                <span style={{
+                  color: loopAnalysis.status === "loop" ? "var(--red)" : "var(--yellow)",
+                  display: "flex", alignItems: "center", gap: 4,
+                  fontWeight: 600,
+                }}>
+                  <AlertTriangle size={9} />
+                  {loopAnalysis.status === "loop" ? "Loop Detected" : "Loop Watch"}
+                </span>
+                <span style={{ color: "var(--text-dimmer)" }}>{loopAnalysis.findings.length} pattern{loopAnalysis.findings.length !== 1 ? "s" : ""}</span>
+              </div>
+              {loopAnalysis.findings.map(f => (
+                <div key={f.pattern} style={{ marginBottom: 5 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 1 }}>
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, padding: "1px 4px",
+                      background: f.severity === "critical" ? "rgba(248,81,73,0.15)" : "rgba(226,197,65,0.15)",
+                      color: f.severity === "critical" ? "var(--red)" : "var(--yellow)",
+                    }}>
+                      {f.label.toUpperCase()}
+                    </span>
+                  </div>
+                  <div style={{ color: "var(--text-dimmer)", lineHeight: 1.4 }}>{f.description}</div>
+                  {f.snippet && (
+                    <div style={{
+                      marginTop: 3, fontFamily: "var(--font)", fontSize: 9,
+                      color: "var(--text-dimmer)", background: "var(--bg-2)",
+                      padding: "2px 5px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      {f.snippet}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Message counts */}
           <div style={{ display: "flex", justifyContent: "space-between" }}>

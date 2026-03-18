@@ -11,6 +11,7 @@ import { join, extname } from "path";
 import { tmpdir, homedir } from "os";
 import { getDb } from "../db.js";
 import { loadScanContext } from "../context.js";
+import { analyzeSessionLoop } from "../lib/loop-detector.js";
 
 /**
  * Expand @file mentions in a message.
@@ -404,6 +405,17 @@ export function sessionsRoutes(projectDir: string) {
         "Connection": "keep-alive",
       },
     });
+  });
+
+  // GET /api/sessions/:id/loop-analysis — detect behavioral loops in conversation
+  app.get("/:id/loop-analysis", (c) => {
+    const db = getDb(dataDir);
+    const session = db.prepare("SELECT id FROM sessions WHERE id = ?").get(c.req.param("id"));
+    if (!session) return c.json({ error: "Not found" }, 404);
+    const messages = db.prepare(
+      "SELECT role, content FROM session_messages WHERE session_id = ? ORDER BY created_at ASC"
+    ).all(c.req.param("id")) as Array<{ role: string; content: string }>;
+    return c.json(analyzeSessionLoop(messages));
   });
 
   // GET /api/sessions/:id/tokens
