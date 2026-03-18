@@ -1,3 +1,7 @@
+import { spawn } from "child_process";
+import { existsSync } from "fs";
+import { join } from "path";
+
 export interface AIStreamOptions {
   provider: string;
   model: string;
@@ -19,6 +23,7 @@ export async function streamAIResponse(opts: AIStreamOptions): Promise<void> {
       case "mistral":  return await streamOpenAICompat(opts, "https://api.mistral.ai/v1/chat/completions");
       case "grok":     return await streamOpenAICompat(opts, "https://api.x.ai/v1/chat/completions");
       case "ollama":   return await streamOllama(opts);
+      case "codex":    return await streamCodex(opts);
       default:
         throw new Error(`Unknown provider: ${opts.provider}`);
     }
@@ -204,6 +209,38 @@ async function streamGemini(opts: AIStreamOptions): Promise<void> {
   }
 
   opts.onDone();
+}
+
+// ── Codex CLI ──────────────────────────────────────────────────────────────────
+
+async function streamCodex(opts: AIStreamOptions): Promise<void> {
+  const candidates = [
+    join(process.cwd(), "node_modules", ".bin", "codex"),
+    "/usr/local/bin/codex",
+    "codex",
+  ];
+  const codexBin = candidates.find(p => { try { return existsSync(p); } catch { return false; } }) ?? "codex";
+
+  const lastUser = [...opts.messages].reverse().find(m => m.role === "user");
+  const prompt = lastUser?.content ?? "";
+
+  return new Promise((resolve, reject) => {
+    const args = ["--approval-mode", "full-auto", "-q", prompt];
+    if (opts.model) args.unshift("--model", opts.model);
+
+    const proc = spawn(codexBin, args, {
+      env: { ...process.env, OPENAI_API_KEY: opts.apiKey ?? process.env.OPENAI_API_KEY ?? "" },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    proc.stdout.on("data", (chunk: Buffer) => opts.onChunk(chunk.toString()));
+    proc.stderr.on("data", () => {});
+    proc.on("close", (code) => {
+      if (code === 0 || code === null) { opts.onDone(); resolve(); }
+      else { const e = new Error(`codex exited with code ${code}`); opts.onError(e); reject(e); }
+    });
+    proc.on("error", (err) => { opts.onError(err); reject(err); });
+  });
 }
 
 // ── Ollama ─────────────────────────────────────────────────────────────────────

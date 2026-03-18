@@ -7,6 +7,7 @@ const STATIC_MODELS: Record<string, string[]> = {
   gemini:  ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
   mistral: ["mistral-large-latest", "mistral-small-latest", "codestral-latest"],
   grok:    ["grok-3", "grok-3-mini"],
+  codex:   ["gpt-4o", "gpt-4o-mini", "o3", "o3-mini", "o1", "o1-mini"],
 };
 
 export function providersRoutes(projectDir: string) {

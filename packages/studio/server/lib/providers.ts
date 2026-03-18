@@ -25,6 +25,7 @@ const DEFAULT_STORE: ProvidersStore = {
     { id: "mistral", name: "Mistral", enabled: false },
     { id: "grok",    name: "Grok",    enabled: false },
     { id: "ollama",  name: "Ollama",  baseUrl: "http://localhost:11434", enabled: false },
+    { id: "codex",   name: "Codex (OpenAI)", enabled: false },
   ],
 };
 
