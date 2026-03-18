@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Shield } from "lucide-react";
 import { SkeletonLine, SkeletonBlock } from "../components/Skeleton";
 
@@ -6,12 +6,18 @@ import { SkeletonLine, SkeletonBlock } from "../components/Skeleton";
 // Types
 // ---------------------------------------------------------------------------
 
+interface PolicyRule {
+  type: "block" | "warn" | "require";
+  pattern: string;
+  message: string;
+}
+
 interface Policy {
   id: string;
   name: string;
   description: string;
   scope: string;
-  rules: unknown[];
+  rules: PolicyRule[];
   enabled: number;
   created_at: number;
 }
@@ -90,39 +96,209 @@ function TypeBadge({ type }: { type: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// New policy form
+// Toggle switch
 // ---------------------------------------------------------------------------
 
-interface PolicyFormProps {
-  onSave: () => void;
-  onCancel: () => void;
+function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={() => !disabled && onChange(!checked)}
+      aria-checked={checked}
+      role="switch"
+      style={{
+        position: "relative",
+        display: "inline-block",
+        width: 32,
+        height: 18,
+        background: checked ? "var(--accent)" : "var(--bg-4)",
+        border: `1px solid ${checked ? "var(--accent)" : "var(--border)"}`,
+        borderRadius: 9,
+        cursor: disabled ? "not-allowed" : "pointer",
+        transition: "background 0.15s, border-color 0.15s",
+        flexShrink: 0,
+        opacity: disabled ? 0.5 : 1,
+      }}
+    >
+      <span style={{
+        position: "absolute",
+        top: 2,
+        left: checked ? 14 : 2,
+        width: 12,
+        height: 12,
+        borderRadius: "50%",
+        background: "#fff",
+        transition: "left 0.15s",
+      }} />
+    </button>
+  );
 }
 
-function PolicyForm({ onSave, onCancel }: PolicyFormProps) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [scope, setScope] = useState("all");
-  const [rulesRaw, setRulesRaw] = useState("[]");
+// ---------------------------------------------------------------------------
+// Delete confirm tooltip
+// ---------------------------------------------------------------------------
+
+function DeleteButton({ onConfirm }: { onConfirm: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        title="Delete policy"
+        style={{
+          background: "none", border: "none",
+          color: open ? "#ef4444" : "var(--text-dimmer)",
+          cursor: "pointer", fontSize: 15, lineHeight: 1,
+          transition: "color 0.1s", padding: "0 2px",
+        }}
+        onMouseEnter={e => { if (!open) e.currentTarget.style.color = "#ef4444"; }}
+        onMouseLeave={e => { if (!open) e.currentTarget.style.color = "var(--text-dimmer)"; }}
+      >
+        ×
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute",
+          right: 0,
+          top: "calc(100% + 4px)",
+          background: "var(--bg-3)",
+          border: "1px solid var(--border)",
+          borderTop: "2px solid #ef4444",
+          padding: "10px 12px",
+          whiteSpace: "nowrap",
+          zIndex: 100,
+          minWidth: 160,
+        }}>
+          <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 8 }}>Delete this policy?</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button
+              onClick={() => { setOpen(false); onConfirm(); }}
+              style={{
+                background: "#ef4444", border: "none", color: "#fff",
+                padding: "3px 10px", fontFamily: "var(--font)", fontSize: 10,
+                fontWeight: 700, cursor: "pointer", letterSpacing: "0.04em",
+              }}
+            >
+              DELETE
+            </button>
+            <button
+              onClick={() => setOpen(false)}
+              style={{
+                background: "none", border: "1px solid var(--border-dim)",
+                color: "var(--text-dim)", padding: "3px 10px",
+                fontFamily: "var(--font)", fontSize: 10, cursor: "pointer",
+              }}
+            >
+              CANCEL
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Rule templates
+// ---------------------------------------------------------------------------
+
+const RULE_TEMPLATES: { label: string; rule: PolicyRule }[] = [
+  {
+    label: "No secrets in commits",
+    rule: { type: "block", pattern: "(?i)(password|secret|api[_-]?key|token)\\s*=\\s*['\"][^'\"]+['\"]", message: "Potential secret detected in commit" },
+  },
+  {
+    label: "No force push",
+    rule: { type: "warn", pattern: "git push --force|git push -f", message: "Force push requires review" },
+  },
+  {
+    label: "Require tests",
+    rule: { type: "require", pattern: "\\.(test|spec)\\.(ts|tsx|js|jsx)$", message: "Tests required before merge" },
+  },
+  {
+    label: "No prod deploys on Friday",
+    rule: { type: "block", pattern: "deploy.*prod|prod.*deploy", message: "Production deploys blocked on Fridays" },
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Policy drawer (create / edit)
+// ---------------------------------------------------------------------------
+
+interface PolicyDrawerProps {
+  policy: Policy | null; // null = create mode
+  onSave: () => void;
+  onClose: () => void;
+}
+
+function PolicyDrawer({ policy, onSave, onClose }: PolicyDrawerProps) {
+  const [name, setName] = useState(policy?.name ?? "");
+  const [description, setDescription] = useState(policy?.description ?? "");
+  const [scope, setScope] = useState<"session" | "project" | "global">(
+    (policy?.scope as "session" | "project" | "global") ?? "project"
+  );
+  const [rulesRaw, setRulesRaw] = useState(
+    policy ? JSON.stringify(policy.rules, null, 2) : "[]"
+  );
   const [rulesErr, setRulesErr] = useState("");
+  const [enabled, setEnabled] = useState(policy ? Boolean(policy.enabled) : true);
   const [saving, setSaving] = useState(false);
+
+  const isEdit = policy !== null;
+
+  const validateRules = (raw: string) => {
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) throw new Error("must be array");
+      setRulesErr("");
+      return parsed as PolicyRule[];
+    } catch {
+      setRulesErr("Rules must be a valid JSON array");
+      return null;
+    }
+  };
+
+  const addTemplate = (rule: PolicyRule) => {
+    try {
+      const current = JSON.parse(rulesRaw);
+      const next = Array.isArray(current) ? [...current, rule] : [rule];
+      setRulesRaw(JSON.stringify(next, null, 2));
+      setRulesErr("");
+    } catch {
+      setRulesRaw(JSON.stringify([rule], null, 2));
+      setRulesErr("");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    let rules: unknown[];
-    try {
-      rules = JSON.parse(rulesRaw);
-      if (!Array.isArray(rules)) throw new Error("must be array");
-      setRulesErr("");
-    } catch {
-      setRulesErr("Rules must be a valid JSON array");
-      return;
-    }
+    const rules = validateRules(rulesRaw);
+    if (!rules) return;
     setSaving(true);
-    await fetch("/api/governance/policies", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description, scope, rules }),
-    });
+    if (isEdit) {
+      await fetch(`/api/governance/policies/${policy.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, description, scope, rules, enabled }),
+      });
+    } else {
+      await fetch("/api/governance/policies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, description, scope, rules, enabled }),
+      });
+    }
     setSaving(false);
     onSave();
   };
@@ -137,6 +313,7 @@ function PolicyForm({ onSave, onCancel }: PolicyFormProps) {
     padding: "6px 8px",
     outline: "none",
     boxSizing: "border-box",
+    borderRadius: 0,
   };
 
   const labelStyle: React.CSSProperties = {
@@ -149,84 +326,195 @@ function PolicyForm({ onSave, onCancel }: PolicyFormProps) {
   };
 
   return (
-    <form onSubmit={e => void handleSubmit(e)} style={{
-      background: "var(--bg-2)",
-      border: "1px solid var(--border)",
-      padding: 16,
-      marginBottom: 12,
-    }}>
-      <div style={{ fontSize: 11, color: "var(--accent)", marginBottom: 12, letterSpacing: "0.04em" }}>
-        NEW POLICY
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-        <div>
-          <label style={labelStyle}>Name *</label>
-          <input
-            style={inputStyle}
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="e.g. no-shell-exec"
-            required
-          />
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed", inset: 0,
+          background: "rgba(0,0,0,0.4)",
+          zIndex: 200,
+        }}
+      />
+      {/* Drawer */}
+      <div style={{
+        position: "fixed",
+        top: 0, right: 0, bottom: 0,
+        width: 480,
+        background: "var(--bg-2)",
+        borderLeft: "1px solid var(--border)",
+        zIndex: 201,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}>
+        {/* Drawer header */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "14px 16px",
+          borderBottom: "1px solid var(--border-dim)",
+          background: "var(--bg-3)",
+        }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", letterSpacing: "0.06em" }}>
+            {isEdit ? "EDIT POLICY" : "NEW POLICY"}
+          </span>
+          <button
+            onClick={onClose}
+            style={{ background: "none", border: "none", color: "var(--text-dimmer)", fontSize: 18, cursor: "pointer", lineHeight: 1 }}
+          >
+            ×
+          </button>
         </div>
-        <div>
-          <label style={labelStyle}>Scope</label>
-          <input
-            style={inputStyle}
-            value={scope}
-            onChange={e => setScope(e.target.value)}
-            placeholder="all  or  agent_id"
-          />
+
+        {/* Scrollable body */}
+        <form
+          onSubmit={e => void handleSubmit(e)}
+          style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 14 }}
+        >
+          {/* Name + Scope */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Name *</label>
+              <input
+                style={inputStyle}
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="e.g. no-shell-exec"
+                required
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Scope</label>
+              <select
+                style={{ ...inputStyle, appearance: "none" }}
+                value={scope}
+                onChange={e => setScope(e.target.value as "session" | "project" | "global")}
+              >
+                <option value="session">session</option>
+                <option value="project">project</option>
+                <option value="global">global</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label style={labelStyle}>Description <span style={{ opacity: 0.5, textTransform: "none", fontSize: 9 }}>(optional)</span></label>
+            <input
+              style={inputStyle}
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="What does this policy enforce?"
+            />
+          </div>
+
+          {/* Rule templates */}
+          <div>
+            <div style={{ fontSize: 10, letterSpacing: "0.06em", color: "var(--text-dimmer)", marginBottom: 6, textTransform: "uppercase" }}>
+              Quick-add templates
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {RULE_TEMPLATES.map(t => (
+                <button
+                  key={t.label}
+                  type="button"
+                  onClick={() => addTemplate(t.rule)}
+                  style={{
+                    background: "var(--bg-3)",
+                    border: "1px solid var(--border-dim)",
+                    color: "var(--text-dim)",
+                    padding: "3px 9px",
+                    fontFamily: "var(--font)",
+                    fontSize: 10,
+                    cursor: "pointer",
+                    letterSpacing: "0.03em",
+                    borderRadius: 0,
+                    transition: "border-color 0.1s, color 0.1s",
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = "var(--accent)";
+                    e.currentTarget.style.color = "var(--accent)";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = "var(--border-dim)";
+                    e.currentTarget.style.color = "var(--text-dim)";
+                  }}
+                >
+                  + {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Rules JSON editor */}
+          <div>
+            <label style={labelStyle}>Rules (JSON array)</label>
+            <textarea
+              style={{
+                ...inputStyle,
+                height: 180,
+                resize: "vertical",
+                borderColor: rulesErr ? "#ef4444" : "var(--border-dim)",
+              }}
+              value={rulesRaw}
+              onChange={e => setRulesRaw(e.target.value)}
+              onBlur={() => validateRules(rulesRaw)}
+              spellCheck={false}
+            />
+            {rulesErr
+              ? <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{rulesErr}</div>
+              : <div style={{ fontSize: 10, color: "var(--text-dimmer)", marginTop: 4 }}>
+                  Each rule: <code style={{ color: "var(--text-dim)" }}>{"{ type, pattern, message }"}</code> — type: block | warn | require
+                </div>
+            }
+          </div>
+
+          {/* Enabled toggle */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Toggle checked={enabled} onChange={setEnabled} />
+            <span style={{ fontSize: 11, color: "var(--text-dim)" }}>
+              {enabled ? "Enabled" : "Disabled"}
+            </span>
+          </div>
+        </form>
+
+        {/* Sticky footer */}
+        <div style={{
+          padding: "12px 16px",
+          borderTop: "1px solid var(--border-dim)",
+          background: "var(--bg-3)",
+          display: "flex",
+          gap: 8,
+        }}>
+          <button
+            onClick={e => void handleSubmit(e as unknown as React.FormEvent)}
+            disabled={saving || !name.trim()}
+            style={{
+              background: "var(--accent)", color: "#000",
+              border: "none", padding: "6px 16px",
+              fontFamily: "var(--font)", fontSize: 11, fontWeight: 700,
+              cursor: saving || !name.trim() ? "not-allowed" : "pointer",
+              letterSpacing: "0.04em",
+              opacity: saving || !name.trim() ? 0.6 : 1,
+            }}
+          >
+            {saving ? "SAVING…" : isEdit ? "> UPDATE POLICY" : "> SAVE POLICY"}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "none", border: "1px solid var(--border-dim)",
+              color: "var(--text-dim)", padding: "6px 14px",
+              fontFamily: "var(--font)", fontSize: 11,
+              cursor: "pointer", letterSpacing: "0.04em",
+            }}
+          >
+            CANCEL
+          </button>
         </div>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={labelStyle}>Description</label>
-        <input
-          style={inputStyle}
-          value={description}
-          onChange={e => setDescription(e.target.value)}
-          placeholder="What does this policy enforce?"
-        />
-      </div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={labelStyle}>Rules (JSON array)</label>
-        <textarea
-          style={{ ...inputStyle, height: 80, resize: "vertical" }}
-          value={rulesRaw}
-          onChange={e => setRulesRaw(e.target.value)}
-          spellCheck={false}
-        />
-        {rulesErr && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{rulesErr}</div>}
-      </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <button
-          type="submit"
-          disabled={saving || !name.trim()}
-          style={{
-            background: "var(--accent)", color: "#000",
-            border: "none", padding: "5px 14px",
-            fontFamily: "var(--font)", fontSize: 11, fontWeight: 700,
-            cursor: saving ? "not-allowed" : "pointer",
-            letterSpacing: "0.04em",
-            opacity: saving ? 0.6 : 1,
-          }}
-        >
-          {saving ? "SAVING…" : "> SAVE POLICY"}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          style={{
-            background: "none", border: "1px solid var(--border-dim)",
-            color: "var(--text-dim)", padding: "5px 14px",
-            fontFamily: "var(--font)", fontSize: 11,
-            cursor: "pointer", letterSpacing: "0.04em",
-          }}
-        >
-          CANCEL
-        </button>
-      </div>
-    </form>
+    </>
   );
 }
 
@@ -237,7 +525,9 @@ function PolicyForm({ onSave, onCancel }: PolicyFormProps) {
 function PoliciesTab() {
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [drawerPolicy, setDrawerPolicy] = useState<Policy | null | "new">(undefined as unknown as Policy | null | "new");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -250,17 +540,30 @@ function PoliciesTab() {
 
   useEffect(() => { load(); }, [load]);
 
+  const openCreate = () => {
+    setDrawerPolicy(null);
+    setDrawerOpen(true);
+  };
+
+  const openEdit = (p: Policy) => {
+    setDrawerPolicy(p);
+    setDrawerOpen(true);
+  };
+
+  const closeDrawer = () => setDrawerOpen(false);
+
   const toggleEnabled = async (p: Policy) => {
+    setTogglingId(p.id);
     await fetch(`/api/governance/policies/${p.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ enabled: p.enabled === 0 }),
     });
+    setTogglingId(null);
     load();
   };
 
   const deletePolicy = async (id: string) => {
-    if (!confirm("Delete this policy?")) return;
     await fetch(`/api/governance/policies/${id}`, { method: "DELETE" });
     load();
   };
@@ -272,35 +575,24 @@ function PoliciesTab() {
           {policies.length} {policies.length === 1 ? "policy" : "policies"}
         </span>
         <button
-          onClick={() => setShowForm(v => !v)}
+          onClick={openCreate}
           style={{
-            background: showForm ? "var(--accent-bg)" : "none",
+            background: "none",
             border: "1px solid var(--border)",
-            color: showForm ? "var(--accent)" : "var(--text-dim)",
+            color: "var(--text-dim)",
             padding: "4px 12px",
             fontFamily: "var(--font)", fontSize: 11,
             cursor: "pointer", letterSpacing: "0.04em",
           }}
         >
-          {showForm ? "CANCEL" : "+ NEW POLICY"}
+          + NEW POLICY
         </button>
       </div>
 
-      {showForm && (
-        <PolicyForm
-          onSave={() => { setShowForm(false); load(); }}
-          onCancel={() => setShowForm(false)}
-        />
-      )}
-
       {loading ? (
-        <div style={{
-          border: "1px solid var(--border-dim)",
-          overflow: "hidden",
-        }}>
-          {/* header row */}
+        <div style={{ border: "1px solid var(--border-dim)", overflow: "hidden" }}>
           <div style={{
-            display: "grid", gridTemplateColumns: "1fr 80px 60px 60px 120px 32px",
+            display: "grid", gridTemplateColumns: "1fr 90px 70px 48px 60px 80px 48px",
             padding: "6px 10px", background: "var(--bg-3)",
             borderBottom: "1px solid var(--border-dim)",
           }}>
@@ -308,7 +600,7 @@ function PoliciesTab() {
           </div>
           {[0, 1, 2].map(i => (
             <div key={i} style={{
-              display: "grid", gridTemplateColumns: "1fr 80px 60px 60px 120px 32px",
+              display: "grid", gridTemplateColumns: "1fr 90px 70px 48px 60px 80px 48px",
               alignItems: "center", padding: "10px 10px", gap: 8,
               borderBottom: i < 2 ? "1px solid var(--border-dim)" : "none",
             }}>
@@ -316,11 +608,12 @@ function PoliciesTab() {
                 <SkeletonLine height={11} width={`${50 + i * 20}%`} style={{ marginBottom: 5 }} />
                 <SkeletonLine height={9} width="70%" />
               </div>
-              <SkeletonLine height={10} width={50} />
+              <SkeletonLine height={10} width={55} />
               <SkeletonLine height={10} width={20} />
-              <SkeletonBlock width={32} height={16} />
-              <SkeletonLine height={10} width={90} />
-              <SkeletonLine height={10} width={12} />
+              <SkeletonBlock width={32} height={18} />
+              <SkeletonBlock width={40} height={22} />
+              <SkeletonBlock width={60} height={22} />
+              <SkeletonLine height={10} width={14} />
             </div>
           ))}
         </div>
@@ -336,8 +629,8 @@ function PoliciesTab() {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
-              {["NAME", "SCOPE", "RULES", "ENABLED", "CREATED", ""].map(h => (
-                <th key={h} style={{
+              {["NAME", "SCOPE", "RULES", "ENABLED", "", "", ""].map((h, i) => (
+                <th key={i} style={{
                   padding: "6px 10px", textAlign: "left",
                   fontSize: 10, letterSpacing: "0.06em",
                   color: "var(--text-dimmer)", fontWeight: 600,
@@ -361,57 +654,67 @@ function PoliciesTab() {
                     <div style={{ fontSize: 11, color: "var(--text-dimmer)", marginTop: 2 }}>{p.description}</div>
                   )}
                 </td>
-                <td style={{ padding: "8px 10px", color: "var(--text-dim)", fontFamily: "var(--font)" }}>
+                <td style={{ padding: "8px 10px", color: "var(--text-dim)", fontFamily: "var(--font)", fontSize: 11 }}>
                   {p.scope}
                 </td>
                 <td style={{ padding: "8px 10px", color: "var(--text-dim)" }}>
                   {p.rules.length}
                 </td>
                 <td style={{ padding: "8px 10px" }}>
+                  <Toggle
+                    checked={Boolean(p.enabled)}
+                    onChange={() => void toggleEnabled(p)}
+                    disabled={togglingId === p.id}
+                  />
+                </td>
+                <td style={{ padding: "8px 6px" }}>
                   <button
-                    onClick={() => void toggleEnabled(p)}
+                    onClick={() => openEdit(p)}
                     style={{
-                      background: "none", border: "none",
-                      cursor: "pointer",
-                      color: p.enabled ? "#10b981" : "var(--text-dimmer)",
-                      fontSize: 11, fontFamily: "var(--font)",
-                      letterSpacing: "0.04em",
+                      background: "none", border: "1px solid var(--border-dim)",
+                      color: "var(--text-dim)", padding: "3px 8px",
+                      fontFamily: "var(--font)", fontSize: 10,
+                      cursor: "pointer", letterSpacing: "0.04em",
+                      whiteSpace: "nowrap",
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = "var(--accent)";
+                      e.currentTarget.style.color = "var(--accent)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = "var(--border-dim)";
+                      e.currentTarget.style.color = "var(--text-dim)";
                     }}
                   >
-                    {p.enabled ? "ON" : "OFF"}
+                    EDIT
                   </button>
                 </td>
-                <td style={{ padding: "8px 10px", color: "var(--text-dimmer)", fontSize: 11, fontFamily: "var(--font)" }}>
-                  {fmtTime(p.created_at)}
-                </td>
-                <td style={{ padding: "8px 10px", textAlign: "right" }}>
-                  <button
-                    onClick={() => void deletePolicy(p.id)}
-                    style={{
-                      background: "none", border: "none",
-                      color: "var(--text-dimmer)", cursor: "pointer",
-                      fontSize: 13, lineHeight: 1,
-                      transition: "color 0.1s",
-                    }}
-                    title="Delete policy"
-                    onMouseEnter={e => (e.currentTarget.style.color = "#ef4444")}
-                    onMouseLeave={e => (e.currentTarget.style.color = "var(--text-dimmer)")}
-                  >
-                    ×
-                  </button>
+                <td style={{ padding: "8px 6px" }}>
+                  <DeleteButton onConfirm={() => void deletePolicy(p.id)} />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
+
+      {drawerOpen && (
+        <PolicyDrawer
+          policy={drawerPolicy as Policy | null}
+          onSave={() => { closeDrawer(); load(); }}
+          onClose={closeDrawer}
+        />
+      )}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Action Log tab
+// Action Log tab — sortable + type filter chips + CSV export
 // ---------------------------------------------------------------------------
+
+type SortKey = "created_at" | "agent_id" | "action_type" | "target";
+type SortDir = "asc" | "desc";
 
 function ActionLogTab() {
   const [actions, setActions] = useState<AgentAction[]>([]);
@@ -419,6 +722,9 @@ function ActionLogTab() {
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const [outcomeFilter, setOutcomeFilter] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [loading, setLoading] = useState(true);
 
   const LIMIT = 100;
@@ -462,6 +768,51 @@ function ActionLogTab() {
     loadActions(next, outcomeFilter);
   };
 
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(d => d === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  };
+
+  // Derive unique action types from loaded actions
+  const actionTypes = Array.from(new Set(actions.map(a => a.action_type))).sort();
+
+  // Apply client-side type filter and sort
+  const displayed = [...actions]
+    .filter(a => typeFilter === null || a.action_type === typeFilter)
+    .sort((a, b) => {
+      const va = a[sortKey] ?? "";
+      const vb = b[sortKey] ?? "";
+      const cmp = va < vb ? -1 : va > vb ? 1 : 0;
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+  const exportCSV = () => {
+    const rows = [
+      ["timestamp", "agent", "action_type", "target", "outcome", "session_id", "policy_id"],
+      ...displayed.map(a => [
+        fmtTime(a.created_at),
+        a.agent_id ?? "",
+        a.action_type,
+        a.target ?? "",
+        a.outcome,
+        a.session_id ?? "",
+        a.policy_id ?? "",
+      ]),
+    ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `action-log-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const filterBtnStyle = (active: boolean): React.CSSProperties => ({
     background: active ? "var(--accent-bg)" : "none",
     border: `1px solid ${active ? "var(--accent)" : "var(--border-dim)"}`,
@@ -469,6 +820,20 @@ function ActionLogTab() {
     padding: "3px 10px",
     fontFamily: "var(--font)", fontSize: 10,
     letterSpacing: "0.06em", cursor: "pointer",
+    borderRadius: 0,
+  });
+
+  const sortIndicator = (key: SortKey) => {
+    if (sortKey !== key) return <span style={{ opacity: 0.25, marginLeft: 3 }}>↕</span>;
+    return <span style={{ marginLeft: 3, color: "var(--accent)" }}>{sortDir === "asc" ? "↑" : "↓"}</span>;
+  };
+
+  const thStyle = (key: SortKey): React.CSSProperties => ({
+    padding: "6px 10px", textAlign: "left",
+    fontSize: 10, letterSpacing: "0.06em",
+    color: "var(--text-dimmer)", fontWeight: 600,
+    cursor: "pointer", userSelect: "none",
+    whiteSpace: "nowrap",
   });
 
   return (
@@ -498,9 +863,9 @@ function ActionLogTab() {
         </div>
       )}
 
-      {/* Filter row */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 12, alignItems: "center" }}>
-        <span style={{ fontSize: 10, color: "var(--text-dimmer)", letterSpacing: "0.06em", marginRight: 4 }}>FILTER:</span>
+      {/* Outcome filter row */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <span style={{ fontSize: 10, color: "var(--text-dimmer)", letterSpacing: "0.06em", marginRight: 4 }}>OUTCOME:</span>
         {([null, "blocked", "flagged"] as const).map(f => (
           <button
             key={f ?? "all"}
@@ -510,10 +875,49 @@ function ActionLogTab() {
             {f === null ? "ALL" : f.toUpperCase()}
           </button>
         ))}
-        <div style={{ flex: 1 }} />
-        <span style={{ fontSize: 11, color: "var(--text-dimmer)" }}>
-          {actions.length} / {total}
+      </div>
+
+      {/* Action type filter chips */}
+      {actionTypes.length > 0 && (
+        <div style={{ display: "flex", gap: 6, marginBottom: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <span style={{ fontSize: 10, color: "var(--text-dimmer)", letterSpacing: "0.06em", marginRight: 4 }}>TYPE:</span>
+          <button
+            onClick={() => setTypeFilter(null)}
+            style={filterBtnStyle(typeFilter === null)}
+          >
+            ALL
+          </button>
+          {actionTypes.map(t => (
+            <button
+              key={t}
+              onClick={() => setTypeFilter(t === typeFilter ? null : t)}
+              style={filterBtnStyle(typeFilter === t)}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Count + export row */}
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 8, gap: 8 }}>
+        <span style={{ fontSize: 11, color: "var(--text-dimmer)", flex: 1 }}>
+          {displayed.length} / {total} actions
         </span>
+        <button
+          onClick={exportCSV}
+          disabled={displayed.length === 0}
+          style={{
+            background: "none", border: "1px solid var(--border-dim)",
+            color: "var(--text-dim)", padding: "3px 10px",
+            fontFamily: "var(--font)", fontSize: 10,
+            cursor: displayed.length === 0 ? "not-allowed" : "pointer",
+            letterSpacing: "0.04em",
+            opacity: displayed.length === 0 ? 0.4 : 1,
+          }}
+        >
+          ↓ EXPORT CSV
+        </button>
       </div>
 
       {/* Table */}
@@ -540,7 +944,7 @@ function ActionLogTab() {
             </div>
           ))}
         </div>
-      ) : actions.length === 0 ? (
+      ) : displayed.length === 0 ? (
         <div style={{ padding: "40px 0", textAlign: "center", color: "var(--text-dimmer)", fontSize: 12 }}>
           No actions logged yet.
         </div>
@@ -548,20 +952,30 @@ function ActionLogTab() {
         <>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
             <thead>
-              <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
-                {["TIMESTAMP", "AGENT", "TYPE", "TARGET", "OUTCOME"].map(h => (
-                  <th key={h} style={{
-                    padding: "6px 10px", textAlign: "left",
-                    fontSize: 10, letterSpacing: "0.06em",
-                    color: "var(--text-dimmer)", fontWeight: 600,
-                  }}>
-                    {h}
-                  </th>
-                ))}
+              <tr style={{ borderBottom: "1px solid var(--border-dim)", background: "var(--bg-3)" }}>
+                <th style={thStyle("created_at")} onClick={() => handleSort("created_at")}>
+                  TIMESTAMP {sortIndicator("created_at")}
+                </th>
+                <th style={thStyle("agent_id")} onClick={() => handleSort("agent_id")}>
+                  AGENT {sortIndicator("agent_id")}
+                </th>
+                <th style={thStyle("action_type")} onClick={() => handleSort("action_type")}>
+                  TYPE {sortIndicator("action_type")}
+                </th>
+                <th style={thStyle("target")} onClick={() => handleSort("target")}>
+                  TARGET {sortIndicator("target")}
+                </th>
+                <th style={{
+                  padding: "6px 10px", textAlign: "left",
+                  fontSize: 10, letterSpacing: "0.06em",
+                  color: "var(--text-dimmer)", fontWeight: 600,
+                }}>
+                  OUTCOME
+                </th>
               </tr>
             </thead>
             <tbody>
-              {actions.map(a => (
+              {displayed.map(a => (
                 <tr
                   key={a.id}
                   style={{ borderBottom: "1px solid var(--border-dim)" }}
