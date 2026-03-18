@@ -28,17 +28,19 @@ export default function Agents() {
   const [search, setSearch] = useState("");
 
   // Run mode state
-  const [tab, setTab] = useState<"edit" | "run">("edit");
+  const [tab, setTab] = useState<"edit" | "run" | "gov">("edit");
   const [runPrompt, setRunPrompt] = useState("");
   const [runModel, setRunModel] = useState("claude-sonnet-4-6");
   const [running, setRunning] = useState(false);
   const [output, setOutput] = useState("");
   const [runStatus, setRunStatus] = useState<"idle" | "running" | "done" | "error" | "stopped">("idle");
   const [runMeta, setRunMeta] = useState<{ startedAt: number; durationMs?: number; wordCount?: number } | null>(null);
+  const [loopDetected, setLoopDetected] = useState<{ count: number; pattern: string } | null>(null);
   const [modelOpen, setModelOpen] = useState(false);
   const modelRef = useRef<HTMLDivElement>(null);
   const outputRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
+  const loopCountRef = useRef(0);
 
   useEffect(() => {
     fetch("/api/agents")
@@ -88,6 +90,8 @@ export default function Agents() {
     setTab("edit");
     setOutput("");
     setRunPrompt("");
+    setLoopDetected(null);
+    loopCountRef.current = 0;
   }
 
   async function saveAgent() {
@@ -112,6 +116,8 @@ export default function Agents() {
     setRunning(true);
     setOutput("");
     setRunStatus("running");
+    setLoopDetected(null);
+    loopCountRef.current = 0;
     const startedAt = Date.now();
     setRunMeta({ startedAt });
 
@@ -169,6 +175,21 @@ export default function Agents() {
               if (evt.type === "text" && evt.text) {
                 assembled += evt.text;
                 setOutput(assembled);
+                // Loop detection: check if the last 250 chars repeat earlier in output
+                if (assembled.length > 600) {
+                  const tail = assembled.slice(-250);
+                  const earlier = assembled.slice(0, assembled.length - 250);
+                  if (earlier.includes(tail)) {
+                    loopCountRef.current += 1;
+                    if (loopCountRef.current === 1) {
+                      setLoopDetected({ count: 1, pattern: tail.slice(0, 60).trim() });
+                    } else if (loopCountRef.current >= 3) {
+                      stopped = true;
+                      reader.cancel().catch(() => {});
+                      setLoopDetected({ count: loopCountRef.current, pattern: tail.slice(0, 60).trim() });
+                    }
+                  }
+                }
               } else if (evt.type === "done") {
                 const status = stopped ? "stopped" : (evt.success ? "done" : "error");
                 setRunStatus(status);
@@ -359,6 +380,46 @@ export default function Agents() {
     return null;
   }, [runStatus, output]);
 
+  // #42 — parse agent definition for governance metadata
+  const govInfo = useMemo(() => {
+    const content = selected?.content ?? "";
+    if (!content) return null;
+
+    // Role: first heading or "You are..." sentence
+    const headingMatch = content.match(/^#\s+(.+)/m);
+    const roleMatch = content.match(/you are\s+([^.\n]{10,80})/i);
+    const role = headingMatch?.[1] ?? roleMatch?.[1] ?? null;
+
+    // Risk class: keyword scan
+    const lc = content.toLowerCase();
+    const riskClass =
+      /stripe|payment|billing|checkout|subscription/.test(lc) ? "HIGH" :
+      /auth|jwt|session|clerk|oauth|login|password/.test(lc) && /database|prisma|sql|supabase/.test(lc) ? "MEDIUM" :
+      "LOW";
+
+    // Tools mentioned (standard Claude tools)
+    const toolNames = ["Bash", "Read", "Write", "Edit", "Glob", "Grep", "WebSearch", "WebFetch", "Agent", "MCP"];
+    const tools = toolNames.filter((t) => new RegExp(`\\b${t}\\b`).test(content));
+
+    // Constraints: lines with hard rules
+    const constraints = content
+      .split("\n")
+      .filter((l) => /\b(never|do not|must not|always|prohibited|forbidden)\b/i.test(l))
+      .map((l) => l.replace(/^[-*#>\s]+/, "").trim())
+      .filter((l) => l.length > 10 && l.length < 120)
+      .slice(0, 6);
+
+    // Non-delegation markers
+    const nonDelegation = content
+      .split("\n")
+      .filter((l) => /\b(do not delegate|never delegate|human approval|require confirmation|escalate)\b/i.test(l))
+      .map((l) => l.replace(/^[-*#>\s]+/, "").trim())
+      .filter((l) => l.length > 5)
+      .slice(0, 4);
+
+    return { role, riskClass, tools, constraints, nonDelegation };
+  }, [selected?.content]);
+
   const STATUS_BADGE: Record<string, { label: string; color: string }> = {
     done: { label: "DONE", color: "var(--accent)" },
     error: { label: "ERROR", color: "var(--red)" },
@@ -484,7 +545,7 @@ export default function Agents() {
             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
               {/* Tabs */}
               <div style={{ display: "flex", border: "1px solid var(--border-dim)", borderRadius: "var(--radius)", overflow: "hidden" }}>
-                {(["edit", "run"] as const).map((t) => (
+                {(["edit", "run", "gov"] as const).map((t) => (
                   <button
                     key={t}
                     onClick={() => setTab(t)}
@@ -495,7 +556,7 @@ export default function Agents() {
                       letterSpacing: "0.08em",
                       background: tab === t ? "var(--accent-bg)" : "none",
                       border: "none",
-                      borderRight: t === "edit" ? "1px solid var(--border-dim)" : "none",
+                      borderRight: t !== "gov" ? "1px solid var(--border-dim)" : "none",
                       color: tab === t ? "var(--accent)" : "var(--text-dimmer)",
                       cursor: "pointer",
                       fontFamily: "var(--font)",
@@ -730,9 +791,15 @@ export default function Agents() {
                         <span>{runMeta.wordCount.toLocaleString()} words</span>
                       </>
                     )}
-                    {running && (
+                    {running && !loopDetected && (
                       <span style={{ color: "var(--accent)", marginLeft: "auto" }}>
                         ● streaming
+                      </span>
+                    )}
+                    {running && loopDetected && (
+                      <span style={{ color: "var(--yellow)", marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
+                        <span style={{ fontWeight: 600 }}>⟳ LOOP ×{loopDetected.count}</span>
+                        {loopDetected.count >= 3 && <span style={{ opacity: 0.7 }}>— auto-stopped</span>}
                       </span>
                     )}
                     {!running && failureClass && (
@@ -846,8 +913,108 @@ export default function Agents() {
               </div>
             </div>
           )}
+
+          {/* GOV tab */}
+          {tab === "gov" && (
+            <div style={{ flex: 1, overflow: "auto", padding: "20px" }}>
+              {!govInfo ? (
+                <div style={{ color: "var(--text-dimmer)", fontSize: 11 }}>No agent selected.</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+                  {/* Role */}
+                  <GovSection label="Role">
+                    <div style={{ fontSize: 12, color: govInfo.role ? "var(--text)" : "var(--text-dimmer)", fontStyle: govInfo.role ? "normal" : "italic" }}>
+                      {govInfo.role ?? "No role definition found"}
+                    </div>
+                  </GovSection>
+
+                  {/* Risk class */}
+                  <GovSection label="Risk Class">
+                    <span style={{
+                      display: "inline-block",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: "0.08em",
+                      padding: "2px 8px",
+                      borderRadius: 2,
+                      color: govInfo.riskClass === "HIGH" ? "var(--red)" : govInfo.riskClass === "MEDIUM" ? "var(--yellow)" : "var(--accent)",
+                      background: govInfo.riskClass === "HIGH" ? "var(--red-bg)" : govInfo.riskClass === "MEDIUM" ? "rgba(210,153,34,0.1)" : "var(--accent-bg)",
+                      border: `1px solid ${govInfo.riskClass === "HIGH" ? "rgba(248,81,73,0.25)" : govInfo.riskClass === "MEDIUM" ? "rgba(210,153,34,0.25)" : "rgba(63,185,80,0.25)"}`,
+                    }}>
+                      {govInfo.riskClass}
+                    </span>
+                    <span style={{ fontSize: 10, color: "var(--text-dimmer)", marginLeft: 8 }}>
+                      {govInfo.riskClass === "HIGH" ? "payments or billing detected" : govInfo.riskClass === "MEDIUM" ? "auth + database detected" : "no high-risk patterns"}
+                    </span>
+                  </GovSection>
+
+                  {/* Tools */}
+                  <GovSection label="Tools Referenced">
+                    {govInfo.tools.length === 0 ? (
+                      <div style={{ fontSize: 11, color: "var(--text-dimmer)", fontStyle: "italic" }}>None detected</div>
+                    ) : (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                        {govInfo.tools.map((t) => (
+                          <span key={t} style={{
+                            fontSize: 10, padding: "2px 7px",
+                            background: "var(--bg-4)", color: "var(--text-dim)",
+                            border: "1px solid var(--border-dim)", borderRadius: 2,
+                            fontFamily: "var(--font)",
+                          }}>{t}</span>
+                        ))}
+                      </div>
+                    )}
+                  </GovSection>
+
+                  {/* Constraints */}
+                  <GovSection label="Hard Constraints">
+                    {govInfo.constraints.length === 0 ? (
+                      <div style={{ fontSize: 11, color: "var(--text-dimmer)", fontStyle: "italic" }}>None found</div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        {govInfo.constraints.map((c, i) => (
+                          <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-start", fontSize: 11 }}>
+                            <span style={{ color: "var(--red)", flexShrink: 0 }}>✕</span>
+                            <span style={{ color: "var(--text-dim)", lineHeight: "1.4" }}>{c}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </GovSection>
+
+                  {/* Non-delegation */}
+                  {govInfo.nonDelegation.length > 0 && (
+                    <GovSection label="Non-Delegation Zones">
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        {govInfo.nonDelegation.map((n, i) => (
+                          <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-start", fontSize: 11 }}>
+                            <span style={{ color: "var(--yellow)", flexShrink: 0 }}>⚠</span>
+                            <span style={{ color: "var(--text-dim)", lineHeight: "1.4" }}>{n}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </GovSection>
+                  )}
+
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+function GovSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div style={{
+        fontSize: 9, color: "var(--text-dimmer)", textTransform: "uppercase",
+        letterSpacing: "0.1em", marginBottom: 6, fontFamily: "var(--font)",
+      }}>{label}</div>
+      {children}
     </div>
   );
 }
