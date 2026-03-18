@@ -12,6 +12,7 @@
  */
 
 import type { ScanResult, ComplexityDelta } from "../types.js";
+import type { SectionFreshness } from "../lib/freshness.js";
 import { getStackPatternSections } from "../templates/stack-patterns.js";
 
 // ============================================================================
@@ -831,11 +832,37 @@ export function generateContextMd(scan: ScanResult): string {
 // Main generator — full 5-layer CLAUDE.md
 // ============================================================================
 
+/** Build a staleness annotation comment for a section, or empty string if fresh. */
+function stalenessComment(sectionName: string, freshnessInfo: SectionFreshness[]): string {
+  const info = freshnessInfo.find(f => f.section === sectionName);
+  if (!info || info.isNew || info.scansStale === 0) return "";
+  if (info.scansStale >= 5) {
+    return `<!-- 🔴 This section unchanged for ${info.scansStale} scans — likely stale -->`;
+  }
+  if (info.scansStale >= 2) {
+    return `<!-- ⚠️ This section unchanged for ${info.scansStale} scans — consider re-running hashmark -->`;
+  }
+  return "";
+}
+
+/** Build the freshness summary line for the top of the document. */
+function buildFreshnessSummary(freshnessInfo: SectionFreshness[], scanCount: number): string | null {
+  const stale = freshnessInfo.filter(f => !f.isNew && f.scansStale >= 2);
+  if (stale.length === 0) return null;
+  const detail = stale.map(f => `${f.section}: ${f.scansStale} scans`).join(", ");
+  return `> Scan #${scanCount} · ${stale.length} section${stale.length === 1 ? "" : "s"} stale (${detail})`;
+}
+
 /**
  * Full 5-layer CLAUDE.md following the Model Workspace Protocol.
  * Ref: arxiv 2603.16021 — Folder Structure as Agentic Architecture
  */
-export function generateClaudeMd(scan: ScanResult, customRules: string[] = []): string {
+export function generateClaudeMd(
+  scan: ScanResult,
+  customRules: string[] = [],
+  freshnessInfo?: SectionFreshness[],
+  scanCount?: number
+): string {
   const lines: string[] = [];
   const generatedAt = new Date().toISOString().split("T")[0];
 
@@ -853,19 +880,60 @@ export function generateClaudeMd(scan: ScanResult, customRules: string[] = []): 
 
   // Layer 1: Identity
   for (const l of buildIdentityLayer(scan, generatedAt)) lines.push(l);
+
+  // Freshness summary after identity lines
+  if (freshnessInfo && scanCount !== undefined) {
+    const summary = buildFreshnessSummary(freshnessInfo, scanCount);
+    if (summary) {
+      lines.push(summary);
+    }
+  }
   lines.push("");
 
   // Layer 2: Orientation
-  for (const l of buildOrientationLayer(scan)) lines.push(l);
+  const orientationLines = buildOrientationLayer(scan);
+  for (const l of orientationLines) lines.push(l);
+  if (freshnessInfo) {
+    const comment = stalenessComment("Orientation", freshnessInfo);
+    if (comment) {
+      // Insert after the ## Orientation header line
+      const headerIdx = lines.lastIndexOf("## Orientation");
+      if (headerIdx !== -1) lines.splice(headerIdx + 1, 0, comment);
+    }
+  }
 
   // Layer 3: Operations
-  for (const l of buildOperationsLayer(scan)) lines.push(l);
+  const operationsLines = buildOperationsLayer(scan);
+  for (const l of operationsLines) lines.push(l);
+  if (freshnessInfo) {
+    const comment = stalenessComment("Operations", freshnessInfo);
+    if (comment) {
+      const headerIdx = lines.lastIndexOf("## Operations");
+      if (headerIdx !== -1) lines.splice(headerIdx + 1, 0, comment);
+    }
+  }
 
   // Layer 4: Constraints
-  for (const l of buildConstraintsLayer(scan, customRules)) lines.push(l);
+  const constraintsLines = buildConstraintsLayer(scan, customRules);
+  for (const l of constraintsLines) lines.push(l);
+  if (freshnessInfo) {
+    const comment = stalenessComment("Constraints", freshnessInfo);
+    if (comment) {
+      const headerIdx = lines.lastIndexOf("## Constraints");
+      if (headerIdx !== -1) lines.splice(headerIdx + 1, 0, comment);
+    }
+  }
 
   // Layer 5: Knowledge
-  for (const l of buildKnowledgeLayer(scan)) lines.push(l);
+  const knowledgeLines = buildKnowledgeLayer(scan);
+  for (const l of knowledgeLines) lines.push(l);
+  if (freshnessInfo) {
+    const comment = stalenessComment("Knowledge", freshnessInfo);
+    if (comment) {
+      const headerIdx = lines.lastIndexOf("## Knowledge");
+      if (headerIdx !== -1) lines.splice(headerIdx + 1, 0, comment);
+    }
+  }
 
   return lines.join("\n");
 }

@@ -91,7 +91,7 @@ const claudeMdAdapter: FormatAdapter = {
   tool: "Claude Code",
   description: "Claude Code project instructions",
   generate(scan, { customRules = [] }) {
-    return [{ format: this.id, path: "CLAUDE.md", tool: this.tool, content: generateClaudeMd(scan, customRules) }];
+    return [{ format: this.id, path: "CLAUDE.md", tool: this.tool, content: generateClaudeMd(scan, customRules, scan.sectionFreshness, scan.freshnessStoreCount) }];
   },
 };
 

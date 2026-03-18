@@ -144,7 +144,29 @@ cli
         // non-fatal — validation failure should never abort the scan
       }
 
-      // 6. Report & Generate
+      // 6. Freshness tracking — compute section staleness vs last scan
+      try {
+        const freshnessStore = loadFreshnessStore(targetDir);
+        // Generate raw CLAUDE.md (no freshness) to extract section content for hashing
+        const rawClaudeMd = generateClaudeMd(scanResult);
+        const sectionMap: Record<string, string> = {};
+        const parts = rawClaudeMd.split(/\n(?=## )/);
+        for (const part of parts) {
+          const headerMatch = part.match(/^## ([^\n]+)/);
+          if (headerMatch) sectionMap[headerMatch[1].trim()] = part;
+        }
+        const freshness = computeFreshness(sectionMap, freshnessStore);
+        scanResult.sectionFreshness = freshness;
+        scanResult.freshnessStoreCount = freshnessStore.scanCount + 1;
+        if (!options.dryRun) {
+          const updatedStore = updateFreshnessStore(sectionMap, freshnessStore);
+          saveFreshnessStore(targetDir, updatedStore);
+        }
+      } catch {
+        // non-fatal
+      }
+
+      // 7. Report & Generate
       if (!quiet) reportFindings(scanResult);
 
       const outputDir = options.output ? resolve(options.output) : targetDir;
