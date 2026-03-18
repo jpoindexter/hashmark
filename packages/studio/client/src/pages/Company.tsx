@@ -226,6 +226,9 @@ export default function Company() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [runs, setRuns] = useState<RunRecord[]>([]);
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
+  const [clearCountdown, setClearCountdown] = useState<number | null>(null);
+  const clearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load available agents for preview
   useEffect(() => {
@@ -250,10 +253,37 @@ export default function Company() {
     return () => clearInterval(interval);
   }, [historyOpen, loadRuns]);
 
-  // Reload runs when a swarm completes
+  // On completion: reload runs, open history, start auto-clear countdown
   useEffect(() => {
-    if (phase === 'done') loadRuns();
-  }, [phase, loadRuns]);
+    if (phase !== 'done') return;
+    loadRuns();
+    setHistoryOpen(true);
+
+    let secs = 8;
+    setClearCountdown(secs);
+    countdownRef.current = setInterval(() => {
+      secs--;
+      if (secs <= 0) {
+        setClearCountdown(null);
+        if (countdownRef.current) clearInterval(countdownRef.current);
+        handleClear();
+      } else {
+        setClearCountdown(secs);
+      }
+    }, 1000);
+
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
+  // Cancel auto-clear if user interacts with the result
+  function cancelAutoClear() {
+    if (clearTimerRef.current) { clearTimeout(clearTimerRef.current); clearTimerRef.current = null; }
+    if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+    setClearCountdown(null);
+  }
 
   const agentName = useCallback((agentId: string): string => {
     const a = availableAgents.find(x => x.id === agentId);
@@ -402,6 +432,9 @@ export default function Company() {
   }
 
   function handleClear() {
+    if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+    if (clearTimerRef.current) { clearTimeout(clearTimerRef.current); clearTimerRef.current = null; }
+    setClearCountdown(null);
     setTask("");
     setPhase("idle");
     setPlan([]);
@@ -453,7 +486,20 @@ export default function Company() {
             </div>
           )}
           {phase !== "idle" && (
-            <button className="btn" onClick={handleClear} style={{ fontSize: 11 }}>CLEAR</button>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {clearCountdown !== null && (
+                <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>
+                  clearing in {clearCountdown}s
+                  <button
+                    onClick={cancelAutoClear}
+                    style={{ background: "none", border: "none", color: "var(--accent)", cursor: "pointer", fontSize: 10, marginLeft: 4, padding: 0 }}
+                  >
+                    cancel
+                  </button>
+                </span>
+              )}
+              <button className="btn" onClick={() => { cancelAutoClear(); handleClear(); }} style={{ fontSize: 11 }}>CLEAR</button>
+            </div>
           )}
         </div>
       </div>
@@ -568,7 +614,7 @@ export default function Company() {
 
       {/* Swarm grid — always-visible output during/after run */}
       {workerList.length > 0 && (phase === "running" || phase === "merging" || phase === "done") && (
-        <div>
+        <div onClick={cancelAutoClear}>
           <div style={{
             fontSize: 10,
             color: "var(--text-dimmer)",
