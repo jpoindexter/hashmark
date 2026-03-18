@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from "react";
 import { Home, FolderTree, GitBranch, Bot, Zap, Settings, TerminalSquare, Play, Building2, ChevronRight, AlertTriangle, Shield, PlayCircle, History } from "lucide-react";
 import CommandPalette from "./CommandPalette.tsx";
 import ActivitySidebar from "./ActivitySidebar.tsx";
@@ -365,6 +365,7 @@ export default function Layout() {
           <span style={{ fontSize: 11, color: "var(--text-dimmer)", marginLeft: 60 }}>
             {info?.projectName ?? "…"}
           </span>
+          {drift && <DriftBadge drift={drift} navigate={navigate} />}
           {git?.branch && (
             <>
               <ChevronRight size={12} style={{ color: "var(--text-dimmer)", opacity: 0.4 }} />
@@ -535,6 +536,132 @@ export default function Layout() {
 
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
       {shortcutsOpen && <ShortcutsHelp onClose={() => setShortcutsOpen(false)} />}
+    </div>
+  );
+}
+
+function signalLabel(s: DriftSignal): string {
+  if (s.type === "age_days") return `Age: ${s.days ?? "?"} days old`;
+  if (s.type === "commit_mismatch") return `Commit mismatch: ${(s.fileCommit ?? "?").slice(0, 7)} vs ${(s.headCommit ?? "?").slice(0, 7)}`;
+  if (s.type === "file_count_delta") return `File count delta: ${s.delta != null ? (s.delta > 0 ? "+" : "") + s.delta : "?"}`;
+  return s.type;
+}
+
+function DriftBadge({ drift, navigate }: { drift: DriftResult; navigate: (to: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const isMajor = drift.driftLevel === "major";
+  const dotColor = isMajor ? "#f85149" : "#d29922";
+  const tooltipText = isMajor
+    ? "Context is significantly stale"
+    : "Context is slightly stale — consider rescanning";
+
+  useEffect(() => {
+    if (!open) return;
+    const h = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [open]);
+
+  return (
+    <div ref={ref} style={{ position: "relative", display: "flex", alignItems: "center" }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        title={open ? undefined : tooltipText}
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: "0 4px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <span
+          style={{
+            display: "inline-block",
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: dotColor,
+            flexShrink: 0,
+            animation: isMajor ? "drift-pulse 1.4s ease-in-out infinite" : "none",
+          } as CSSProperties}
+        />
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 100,
+            background: "var(--bg-4)",
+            border: "1px solid var(--border)",
+            borderRadius: 0,
+            width: 220,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+            fontSize: 11,
+            fontFamily: "var(--font-ui)",
+          }}
+        >
+          {/* Header */}
+          <div style={{
+            padding: "8px 10px 6px",
+            borderBottom: "1px solid var(--border-dim)",
+            color: dotColor,
+            fontWeight: 600,
+            fontSize: 10,
+            letterSpacing: "0.06em",
+          }}>
+            {isMajor ? "CONTEXT SIGNIFICANTLY STALE" : "CONTEXT SLIGHTLY STALE"}
+          </div>
+
+          {/* Signals */}
+          <div style={{ padding: "6px 10px", borderBottom: "1px solid var(--border-dim)" }}>
+            {drift.signals.map((s, i) => (
+              <div key={i} style={{ color: "var(--text-dim)", marginBottom: i < drift.signals.length - 1 ? 3 : 0 }}>
+                · {signalLabel(s)}
+              </div>
+            ))}
+          </div>
+
+          {/* Recommendation */}
+          <div style={{ padding: "6px 10px 8px", color: "var(--text-dimmer)", borderBottom: "1px solid var(--border-dim)" }}>
+            {drift.recommendation}
+          </div>
+
+          {/* Rescan button */}
+          <div style={{ padding: "6px 10px" }}>
+            <button
+              onClick={() => { setOpen(false); navigate("/generate"); }}
+              style={{
+                width: "100%",
+                background: "var(--bg-3)",
+                border: `1px solid ${dotColor}`,
+                color: dotColor,
+                padding: "4px 8px",
+                fontSize: 11,
+                fontFamily: "var(--font-ui)",
+                fontWeight: 600,
+                cursor: "pointer",
+                borderRadius: 0,
+                textAlign: "center",
+                transition: "background 0.1s",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = isMajor ? "rgba(248,81,73,0.1)" : "rgba(210,153,34,0.1)")}
+              onMouseLeave={e => (e.currentTarget.style.background = "var(--bg-3)")}
+            >
+              Rescan now
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
