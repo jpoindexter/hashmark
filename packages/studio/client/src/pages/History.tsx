@@ -1,0 +1,352 @@
+import { useState, useEffect, useCallback } from "react";
+import { DiffPanel } from "../components/DiffPanel.tsx";
+
+interface AgentRun {
+  id: string;
+  task: string;
+  status: string;
+  created_at: number;
+  worktree_branch: string | null;
+}
+
+interface RunsResponse {
+  runs: AgentRun[];
+}
+
+interface DiffResponse {
+  diff: string;
+  branch: string | null;
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const color =
+    status === "complete" ? "#10b981"
+    : status === "conflict" ? "#eab308"
+    : status === "error" ? "#ef4444"
+    : status === "running" ? "#06b6d4"
+    : "#52525b";
+
+  return (
+    <span style={{
+      display: "inline-block",
+      padding: "1px 6px",
+      border: `1px solid ${color}`,
+      borderRadius: 2,
+      fontSize: 9,
+      fontFamily: "var(--font, monospace)",
+      letterSpacing: "0.07em",
+      textTransform: "uppercase",
+      color,
+      whiteSpace: "nowrap",
+    }}>
+      {status}
+    </span>
+  );
+}
+
+function formatTs(ts: number): string {
+  const d = new Date(ts);
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export default function History() {
+  const [runs, setRuns] = useState<AgentRun[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [activeDiff, setActiveDiff] = useState<string | null>(null); // run id
+  const [diffText, setDiffText] = useState<string>("");
+  const [diffFilename, setDiffFilename] = useState<string>("");
+  const [diffLoading, setDiffLoading] = useState(false);
+  const [diffError, setDiffError] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    fetch("/api/runs")
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json() as Promise<RunsResponse>;
+      })
+      .then(d => { setRuns(d.runs ?? []); setLoading(false); })
+      .catch(e => { setError(e instanceof Error ? e.message : String(e)); setLoading(false); });
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  function openDiff(run: AgentRun) {
+    if (activeDiff === run.id) {
+      setActiveDiff(null);
+      return;
+    }
+    setActiveDiff(run.id);
+    setDiffText("");
+    setDiffError(null);
+    setDiffLoading(true);
+    setDiffFilename(run.worktree_branch ?? run.task.slice(0, 40));
+
+    fetch(`/api/runs/${run.id}/diff`)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json() as Promise<DiffResponse>;
+      })
+      .then(d => {
+        setDiffText(d.diff ?? "");
+        setDiffLoading(false);
+      })
+      .catch(e => {
+        setDiffError(e instanceof Error ? e.message : String(e));
+        setDiffLoading(false);
+      });
+  }
+
+  const monoMuted: React.CSSProperties = {
+    padding: 16,
+    fontFamily: "var(--font, monospace)",
+    fontSize: 12,
+    color: "var(--text-dimmer, #52525b)",
+  };
+
+  return (
+    <div style={{ display: "flex", height: "100%", overflow: "hidden", position: "relative" }}>
+
+      {/* Main run list */}
+      <div style={{
+        flex: 1,
+        overflow: "auto",
+        padding: "24px 28px",
+        minWidth: 0,
+      }}>
+        {/* Header */}
+        <div style={{ marginBottom: 20 }}>
+          <h1 style={{
+            fontSize: 16,
+            fontWeight: 700,
+            letterSpacing: "-0.01em",
+            color: "var(--text, #fafafa)",
+            marginBottom: 4,
+            fontFamily: "var(--font-ui, sans-serif)",
+          }}>
+            HISTORY
+          </h1>
+          <div style={{ fontSize: 11, color: "var(--text-dimmer, #52525b)", fontFamily: "var(--font-ui, sans-serif)" }}>
+            Past agent runs — click "View diff" to inspect changes
+          </div>
+        </div>
+
+        {loading && <div style={monoMuted}>Loading...</div>}
+        {error && (
+          <div style={{ ...monoMuted, color: "var(--red, #ef4444)" }}>
+            Failed to load runs: {error}
+          </div>
+        )}
+
+        {!loading && !error && runs.length === 0 && (
+          <div style={monoMuted}>No runs yet. Go to Run and kick one off.</div>
+        )}
+
+        {!loading && !error && runs.length > 0 && (
+          <div style={{
+            border: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+            borderRadius: "var(--radius, 0)",
+            overflow: "hidden",
+          }}>
+            {/* Table header */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 120px 100px 90px",
+              padding: "6px 14px",
+              background: "var(--bg-3, #27272a)",
+              borderBottom: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+              fontSize: 9,
+              letterSpacing: "0.08em",
+              color: "var(--text-dimmer, #52525b)",
+              textTransform: "uppercase",
+              fontFamily: "var(--font-ui, sans-serif)",
+            }}>
+              <span>Task</span>
+              <span>Date</span>
+              <span>Status</span>
+              <span />
+            </div>
+
+            {runs.map((run, idx) => {
+              const isActive = activeDiff === run.id;
+              return (
+                <div
+                  key={run.id}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 120px 100px 90px",
+                    alignItems: "center",
+                    padding: "10px 14px",
+                    borderBottom: idx < runs.length - 1
+                      ? "1px solid var(--border-dim, rgba(255,255,255,0.06))"
+                      : "none",
+                    background: isActive
+                      ? "var(--accent-bg, rgba(16,185,129,0.06))"
+                      : "transparent",
+                    transition: "background 0.1s",
+                    gap: 8,
+                  }}
+                >
+                  {/* Task */}
+                  <div style={{
+                    fontFamily: "var(--font, monospace)",
+                    fontSize: 12,
+                    color: "var(--text, #fafafa)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                    title={run.task}
+                  >
+                    {run.task || <span style={{ color: "var(--text-dimmer, #52525b)" }}>—</span>}
+                  </div>
+
+                  {/* Date */}
+                  <div style={{
+                    fontFamily: "var(--font, monospace)",
+                    fontSize: 11,
+                    color: "var(--text-dim, #a1a1aa)",
+                    whiteSpace: "nowrap",
+                  }}>
+                    {formatTs(run.created_at)}
+                  </div>
+
+                  {/* Status */}
+                  <div>
+                    <StatusBadge status={run.status} />
+                  </div>
+
+                  {/* Action */}
+                  <div>
+                    <button
+                      onClick={() => openDiff(run)}
+                      style={{
+                        background: "none",
+                        border: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+                        borderRadius: "var(--radius, 0)",
+                        cursor: "pointer",
+                        color: isActive ? "var(--accent, #10b981)" : "var(--text-dim, #a1a1aa)",
+                        fontFamily: "var(--font, monospace)",
+                        fontSize: 10,
+                        padding: "3px 8px",
+                        letterSpacing: "0.04em",
+                        transition: "color 0.1s, border-color 0.1s",
+                        whiteSpace: "nowrap",
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLButtonElement).style.color = "var(--accent, #10b981)";
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--accent, #10b981)";
+                      }}
+                      onMouseLeave={e => {
+                        if (!isActive) {
+                          (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim, #a1a1aa)";
+                          (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-dim, rgba(255,255,255,0.08))";
+                        }
+                      }}
+                    >
+                      {isActive ? "CLOSE" : "VIEW DIFF"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Diff panel — fixed right drawer */}
+      {activeDiff && (
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={() => setActiveDiff(null)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 40,
+              background: "rgba(0,0,0,0.35)",
+            }}
+          />
+
+          {/* Drawer */}
+          <div style={{
+            position: "fixed",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 50,
+            width: "clamp(320px, 40vw, 680px)",
+            display: "flex",
+            flexDirection: "column",
+            boxShadow: "-4px 0 24px rgba(0,0,0,0.5)",
+          }}>
+            {diffLoading ? (
+              <div style={{
+                flex: 1,
+                background: "var(--bg, #09090b)",
+                borderLeft: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+                display: "flex",
+                alignItems: "flex-start",
+                padding: 20,
+                fontFamily: "var(--font, monospace)",
+                fontSize: 12,
+                color: "var(--text-dimmer, #52525b)",
+              }}>
+                {/* Filename header while loading */}
+                <div style={{ width: "100%" }}>
+                  <div style={{
+                    height: 36,
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "0 12px",
+                    background: "var(--bg-2, #18181b)",
+                    borderBottom: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+                    marginBottom: 16,
+                    gap: 8,
+                  }}>
+                    <span style={{ flex: 1, fontFamily: "var(--font, monospace)", fontSize: 11, color: "var(--text-dim, #a1a1aa)" }}>
+                      {diffFilename}
+                    </span>
+                    <button
+                      onClick={() => setActiveDiff(null)}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer, #52525b)", fontSize: 16, padding: "0 4px", lineHeight: 1 }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  Loading diff...
+                </div>
+              </div>
+            ) : diffError ? (
+              <div style={{
+                flex: 1,
+                background: "var(--bg, #09090b)",
+                borderLeft: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+                padding: 20,
+                fontFamily: "var(--font, monospace)",
+                fontSize: 12,
+                color: "var(--red, #ef4444)",
+              }}>
+                {diffError}
+              </div>
+            ) : (
+              <DiffPanel
+                diff={diffText}
+                filename={diffFilename}
+                onClose={() => setActiveDiff(null)}
+              />
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

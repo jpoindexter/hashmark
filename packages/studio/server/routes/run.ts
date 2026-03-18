@@ -12,6 +12,7 @@ import { randomUUID } from "crypto";
 import { promisify } from "util";
 import { tmpdir } from "os";
 import { logAgentAction, parseActionsFromOutput } from "../lib/action-log.js";
+import { getDb } from "../db.js";
 
 const execFile = promisify(execFileCb);
 
@@ -85,6 +86,72 @@ export function runRoutes(projectDir: string) {
 
   app.get("/status", (c) => c.json({ active: activeRun }));
 
+  // GET /api/runs — list past runs newest first
+  app.get("/runs", (c) => {
+    try {
+      const db = getDb(dataDir);
+      const cols = db.prepare("PRAGMA table_info(runs)").all() as { name: string }[];
+      if (!cols.some(col => col.name === "task")) {
+        db.exec("ALTER TABLE runs ADD COLUMN task TEXT NOT NULL DEFAULT ''");
+      }
+      if (!cols.some(col => col.name === "worktree_branch")) {
+        db.exec("ALTER TABLE runs ADD COLUMN worktree_branch TEXT");
+      }
+      const rows = db
+        .prepare(
+          `SELECT id, task, status, started_at AS created_at, worktree_branch
+           FROM runs ORDER BY started_at DESC LIMIT 50`
+        )
+        .all() as { id: string; task: string; status: string; created_at: number; worktree_branch: string | null }[];
+      return c.json({ runs: rows });
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    }
+  });
+
+  // GET /api/runs/:id/diff — return git diff for the run's worktree branch
+  app.get("/runs/:id/diff", async (c) => {
+    const id = c.req.param("id");
+    try {
+      const db = getDb(dataDir);
+      const run = db.prepare("SELECT worktree_branch, task FROM runs WHERE id = ?").get(id) as
+        | { worktree_branch: string | null; task: string } | undefined;
+      if (!run) return c.json({ error: "Run not found" }, 404);
+
+      const branch = run.worktree_branch;
+      if (!branch) return c.json({ diff: "", branch: null });
+
+      // Try branch diff first; fall back to commit search if branch was deleted post-merge
+      let diff = "";
+      try {
+        const res = await execFile("git", ["diff", `main...${branch}`], {
+          cwd: projectDir,
+          maxBuffer: 4 * 1024 * 1024,
+        });
+        diff = res.stdout;
+      } catch {
+        try {
+          const logRes = await execFile(
+            "git", ["log", "--all", "--oneline", `--grep=run/${id}`],
+            { cwd: projectDir }
+          );
+          const hash = logRes.stdout.trim().split(/\s/)[0];
+          if (hash) {
+            const showRes = await execFile("git", ["show", hash], {
+              cwd: projectDir,
+              maxBuffer: 4 * 1024 * 1024,
+            });
+            diff = showRes.stdout;
+          }
+        } catch { /* no diff available */ }
+      }
+
+      return c.json({ diff, branch });
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    }
+  });
+
   // POST /api/run — start a single-agent run, returns SSE stream
   app.post("/", async (c) => {
     if (activeRun) {
@@ -116,6 +183,17 @@ export function runRoutes(projectDir: string) {
 
         async function run() {
           send({ type: "start", runId, task: body.task, agentId: body.agentId ?? null });
+
+          // Persist run record to DB
+          try {
+            const db = getDb(dataDir);
+            const cols = db.prepare("PRAGMA table_info(runs)").all() as { name: string }[];
+            if (!cols.some(col => col.name === "task")) db.exec("ALTER TABLE runs ADD COLUMN task TEXT NOT NULL DEFAULT ''");
+            if (!cols.some(col => col.name === "worktree_branch")) db.exec("ALTER TABLE runs ADD COLUMN worktree_branch TEXT");
+            db.prepare(
+              `INSERT INTO runs (id, task, status, worktree_branch, started_at) VALUES (?, ?, 'running', ?, ?)`
+            ).run(runId, body.task, branchName, Date.now());
+          } catch { /* non-fatal */ }
 
           // Create worktree
           try {
@@ -177,6 +255,7 @@ export function runRoutes(projectDir: string) {
           // In plan mode, skip commit + merge entirely
           let hasChanges = false;
           if (mode === "plan") {
+            try { getDb(dataDir).prepare("UPDATE runs SET status = ?, ended_at = ? WHERE id = ?").run("complete", Date.now(), runId); } catch {}
             send({ type: "complete", hasChanges: false, mode: "plan" });
             activeRun = false;
             controller.close();
@@ -236,12 +315,20 @@ export function runRoutes(projectDir: string) {
             } catch {}
           }
 
+          // Update run status in DB
+          try {
+            const db = getDb(dataDir);
+            db.prepare("UPDATE runs SET status = ?, ended_at = ? WHERE id = ?")
+              .run("complete", Date.now(), runId);
+          } catch { /* non-fatal */ }
+
           send({ type: "complete", hasChanges, mode: "build" });
           activeRun = false;
           controller.close();
         }
 
         run().catch((err) => {
+          try { getDb(dataDir).prepare("UPDATE runs SET status = ?, ended_at = ? WHERE id = ?").run("error", Date.now(), runId); } catch {}
           send({ type: "error", error: err instanceof Error ? err.message : String(err) });
           activeRun = false;
           controller.close();
