@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import ScanProgress, { type ScanResult } from "../components/ScanProgress";
 
 interface Agent {
   id: string;
@@ -29,6 +30,9 @@ export default function Home() {
   const [info, setInfo] = useState<ProjectInfo | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scanning, setScanning] = useState(false);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -51,6 +55,22 @@ export default function Home() {
 
   const depts = Object.entries(byDept).sort((a, b) => b[1].length - a[1].length);
   const hasAgents = agents.length > 0;
+
+  if (scanning) {
+    return (
+      <ScanProgress
+        onComplete={(result) => {
+          setScanResult(result);
+          setScanning(false);
+        }}
+        onError={(err) => {
+          setScanError(err);
+          setScanning(false);
+        }}
+        onCancel={() => setScanning(false)}
+      />
+    );
+  }
 
   return (
     <div style={{ padding: "32px", maxWidth: "900px" }}>
@@ -156,6 +176,50 @@ export default function Home() {
         )
       )}
 
+      {/* Scan result banner */}
+      {scanResult && (
+        <div style={{
+          background: "var(--accent-bg)",
+          border: "1px solid var(--accent-border)",
+          borderRadius: "var(--radius)",
+          padding: "12px 16px",
+          marginBottom: "24px",
+          fontSize: "12px",
+          color: "var(--accent)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}>
+          <span>✓ Scan complete</span>
+          <button
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontSize: "14px", lineHeight: 1 }}
+            onClick={() => setScanResult(null)}
+          >×</button>
+        </div>
+      )}
+
+      {/* Scan error banner */}
+      {scanError && (
+        <div style={{
+          background: "var(--red-bg)",
+          border: "1px solid rgba(239,68,68,0.2)",
+          borderRadius: "var(--radius)",
+          padding: "12px 16px",
+          marginBottom: "24px",
+          fontSize: "12px",
+          color: "var(--red)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}>
+          <span>✕ {scanError}</span>
+          <button
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--red)", fontSize: "14px", lineHeight: 1 }}
+            onClick={() => setScanError(null)}
+          >×</button>
+        </div>
+      )}
+
       {/* Quick actions */}
       <SectionHeader>Quick Actions</SectionHeader>
       <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
@@ -164,6 +228,9 @@ export default function Home() {
         </button>
         <button className="btn" onClick={() => navigate("/agents")}>
           ▣ View Agents
+        </button>
+        <button className="btn" onClick={() => { setScanResult(null); setScanError(null); setScanning(true); }}>
+          ◎ Run Scan
         </button>
       </div>
     </div>

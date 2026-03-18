@@ -53,6 +53,7 @@ function AppShell() {
         <Route path="generate" element={<Generate />} />
         <Route path="sessions" element={<Sessions />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="setup" element={<WorkspaceSetup />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

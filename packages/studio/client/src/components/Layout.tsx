@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef, Suspense, lazy } from "react";
-import { Home, FolderTree, GitBranch, MessageSquare, Bot, Zap, Settings, TerminalSquare } from "lucide-react";
+import { Home, FolderTree, GitBranch, MessageSquare, Bot, Zap, Settings, TerminalSquare, Play } from "lucide-react";
 import WorkspaceSidebar from "./WorkspaceSidebar.tsx";
 import ChatMessages from "./ChatMessages.tsx";
 import ChatInputBar from "./ChatInputBar.tsx";
@@ -16,6 +16,7 @@ const NAV = [
   { to: "/sessions", icon: <MessageSquare size={20} />, title: "Chat"                },
   { to: "/agents",   icon: <Bot size={20} />,           title: "Agents"              },
   { to: "/generate", icon: <Zap size={20} />,           title: "Generate"            },
+  { to: "/setup",    icon: <Play size={20} />,          title: "Workspace"           },
   { to: "/settings", icon: <Settings size={20} />,      title: "Settings"            },
 ];
 
@@ -135,6 +136,20 @@ export default function Layout() {
       .then((d: { session: { id: string } }) => setActiveSessionId(d.session.id))
       .catch(() => {});
   };
+
+  const [runActive, setRunActive] = useState(false);
+
+  useEffect(() => {
+    const check = () => {
+      fetch("/api/workspace/status")
+        .then(r => r.json())
+        .then((d: { running: string[] }) => setRunActive(d.running.includes("run")))
+        .catch(() => {});
+    };
+    check();
+    const id = setInterval(check, 3000);
+    return () => clearInterval(id);
+  }, []);
 
   const changedFiles = git?.files?.length ?? 0;
 
@@ -430,6 +445,20 @@ export default function Layout() {
             <span style={{ marginLeft: 4, opacity: 0.8 }}>+{changedFiles}</span>
           )}
         </StatusItem>
+
+        {runActive && (
+          <StatusItem onClick={() => { window.location.hash = "/setup"; }} title="Workspace running">
+            <span style={{
+              display: "inline-block",
+              width: 6, height: 6,
+              borderRadius: "50%",
+              background: "var(--accent)",
+              animation: "blink 1s step-end infinite",
+              flexShrink: 0,
+            }} />
+            running
+          </StatusItem>
+        )}
 
         <div style={{ flex: 1 }} />
 
