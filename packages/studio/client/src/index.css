@@ -151,6 +151,7 @@ input:focus, textarea:focus, select:focus {
 @keyframes drift-pulse { 0%,100%{opacity:.6;box-shadow:0 0 0 0 rgba(248,81,73,.5)} 50%{opacity:1;box-shadow:0 0 0 4px rgba(248,81,73,0)} }
 @keyframes cursor-blink { 0%,100%{opacity:1} 50%{opacity:0} }
 @keyframes stream-pulse { 0%,100%{opacity:.4;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }
+@keyframes changes-pulse { 0%,100%{opacity:.7;box-shadow:0 0 0 0 rgba(16,185,129,.4)} 50%{opacity:1;box-shadow:0 0 0 3px rgba(16,185,129,0)} }
 
 .fade-in  { animation: fadeIn .15s ease forwards; }
 .slide-in { animation: slideIn .12s ease forwards; }

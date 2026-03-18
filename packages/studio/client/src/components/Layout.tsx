@@ -124,6 +124,24 @@ export default function Layout() {
       .catch(() => {});
   }, []);
 
+  // Poll git status during streaming so changed-files count stays live
+  useEffect(() => {
+    if (!streaming) {
+      fetch("/api/files/git")
+        .then(r => r.json())
+        .then((data: GitStatus) => setGit(data))
+        .catch(() => {});
+      return;
+    }
+    const id = setInterval(() => {
+      fetch("/api/files/git")
+        .then(r => r.json())
+        .then((data: GitStatus) => setGit(data))
+        .catch(() => {});
+    }, 3000);
+    return () => clearInterval(id);
+  }, [streaming]);
+
   const clearLastKey = useCallback(() => {
     lastKeyRef.current = null;
     if (lastKeyTimer.current) { clearTimeout(lastKeyTimer.current); lastKeyTimer.current = null; }
@@ -409,6 +427,26 @@ export default function Layout() {
                   {git.branch}
                 </span>
               </>
+            )}
+            {changedFiles > 0 && (
+              <button
+                onClick={() => navigate("/source-control")}
+                title="View changed files"
+                style={{
+                  background: "rgba(16,185,129,0.1)",
+                  border: "1px solid rgba(16,185,129,0.2)",
+                  borderRadius: 4,
+                  padding: "2px 8px",
+                  fontSize: 11,
+                  color: "#10b981",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                  animation: streaming ? "changes-pulse 1.5s ease-in-out infinite" : "none",
+                } as React.CSSProperties}
+              >
+                Changes {changedFiles}
+              </button>
             )}
           </div>
 
