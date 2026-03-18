@@ -49,8 +49,9 @@ export default function Layout() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(() =>
     localStorage.getItem("studio_active_session_id") ?? null
   );
-  const [streamText, setStreamText] = useState("");
-  const [streaming,  setStreaming]  = useState(false);
+  const [streamText,    setStreamText]    = useState("");
+  const [streaming,     setStreaming]     = useState(false);
+  const [terminalCwd,   setTerminalCwd]   = useState("");
 
   useEffect(() => persist("termOpen",   termOpen),   [termOpen]);
   useEffect(() => persist("termHeight", termHeight), [termHeight]);
@@ -404,7 +405,7 @@ export default function Layout() {
               </div>
 
               <div style={{ flex: 1, overflow: "hidden", display: activeTab === "TERMINAL" ? "flex" : "none", flexDirection: "column" }}>
-                <TerminalTabs />
+                <TerminalTabs onCwdChange={setTerminalCwd} />
               </div>
               {activeTab === "OUTPUT" && (
                 <div style={{ flex: 1, padding: "12px 16px", overflow: "auto", fontSize: 12, color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>
@@ -428,6 +429,7 @@ export default function Layout() {
         onStreamText={setStreamText}
         onStreamingChange={setStreaming}
         streaming={streaming}
+        terminalCwd={terminalCwd || undefined}
       />
 
       {/* ── Status bar ───────────────────────────────────────────────── */}

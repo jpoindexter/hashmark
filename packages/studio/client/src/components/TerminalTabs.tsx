@@ -60,13 +60,19 @@ function ToolbarBtn({
   );
 }
 
-export default function TerminalTabs() {
+export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: string) => void }) {
   const [tabs, setTabs] = useState<TerminalTab[]>([
     { id: genId(), label: "zsh", shell: "zsh" },
   ]);
   const [activeTabId, setActiveTabId] = useState<string>(tabs[0].id);
   const [shellMenuOpen, setShellMenuOpen] = useState(false);
   const shellMenuRef = useRef<HTMLDivElement>(null);
+  const [tabCwds, setTabCwds] = useState<Record<string, string>>({});
+
+  // Bubble active tab's CWD to parent whenever it changes or active tab switches
+  useEffect(() => {
+    onCwdChange?.(tabCwds[activeTabId] ?? "");
+  }, [tabCwds, activeTabId, onCwdChange]);
 
   const addTab = (shell = "zsh") => {
     if (tabs.length >= 8) return;
@@ -211,7 +217,10 @@ export default function TerminalTabs() {
             }}
           >
             <Suspense fallback={null}>
-              <Terminal tabId={tab.id} />
+              <Terminal
+                tabId={tab.id}
+                onCwdChange={(cwd) => setTabCwds(prev => ({ ...prev, [tab.id]: cwd }))}
+              />
             </Suspense>
           </div>
         ))}

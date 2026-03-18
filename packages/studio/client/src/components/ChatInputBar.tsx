@@ -385,6 +385,7 @@ interface ChatInputBarProps {
   onStreamText: (text: string) => void;
   onStreamingChange: (streaming: boolean) => void;
   streaming: boolean;
+  terminalCwd?: string;
 }
 
 const MODELS = [
@@ -499,7 +500,7 @@ function ToolbarToggle({
 }
 
 export default function ChatInputBar({
-  sessionId, onNewSession, onSessionCreated, onStreamText, onStreamingChange, streaming,
+  sessionId, onNewSession, onSessionCreated, onStreamText, onStreamingChange, streaming, terminalCwd,
 }: ChatInputBarProps) {
   const [input, setInput] = useState("");
   const [selectedModel, setSelectedModel] = useState(() => restore("model", "claude-sonnet-4-6"));
@@ -512,6 +513,19 @@ export default function ChatInputBar({
 
   const slashCommands = useSlashCommands(onNewSession, () => setPlanMode(v => !v), () => setThinking(v => !v));
   const mentionFiles = useMentionFiles();
+
+  const injectTerminalCwd = useCallback(() => {
+    if (!terminalCwd) return;
+    const snippet = `\n\n[Terminal cwd: ${terminalCwd}]`;
+    setInput(prev => prev + snippet);
+    requestAnimationFrame(() => {
+      const ta = textareaRef.current;
+      if (!ta) return;
+      ta.focus();
+      ta.style.height = "auto";
+      ta.style.height = `${Math.min(ta.scrollHeight, 140)}px`;
+    });
+  }, [terminalCwd]);
 
   useEffect(() => persist("model", selectedModel), [selectedModel]);
   useEffect(() => persist("thinking", thinking), [thinking]);
@@ -740,6 +754,32 @@ export default function ChatInputBar({
           <ModelPill selected={selectedModel} onChange={setSelectedModel} />
           <ToolbarToggle active={thinking} onClick={() => setThinking(v => !v)} icon={<span style={{ fontSize: 13, lineHeight: 1 }}>◐</span>} label="Thinking" />
           <ToolbarToggle active={planMode} onClick={() => setPlanMode(v => !v)} icon={<span style={{ fontSize: 11, lineHeight: 1 }}>▦</span>} label="Plan" />
+          {terminalCwd && (
+            <button
+              onClick={injectTerminalCwd}
+              title={`Inject terminal path: ${terminalCwd}`}
+              style={{
+                display: "flex", alignItems: "center", gap: 4,
+                padding: "3px 8px", background: "none", border: "none", borderRadius: 4,
+                color: "var(--text-dimmer)", fontSize: 11, fontFamily: "var(--font-ui)",
+                cursor: "pointer", transition: "background 0.1s, color 0.1s", whiteSpace: "nowrap",
+                maxWidth: 180, overflow: "hidden",
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
+                (e.currentTarget as HTMLButtonElement).style.color = "var(--text)";
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.background = "none";
+                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)";
+              }}
+            >
+              <span style={{ fontSize: 12, lineHeight: 1 }}>⊡</span>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                {terminalCwd.split("/").pop() || terminalCwd}
+              </span>
+            </button>
+          )}
 
           <div style={{ flex: 1 }} />
 
