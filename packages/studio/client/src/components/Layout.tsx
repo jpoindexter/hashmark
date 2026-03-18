@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback, type CSSProperties } from "react";
-import { Home, FolderTree, GitBranch, Bot, Zap, Settings, TerminalSquare, Play, Building2, ChevronRight, AlertTriangle, Shield, PlayCircle, History } from "lucide-react";
+import { Home, FolderTree, GitBranch, Bot, Zap, Settings, TerminalSquare, Play, Building2, ChevronRight, AlertTriangle, Shield, PlayCircle, History, ChevronLeft, RotateCcw } from "lucide-react";
 import CommandPalette from "./CommandPalette.tsx";
 import ActivitySidebar from "./ActivitySidebar.tsx";
 import ChatMessages from "./ChatMessages.tsx";
@@ -349,38 +349,116 @@ export default function Layout() {
       {/* ── Main column ──────────────────────────────────────────────── */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
 
-        {/* Breadcrumb / titlebar */}
+        {/* Conductor-style header */}
         <div style={{
-          height: 38, minHeight: 38,
-          background: "var(--bg-2)",
-          borderBottom: "1px solid var(--border-dim)",
+          height: 40, minHeight: 40,
+          background: "#0a0a0a",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
           display: "flex", alignItems: "center",
-          padding: "0 14px",
-          gap: 6, flexShrink: 0,
+          padding: "0 12px",
+          gap: 8, flexShrink: 0,
+          fontFamily: "-apple-system, system-ui, sans-serif",
+          fontSize: 12,
+          color: "rgba(255,255,255,0.5)",
           WebkitAppRegion: "drag",
         } as React.CSSProperties}>
-          <span style={{ fontSize: 11, color: "var(--text-dimmer)", marginLeft: 60 }}>
-            {info?.projectName ?? "…"}
-          </span>
-          {drift && <DriftBadge drift={drift} navigate={navigate} />}
-          {git?.branch && (
-            <>
-              <ChevronRight size={12} style={{ color: "var(--text-dimmer)", opacity: 0.4 }} />
-              <span style={{ fontSize: 11, color: "var(--text-dim)" }}>{git.branch}</span>
-            </>
-          )}
-          {!isHome && (
-            <>
-              <ChevronRight size={12} style={{ color: "var(--text-dimmer)", opacity: 0.4 }} />
-              <span style={{ fontSize: 11, color: "var(--text)" }}>{routeTitle}</span>
-            </>
-          )}
+
+          {/* Back / Forward */}
+          <div style={{ display: "flex", gap: 2, WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+            <button
+              onClick={() => navigate(-1)}
+              title="Back"
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: "rgba(255,255,255,0.35)", padding: "2px 4px",
+                display: "flex", alignItems: "center", borderRadius: 3,
+                transition: "color 0.1s",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.8)")}
+              onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <button
+              onClick={() => navigate(1)}
+              title="Forward"
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: "rgba(255,255,255,0.35)", padding: "2px 4px",
+                display: "flex", alignItems: "center", borderRadius: 3,
+                transition: "color 0.1s",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.8)")}
+              onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
+          {/* Breadcrumb: project > branch */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+            <span style={{ color: "rgba(255,255,255,0.7)", whiteSpace: "nowrap" }}>
+              {info?.projectName ?? "…"}
+            </span>
+            {drift && <DriftBadge drift={drift} navigate={navigate} />}
+            {git?.branch && (
+              <>
+                <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>›</span>
+                <GitBranch size={11} style={{ color: "rgba(255,255,255,0.35)", flexShrink: 0 }} />
+                <span style={{ color: "rgba(255,255,255,0.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 160 }}>
+                  {git.branch}
+                </span>
+              </>
+            )}
+          </div>
+
+          {/* Refresh icon */}
+          <button
+            onClick={() => { fetch("/api/files/git").then(r => r.json()).then(setGit).catch(() => {}); }}
+            title="Refresh git status"
+            style={{
+              background: "none", border: "none", cursor: "pointer",
+              color: "rgba(255,255,255,0.3)", padding: "2px 4px",
+              display: "flex", alignItems: "center", borderRadius: 3,
+              transition: "color 0.1s",
+              WebkitAppRegion: "no-drag",
+            } as React.CSSProperties}
+            onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
+            onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
+          >
+            <RotateCcw size={12} />
+          </button>
+
           <div style={{ flex: 1 }} />
 
-          {/* Project switcher (Electron only) */}
-          {typeof window.studio !== "undefined" && (
-            <ProjectSwitcher projectName={info?.projectName ?? null} />
-          )}
+          {/* Right side: route badge + settings */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+            <span style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 4,
+              padding: "2px 8px",
+              fontSize: 11,
+              color: "rgba(255,255,255,0.6)",
+              whiteSpace: "nowrap",
+            }}>
+              {routeTitle}
+            </span>
+            <button
+              onClick={() => navigate("/settings")}
+              title="Settings"
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: "rgba(255,255,255,0.3)", padding: "2px 4px",
+                display: "flex", alignItems: "center", borderRadius: 3,
+                transition: "color 0.1s",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
+              onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
+            >
+              <Settings size={13} />
+            </button>
+          </div>
         </div>
 
         {/* Drift warning banner */}

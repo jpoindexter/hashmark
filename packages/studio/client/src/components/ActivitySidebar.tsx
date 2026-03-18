@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, HelpCircle, Settings, MessageSquare, Play, Search, Eye } from "lucide-react";
+import { AlignJustify, Plus, HelpCircle, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { SkeletonLine } from "./Skeleton.tsx";
 
@@ -44,34 +44,93 @@ interface ScanSnapshot {
   totalLines: number;
 }
 
-const INITIAL_COLORS = ["var(--blue)","var(--accent)","var(--yellow)","#8b5cf6","var(--red)","#06b6d4","#ec4899"];
-const nameColor = (name: string) => INITIAL_COLORS[name.charCodeAt(0) % INITIAL_COLORS.length];
-
-function reltime(ts: number): string {
-  const diff = Date.now() - ts;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
+interface ActivitySidebarProps {
+  onSessionSelect?: (sessionId: string) => void;
 }
 
-function StatusDot({ status }: { status: string }) {
-  const color = status === "complete" ? "var(--accent)"
-    : status === "running" ? "var(--yellow)"
-    : status === "error" ? "var(--red)"
-    : "var(--text-dimmer)";
+// Avatar background colors keyed by first letter — muted, not saturated
+const AVATAR_COLORS: Record<string, string> = {
+  a: "rgba(139,92,246,0.18)", b: "rgba(59,130,246,0.18)", c: "rgba(16,185,129,0.18)",
+  d: "rgba(245,158,11,0.18)", e: "rgba(239,68,68,0.18)", f: "rgba(6,182,212,0.18)",
+  g: "rgba(236,72,153,0.18)", h: "rgba(139,92,246,0.18)", i: "rgba(59,130,246,0.18)",
+  j: "rgba(16,185,129,0.18)", k: "rgba(245,158,11,0.18)", l: "rgba(239,68,68,0.18)",
+  m: "rgba(6,182,212,0.18)", n: "rgba(236,72,153,0.18)", o: "rgba(139,92,246,0.18)",
+  p: "rgba(59,130,246,0.18)", q: "rgba(16,185,129,0.18)", r: "rgba(245,158,11,0.18)",
+  s: "rgba(239,68,68,0.18)", t: "rgba(6,182,212,0.18)", u: "rgba(236,72,153,0.18)",
+  v: "rgba(139,92,246,0.18)", w: "rgba(59,130,246,0.18)", x: "rgba(16,185,129,0.18)",
+  y: "rgba(245,158,11,0.18)", z: "rgba(239,68,68,0.18)",
+};
+
+const AVATAR_TEXT_COLORS: Record<string, string> = {
+  a: "rgba(167,139,250,0.8)", b: "rgba(147,197,253,0.8)", c: "rgba(110,231,183,0.8)",
+  d: "rgba(252,211,77,0.8)", e: "rgba(252,165,165,0.8)", f: "rgba(103,232,249,0.8)",
+  g: "rgba(249,168,212,0.8)", h: "rgba(167,139,250,0.8)", i: "rgba(147,197,253,0.8)",
+  j: "rgba(110,231,183,0.8)", k: "rgba(252,211,77,0.8)", l: "rgba(252,165,165,0.8)",
+  m: "rgba(103,232,249,0.8)", n: "rgba(249,168,212,0.8)", o: "rgba(167,139,250,0.8)",
+  p: "rgba(147,197,253,0.8)", q: "rgba(110,231,183,0.8)", r: "rgba(252,211,77,0.8)",
+  s: "rgba(252,165,165,0.8)", t: "rgba(103,232,249,0.8)", u: "rgba(249,168,212,0.8)",
+  v: "rgba(167,139,250,0.8)", w: "rgba(147,197,253,0.8)", x: "rgba(110,231,183,0.8)",
+  y: "rgba(252,211,77,0.8)", z: "rgba(252,165,165,0.8)",
+};
+
+function avatarBg(name: string): string {
+  const key = name.charAt(0).toLowerCase();
+  return AVATAR_COLORS[key] ?? "rgba(255,255,255,0.08)";
+}
+
+function avatarColor(name: string): string {
+  const key = name.charAt(0).toLowerCase();
+  return AVATAR_TEXT_COLORS[key] ?? "rgba(255,255,255,0.5)";
+}
+
+function isRecent(ts: number): boolean {
+  return Date.now() - ts < 5 * 60 * 1000;
+}
+
+function StatusDot({ active }: { active: boolean }) {
   return (
     <span style={{
-      display: "inline-block", width: 6, height: 6, borderRadius: "50%",
-      background: color, flexShrink: 0,
-      boxShadow: status === "running" ? `0 0 5px ${color}` : undefined,
+      display: "inline-block",
+      width: 6,
+      height: 6,
+      borderRadius: "50%",
+      background: active ? "#facc15" : "rgba(255,255,255,0.2)",
+      flexShrink: 0,
+      boxShadow: active ? "0 0 4px #facc15" : undefined,
     }} />
   );
 }
 
-export default function ActivitySidebar() {
+function IconBtn({ children, title, onClick }: { children: React.ReactNode; title: string; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: hovered ? "rgba(255,255,255,0.07)" : "none",
+        border: "none",
+        cursor: "pointer",
+        color: hovered ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.3)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 22,
+        height: 22,
+        padding: 0,
+        borderRadius: 3,
+        transition: "color 0.1s, background 0.1s",
+        fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+export default function ActivitySidebar({ onSessionSelect }: ActivitySidebarProps) {
   const navigate = useNavigate();
   const [workspace, setWorkspace] = useState<WorkspaceEntry | null>(null);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -80,16 +139,13 @@ export default function ActivitySidebar() {
   );
   const [runs, setRuns] = useState<Run[] | null>(null);
   const [scans, setScans] = useState<ScanSnapshot[] | null>(null);
-  const [activeSession, setActiveSession] = useState<string | null>(null);
-  const [runsExpanded, setRunsExpanded] = useState(true);
-  const [scansExpanded, setScansExpanded] = useState(true);
-  const [chatsExpanded, setChatsExpanded] = useState(true);
 
   useEffect(() => {
     const load = () => {
-      fetch("/api/sessions").then(r => r.json()).then((d: { sessions: ChatSession[] }) => {
-        setSessions((d.sessions ?? []).slice(0, 8));
-      }).catch(() => {});
+      fetch("/api/sessions")
+        .then(r => r.json())
+        .then((d: { sessions: ChatSession[] }) => setSessions((d.sessions ?? []).slice(0, 9)))
+        .catch(() => {});
     };
     load();
     const id = setInterval(load, 8000);
@@ -118,9 +174,10 @@ export default function ActivitySidebar() {
 
   useEffect(() => {
     const load = () => {
-      fetch("/api/runs").then(r => r.json()).then((d: { runs?: Run[] }) => {
-        setRuns((d.runs ?? []).slice(0, 5));
-      }).catch(() => setRuns([]));
+      fetch("/api/runs")
+        .then(r => r.json())
+        .then((d: { runs?: Run[] }) => setRuns((d.runs ?? []).slice(0, 5)))
+        .catch(() => setRuns([]));
     };
     load();
     const id = setInterval(load, 10000);
@@ -128,357 +185,298 @@ export default function ActivitySidebar() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/scan/history").then(r => r.json()).then((d: { snapshots?: ScanSnapshot[] }) => {
-      setScans(d.snapshots ?? []);
-    }).catch(() => setScans([]));
+    fetch("/api/scan/history")
+      .then(r => r.json())
+      .then((d: { snapshots?: ScanSnapshot[] }) => setScans(d.snapshots ?? []))
+      .catch(() => setScans([]));
   }, []);
 
   const totalAdded = workspace?.git?.files?.reduce((s, f) => s + (f.added ?? 0), 0) ?? 0;
   const totalRemoved = workspace?.git?.files?.reduce((s, f) => s + (f.removed ?? 0), 0) ?? 0;
+  const shortName = workspace ? (workspace.name.split("/").pop() ?? workspace.name) : null;
+
+  const handleSessionClick = (id: string) => {
+    localStorage.setItem("studio_active_session_id", id);
+    setActiveSessionId(id);
+    if (onSessionSelect) {
+      onSessionSelect(id);
+    } else {
+      navigate("/");
+      window.dispatchEvent(new CustomEvent("studio:switch-session", { detail: id }));
+    }
+  };
 
   return (
     <div style={{
-      display: "flex", flexDirection: "column", height: "100%",
-      background: "var(--bg-2)", borderRight: "1px solid var(--border-dim)",
-      fontFamily: "var(--font-ui)", userSelect: "none",
+      display: "flex",
+      flexDirection: "column",
+      height: "100%",
+      width: 220,
+      minWidth: 220,
+      maxWidth: 220,
+      background: "#111",
+      fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+      userSelect: "none",
+      flexShrink: 0,
     }}>
       {/* Header */}
       <div style={{
-        height: 38, display: "flex", alignItems: "center", padding: "0 14px",
-        WebkitAppRegion: "drag", flexShrink: 0,
+        height: 38,
+        display: "flex",
+        alignItems: "center",
+        padding: "0 8px 0 12px",
+        flexShrink: 0,
+        WebkitAppRegion: "drag",
       } as React.CSSProperties}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-dim)", letterSpacing: "-0.01em" }}>
+        <span style={{
+          flex: 1,
+          fontSize: 12,
+          fontWeight: 600,
+          color: "rgba(255,255,255,0.5)",
+          letterSpacing: "0.02em",
+          textTransform: "uppercase",
+        }}>
           Activity
         </span>
+        <div style={{ display: "flex", gap: 2, WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+          <IconBtn title="Filter" onClick={() => {}}>
+            <AlignJustify size={12} />
+          </IconBtn>
+          <IconBtn title="Add" onClick={() => navigate("/setup")}>
+            <Plus size={12} />
+          </IconBtn>
+        </div>
       </div>
 
-      {/* Workspace header */}
-      <div style={{ display: "flex", alignItems: "center", padding: "0 10px 0 14px", height: 28, flexShrink: 0 }}>
-        <span style={{ flex: 1, fontSize: 11, fontWeight: 600, color: "var(--text-dim)" }}>Workspaces</span>
-        <SidebarIconBtn title="Add workspace" onClick={() => navigate("/setup")}>
-          <Plus size={13} />
-        </SidebarIconBtn>
+      {/* Workspaces section header */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        padding: "0 8px 0 12px",
+        height: 26,
+        flexShrink: 0,
+      }}>
+        <span style={{
+          flex: 1,
+          fontSize: 10,
+          fontWeight: 600,
+          color: "rgba(255,255,255,0.3)",
+          textTransform: "uppercase",
+          letterSpacing: "0.06em",
+        }}>
+          Workspaces
+        </span>
+        <div style={{ display: "flex", gap: 2 }}>
+          <IconBtn title="Sort" onClick={() => {}}>
+            <AlignJustify size={11} />
+          </IconBtn>
+          <IconBtn title="Add workspace" onClick={() => navigate("/setup")}>
+            <Plus size={11} />
+          </IconBtn>
+        </div>
       </div>
 
       {/* Scrollable content */}
-      <div style={{ flex: 1, overflow: "auto" }}>
+      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
 
-        {/* Workspace entry */}
-        {workspace ? (
-          <WorkspaceItem
-            workspace={workspace}
+        {/* Workspace group */}
+        {workspace && shortName ? (
+          <WorkspaceGroup
+            name={shortName}
+            branch={workspace.git?.branch ?? null}
             totalAdded={totalAdded}
             totalRemoved={totalRemoved}
-            activeSession={activeSession}
-            onSelectSession={setActiveSession}
+            sessions={sessions}
+            activeSessionId={activeSessionId}
+            onSessionClick={handleSessionClick}
           />
         ) : (
-          <div style={{ padding: "8px 14px", display: "flex", flexDirection: "column", gap: 6 }}>
-            <SkeletonLine width="60%" height={12} />
-            <SkeletonLine width="40%" height={10} />
+          <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+            <SkeletonLine width="55%" height={11} />
+            <SkeletonLine width="70%" height={10} />
+            <SkeletonLine width="60%" height={10} />
           </div>
         )}
 
-        {/* Quick Actions */}
-        <div style={{ marginTop: 12 }}>
-          <SectionHeader label="Quick Actions" />
-          <div style={{ padding: "6px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
-            <QuickActionBtn
-              icon={<Play size={11} />}
-              label="New run"
-              onClick={() => navigate("/")}
-            />
-            <QuickActionBtn
-              icon={<Search size={11} />}
-              label="New scan"
-              onClick={() => {
-                fetch("/api/scan", { method: "POST" }).catch(() => {});
-                navigate("/");
-              }}
-            />
-            <QuickActionBtn
-              icon={<Eye size={11} />}
-              label="Watch mode"
-              onClick={() => navigate("/settings")}
-            />
-          </div>
-        </div>
-
-        {/* Recent Runs */}
-        <div style={{ marginTop: 8 }}>
-          <CollapsibleSectionHeader
-            label="Recent Runs"
-            expanded={runsExpanded}
-            onToggle={() => setRunsExpanded(v => !v)}
-          />
-          {runsExpanded && (
-            runs === null ? (
-              <div style={{ padding: "6px 14px", display: "flex", flexDirection: "column", gap: 6 }}>
-                <SkeletonLine width="80%" height={11} />
-                <SkeletonLine width="65%" height={11} />
-                <SkeletonLine width="72%" height={11} />
-              </div>
-            ) : runs.length === 0 ? (
-              <div style={{ padding: "8px 14px", fontSize: 11, color: "var(--text-dimmer)", fontStyle: "italic" }}>
-                No runs yet
-              </div>
-            ) : (
-              runs.map(run => (
-                <RunRow key={run.id} run={run} onClick={() => navigate("/")} />
-              ))
-            )
-          )}
-        </div>
-
-        {/* Recent Scans */}
-        <div style={{ marginTop: 8 }}>
-          <CollapsibleSectionHeader
-            label="Recent Scans"
-            expanded={scansExpanded}
-            onToggle={() => setScansExpanded(v => !v)}
-          />
-          {scansExpanded && (
-            scans === null ? (
-              <div style={{ padding: "6px 14px", display: "flex", flexDirection: "column", gap: 6 }}>
-                <SkeletonLine width="70%" height={11} />
-                <SkeletonLine width="55%" height={11} />
-              </div>
-            ) : scans.length === 0 ? (
-              <div style={{ padding: "8px 14px", fontSize: 11, color: "var(--text-dimmer)", fontStyle: "italic" }}>
-                No scans yet
-              </div>
-            ) : (
-              scans.map((snap, i) => (
-                <ScanRow key={i} snap={snap} />
-              ))
-            )
-          )}
-        </div>
-
-        {/* Chat history */}
-        {sessions.length > 0 && (
-          <div style={{ marginTop: 8 }}>
-            <CollapsibleSectionHeader
-              label="Recent Chats"
-              expanded={chatsExpanded}
-              onToggle={() => setChatsExpanded(v => !v)}
-            />
-            {chatsExpanded && sessions.map(s => (
-              <SessionRow
-                key={s.id}
-                session={s}
-                active={s.id === activeSessionId}
-                onClick={() => {
-                  localStorage.setItem("studio_active_session_id", s.id);
-                  setActiveSessionId(s.id);
-                  navigate("/");
-                  window.dispatchEvent(new CustomEvent("studio:switch-session", { detail: s.id }));
-                }}
-              />
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* Bottom actions */}
+      {/* Bottom bar */}
       <div style={{
-        height: 40, borderTop: "1px solid var(--border-dim)",
-        display: "flex", alignItems: "center", padding: "0 10px", gap: 4, flexShrink: 0,
+        height: 36,
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+        display: "flex",
+        alignItems: "center",
+        padding: "0 8px 0 10px",
+        flexShrink: 0,
+        gap: 4,
       }}>
         <button
           onClick={() => navigate("/setup")}
           style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "4px 10px", background: "none",
-            border: "1px solid var(--border-dim)", borderRadius: 4,
-            color: "var(--text-dimmer)", fontSize: 11, cursor: "pointer", transition: "all 0.1s",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "rgba(255,255,255,0.35)",
+            fontSize: 12,
+            fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+            padding: "3px 6px",
+            borderRadius: 3,
+            transition: "color 0.1s",
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
           }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)";
-            (e.currentTarget as HTMLButtonElement).style.color = "var(--text)";
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-dim)";
-            (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)";
-          }}
+          onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
+          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
         >
           <Plus size={11} />
           Add
         </button>
         <div style={{ flex: 1 }} />
-        <SidebarIconBtn title="Help" onClick={() => {}}>
-          <HelpCircle size={14} />
-        </SidebarIconBtn>
-        <SidebarIconBtn title="Settings" onClick={() => navigate("/settings")}>
-          <Settings size={14} />
-        </SidebarIconBtn>
+        <IconBtn title="Help" onClick={() => {}}>
+          <HelpCircle size={13} />
+        </IconBtn>
+        <IconBtn title="Settings" onClick={() => navigate("/settings")}>
+          <Settings size={13} />
+        </IconBtn>
       </div>
     </div>
   );
 }
 
-function QuickActionBtn({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "flex", alignItems: "center", gap: 8,
-        padding: "5px 8px", width: "100%", textAlign: "left",
-        background: hovered ? "rgba(255,255,255,0.05)" : "transparent",
-        border: "none", borderRadius: "var(--radius-sm)",
-        color: hovered ? "var(--text)" : "var(--text-dim)",
-        fontSize: 11, cursor: "pointer", transition: "all 0.1s",
-      }}
-    >
-      <span style={{ color: "var(--accent)", flexShrink: 0 }}>{icon}</span>
-      {label}
-    </button>
-  );
-}
-
-function RunRow({ run, onClick }: { run: Run; onClick: () => void }) {
-  const [hovered, setHovered] = useState(false);
-  const snippet = run.task.length > 40 ? run.task.slice(0, 40) + "…" : run.task;
-  return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "flex", alignItems: "flex-start", gap: 8,
-        padding: "5px 14px 5px 16px", cursor: "pointer",
-        background: hovered ? "rgba(255,255,255,0.04)" : "transparent",
-        transition: "background 0.1s",
-      }}
-    >
-      <StatusDot status={run.status} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          fontSize: 11, color: "var(--text-dim)",
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        }}>
-          {snippet || `run/${run.id}`}
-        </div>
-        <div style={{ fontSize: 10, color: "var(--text-dimmer)", marginTop: 1 }}>
-          {reltime(run.created_at)}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ScanRow({ snap }: { snap: ScanSnapshot }) {
-  return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 8,
-      padding: "5px 14px 5px 16px",
-    }}>
-      <span style={{ fontSize: 10, color: "var(--accent)", flexShrink: 0 }}>⬡</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11, color: "var(--text-dim)" }}>
-          {snap.totalFiles} files · {snap.totalLines.toLocaleString()} lines
-        </div>
-        <div style={{ fontSize: 10, color: "var(--text-dimmer)", marginTop: 1 }}>
-          {reltime(snap.scannedAt)}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function WorkspaceItem({
-  workspace, totalAdded, totalRemoved, activeSession, onSelectSession,
+function WorkspaceGroup({
+  name,
+  branch,
+  totalAdded,
+  totalRemoved,
+  sessions,
+  activeSessionId,
+  onSessionClick,
 }: {
-  workspace: WorkspaceEntry;
+  name: string;
+  branch: string | null;
   totalAdded: number;
   totalRemoved: number;
-  activeSession: string | null;
-  onSelectSession: (id: string | null) => void;
+  sessions: ChatSession[];
+  activeSessionId: string | null;
+  onSessionClick: (id: string) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
-  const color = nameColor(workspace.name);
-  const shortName = workspace.name.split("/").pop() ?? workspace.name;
+  const [hovered, setHovered] = useState(false);
 
   return (
     <div>
+      {/* Workspace row */}
       <div
         onClick={() => setExpanded(v => !v)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         style={{
-          display: "flex", alignItems: "center", gap: 8, padding: "5px 14px",
-          cursor: "pointer", transition: "background 0.1s",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "5px 10px",
+          cursor: "pointer",
+          background: hovered ? "rgba(255,255,255,0.04)" : "transparent",
+          transition: "background 0.1s",
         }}
-        onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"}
-        onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
       >
+        {/* Letter avatar */}
         <div style={{
-          width: 20, height: 20, borderRadius: 4,
-          background: `${color}22`, border: `1px solid ${color}44`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 10, fontWeight: 700, color: color, flexShrink: 0,
+          width: 20,
+          height: 20,
+          borderRadius: 4,
+          background: avatarBg(name),
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 10,
+          fontWeight: 700,
+          color: avatarColor(name),
+          flexShrink: 0,
+          fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
         }}>
-          {shortName.charAt(0).toUpperCase()}
+          {name.charAt(0).toUpperCase()}
         </div>
         <span style={{
-          flex: 1, fontSize: 12, fontWeight: 600, color: "var(--text)",
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          flex: 1,
+          fontSize: 12,
+          fontWeight: 500,
+          color: "rgba(255,255,255,0.75)",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
         }}>
-          {shortName}
+          {name}
         </span>
         {(totalAdded > 0 || totalRemoved > 0) && (
-          <span style={{ display: "flex", gap: 4, fontSize: 10 }}>
-            {totalAdded > 0 && <span style={{ color: "var(--accent)" }}>+{totalAdded}</span>}
-            {totalRemoved > 0 && <span style={{ color: "var(--red)" }}>-{totalRemoved}</span>}
+          <span style={{ display: "flex", gap: 4, fontFamily: "monospace", fontSize: 10 }}>
+            {totalAdded > 0 && (
+              <span style={{ color: "#4ade80" }}>+{totalAdded}</span>
+            )}
+            {totalRemoved > 0 && (
+              <span style={{ color: "#f87171" }}>-{totalRemoved}</span>
+            )}
           </span>
         )}
       </div>
 
-      {workspace.git?.branch && (
+      {/* Branch label */}
+      {branch && (
         <div style={{
-          paddingLeft: 42, paddingRight: 14, paddingBottom: 2,
-          fontSize: 10, color: "var(--text-dimmer)",
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          paddingLeft: 38,
+          paddingRight: 10,
+          paddingBottom: 2,
+          fontSize: 10,
+          color: "rgba(255,255,255,0.2)",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
         }}>
-          {workspace.git.branch}
+          {branch}
         </div>
       )}
 
-      {expanded && workspace.agents.length > 0 && (
-        <div style={{ paddingBottom: 4 }}>
-          {workspace.agents.slice(0, 20).map((agent, i) => (
-            <AgentRow
-              key={agent.id}
-              agent={agent}
-              shortcut={i < 9 ? `⌘${i + 1}` : undefined}
-              active={activeSession === agent.id}
-              onClick={() => onSelectSession(agent.id)}
-            />
-          ))}
-        </div>
-      )}
+      {/* Session rows */}
+      {expanded && sessions.length > 0 && sessions.map((s, i) => (
+        <SessionRow
+          key={s.id}
+          session={s}
+          shortcut={i < 9 ? `⌘${i + 1}` : undefined}
+          active={s.id === activeSessionId}
+          onClick={() => onSessionClick(s.id)}
+        />
+      ))}
 
-      {expanded && workspace.agents.length === 0 && (
-        <div style={{ paddingLeft: 42, paddingBottom: 8, fontSize: 11, color: "var(--text-dimmer)", fontStyle: "italic" }}>
-          No agents
+      {expanded && sessions.length === 0 && (
+        <div style={{
+          paddingLeft: 38,
+          paddingBottom: 8,
+          fontSize: 11,
+          color: "rgba(255,255,255,0.2)",
+          fontStyle: "italic",
+        }}>
+          No sessions
         </div>
       )}
     </div>
   );
 }
 
-function AgentRow({
-  agent, shortcut, active, onClick,
+function SessionRow({
+  session,
+  shortcut,
+  active,
+  onClick,
 }: {
-  agent: Agent;
+  session: ChatSession;
   shortcut?: string;
   active: boolean;
   onClick: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
-  const displayName = agent.name || agent.id;
-  const sub = agent.path ? agent.path.split("/").pop() ?? agent.path : agent.department;
+  const recent = isRecent(session.updated_at);
+  const title = session.title || "Untitled";
 
   return (
     <div
@@ -486,127 +484,61 @@ function AgentRow({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        display: "flex", alignItems: "center", gap: 8, padding: "4px 14px 4px 42px",
+        display: "flex",
+        alignItems: "center",
+        gap: 7,
+        height: 32,
+        padding: "4px 10px 4px 20px",
         cursor: "pointer",
-        background: active ? "var(--accent-bg)" : hovered ? "rgba(255,255,255,0.04)" : "transparent",
-        borderLeft: active ? "2px solid var(--accent)" : "2px solid transparent",
+        background: active
+          ? "rgba(255,255,255,0.06)"
+          : hovered
+          ? "rgba(255,255,255,0.03)"
+          : "transparent",
         transition: "background 0.1s",
       }}
     >
-      <div style={{
-        width: 6, height: 6, borderRadius: "50%",
-        background: active ? "var(--accent)" : "var(--yellow)", flexShrink: 0,
-        boxShadow: active ? "0 0 6px var(--accent)" : undefined,
-      }} />
+      <StatusDot active={recent} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
-          fontSize: 12, fontWeight: 500,
-          color: active ? "var(--accent)" : "var(--text)",
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          fontSize: 12,
+          fontWeight: active ? 500 : 400,
+          color: active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.55)",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
         }}>
-          {displayName}
+          {title}
         </div>
-        {sub && (
-          <div style={{
-            fontSize: 10, color: "var(--text-dimmer)",
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          }}>
-            {sub}
-          </div>
-        )}
-      </div>
-      {shortcut && (
-        <span style={{ fontSize: 10, color: "var(--text-dimmer)", flexShrink: 0, opacity: hovered ? 1 : 0.5 }}>
-          {shortcut}
-        </span>
-      )}
-    </div>
-  );
-}
-
-function SidebarIconBtn({ children, title, onClick }: { children: React.ReactNode; title: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      style={{
-        background: "none", border: "none", cursor: "pointer",
-        color: "var(--text-dimmer)", display: "flex", alignItems: "center", justifyContent: "center",
-        width: 24, height: 24, padding: 0, borderRadius: 3, transition: "color 0.1s, background 0.1s",
-      }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLButtonElement).style.color = "var(--text)";
-        (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)";
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)";
-        (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
-function SectionHeader({ label }: { label: string }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 10px 0 14px", height: 26, flexShrink: 0 }}>
-      <span style={{ flex: 1, fontSize: 11, fontWeight: 600, color: "var(--text-dim)" }}>{label}</span>
-    </div>
-  );
-}
-
-function CollapsibleSectionHeader({ label, expanded, onToggle }: { label: string; expanded: boolean; onToggle: () => void }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <div
-      onClick={onToggle}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "flex", alignItems: "center", gap: 6,
-        padding: "0 10px 0 14px", height: 26, flexShrink: 0,
-        cursor: "pointer", background: hovered ? "rgba(255,255,255,0.03)" : "transparent",
-        transition: "background 0.1s",
-      }}
-    >
-      <span style={{
-        fontSize: 9, color: "var(--text-dimmer)", transition: "transform 0.1s",
-        display: "inline-block", transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
-      }}>
-        ▶
-      </span>
-      <span style={{ flex: 1, fontSize: 11, fontWeight: 600, color: "var(--text-dim)" }}>{label}</span>
-    </div>
-  );
-}
-
-function SessionRow({ session, active, onClick }: { session: ChatSession; active: boolean; onClick: () => void }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "flex", alignItems: "center", gap: 8, padding: "5px 14px 5px 16px",
-        cursor: "pointer",
-        background: active ? "var(--accent-bg)" : hovered ? "rgba(255,255,255,0.04)" : "transparent",
-        borderLeft: active ? "2px solid var(--accent)" : "2px solid transparent",
-        transition: "background 0.1s",
-      }}
-    >
-      <MessageSquare size={12} style={{ color: active ? "var(--accent)" : "var(--text-dimmer)", flexShrink: 0 }} />
-      <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
-          fontSize: 11, color: active ? "var(--text)" : "var(--text-dim)",
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          fontSize: 10,
+          color: "rgba(255,255,255,0.2)",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          marginTop: 1,
         }}>
-          {session.title || "Untitled"}
-        </div>
-        <div style={{ fontSize: 10, color: "var(--text-dimmer)" }}>
           {session.message_count} msgs
         </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+        <span style={{
+          fontFamily: "monospace",
+          fontSize: 11,
+          color: "#4ade80",
+        }}>
+          +{session.message_count}
+        </span>
+        {shortcut && (
+          <span style={{
+            fontSize: 10,
+            color: "rgba(255,255,255,0.25)",
+            opacity: hovered || active ? 1 : 0.6,
+            transition: "opacity 0.1s",
+          }}>
+            {shortcut}
+          </span>
+        )}
       </div>
     </div>
   );
