@@ -46,9 +46,13 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
   const barColor = pct > 80 ? "var(--red)" : pct > 60 ? "var(--yellow)" : "var(--accent)";
   const wasteColor = wasteEstimatePct > 25 ? "var(--red)" : wasteEstimatePct > 15 ? "var(--yellow)" : "var(--text-dimmer)";
 
-  // Input split: user prompts vs system overhead (estimated)
-  const inputPct = info.total > 0 ? Math.round((info.inputTokens / info.total) * 100) : 0;
-  const outputPct = 100 - inputPct;
+  // Three-part token breakdown: your messages | history overhead | responses
+  const historyOverhead = Math.max(0, info.inputTokens - info.userInputTokens);
+  const yourMsgPct = info.total > 0 ? Math.round((info.userInputTokens / info.total) * 100) : 0;
+  const historyPct = info.total > 0 ? Math.round((historyOverhead / info.total) * 100) : 0;
+  const responsesPct = info.total > 0 ? Math.round((info.outputTokens / info.total) * 100) : 0;
+  // History overhead is a waste signal — warn when it dominates input
+  const historyDominates = historyOverhead > 0 && info.inputTokens > 0 && (historyOverhead / info.inputTokens) > 0.7;
 
   return (
     <div style={{ borderTop: "1px solid var(--border-dim)", flexShrink: 0 }}>
@@ -115,23 +119,34 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
             </span>
           </div>
 
-          {/* Input/output split bar */}
+          {/* Three-part token flow */}
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-              <span style={{ color: "var(--text-dimmer)" }}>Input / Output split</span>
-              <span>
-                <span style={{ color: "var(--accent)" }}>{inputPct}%</span>
-                {" / "}
-                <span style={{ color: "var(--blue)" }}>{outputPct}%</span>
-              </span>
+              <span style={{ color: "var(--text-dimmer)" }}>Token flow</span>
+              {historyDominates && (
+                <span style={{ color: "var(--yellow)", fontSize: 9 }}>history-heavy</span>
+              )}
             </div>
-            <div style={{ height: 3, background: "var(--border-dim)", display: "flex" }}>
-              <div style={{ width: `${inputPct}%`, background: "var(--accent)", transition: "width 0.3s" }} />
-              <div style={{ flex: 1, background: "var(--blue)", opacity: 0.5 }} />
+            {/* Stacked bar */}
+            <div style={{ height: 4, background: "var(--border-dim)", display: "flex", overflow: "hidden" }}>
+              <div style={{ width: `${yourMsgPct}%`, background: "var(--accent)", transition: "width 0.3s", flexShrink: 0 }} title={`Your messages: ${fmt(info.userInputTokens)}`} />
+              <div style={{ width: `${historyPct}%`, background: "var(--yellow)", opacity: 0.7, transition: "width 0.3s", flexShrink: 0 }} title={`History overhead: ${fmt(historyOverhead)}`} />
+              <div style={{ flex: 1, background: "var(--blue)", opacity: 0.5 }} title={`Responses: ${fmt(info.outputTokens)}`} />
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3, color: "var(--text-dimmer)" }}>
-              <span>{fmt(info.inputTokens)} in</span>
-              <span>{fmt(info.outputTokens)} out</span>
+            {/* Legend */}
+            <div style={{ display: "flex", gap: 10, marginTop: 4, flexWrap: "wrap" }}>
+              {([
+                ["Your msgs", "var(--accent)", yourMsgPct, info.userInputTokens],
+                ["History", "var(--yellow)", historyPct, historyOverhead],
+                ["Responses", "var(--blue)", responsesPct, info.outputTokens],
+              ] as [string, string, number, number][]).map(([label, color, pct, tokens]) => (
+                <span key={label} style={{ display: "flex", alignItems: "center", gap: 3, color: "var(--text-dimmer)" }}>
+                  <span style={{ width: 6, height: 6, background: color, opacity: 0.8, borderRadius: 1, flexShrink: 0 }} />
+                  <span>{label}</span>
+                  <span style={{ color }}>{pct}%</span>
+                  <span style={{ color: "var(--text-dimmer)", opacity: 0.6 }}>({fmt(tokens)})</span>
+                </span>
+              ))}
             </div>
           </div>
 

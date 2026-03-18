@@ -34,6 +34,13 @@ export default function Home() {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [scanDelta, setScanDelta] = useState<ScanDelta | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [staleness, setStaleness] = useState<{
+    exists: boolean;
+    generatedAt: string | null;
+    commitsSince: number | null;
+    daysStale: number | null;
+  } | null>(null);
+  const [staleDismissed, setStaleDismissed] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -45,6 +52,11 @@ export default function Home() {
         setAgents(agentsData.agents ?? []);
       })
       .finally(() => setLoading(false));
+
+    fetch("/api/scan/staleness")
+      .then((r) => r.json())
+      .then((d) => setStaleness(d))
+      .catch(() => {});
   }, []);
 
   // Group agents by department
@@ -246,6 +258,47 @@ export default function Home() {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* CLAUDE.md staleness warning */}
+      {staleness?.exists && !staleDismissed && (
+        (staleness.commitsSince != null && staleness.commitsSince >= 5) ||
+        (staleness.daysStale != null && staleness.daysStale >= 14)
+      ) && (
+        <div style={{
+          background: "rgba(210,153,34,0.08)",
+          border: "1px solid rgba(210,153,34,0.25)",
+          borderRadius: "var(--radius)",
+          padding: "10px 14px",
+          marginBottom: "16px",
+          fontSize: 11,
+          fontFamily: "var(--font)",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}>
+          <span style={{ color: "var(--yellow)" }}>⚠</span>
+          <span style={{ color: "var(--text-dim)", flex: 1 }}>
+            <span style={{ color: "var(--yellow)", fontWeight: 600 }}>CLAUDE.md may be stale</span>
+            {" — "}
+            {staleness.commitsSince != null && staleness.commitsSince > 0
+              ? `${staleness.commitsSince} commits since last scan`
+              : staleness.daysStale != null
+              ? `generated ${staleness.daysStale} days ago`
+              : "re-run scan to refresh"}
+            {". "}
+            <button
+              onClick={() => { setStaleDismissed(false); setScanResult(null); setScanError(null); setScanning(true); }}
+              style={{ background: "none", border: "none", color: "var(--yellow)", cursor: "pointer", padding: 0, textDecoration: "underline", fontFamily: "var(--font)", fontSize: 11 }}
+            >
+              Run scan now
+            </button>
+          </span>
+          <button
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontSize: 14, lineHeight: 1, padding: 0 }}
+            onClick={() => setStaleDismissed(true)}
+          >×</button>
         </div>
       )}
 

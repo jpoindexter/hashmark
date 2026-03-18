@@ -3,7 +3,7 @@
  */
 
 import { Hono } from "hono";
-import { spawn } from "child_process";
+import { spawn, spawnSync } from "child_process";
 import { join } from "path";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { getScanContextMeta } from "../context.js";
@@ -70,6 +70,45 @@ export function scanRoutes(projectDir: string) {
   app.get("/context", (c) => {
     const meta = getScanContextMeta(projectDir);
     return c.json(meta);
+  });
+
+  // GET /api/scan/staleness — check if CLAUDE.md is stale vs. recent commits
+  app.get("/staleness", (c) => {
+    const claudeMdPath = join(projectDir, "CLAUDE.md");
+    if (!existsSync(claudeMdPath)) {
+      return c.json({ exists: false, generatedAt: null, commitsSince: null, daysStale: null });
+    }
+
+    let generatedAt: string | null = null;
+    try {
+      const content = readFileSync(claudeMdPath, "utf-8");
+      const match = content.match(/Generated:\s*(\d{4}-\d{2}-\d{2})/);
+      if (match) generatedAt = match[1];
+    } catch { /* non-fatal */ }
+
+    if (!generatedAt) {
+      return c.json({ exists: true, generatedAt: null, commitsSince: null, daysStale: null });
+    }
+
+    let commitsSince: number | null = null;
+    try {
+      // spawnSync with explicit arg array — no shell injection risk, generatedAt is regex-validated YYYY-MM-DD
+      const result = spawnSync(
+        "git",
+        ["log", `--after=${generatedAt}T00:00:00`, "--oneline"],
+        { cwd: projectDir, timeout: 5000, encoding: "utf-8" }
+      );
+      if (result.status === 0 && result.stdout) {
+        commitsSince = result.stdout.split("\n").filter((l: string) => l.trim().length > 0).length;
+      }
+    } catch { /* not a git repo or git not available */ }
+
+    const genDate = new Date(generatedAt);
+    const daysStale = !isNaN(genDate.getTime())
+      ? Math.floor((Date.now() - genDate.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+
+    return c.json({ exists: true, generatedAt, commitsSince, daysStale });
   });
 
   // POST /api/scan — run scan, stream progress via SSE
