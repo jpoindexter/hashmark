@@ -20,7 +20,3 @@ Stack: Next.js 16.1.6 + TypeScript + Tailwind CSS
 - `npm run build` — Production build
 - `npm test` — Run tests
 - `npm run lint` — Lint code
-
-## Detected Patterns
-
-- Testing: Vitest

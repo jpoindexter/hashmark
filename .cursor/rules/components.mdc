@@ -5,7 +5,7 @@ globs: src/app/**,src/components/dashboard/**,src/components/landing/**,src/comp
 
 # Component Rules
 
-This project has 33 components. Always use existing ones.
+This project has 46 components. Always use existing ones.
 
 ## Rules
 
@@ -29,6 +29,7 @@ This project has 33 components. Always use existing ones.
   Props: repoCount, repoLimit
 - `DashboardShellWrapper` — `@/components/dashboard/dashboard-shell-wrapper`
 - `FilesPage` — `@/components/dashboard/files-page`
+- `FormatToggles`, `ALL` — `@/components/dashboard/format-toggles`
 - `IntelligencePage` — `@/components/dashboard/intelligence-page`
 - `RepoCard` — `@/components/dashboard/repo-card`
 - `RepoSettingsPage` — `@/components/dashboard/repo-settings-page`
@@ -37,20 +38,31 @@ This project has 33 components. Always use existing ones.
 - `RuleCard` — `@/components/dashboard/rule-card`
 - `RuleDialog` — `@/components/dashboard/rule-dialog`
 - `ScanHistoryPage` — `@/components/dashboard/scan-history-page`
+- `LatentHooksSection`, `PatternsSection`, `AiReadinessSection`, `ScannerCoverageSection` — `@/components/dashboard/scan-results-tables-parts`
 - `ScanResultsTables` — `@/components/dashboard/scan-results-tables`
-  Props: results
 - `SearchDialog`, `SearchTrigger` — `@/components/dashboard/search-dialog`
 - `SettingsPage` — `@/components/dashboard/settings-page`
 - `TrialBanner` — `@/components/dashboard/trial-banner`
+- `UpgradeSuccessToast` — `@/components/dashboard/upgrade-success-toast`
 
 ### landing
 
 - `CliSection` — `@/components/landing/cli-section`
+- `ComparisonSection` — `@/components/landing/comparison`
+- `FaqSection` — `@/components/landing/faq`
+- `FEATURES` — `@/components/landing/feature-data`
+- `FeaturesSection` — `@/components/landing/features`
 - `Footer` — `@/components/landing/footer`
 - `Formats` — `@/components/landing/formats`
+- `HeroBgScene` — `@/components/landing/hero-bg-scene`
+- `WheatStalks` — `@/components/landing/hero-wheat`
 - `Hero` — `@/components/landing/hero`
 - `HowItWorks` — `@/components/landing/how-it-works`
+- `FadeUp` — `@/components/landing/motion-wrapper`
+  Props: delay, className, style
+- `CheckIcon`, `FeatureCell`, `PLANS`, `FEATURE`, `FAQ` — `@/components/landing/pricing-helpers`
 - `PricingTable` — `@/components/landing/pricing-table`
+- `ProcessSection` — `@/components/landing/process`
 
 ### shared
 
@@ -64,3 +76,4 @@ This project has 33 components. Always use existing ones.
 
 - `ThemeProvider` — `@/components/theme-provider`
 - `ThemeToggle` — `@/components/theme-toggle`
+- `Toaster` — `@/components/toaster`

@@ -4,8 +4,8 @@
 
 ## Project Overview
 
-**Stack**: Next.js 16.1.6 • App Router • TypeScript 5 • Tailwind CSS • prisma (9 models)
-**Codebase**: 143 files, 17,715 lines, 33 components
+**Stack**: Next.js 16.1.6 • App Router • TypeScript 5 • Tailwind CSS • prisma (10 models)
+**Codebase**: 319 files, 40,163 lines, 46 components
 
 ## Commands
 
@@ -31,11 +31,12 @@ npm run hashmark
 
 ## Critical Rules
 
-- **ALWAYS** check existing 33 components before creating new ones
+- **ALWAYS** check existing 46 components before creating new ones
 - **Prefer** Server Components by default — only add `'use client'` when needed
 - **ALWAYS** use `next/image` for images and `next/link` for navigation
 - **NEVER** use `any` — use proper types or `unknown`
 - **NEVER** use arbitrary values (`w-[137px]`) — use Tailwind scale values
+- ALWAYS** check existing 33 components before creating new ones
 
 ## Architecture
 
@@ -43,26 +44,27 @@ npm run hashmark
 
 Changes to these files affect many dependents — edit carefully:
 
-- `src/lib/auth.ts` (24 dependents)
-- `src/lib/db.ts` (24 dependents)
-- `src/lib/github.ts` (6 dependents)
+- `src/lib/auth.ts` (25 dependents)
+- `src/lib/db.ts` (25 dependents)
+- `src/lib/github.ts` (5 dependents)
 - `src/lib/rate-limit.ts` (5 dependents)
 - `src/lib/scan-worker.ts` (4 dependents)
 - `src/components/shared/status-badge.tsx` (4 dependents)
 
 ### Components
 
-33 components available. Check before creating new ones:
+46 components available. Check before creating new ones:
 
 - **app**: OGImage, TwitterImage
-- **dashboard**: UpgradeButton, ComplexityPage, ConnectRepoDialog, DashboardBreadcrumbs, PlanUsageSection, DashboardShellWrapper, FilesPage, IntelligencePage, RepoCard, RepoSettingsPage, RepoSubNav, ReposPage, RuleCard, RuleDialog, ScanHistoryPage, ScanResultsTables, SearchDialog, SettingsPage, TrialBanner
-- **landing**: CliSection, Footer, Formats, Hero, HowItWorks, PricingTable
+- **dashboard**: UpgradeButton, ComplexityPage, ConnectRepoDialog, DashboardBreadcrumbs, PlanUsageSection, DashboardShellWrapper, FilesPage, FormatToggles, IntelligencePage, RepoCard, RepoSettingsPage, RepoSubNav, ReposPage, RuleCard, RuleDialog, ScanHistoryPage, LatentHooksSection, ScanResultsTables, SearchDialog, SettingsPage, TrialBanner, UpgradeSuccessToast
+- **landing**: CliSection, ComparisonSection, FaqSection, FEATURES, FeaturesSection, Footer, Formats, HeroBgScene, WheatStalks, Hero, HowItWorks, FadeUp, CheckIcon, PricingTable, ProcessSection
 - **shared**: LoginCard, OAuthButtons, StatusBadge, UpgradeGate
-- **components**: ThemeProvider, ThemeToggle
+- **components**: ThemeProvider, ThemeToggle, Toaster
 
 ### Custom Hooks
 
 - `useScanPolling` from `@/hooks/use-scan-polling` *(client only)*
+- `useScanStream` from `@/hooks/use-scan-stream` *(client only)*
 - `useSearch` from `@/hooks/use-search` *(client only)*
 
 ### API Routes
@@ -70,10 +72,12 @@ Changes to these files affect many dependents — edit carefully:
 - `POST` `/api/billing/checkout` (auth)
 - `POST` `/api/billing/portal` (auth)
 - `POST` `/api/billing/webhook`
+- `GET` `/api/health`
 - `GET` `/api/repos` (auth)
 - `POST` `/api/scan/:repoId` (auth)
 - `GET` `/api/scan/:repoId/download` (auth)
 - `GET` `/api/scan/:repoId/latest` (auth)
+- `GET` `/api/scan/:repoId/stream` (auth)
 - `GET` `/api/search` (auth)
 - `POST` `/api/webhooks/github`
 
@@ -82,16 +86,13 @@ Changes to these files affect many dependents — edit carefully:
 - **Account**: id, userId, type, provider, providerAccountId +7
 - **Session**: id, sessionToken, userId, expires
 - **VerificationToken**: identifier, token, expires
-- **User**: id, name, email, emailVerified, image +4
-- **Repository**: id, userId, githubRepoId, name, fullName +9
+- **User**: id, name, email, emailVerified, image +3
+- **Repository**: id, userId, githubRepoId, name, fullName +10
 - **Scan**: id, repositoryId, results, fileCount, lineCount +10
 - **GeneratedFile**: id, scanId, fileName, content, tokenCount +1
 - **CustomRule**: id, userId, name, description, rule +3
 - **SearchChunk**: id, repositoryId, scanId, sectionHeading, sectionType +4
-
-## Code Patterns
-
-- Testing: Vitest
+- **WebhookEvent**: id, processedAt
 
 ## AI Automation Hooks
 

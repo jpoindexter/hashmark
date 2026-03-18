@@ -153,13 +153,17 @@ export function generateClaudeMd(scan: ScanResult, customRules: string[] = []): 
     lines.push(`- ${rule}`);
   }
 
-  // Rules extracted from existing CLAUDE.md
+  // Rules extracted from existing CLAUDE.md (skip rules we already generate fresh)
   if (existingContext.hasClaudeMd && existingContext.claudeMdContent) {
     const existingLines = existingContext.claudeMdContent.split("\n");
     for (const line of existingLines) {
       if ((line.includes("NEVER") || line.includes("ALWAYS") || line.includes("MUST")) && line.trim().length > 20) {
+        // Skip component-count rules — we generate these fresh with the current count
+        if (/check existing \d+ components/i.test(line)) continue;
         const cleanLine = line.replace(/^[\s\-\*\d\.]+/, "").trim();
-        if (!lines.some(l => l.includes(cleanLine))) {
+        // Deduplicate by checking if the core intent already appears
+        const coreContent = cleanLine.replace(/\*\*/g, "").toLowerCase();
+        if (!lines.some(l => l.replace(/\*\*/g, "").toLowerCase().includes(coreContent.slice(0, 40)))) {
           lines.push(`- ${cleanLine}`);
         }
       }

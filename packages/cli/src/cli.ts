@@ -279,6 +279,153 @@ cli
     }
   });
 
+// --- agents command ---
+cli
+  .command("agents [dir]", "Generate a full .claude/agents/ company from your codebase")
+  .option("-o, --output <path>", "Output directory (defaults to scan directory)")
+  .option("-y, --yes", "Non-interactive: generate all departments, skip wizard")
+  .option("--dry-run", "Preview agent list without writing files")
+  .option("--dept <departments>", "Comma-separated departments (engineering,product,design,marketing,sales,operations,pr)")
+  .option("--type <preset>", "Company type preset (saas, agency, ai-product, design-studio, social-media-agency, sales-org, ecommerce, custom)")
+  .option("--json-stream", "Output NDJSON agent events to stdout (for studio integration)")
+  .action(async (dir: string | undefined, options: any) => {
+    const targetDir = dir || process.cwd();
+    const quiet = options.yes;
+
+    if (!quiet) console.log(pc.cyan("\n  # hashmark agents\n"));
+
+    try {
+      // Scan the codebase first
+      const engine = new ScannerEngine();
+      const excludePatterns = loadConfig(targetDir).exclude || [];
+
+      if (!quiet) process.stdout.write("  Scanning codebase...");
+      const scanResult = await engine.run(targetDir, excludePatterns, { yes: true });
+
+      // Run secondary scanners for richer agent context (import graph, deps, latent hooks)
+      const [importGraph, dependencies, latentHooks] = await Promise.all([
+        scanImports(targetDir),
+        scanDependencies(targetDir),
+        scanLatentHooks(targetDir, scanResult.framework, scanResult.utilities),
+      ]);
+      Object.assign(scanResult, { importGraph, dependencies, latentHooks });
+
+      if (!quiet) console.log(pc.green(" done"));
+
+      // Detect project name from package.json
+      let detectedName = "Project";
+      try {
+        const pkgPath = join(targetDir, "package.json");
+        if (existsSync(pkgPath)) {
+          const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+          detectedName = pkg.name || detectedName;
+        }
+      } catch {}
+
+      const { COMPANY_PRESETS } = await import("./agents/company-types.js");
+
+      const { detectProviderFromEnv } = await import("./agents/ai-generator.js");
+
+      let projectName = detectedName;
+      let roles: any[] = [];
+      let providerConfig: any = detectProviderFromEnv();
+
+      if (!quiet) {
+        const { runAgentsWizard } = await import("./agents/wizard.js");
+        const result = await runAgentsWizard(detectedName);
+        if (!result) process.exit(0);
+        projectName = result.projectName;
+        roles = result.roles;
+        providerConfig = result.providerConfig;
+      } else {
+        // Non-interactive: default to saas preset or --type flag
+        const presetId = options.type || "saas";
+        const preset = COMPANY_PRESETS.find((p: any) => p.id === presetId) || COMPANY_PRESETS[0];
+        roles = preset.roles;
+      }
+
+      const outputDir = options.output ? resolve(options.output) : targetDir;
+
+      if (options.dryRun) {
+        console.log(pc.dim("\n  Preview (dry run):\n"));
+        for (const role of roles) {
+          console.log(pc.dim(`    .claude/agents/${role.department}/${role.id}.md`));
+        }
+        console.log(pc.dim(`    .claude/agents/INDEX.md`));
+        const depts = [...new Set(roles.map((r: any) => r.department))];
+        console.log(pc.dim(`\n  ${roles.length} agents across ${depts.length} departments\n`));
+        process.exit(0);
+      }
+
+      if (!providerConfig) {
+        console.error(pc.red("\n  ✗ No AI provider found. Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or GOOGLE_AI_API_KEY — or run without --yes to pick interactively.\n"));
+        process.exit(1);
+      }
+
+      // Generate agents with AI
+      const { generateAgentsWithAI, generateIndexWithAI, buildScanSummary } = await import("./agents/ai-generator.js");
+      const scanSummary = buildScanSummary(scanResult, projectName);
+
+      const jsonStream = options.jsonStream;
+      if (jsonStream) process.stdout.write(JSON.stringify({ type: "start", total: roles.length }) + "\n");
+
+      let done = 0;
+      const agents = await generateAgentsWithAI(
+        scanResult, roles, projectName, providerConfig,
+        (roleTitle, _done, total) => {
+          done = _done;
+          if (jsonStream) {
+            // Find the just-completed agent and stream it
+            // Progress event — the full agent is emitted when written below
+          } else if (!quiet) {
+            process.stdout.write(`\r  Generating agents... ${done}/${total} — ${roleTitle}              `);
+          }
+        }
+      );
+      if (!quiet && !jsonStream) console.log(pc.green(`\r  Generated ${agents.length} agents                                        `));
+
+      // Write agent files
+      for (const agent of agents) {
+        const filePath = join(outputDir, ".claude", "agents", agent.path);
+        if (!existsSync(dirname(filePath))) mkdirSync(dirname(filePath), { recursive: true });
+        writeFileSync(filePath, agent.content, "utf-8");
+        if (jsonStream) {
+          process.stdout.write(JSON.stringify({ type: "agent", path: agent.path, content: agent.content, role: agent.role }) + "\n");
+        } else if (!quiet) {
+          console.log(pc.green(`    ✓ .claude/agents/${agent.path}`));
+        }
+      }
+
+      // Generate and write INDEX.md
+      const index = await generateIndexWithAI(agents, projectName, scanSummary, providerConfig);
+      const indexPath = join(outputDir, ".claude", "agents", "INDEX.md");
+      writeFileSync(indexPath, index, "utf-8");
+      if (jsonStream) {
+        process.stdout.write(JSON.stringify({ type: "done", count: agents.length }) + "\n");
+      } else if (!quiet) {
+        console.log(pc.green(`    ✓ .claude/agents/INDEX.md`));
+      }
+
+      if (!quiet) {
+        const depts = [...new Set(agents.map(a => a.role.department))];
+        console.log(pc.dim(`\n  ${agents.length} agents across ${depts.length} departments`));
+        console.log(pc.dim(`  Claude Code will automatically use these agents based on your requests.\n`));
+      } else {
+        const written = agents.map(a => join(outputDir, ".claude", "agents", a.path));
+        process.stdout.write(JSON.stringify({ ok: true, files: written, count: agents.length }) + "\n");
+      }
+
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      if (options.yes) {
+        process.stderr.write(JSON.stringify({ ok: false, error: msg }) + "\n");
+      } else {
+        console.error(pc.red(`\n  ✗ Failed: ${msg}\n`));
+      }
+      process.exit(1);
+    }
+  });
+
 // --- mcp command ---
 cli
   .command("mcp", "Start the hashmark MCP server (stdio transport for Claude Code, Cursor, etc.)")
@@ -332,6 +479,55 @@ cli
     console.log(`  Email     : ${creds.email}`);
     console.log(`  Connected : ${new Date(creds.connectedAt).toLocaleString()}`);
     console.log();
+  });
+
+// --- studio command ---
+cli
+  .command("studio", "Open the visual agent studio in your browser")
+  .option("--port <port>", "Port to run the studio on", { default: 3200 })
+  .option("--no-open", "Don't auto-open the browser")
+  .action(async (options: { port: number; open: boolean }) => {
+    const { spawn } = await import("child_process");
+    const { join: pathJoin, dirname: pathDirname } = await import("path");
+    const { existsSync: fsExists } = await import("fs");
+
+    const __dir = pathDirname(fileURLToPath(import.meta.url));
+
+    // Look for studio bin in sibling packages/studio or in node_modules
+    const studioBin = [
+      pathJoin(__dir, "../../studio/dist/bin.js"),
+      pathJoin(__dir, "../../../studio/dist/bin.js"),
+      pathJoin(__dir, "../../node_modules/hashmark-studio/dist/bin.js"),
+    ].find((p) => fsExists(p));
+
+    if (!studioBin) {
+      console.error(pc.red("\n  Error: hashmark studio is not built yet."));
+      console.error(pc.dim("  Run: cd packages/studio && npm install && npm run build\n"));
+      process.exit(1);
+    }
+
+    const env: NodeJS.ProcessEnv = {
+      ...process.env,
+      STUDIO_PORT: String(options.port),
+      HASHMARK_PROJECT_DIR: process.cwd(),
+    };
+
+    if (!options.open) env.HASHMARK_NO_OPEN = "1";
+
+    const proc = spawn(process.execPath, [studioBin], {
+      env,
+      stdio: "inherit",
+    });
+
+    proc.on("error", (err) => {
+      console.error(pc.red(`\n  Studio error: ${err.message}\n`));
+      process.exit(1);
+    });
+
+    process.on("SIGINT", () => {
+      proc.kill("SIGINT");
+      process.exit(0);
+    });
   });
 
 cli.help();

@@ -5,11 +5,11 @@
 ## Project
 
 Stack: Next.js 16.1.6, App Router, TypeScript, Tailwind CSS, prisma
-Codebase: 143 files, 33 components
+Codebase: 319 files, 46 components
 
 ## Rules
 
-- Always use existing components (33 available). Never create duplicates.
+- Always use existing components (46 available). Never create duplicates.
 - Use semantic design tokens (bg-primary, text-foreground) — never hardcode colors.
 - Default to Server Components. Only add 'use client' when interactivity is needed.
 - Use next/image for images and next/link for navigation.
@@ -21,14 +21,15 @@ Codebase: 143 files, 33 components
 Available components — use these instead of creating new ones:
 
 app: OGImage, TwitterImage
-dashboard: UpgradeButton, ComplexityPage, ConnectRepoDialog, DashboardBreadcrumbs, PlanUsageSection, DashboardShellWrapper, FilesPage, IntelligencePage, RepoCard, RepoSettingsPage, RepoSubNav, ReposPage, RuleCard, RuleDialog, ScanHistoryPage, ScanResultsTables, SearchDialog, SettingsPage, TrialBanner
-landing: CliSection, Footer, Formats, Hero, HowItWorks, PricingTable
+dashboard: UpgradeButton, ComplexityPage, ConnectRepoDialog, DashboardBreadcrumbs, PlanUsageSection, DashboardShellWrapper, FilesPage, FormatToggles, IntelligencePage, RepoCard, RepoSettingsPage, RepoSubNav, ReposPage, RuleCard, RuleDialog, ScanHistoryPage, LatentHooksSection, ScanResultsTables, SearchDialog, SettingsPage, TrialBanner, UpgradeSuccessToast
+landing: CliSection, ComparisonSection, FaqSection, FEATURES, FeaturesSection, Footer, Formats, HeroBgScene, WheatStalks, Hero, HowItWorks, FadeUp, CheckIcon, PricingTable, ProcessSection
 shared: LoginCard, OAuthButtons, StatusBadge, UpgradeGate
-components: ThemeProvider, ThemeToggle
+components: ThemeProvider, ThemeToggle, Toaster
 
 ## Hooks
 
 useScanPolling → "@/hooks/use-scan-polling" (client only)
+useScanStream → "@/hooks/use-scan-stream" (client only)
 useSearch → "@/hooks/use-search" (client only)
 
 ## API
@@ -36,10 +37,12 @@ useSearch → "@/hooks/use-search" (client only)
 POST /api/billing/checkout (auth)
 POST /api/billing/portal (auth)
 POST /api/billing/webhook
+GET /api/health
 GET /api/repos (auth)
 POST /api/scan/:repoId (auth)
 GET /api/scan/:repoId/download (auth)
 GET /api/scan/:repoId/latest (auth)
+GET /api/scan/:repoId/stream (auth)
 GET /api/search (auth)
 POST /api/webhooks/github
 
@@ -54,10 +57,7 @@ Scan: id, repositoryId, results, fileCount, lineCount
 GeneratedFile: id, scanId, fileName, content, tokenCount
 CustomRule: id, userId, name, description, rule
 SearchChunk: id, repositoryId, scanId, sectionHeading, sectionType
-
-## Patterns
-
-- Testing: Vitest
+WebhookEvent: id, processedAt
 
 ## Commands
 

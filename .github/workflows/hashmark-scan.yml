@@ -38,7 +38,7 @@ jobs:
           node-version: "20"
 
       - name: Install Hashmark CLI
-        run: npm install -g hashmark-cli
+        run: npm install -g hashmark
 
       - name: Generate AI context files
         run: hashmark --force

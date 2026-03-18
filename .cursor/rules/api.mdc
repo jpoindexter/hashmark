@@ -15,9 +15,11 @@ globs: src/app/api/**,app/api/**,pages/api/**
 - `POST` `/api/billing/checkout` [AUTH]
 - `POST` `/api/billing/portal` [AUTH]
 - `POST` `/api/billing/webhook`
+- `GET` `/api/health`
 - `GET` `/api/repos` [AUTH]
 - `POST` `/api/scan/:repoId` [AUTH]
 - `GET` `/api/scan/:repoId/download` [AUTH]
 - `GET` `/api/scan/:repoId/latest` [AUTH]
+- `GET` `/api/scan/:repoId/stream` [AUTH]
 - `GET` `/api/search` [AUTH]
 - `POST` `/api/webhooks/github`

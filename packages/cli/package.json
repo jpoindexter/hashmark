@@ -67,9 +67,17 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.58",
+    "@ai-sdk/google": "^3.0.43",
+    "@ai-sdk/groq": "^3.0.29",
+    "@ai-sdk/mistral": "^3.0.24",
+    "@ai-sdk/openai": "^3.0.41",
+    "@ai-sdk/xai": "^3.0.67",
+    "@anthropic-ai/sdk": "^0.79.0",
     "@clack/prompts": "^1.1.0",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@typescript-eslint/typescript-estree": "^8.54.0",
+    "ai": "^6.0.116",
     "cac": "^6.7.14",
     "chokidar": "^5.0.0",
     "clipboardy": "^5.2.1",

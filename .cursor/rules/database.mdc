@@ -27,12 +27,12 @@ Fields: identifier, token, expires
 
 ### User
 
-Fields: id, name, email, emailVerified, image, githubId, stripeCustomerId, createdAt, updatedAt
+Fields: id, name, email, emailVerified, image, githubId, createdAt, updatedAt
 Relations: plan, accounts, sessions, repositories, customRules
 
 ### Repository
 
-Fields: id, userId, githubRepoId, name, fullName, defaultBranch, private, language, description, scanRoot, actionInstalled, lastScanAt, createdAt, updatedAt
+Fields: id, userId, githubRepoId, name, fullName, defaultBranch, private, language, description, scanRoot, enabledFormats, actionInstalled, lastScanAt, createdAt, updatedAt
 Relations: user, scans, searchChunks
 
 ### Scan
@@ -54,3 +54,7 @@ Relations: scope, user
 
 Fields: id, repositoryId, scanId, sectionHeading, sectionType, content, chunkIndex, tokenCount, createdAt
 Relations: searchVector, repository, scan
+
+### WebhookEvent
+
+Fields: id, processedAt
