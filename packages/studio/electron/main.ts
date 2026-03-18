@@ -109,40 +109,327 @@ function createWindow() {
   if (process.env.STUDIO_DEVTOOLS === "1") win.webContents.openDevTools({ mode: "detach" });
 }
 
+function sendToRenderer(channel: string, ...args: unknown[]) {
+  win?.webContents.send(channel, ...args);
+}
+
 // Native menu
 function buildMenu() {
   const template: Electron.MenuItemConstructorOptions[] = [
+    // ── hashmark ──────────────────────────────────────────────────────────
     {
       label: "hashmark",
       submenu: [
         { label: "About hashmark studio", role: "about" },
         { type: "separator" },
-        { label: "Hide", role: "hide" },
-        { label: "Quit", accelerator: "Cmd+Q", role: "quit" },
+        {
+          label: "Preferences...",
+          accelerator: "Cmd+,",
+          click: () => sendToRenderer("menu:navigate", "/settings"),
+        },
+        { type: "separator" },
+        { label: "Hide hashmark", role: "hide" },
+        { label: "Hide Others", role: "hideOthers" },
+        { label: "Show All", role: "unhide" },
+        { type: "separator" },
+        { label: "Quit hashmark", accelerator: "Cmd+Q", role: "quit" },
       ],
     },
+
+    // ── File ──────────────────────────────────────────────────────────────
+    {
+      label: "File",
+      submenu: [
+        {
+          label: "New Window",
+          accelerator: "Cmd+Shift+N",
+          click: () => createWindow(),
+        },
+        { type: "separator" },
+        {
+          label: "Open Project...",
+          accelerator: "Cmd+Shift+O",
+          click: async () => {
+            const result = await dialog.showOpenDialog({
+              properties: ["openDirectory"],
+              title: "Open Project",
+              buttonLabel: "Open",
+            });
+            if (!result.canceled && result.filePaths[0]) {
+              const dir = result.filePaths[0];
+              const config = readConfig();
+              const updated = addToRecent({ ...config, projectDir: dir }, dir);
+              writeConfig(updated);
+              process.env.HASHMARK_PROJECT_DIR = dir;
+              win?.webContents.reload();
+            }
+          },
+        },
+        { type: "separator" },
+        {
+          label: "Close Window",
+          accelerator: "Cmd+Shift+W",
+          role: "close",
+        },
+      ],
+    },
+
+    // ── Edit ──────────────────────────────────────────────────────────────
     {
       label: "Edit",
       submenu: [
-        { role: "undo" }, { role: "redo" }, { type: "separator" },
-        { role: "cut" }, { role: "copy" }, { role: "paste" },
-        { role: "selectAll" },
+        { role: "undo", accelerator: "Cmd+Z" },
+        { role: "redo", accelerator: "Cmd+Shift+Z" },
+        { type: "separator" },
+        { role: "cut", accelerator: "Cmd+X" },
+        { role: "copy", accelerator: "Cmd+C" },
+        { role: "paste", accelerator: "Cmd+V" },
+        { role: "pasteAndMatchStyle", accelerator: "Cmd+Shift+V" },
+        { role: "delete" },
+        { role: "selectAll", accelerator: "Cmd+A" },
+        { type: "separator" },
+        {
+          label: "Find",
+          accelerator: "Cmd+F",
+          click: () => sendToRenderer("menu:find"),
+        },
+        {
+          label: "Find Next",
+          accelerator: "Cmd+G",
+          click: () => sendToRenderer("menu:find-next"),
+        },
+        {
+          label: "Find Previous",
+          accelerator: "Cmd+Shift+G",
+          click: () => sendToRenderer("menu:find-prev"),
+        },
       ],
     },
+
+    // ── Selection ─────────────────────────────────────────────────────────
+    {
+      label: "Selection",
+      submenu: [
+        { role: "selectAll" },
+        {
+          label: "Expand Selection",
+          accelerator: "Shift+Alt+Right",
+          click: () => sendToRenderer("menu:expand-selection"),
+        },
+        {
+          label: "Shrink Selection",
+          accelerator: "Shift+Alt+Left",
+          click: () => sendToRenderer("menu:shrink-selection"),
+        },
+        { type: "separator" },
+        {
+          label: "Copy Line Up",
+          accelerator: "Shift+Alt+Up",
+          click: () => sendToRenderer("menu:copy-line-up"),
+        },
+        {
+          label: "Copy Line Down",
+          accelerator: "Shift+Alt+Down",
+          click: () => sendToRenderer("menu:copy-line-down"),
+        },
+        {
+          label: "Move Line Up",
+          accelerator: "Alt+Up",
+          click: () => sendToRenderer("menu:move-line-up"),
+        },
+        {
+          label: "Move Line Down",
+          accelerator: "Alt+Down",
+          click: () => sendToRenderer("menu:move-line-down"),
+        },
+      ],
+    },
+
+    // ── View ──────────────────────────────────────────────────────────────
     {
       label: "View",
       submenu: [
-        { role: "reload" }, { role: "forceReload" },
+        {
+          label: "Command Palette...",
+          accelerator: "Cmd+Shift+P",
+          click: () => sendToRenderer("menu:command-palette"),
+        },
         { type: "separator" },
-        { role: "resetZoom" }, { role: "zoomIn" }, { role: "zoomOut" },
+        {
+          label: "Explorer",
+          accelerator: "Cmd+Shift+E",
+          click: () => sendToRenderer("menu:navigate", "/files"),
+        },
+        {
+          label: "Source Control",
+          accelerator: "Cmd+Shift+G",
+          click: () => sendToRenderer("menu:navigate", "/source-control"),
+        },
+        {
+          label: "Agents",
+          accelerator: "Cmd+Shift+A",
+          click: () => sendToRenderer("menu:navigate", "/agents"),
+        },
         { type: "separator" },
-        { role: "togglefullscreen" },
+        {
+          label: "Toggle Activity Bar",
+          click: () => sendToRenderer("menu:toggle-activity-bar"),
+        },
+        {
+          label: "Toggle Sidebar",
+          accelerator: "Cmd+B",
+          click: () => sendToRenderer("menu:toggle-sidebar"),
+        },
+        {
+          label: "Toggle Terminal",
+          accelerator: "Cmd+`",
+          click: () => sendToRenderer("menu:toggle-terminal"),
+        },
+        { type: "separator" },
+        {
+          label: "Zoom In",
+          accelerator: "Cmd+=",
+          role: "zoomIn",
+        },
+        {
+          label: "Zoom Out",
+          accelerator: "Cmd+-",
+          role: "zoomOut",
+        },
+        {
+          label: "Reset Zoom",
+          accelerator: "Cmd+0",
+          role: "resetZoom",
+        },
+        { type: "separator" },
+        { role: "togglefullscreen", label: "Toggle Full Screen", accelerator: "Ctrl+Cmd+F" },
       ],
     },
+
+    // ── Go ────────────────────────────────────────────────────────────────
+    {
+      label: "Go",
+      submenu: [
+        {
+          label: "Back",
+          accelerator: "Ctrl+-",
+          click: () => win?.webContents.goBack(),
+        },
+        {
+          label: "Forward",
+          accelerator: "Ctrl+Shift+-",
+          click: () => win?.webContents.goForward(),
+        },
+        { type: "separator" },
+        {
+          label: "Go to File...",
+          accelerator: "Cmd+P",
+          click: () => sendToRenderer("menu:go-to-file"),
+        },
+        {
+          label: "Go to Symbol...",
+          accelerator: "Cmd+Shift+O",
+          click: () => sendToRenderer("menu:go-to-symbol"),
+        },
+        {
+          label: "Go to Line...",
+          accelerator: "Ctrl+G",
+          click: () => sendToRenderer("menu:go-to-line"),
+        },
+      ],
+    },
+
+    // ── Run ───────────────────────────────────────────────────────────────
+    {
+      label: "Run",
+      submenu: [
+        {
+          label: "Start Agent",
+          accelerator: "Cmd+Shift+D",
+          click: () => sendToRenderer("menu:start-agent"),
+        },
+        {
+          label: "Stop Agent",
+          accelerator: "Cmd+Shift+F5",
+          click: () => sendToRenderer("menu:stop-agent"),
+        },
+        { type: "separator" },
+        {
+          label: "Run Scan",
+          accelerator: "Cmd+Shift+B",
+          click: () => sendToRenderer("menu:run-scan"),
+        },
+      ],
+    },
+
+    // ── Terminal ──────────────────────────────────────────────────────────
+    {
+      label: "Terminal",
+      submenu: [
+        {
+          label: "New Terminal",
+          accelerator: "Ctrl+`",
+          click: () => sendToRenderer("menu:new-terminal"),
+        },
+        {
+          label: "Split Terminal",
+          accelerator: "Cmd+\\",
+          click: () => sendToRenderer("menu:split-terminal"),
+        },
+        { type: "separator" },
+        {
+          label: "Kill Active Terminal",
+          click: () => sendToRenderer("menu:kill-terminal"),
+        },
+        {
+          label: "Kill All Terminals",
+          click: () => sendToRenderer("menu:kill-all-terminals"),
+        },
+        { type: "separator" },
+        {
+          label: "Clear Terminal",
+          click: () => sendToRenderer("menu:clear-terminal"),
+        },
+      ],
+    },
+
+    // ── Window ────────────────────────────────────────────────────────────
     {
       label: "Window",
       submenu: [
-        { role: "minimize" }, { role: "zoom" }, { role: "close" },
+        { role: "minimize", accelerator: "Cmd+M" },
+        { role: "zoom" },
+        { type: "separator" },
+        { role: "close", label: "Close Window", accelerator: "Cmd+W" },
+        { type: "separator" },
+        { role: "front" },
+      ],
+    },
+
+    // ── Help ──────────────────────────────────────────────────────────────
+    {
+      label: "Help",
+      submenu: [
+        {
+          label: "hashmark Documentation",
+          click: () => shell.openExternal("https://hashmark.md/docs"),
+        },
+        { type: "separator" },
+        {
+          label: "Report Issue",
+          click: () => shell.openExternal("https://github.com/hashmark/hashmark/issues"),
+        },
+        { type: "separator" },
+        {
+          label: "Toggle Developer Tools",
+          accelerator: "Cmd+Option+I",
+          click: () => win?.webContents.toggleDevTools(),
+        },
+        {
+          label: "Reload Window",
+          accelerator: "Cmd+Shift+R",
+          click: () => win?.webContents.reload(),
+        },
       ],
     },
   ];

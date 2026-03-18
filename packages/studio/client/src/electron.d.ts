@@ -7,5 +7,6 @@ interface Window {
     getProjectDir: () => Promise<string | null>;
     setProjectDir: (dir: string) => Promise<boolean>;
     getRecentProjects?: () => Promise<string[]>;
+    onMenu?: (channel: string, handler: (...args: unknown[]) => void) => (() => void);
   };
 }

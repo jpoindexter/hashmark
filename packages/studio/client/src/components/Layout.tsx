@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useLocation } from "react-router-dom";
+import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { Home, FolderTree, GitBranch, Bot, Zap, Settings, TerminalSquare, Play, Building2, ChevronRight } from "lucide-react";
 import ActivitySidebar from "./ActivitySidebar.tsx";
@@ -35,6 +35,7 @@ type PanelTab = typeof PANEL_TABS[number];
 
 export default function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [info, setInfo] = useState<ProjectInfo | null>(null);
   const [git, setGit] = useState<GitStatus | null>(null);
 
@@ -90,6 +91,23 @@ export default function Layout() {
     window.addEventListener("studio:switch-session", h);
     return () => window.removeEventListener("studio:switch-session", h);
   }, []);
+
+  // Wire up Electron menu events
+  useEffect(() => {
+    if (typeof window.studio?.onMenu !== "function") return;
+    const subs = [
+      window.studio.onMenu("menu:navigate", (path: unknown) => { if (typeof path === "string") navigate(path); }),
+      window.studio.onMenu("menu:toggle-terminal", () => setTermOpen(v => !v)),
+      window.studio.onMenu("menu:toggle-sidebar", () => {
+        window.dispatchEvent(new CustomEvent("studio:toggle-sidebar"));
+      }),
+      window.studio.onMenu("menu:new-terminal", () => {
+        setTermOpen(true);
+        window.dispatchEvent(new CustomEvent("studio:new-terminal"));
+      }),
+    ];
+    return () => subs.forEach(unsub => unsub?.());
+  }, [navigate]);
 
   // Terminal drag
   const dragging = useRef(false);

@@ -1,27 +1,79 @@
-import { useState, Suspense, lazy } from "react";
+import { useState, Suspense, lazy, useRef } from "react";
+import { Plus, ChevronDown, SplitSquareHorizontal, Trash2, MoreHorizontal, Maximize2 } from "lucide-react";
 
 const Terminal = lazy(() => import("./Terminal.tsx"));
 
 interface TerminalTab {
   id: string;
   label: string;
+  shell: string;
 }
 
 function genId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-export default function TerminalTabs() {
-  const [tabs, setTabs] = useState<TerminalTab[]>([{ id: genId(), label: "bash 1" }]);
-  const [activeTabId, setActiveTabId] = useState<string>(tabs[0].id);
+const SHELLS = ["zsh", "bash", "node", "python"];
 
-  const addTab = () => {
-    if (tabs.length >= 5) return;
+function ToolbarBtn({
+  onClick,
+  title,
+  children,
+  danger,
+}: {
+  onClick?: () => void;
+  title: string;
+  children: React.ReactNode;
+  danger?: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 22,
+        height: 22,
+        borderRadius: 4,
+        border: "none",
+        background: hovered
+          ? danger
+            ? "rgba(248, 81, 73, 0.15)"
+            : "rgba(255,255,255,0.08)"
+          : "none",
+        color: hovered
+          ? danger ? "var(--red)" : "var(--text)"
+          : "var(--text-dimmer)",
+        cursor: "pointer",
+        padding: 0,
+        transition: "background 0.1s, color 0.1s",
+        flexShrink: 0,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+export default function TerminalTabs() {
+  const [tabs, setTabs] = useState<TerminalTab[]>([
+    { id: genId(), label: "zsh", shell: "zsh" },
+  ]);
+  const [activeTabId, setActiveTabId] = useState<string>(tabs[0].id);
+  const [shellMenuOpen, setShellMenuOpen] = useState(false);
+  const shellMenuRef = useRef<HTMLDivElement>(null);
+
+  const addTab = (shell = "zsh") => {
+    if (tabs.length >= 8) return;
     const id = genId();
-    const num = tabs.length + 1;
-    const newTab: TerminalTab = { id, label: `bash ${num}` };
-    setTabs(prev => [...prev, newTab]);
+    setTabs(prev => [...prev, { id, label: shell, shell }]);
     setActiveTabId(id);
+    setShellMenuOpen(false);
   };
 
   const closeTab = (id: string) => {
@@ -32,76 +84,117 @@ export default function TerminalTabs() {
     if (activeTabId === id) setActiveTabId(next.id);
   };
 
+  const killActive = () => {
+    if (tabs.length === 1) {
+      // Reset rather than close the last tab
+      const id = genId();
+      setTabs([{ id, label: "zsh", shell: "zsh" }]);
+      setActiveTabId(id);
+    } else {
+      closeTab(activeTabId);
+    }
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden", minHeight: 0 }}>
-      {/* Tab bar */}
+      {/* VSCode-style terminal toolbar */}
       <div style={{
         display: "flex",
-        alignItems: "stretch",
-        height: 28,
+        alignItems: "center",
+        height: 29,
         borderBottom: "1px solid var(--border-dim)",
         background: "var(--bg-2)",
         flexShrink: 0,
+        paddingRight: 6,
+        gap: 1,
         overflow: "hidden",
       }}>
-        {tabs.map(tab => (
-          <div
-            key={tab.id}
-            onClick={() => setActiveTabId(tab.id)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "0 10px",
-              cursor: "pointer",
-              fontSize: 11,
-              fontFamily: "var(--font)",
-              color: activeTabId === tab.id ? "var(--text)" : "var(--text-dimmer)",
-              borderRight: "1px solid var(--border-dim)",
-              borderBottom: activeTabId === tab.id ? "1px solid var(--accent)" : "1px solid transparent",
-              background: activeTabId === tab.id ? "var(--bg-3)" : "transparent",
-              flexShrink: 0,
-              userSelect: "none",
-            }}
-          >
-            <span>{tab.label}</span>
-            {tabs.length > 1 && (
-              <button
-                onClick={(e) => { e.stopPropagation(); closeTab(tab.id); }}
+        {/* Tabs */}
+        <div style={{ display: "flex", alignItems: "stretch", flex: 1, overflow: "hidden", height: "100%" }}>
+          {tabs.map(tab => (
+            <TabItem
+              key={tab.id}
+              tab={tab}
+              active={tab.id === activeTabId}
+              onSelect={() => setActiveTabId(tab.id)}
+              onClose={() => closeTab(tab.id)}
+              showClose={tabs.length > 1}
+            />
+          ))}
+        </div>
+
+        {/* Right toolbar actions */}
+        <div style={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0, paddingLeft: 4, borderLeft: "1px solid var(--border-dim)" }}>
+          {/* New terminal + shell picker */}
+          <div style={{ position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <ToolbarBtn onClick={() => addTab()} title="New Terminal (⌃`)">
+                <Plus size={13} />
+              </ToolbarBtn>
+              <ToolbarBtn onClick={() => setShellMenuOpen(v => !v)} title="Launch Profile">
+                <ChevronDown size={11} />
+              </ToolbarBtn>
+            </div>
+            {shellMenuOpen && (
+              <div
+                ref={shellMenuRef}
                 style={{
-                  background: "none",
-                  border: "none",
-                  color: "inherit",
-                  cursor: "pointer",
-                  padding: "0 2px",
-                  fontSize: 12,
-                  lineHeight: 1,
-                  opacity: 0.6,
+                  position: "absolute",
+                  top: "calc(100% + 4px)",
+                  right: 0,
+                  background: "var(--bg-3)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 6,
+                  padding: "4px 0",
+                  minWidth: 140,
+                  zIndex: 1000,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
                 }}
               >
-                ×
-              </button>
+                <div style={{ padding: "3px 10px 5px", fontSize: 10, color: "var(--text-dimmer)", fontFamily: "var(--font-ui)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Select Shell
+                </div>
+                {SHELLS.map(shell => (
+                  <div
+                    key={shell}
+                    onClick={() => addTab(shell)}
+                    style={{
+                      padding: "5px 12px",
+                      fontSize: 12,
+                      fontFamily: "var(--font)",
+                      color: "var(--text)",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                    onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.06)"}
+                    onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
+                  >
+                    <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>$</span>
+                    {shell}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-        ))}
 
-        {tabs.length < 5 && (
-          <button
-            onClick={addTab}
-            style={{
-              background: "none",
-              border: "none",
-              borderRight: "1px solid var(--border-dim)",
-              color: "var(--text-dimmer)",
-              cursor: "pointer",
-              padding: "0 10px",
-              fontSize: 14,
-              fontFamily: "var(--font)",
-            }}
-          >
-            +
-          </button>
-        )}
+          <ToolbarBtn title="Split Terminal" onClick={() => addTab()}>
+            <SplitSquareHorizontal size={13} />
+          </ToolbarBtn>
+
+          <ToolbarBtn title="Kill Terminal" onClick={killActive} danger>
+            <Trash2 size={13} />
+          </ToolbarBtn>
+
+          <ToolbarBtn title="More Actions">
+            <MoreHorizontal size={13} />
+          </ToolbarBtn>
+
+          <ToolbarBtn title="Maximize Panel">
+            <Maximize2 size={12} />
+          </ToolbarBtn>
+        </div>
       </div>
 
       {/* Terminal instances — all mounted, only active visible */}
@@ -123,6 +216,98 @@ export default function TerminalTabs() {
           </div>
         ))}
       </div>
+
+      {/* Close shell menu on outside click */}
+      {shellMenuOpen && (
+        <div
+          onClick={() => setShellMenuOpen(false)}
+          style={{ position: "fixed", inset: 0, zIndex: 999 }}
+        />
+      )}
+    </div>
+  );
+}
+
+function TabItem({
+  tab,
+  active,
+  onSelect,
+  onClose,
+  showClose,
+}: {
+  tab: TerminalTab;
+  active: boolean;
+  onSelect: () => void;
+  onClose: () => void;
+  showClose: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      onClick={onSelect}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 5,
+        padding: "0 8px 0 10px",
+        cursor: "pointer",
+        fontSize: 12,
+        fontFamily: "var(--font)",
+        color: active ? "var(--text)" : "var(--text-dimmer)",
+        borderRight: "1px solid var(--border-dim)",
+        borderBottom: active ? "1px solid var(--accent)" : "1px solid transparent",
+        background: active ? "var(--bg-3)" : hovered ? "rgba(255,255,255,0.03)" : "transparent",
+        flexShrink: 0,
+        userSelect: "none",
+        minWidth: 80,
+        height: "100%",
+        transition: "background 0.1s",
+      }}
+    >
+      {/* Shell icon */}
+      <span style={{
+        fontSize: 10,
+        color: active ? "var(--accent)" : "var(--text-dimmer)",
+        fontWeight: 600,
+        fontFamily: "var(--font)",
+      }}>
+        {tab.shell === "node" ? "⬡" : tab.shell === "python" ? "⬢" : "$"}
+      </span>
+      <span style={{ flex: 1 }}>{tab.label}</span>
+      {showClose && (hovered || active) && (
+        <button
+          onClick={e => { e.stopPropagation(); onClose(); }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 16,
+            height: 16,
+            borderRadius: 3,
+            border: "none",
+            background: "none",
+            color: "var(--text-dimmer)",
+            cursor: "pointer",
+            padding: 0,
+            fontSize: 12,
+            lineHeight: 1,
+            flexShrink: 0,
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.1)";
+            (e.currentTarget as HTMLButtonElement).style.color = "var(--text)";
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.background = "none";
+            (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)";
+          }}
+        >
+          ×
+        </button>
+      )}
     </div>
   );
 }

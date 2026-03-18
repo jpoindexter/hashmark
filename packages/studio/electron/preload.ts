@@ -12,4 +12,10 @@ contextBridge.exposeInMainWorld("studio", {
   getProjectDir: () => ipcRenderer.invoke("get-project-dir"),
   setProjectDir: (dir: string) => ipcRenderer.invoke("set-project-dir", dir),
   getRecentProjects: () => ipcRenderer.invoke("get-recent-projects"),
+  // Menu event subscriptions — returns an unsubscribe function
+  onMenu: (channel: string, handler: (...args: unknown[]) => void) => {
+    const wrapped = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => handler(...args);
+    ipcRenderer.on(channel, wrapped);
+    return () => ipcRenderer.removeListener(channel, wrapped);
+  },
 });
