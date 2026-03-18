@@ -8,6 +8,7 @@ import Sessions from "./pages/Sessions.tsx";
 import Settings from "./pages/Settings.tsx";
 import Company from "./pages/Company.tsx";
 import Run from "./pages/Run.tsx";
+import Swarm from "./pages/Swarm.tsx";
 import History from "./pages/History.tsx";
 import WorkspaceSetup from "./pages/WorkspaceSetup.tsx";
 import Governance from "./pages/Governance.tsx";
@@ -59,6 +60,7 @@ function AppShell() {
           <Route path="agents" element={<PageTransition><Agents /></PageTransition>} />
           <Route path="generate" element={<PageTransition><Generate /></PageTransition>} />
           <Route path="run" element={<PageTransition><Run /></PageTransition>} />
+          <Route path="swarm" element={<PageTransition><Swarm /></PageTransition>} />
           <Route path="history" element={<PageTransition><History /></PageTransition>} />
           <Route path="company" element={<PageTransition><Company /></PageTransition>} />
           <Route path="governance" element={<PageTransition><Governance /></PageTransition>} />
