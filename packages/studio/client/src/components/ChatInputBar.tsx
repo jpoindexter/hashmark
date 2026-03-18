@@ -159,12 +159,24 @@ export default function ChatInputBar({
   const [selectedModel, setSelectedModel] = useState(() => restore("model", "claude-sonnet-4-6"));
   const [thinking, setThinking] = useState(() => restore("thinking", false));
   const [planMode, setPlanMode] = useState(() => restore("plan_mode", false));
+  const [contextInfo, setContextInfo] = useState<{
+    available: boolean;
+    charCount: number;
+    source: string | null;
+  } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
 
   useEffect(() => persist("model", selectedModel), [selectedModel]);
   useEffect(() => persist("thinking", thinking), [thinking]);
   useEffect(() => persist("plan_mode", planMode), [planMode]);
+
+  useEffect(() => {
+    fetch("/api/scan/context")
+      .then((r) => r.json())
+      .then((d: { available: boolean; charCount: number; source: string | null }) => setContextInfo(d))
+      .catch(() => setContextInfo({ available: false, charCount: 0, source: null }));
+  }, []);
 
   useEffect(() => {
     if (!sessionId) { setSessionTitle(null); return; }
@@ -297,6 +309,25 @@ export default function ChatInputBar({
         <ToggleButton active={planMode} onClick={() => setPlanMode((v) => !v)}>
           📋 Plan
         </ToggleButton>
+        {contextInfo !== null && (
+          <span
+            title={
+              contextInfo.available
+                ? `${contextInfo.charCount.toLocaleString()} chars of project context loaded (${contextInfo.source})`
+                : "No scan context. Run a scan first."
+            }
+            style={{
+              fontSize: "10px",
+              color: contextInfo.available ? "var(--accent)" : "var(--text-dimmer)",
+              fontFamily: "var(--font)",
+              flexShrink: 0,
+              cursor: "default",
+              letterSpacing: "0.04em",
+            }}
+          >
+            {contextInfo.available ? "◉ ctx" : "○ ctx"}
+          </span>
+        )}
         <div style={{
           fontSize: "10px", color: "var(--text-dimmer)", fontFamily: "var(--font)",
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",

@@ -9,6 +9,7 @@ import { spawn } from "child_process";
 import { existsSync } from "fs";
 import { join } from "path";
 import { getDb } from "../db.js";
+import { loadScanContext } from "../context.js";
 
 // Candidates for the claude binary — same as runner.ts
 function findClaudeBin(projectDir: string): string {
@@ -161,11 +162,12 @@ export function sessionsRoutes(projectDir: string) {
       "SELECT role, content FROM session_messages WHERE session_id = ? ORDER BY created_at ASC"
     ).all(sessionId) as Array<{ role: string; content: string }>;
 
-    // Save user message
+    // Save user message with token estimate
+    const inputEstimate = Math.ceil(body.message.length / 4);
     db.prepare(`
-      INSERT INTO session_messages (id, session_id, role, content, created_at)
-      VALUES (?, ?, 'user', ?, ?)
-    `).run(randomUUID(), sessionId, body.message, Date.now());
+      INSERT INTO session_messages (id, session_id, role, content, input_tokens, created_at)
+      VALUES (?, ?, 'user', ?, ?, ?)
+    `).run(randomUUID(), sessionId, body.message, inputEstimate, Date.now());
 
     // Auto-title from first message
     if (history.length === 0 && (session.title === "New Session" || session.title === "")) {
@@ -173,12 +175,17 @@ export function sessionsRoutes(projectDir: string) {
       db.prepare("UPDATE sessions SET title = ? WHERE id = ?").run(title, sessionId);
     }
 
-    // Build system prompt
-    const systemPrompt = body.systemPrompt ??
-      (session.agent_name ? `You are ${session.agent_name}, an AI assistant.` : undefined);
+    // Build system prompt — scan context + agent identity + user's custom prompt
+    const scanContext = loadScanContext(projectDir);
+    const agentIdentity = session.agent_name ? `You are ${session.agent_name}, an AI assistant.` : null;
+    const userSystemPrompt = body.systemPrompt ?? null;
+
+    const effectiveSystemPrompt = [scanContext, agentIdentity, userSystemPrompt]
+      .filter(Boolean)
+      .join("\n\n---\n\n") || undefined;
 
     // Build the full prompt with conversation history
-    const fullPrompt = buildConversationPrompt(history, body.message, systemPrompt);
+    const fullPrompt = buildConversationPrompt(history, body.message, effectiveSystemPrompt);
 
     const claudeBin = findClaudeBin(projectDir);
 
@@ -231,16 +238,25 @@ export function sessionsRoutes(projectDir: string) {
           const killed = code === null || code === 130 || code === 143;
           const finalText = fullText.trim();
 
-          // Save assistant message
-          db.prepare(`
-            INSERT INTO session_messages (id, session_id, role, content, created_at)
-            VALUES (?, ?, 'assistant', ?, ?)
-          `).run(randomUUID(), sessionId, finalText || (killed ? "[interrupted]" : "[no response]"), Date.now());
+          // Save assistant message with token estimates
+          const savedText = finalText || (killed ? "[interrupted]" : "[no response]");
+          const msgInputEstimate = Math.ceil(body.message.length / 4);
+          const msgOutputEstimate = Math.ceil(savedText.length / 4);
 
-          // Update session
           db.prepare(`
-            UPDATE sessions SET status = 'idle', updated_at = ? WHERE id = ?
-          `).run(Date.now(), sessionId);
+            INSERT INTO session_messages (id, session_id, role, content, input_tokens, output_tokens, created_at)
+            VALUES (?, ?, 'assistant', ?, ?, ?, ?)
+          `).run(randomUUID(), sessionId, savedText, msgInputEstimate, msgOutputEstimate, Date.now());
+
+          // Update session totals + status
+          db.prepare(`
+            UPDATE sessions
+            SET status = 'idle',
+                total_input_tokens = total_input_tokens + ?,
+                total_output_tokens = total_output_tokens + ?,
+                updated_at = ?
+            WHERE id = ?
+          `).run(msgInputEstimate, msgOutputEstimate, Date.now(), sessionId);
 
           send({ type: "done", success: code === 0 || killed });
           controller.close();
@@ -269,6 +285,35 @@ export function sessionsRoutes(projectDir: string) {
         "Cache-Control": "no-cache",
         "Connection": "keep-alive",
       },
+    });
+  });
+
+  // GET /api/sessions/:id/tokens
+  app.get("/:id/tokens", (c) => {
+    const db = getDb(dataDir);
+    const session = db.prepare(`
+      SELECT total_input_tokens, total_output_tokens,
+        (SELECT COUNT(*) FROM session_messages WHERE session_id = ?) as message_count
+      FROM sessions WHERE id = ?
+    `).get(c.req.param("id"), c.req.param("id")) as {
+      total_input_tokens: number;
+      total_output_tokens: number;
+      message_count: number;
+    } | undefined;
+
+    if (!session) return c.json({ error: "Not found" }, 404);
+
+    const total = session.total_input_tokens + session.total_output_tokens;
+    const contextWindow = 200000;
+    const pct = Math.min(100, Math.round((total / contextWindow) * 100));
+
+    return c.json({
+      inputTokens: session.total_input_tokens,
+      outputTokens: session.total_output_tokens,
+      total,
+      contextWindow,
+      pct,
+      messageCount: session.message_count,
     });
   });
 

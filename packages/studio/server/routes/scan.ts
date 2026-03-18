@@ -6,9 +6,16 @@ import { Hono } from "hono";
 import { spawn } from "child_process";
 import { join } from "path";
 import { existsSync } from "fs";
+import { getScanContextMeta } from "../context.js";
 
 export function scanRoutes(projectDir: string) {
   const app = new Hono();
+
+  // GET /api/scan/context — check if scan context is available for chat injection
+  app.get("/context", (c) => {
+    const meta = getScanContextMeta(projectDir);
+    return c.json(meta);
+  });
 
   // POST /api/scan — run scan, stream progress via SSE
   app.post("/", async (c) => {
