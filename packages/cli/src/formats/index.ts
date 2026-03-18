@@ -14,7 +14,7 @@
 
 import type { ScanResult } from "../types.js";
 import { generateAgentsMd, type GeneratorOptions } from "../generator.js";
-import { generateClaudeMd } from "./claude-md.js";
+import { generateClaudeMd, generateClaudeMdRouter, generateContextMd } from "./claude-md.js";
 import { generateCursorRules } from "./cursor-rules.js";
 import { generateCursorMdc } from "./cursor-mdc.js";
 import { generateCopilotMd } from "./copilot-md.js";
@@ -26,6 +26,7 @@ import { generateClineRules } from "./cline-rules.js";
 export type FormatId =
   | "agents-md"
   | "claude-md"
+  | "claude-md-workspace"
   | "cursorrules"
   | "cursor-mdc"
   | "copilot-md"
@@ -91,6 +92,18 @@ const claudeMdAdapter: FormatAdapter = {
   description: "Claude Code project instructions",
   generate(scan, { customRules = [] }) {
     return [{ format: this.id, path: "CLAUDE.md", tool: this.tool, content: generateClaudeMd(scan, customRules) }];
+  },
+};
+
+const claudeMdWorkspaceAdapter: FormatAdapter = {
+  id: "claude-md-workspace",
+  tool: "Claude Code",
+  description: "Claude Code workspace (MWP pattern) — lean CLAUDE.md router + detailed CONTEXT.md",
+  generate(scan, { customRules = [] }) {
+    return [
+      { format: this.id, path: "CLAUDE.md", tool: this.tool, content: generateClaudeMdRouter(scan, customRules) },
+      { format: this.id, path: "CONTEXT.md", tool: this.tool, content: generateContextMd(scan) },
+    ];
   },
 };
 
@@ -161,6 +174,7 @@ const clineRulesAdapter: FormatAdapter = {
 export const ADAPTERS: FormatAdapter[] = [
   agentsMdAdapter,
   claudeMdAdapter,
+  claudeMdWorkspaceAdapter,
   cursorRulesAdapter,
   cursorMdcAdapter,
   copilotMdAdapter,
@@ -188,6 +202,7 @@ export const FORMAT_REGISTRY: Record<FormatId, { tool: string; path: string; des
       path: {
         "agents-md": "AGENTS.md",
         "claude-md": "CLAUDE.md",
+        "claude-md-workspace": "CLAUDE.md",
         "cursorrules": ".cursorrules",
         "cursor-mdc": ".cursor/rules/",
         "copilot-md": ".github/copilot-instructions.md",
@@ -231,7 +246,7 @@ export function generateAllFormats(
   return ADAPTERS.flatMap(adapter => adapter.generate(scan, options));
 }
 
-export { generateClaudeMd } from "./claude-md.js";
+export { generateClaudeMd, generateClaudeMdRouter, generateContextMd } from "./claude-md.js";
 export { generateCursorRules } from "./cursor-rules.js";
 export { generateCursorMdc } from "./cursor-mdc.js";
 export { generateCopilotMd } from "./copilot-md.js";
