@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Plus, Send, Square } from "lucide-react";
+import { ArrowUp, Square, Plus } from "lucide-react";
 import ProviderSelector from "./ProviderSelector.tsx";
 
 // ─── Slash command registry ───────────────────────────────────────────────────
@@ -9,28 +9,24 @@ interface SlashCommand {
   description: string;
   argHint?: string;
   category: "claude" | "studio" | "mode";
-  /** If set, run this action instead of sending the command text */
   action?: () => void;
 }
 
 const BUILTIN_COMMANDS: SlashCommand[] = [
-  // Claude CLI pass-throughs
-  { name: "compact",  description: "Compact conversation to save context",    category: "claude" },
-  { name: "clear",    description: "Clear conversation context",              category: "claude" },
-  { name: "help",     description: "Show available commands",                 category: "claude" },
-  { name: "init",     description: "Initialize or update CLAUDE.md",         category: "claude" },
-  { name: "debug",    description: "Troubleshoot the current session",        category: "claude" },
-  { name: "review",   description: "Review recent code changes",              category: "claude" },
-  { name: "commit",   description: "Commit staged changes with a message",    category: "claude" },
-  { name: "simplify", description: "Review and simplify recently changed code", category: "claude" },
-  { name: "batch",    description: "Orchestrate large-scale parallel changes", argHint: "<instruction>", category: "claude" },
-  // Mode toggles (inserted as system context)
-  { name: "plan",     description: "Toggle plan mode — respond with a plan, no code", category: "mode" },
-  { name: "think",    description: "Toggle extended thinking",                category: "mode" },
-  // Studio actions
-  { name: "new",      description: "Start a new chat session",               category: "studio" },
-  { name: "checkpoint", description: "Save a checkpoint of the current session", category: "studio" },
-  { name: "scan",     description: "Trigger a codebase scan",                category: "studio" },
+  { name: "compact",    description: "Compact conversation to save context",       category: "claude" },
+  { name: "clear",      description: "Clear conversation context",                 category: "claude" },
+  { name: "help",       description: "Show available commands",                    category: "claude" },
+  { name: "init",       description: "Initialize or update CLAUDE.md",            category: "claude" },
+  { name: "debug",      description: "Troubleshoot the current session",           category: "claude" },
+  { name: "review",     description: "Review recent code changes",                 category: "claude" },
+  { name: "commit",     description: "Commit staged changes with a message",       category: "claude" },
+  { name: "simplify",   description: "Review and simplify recently changed code",  category: "claude" },
+  { name: "batch",      description: "Orchestrate large-scale parallel changes",   argHint: "<instruction>", category: "claude" },
+  { name: "plan",       description: "Toggle plan mode — respond with a plan, no code", category: "mode" },
+  { name: "think",      description: "Toggle extended thinking",                   category: "mode" },
+  { name: "new",        description: "Start a new chat session",                   category: "studio" },
+  { name: "checkpoint", description: "Save a checkpoint of the current session",   category: "studio" },
+  { name: "scan",       description: "Trigger a codebase scan",                    category: "studio" },
 ];
 
 const CATEGORY_LABEL: Record<SlashCommand["category"], string> = {
@@ -58,8 +54,8 @@ function useSlashCommands(onNewSession: () => void, onTogglePlan: () => void, on
 
   return [
     ...BUILTIN_COMMANDS.map(cmd => {
-      if (cmd.name === "new") return { ...cmd, action: onNewSession };
-      if (cmd.name === "plan") return { ...cmd, action: onTogglePlan };
+      if (cmd.name === "new")   return { ...cmd, action: onNewSession };
+      if (cmd.name === "plan")  return { ...cmd, action: onTogglePlan };
       if (cmd.name === "think") return { ...cmd, action: onToggleThink };
       return cmd;
     }),
@@ -67,20 +63,17 @@ function useSlashCommands(onNewSession: () => void, onTogglePlan: () => void, on
   ];
 }
 
-// ─── Inline slash picker ──────────────────────────────────────────────────────
+// ─── Slash picker ─────────────────────────────────────────────────────────────
 
 function SlashPicker({
-  query,
-  commands,
-  onSelect,
-  onDismiss,
+  query, commands, onSelect, onDismiss,
 }: {
   query: string;
   commands: SlashCommand[];
   onSelect: (cmd: SlashCommand) => void;
   onDismiss: () => void;
 }) {
-  const q = query.slice(1).toLowerCase(); // strip leading "/"
+  const q = query.slice(1).toLowerCase();
   const filtered = q
     ? commands.filter(c => c.name.startsWith(q) || c.description.toLowerCase().includes(q))
     : commands;
@@ -90,7 +83,6 @@ function SlashPicker({
 
   useEffect(() => { setActiveIdx(0); }, [query]);
 
-  // Scroll active into view
   useEffect(() => {
     const el = listRef.current?.querySelector("[data-active='true']") as HTMLElement | null;
     el?.scrollIntoView({ block: "nearest" });
@@ -113,7 +105,6 @@ function SlashPicker({
 
   if (filtered.length === 0) return null;
 
-  // Group by category
   const grouped = filtered.reduce<Record<string, SlashCommand[]>>((acc, cmd) => {
     if (!acc[cmd.category]) acc[cmd.category] = [];
     acc[cmd.category].push(cmd);
@@ -124,31 +115,32 @@ function SlashPicker({
 
   return (
     <div
+      ref={listRef}
       style={{
         position: "absolute",
-        bottom: "calc(100% + 4px)",
+        bottom: "calc(100% + 6px)",
         left: 0,
         right: 0,
         background: "var(--bg-3)",
         border: "1px solid var(--border)",
         borderRadius: "var(--radius-lg)",
-        boxShadow: "0 -8px 24px rgba(0,0,0,0.5)",
+        boxShadow: "0 -8px 32px rgba(0,0,0,0.6)",
         zIndex: 500,
         maxHeight: 320,
         overflow: "auto",
       }}
-      ref={listRef}
     >
       {Object.entries(grouped).map(([cat, cmds]) => (
         <div key={cat}>
           <div style={{
-            padding: "5px 12px 2px",
+            padding: "6px 12px 3px",
             fontSize: 10,
             fontWeight: 600,
             color: "var(--text-dimmer)",
             textTransform: "uppercase",
             letterSpacing: "0.08em",
             userSelect: "none",
+            fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
           }}>
             {CATEGORY_LABEL[cat as SlashCommand["category"]] ?? cat}
           </div>
@@ -191,6 +183,7 @@ function SlashPicker({
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
+                  fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
                 }}>
                   {cmd.description}
                 </span>
@@ -206,6 +199,7 @@ function SlashPicker({
         borderTop: "1px solid var(--border-dim)",
         display: "flex",
         gap: 10,
+        fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
       }}>
         <span>↑↓ navigate</span>
         <span>↵ / Tab select</span>
@@ -235,12 +229,9 @@ function useMentionFiles() {
 }
 
 function MentionPicker({
-  query,
-  files,
-  onSelect,
-  onDismiss,
+  query, files, onSelect, onDismiss,
 }: {
-  query: string;           // everything after "@"
+  query: string;
   files: FileEntry[];
   onSelect: (file: FileEntry) => void;
   onDismiss: () => void;
@@ -288,19 +279,28 @@ function MentionPicker({
       ref={listRef}
       style={{
         position: "absolute",
-        bottom: "calc(100% + 4px)",
+        bottom: "calc(100% + 6px)",
         left: 0,
         right: 0,
         background: "var(--bg-3)",
         border: "1px solid var(--border)",
         borderRadius: "var(--radius-lg)",
-        boxShadow: "0 -8px 24px rgba(0,0,0,0.5)",
+        boxShadow: "0 -8px 32px rgba(0,0,0,0.6)",
         zIndex: 500,
         maxHeight: 280,
         overflow: "auto",
       }}
     >
-      <div style={{ padding: "4px 12px 2px", fontSize: 10, fontWeight: 600, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", userSelect: "none" }}>
+      <div style={{
+        padding: "6px 12px 3px",
+        fontSize: 10,
+        fontWeight: 600,
+        color: "var(--text-dimmer)",
+        textTransform: "uppercase",
+        letterSpacing: "0.08em",
+        userSelect: "none",
+        fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+      }}>
         Files
       </div>
       {filtered.map((file, idx) => {
@@ -338,7 +338,15 @@ function MentionPicker({
           </div>
         );
       })}
-      <div style={{ padding: "4px 12px 6px", fontSize: 10, color: "var(--text-dimmer)", borderTop: "1px solid var(--border-dim)", display: "flex", gap: 10 }}>
+      <div style={{
+        padding: "4px 12px 6px",
+        fontSize: 10,
+        color: "var(--text-dimmer)",
+        borderTop: "1px solid var(--border-dim)",
+        display: "flex",
+        gap: 10,
+        fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+      }}>
         <span>↑↓ navigate</span>
         <span>↵ / Tab select</span>
         <span>Esc dismiss</span>
@@ -349,12 +357,10 @@ function MentionPicker({
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-/** Find the @word the cursor is currently inside, returns null if not in an @mention */
 function getAtQuery(val: string, cursorPos: number): string | null {
   const before = val.slice(0, cursorPos);
   const atIdx = before.lastIndexOf("@");
   if (atIdx === -1) return null;
-  // There must be no space between @ and cursor
   const segment = before.slice(atIdx + 1);
   if (segment.includes(" ") || segment.includes("\n")) return null;
   return segment;
@@ -399,9 +405,7 @@ function useAgentSuggestion(query: string, currentFile?: string) {
 }
 
 function AgentChip({
-  suggestion,
-  onApply,
-  onDismiss,
+  suggestion, onApply, onDismiss,
 }: {
   suggestion: AgentSuggestion;
   onApply: (id: string) => void;
@@ -417,9 +421,9 @@ function AgentChip({
       border: "1px solid var(--border-dim)",
       borderRadius: 4,
       fontSize: 10,
-      fontFamily: "var(--font)",
+      fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
       color: "var(--text-dimmer)",
-      marginBottom: 4,
+      marginBottom: 6,
       width: "fit-content",
       userSelect: "none",
     }}>
@@ -429,14 +433,8 @@ function AgentChip({
         onClick={() => onApply(suggestion.id)}
         title={suggestion.description || suggestion.reason}
         style={{
-          background: "none",
-          border: "none",
-          padding: 0,
-          cursor: "pointer",
-          color: "var(--accent)",
-          fontFamily: "var(--font)",
-          fontSize: 10,
-          fontWeight: 600,
+          background: "none", border: "none", padding: 0, cursor: "pointer",
+          color: "var(--accent)", fontFamily: "inherit", fontSize: 10, fontWeight: 600,
         }}
       >
         {suggestion.name}
@@ -445,14 +443,8 @@ function AgentChip({
       <button
         onClick={onDismiss}
         style={{
-          background: "none",
-          border: "none",
-          padding: "0 0 0 2px",
-          cursor: "pointer",
-          color: "var(--text-dimmer)",
-          fontFamily: "var(--font)",
-          fontSize: 11,
-          lineHeight: 1,
+          background: "none", border: "none", padding: "0 0 0 2px", cursor: "pointer",
+          color: "var(--text-dimmer)", fontFamily: "inherit", fontSize: 11, lineHeight: 1,
         }}
         title="Dismiss"
       >
@@ -462,7 +454,7 @@ function AgentChip({
   );
 }
 
-// ─── ──────────────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Session {
   id: string;
@@ -479,7 +471,10 @@ interface ChatInputBarProps {
   streaming: boolean;
   terminalCwd?: string;
   currentFile?: string;
+  modelName?: string;
 }
+
+// ─── Model + persistence ──────────────────────────────────────────────────────
 
 const MODELS = [
   { id: "claude-opus-4-6",           label: "Opus 4.6",   note: "1M ctx" },
@@ -497,6 +492,8 @@ function restore<T>(key: string, fallback: T): T {
   } catch { return fallback; }
 }
 
+// ─── Model pill (dropdown) ────────────────────────────────────────────────────
+
 function ModelPill({ selected, onChange }: { selected: string; onChange: (id: string) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -504,7 +501,9 @@ function ModelPill({ selected, onChange }: { selected: string; onChange: (id: st
 
   useEffect(() => {
     if (!open) return;
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const h = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
@@ -515,22 +514,24 @@ function ModelPill({ selected, onChange }: { selected: string; onChange: (id: st
         onClick={() => setOpen(v => !v)}
         style={{
           display: "flex", alignItems: "center", gap: 5,
-          padding: "3px 8px", background: "none", border: "none", borderRadius: 4,
-          color: "var(--text-dim)", fontSize: 11, fontFamily: "var(--font-ui)",
-          cursor: "pointer", transition: "background 0.1s, color 0.1s", whiteSpace: "nowrap",
+          padding: "2px 6px", background: "none", border: "none", borderRadius: 4,
+          color: "rgba(255,255,255,0.35)", fontSize: 12,
+          fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+          cursor: "pointer", transition: "color 0.1s", whiteSpace: "nowrap",
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "none"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim)"; }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.65)"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.35)"; }}
       >
-        <span style={{ color: "var(--accent)", fontSize: 13 }}>✸</span>
-        {current.label}
+        {/* Anthropic sparkle */}
+        <span style={{ fontSize: 13, lineHeight: 1, color: "rgba(255,255,255,0.5)" }}>✦</span>
+        <span>{current.label}</span>
       </button>
 
       {open && (
         <div style={{
-          position: "absolute", bottom: "calc(100% + 4px)", left: 0, zIndex: 300,
+          position: "absolute", bottom: "calc(100% + 6px)", left: 0, zIndex: 300,
           background: "var(--bg-3)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)",
-          minWidth: 180, boxShadow: "0 -4px 16px rgba(0,0,0,0.4)", overflow: "hidden",
+          minWidth: 180, boxShadow: "0 -4px 20px rgba(0,0,0,0.5)", overflow: "hidden",
         }}>
           {MODELS.map(m => (
             <button
@@ -541,8 +542,8 @@ function ModelPill({ selected, onChange }: { selected: string; onChange: (id: st
                 width: "100%", padding: "7px 12px", background: "none", border: "none",
                 borderLeft: m.id === selected ? "2px solid var(--accent)" : "2px solid transparent",
                 color: m.id === selected ? "var(--accent)" : "var(--text-dim)",
-                fontFamily: "var(--font)", fontSize: 12, cursor: "pointer", textAlign: "left",
-                transition: "background 0.1s",
+                fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", fontSize: 12,
+                cursor: "pointer", textAlign: "left", transition: "background 0.1s",
               }}
               onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)"}
               onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "none"}
@@ -557,78 +558,53 @@ function ModelPill({ selected, onChange }: { selected: string; onChange: (id: st
   );
 }
 
-function ToolbarToggle({
-  active, onClick, icon, label,
-}: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+// ─── Thinking badge ───────────────────────────────────────────────────────────
+
+function ThinkingBadge({ visible }: { visible: boolean }) {
+  if (!visible) return null;
   return (
-    <button
-      onClick={onClick}
-      title={label}
-      style={{
-        display: "flex", alignItems: "center", gap: 4,
-        padding: "3px 8px",
-        background: active ? "var(--accent-bg)" : "none",
-        border: "none", borderRadius: 4,
-        color: active ? "var(--accent)" : "var(--text-dimmer)",
-        fontSize: 11, fontFamily: "var(--font-ui)",
-        cursor: "pointer", transition: "background 0.1s, color 0.1s", whiteSpace: "nowrap",
-      }}
-      onMouseEnter={e => {
-        if (!active) {
-          (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
-          (e.currentTarget as HTMLButtonElement).style.color = "var(--text)";
-        }
-      }}
-      onMouseLeave={e => {
-        if (!active) {
-          (e.currentTarget as HTMLButtonElement).style.background = "none";
-          (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)";
-        }
-      }}
-    >
-      {icon}
-      {label}
-    </button>
+    <div style={{
+      display: "flex", alignItems: "center", gap: 5,
+      padding: "2px 7px",
+      background: "rgba(96, 165, 250, 0.1)",
+      border: "1px solid rgba(96, 165, 250, 0.2)",
+      borderRadius: 99,
+      fontSize: 11,
+      fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+      color: "rgba(147, 197, 253, 0.8)",
+      userSelect: "none",
+    }}>
+      <span style={{
+        display: "inline-block",
+        width: 5,
+        height: 5,
+        borderRadius: "50%",
+        background: "rgba(147, 197, 253, 0.7)",
+        animation: "thinking-pulse 1.4s ease-in-out infinite",
+        flexShrink: 0,
+      }} />
+      Thinking
+    </div>
   );
 }
 
-const PLACEHOLDERS = [
-  "Ask anything...",
-  "Run a task...",
-  "Analyze codebase...",
-  "Generate context...",
-];
-
-// Rough approximation: 1 token ≈ 4 chars
-function estimateTokens(text: string) {
-  return Math.round(text.length / 4);
-}
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ChatInputBar({
-  sessionId, onNewSession, onSessionCreated, onStreamText, onStreamingChange, streaming, terminalCwd, currentFile,
+  sessionId, onNewSession, onSessionCreated, onStreamText, onStreamingChange,
+  streaming, terminalCwd, currentFile,
 }: ChatInputBarProps) {
   const [input, setInput] = useState("");
   const [selectedModel, setSelectedModel] = useState(() => restore("model", "claude-sonnet-4-6"));
   const [thinking, setThinking] = useState(() => restore("thinking", false));
   const [planMode, setPlanMode] = useState(() => restore("plan_mode", false));
   const [slashOpen, setSlashOpen] = useState(false);
-  const [atQuery, setAtQuery] = useState<string | null>(null); // null = closed
+  const [atQuery, setAtQuery] = useState<string | null>(null);
   const [chipDismissed, setChipDismissed] = useState(false);
-  const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
 
-  // Cycle placeholder every 4s when input is empty
-  useEffect(() => {
-    if (input || streaming) return;
-    const id = setInterval(() => {
-      setPlaceholderIdx(i => (i + 1) % PLACEHOLDERS.length);
-    }, 4000);
-    return () => clearInterval(id);
-  }, [input, streaming]);
-
   const agentSuggestion = useAgentSuggestion(input, currentFile);
-
   const slashCommands = useSlashCommands(onNewSession, () => setPlanMode(v => !v), () => setThinking(v => !v));
   const mentionFiles = useMentionFiles();
 
@@ -641,7 +617,7 @@ export default function ChatInputBar({
       if (!ta) return;
       ta.focus();
       ta.style.height = "auto";
-      ta.style.height = `${Math.min(ta.scrollHeight, 140)}px`;
+      ta.style.height = `${Math.min(ta.scrollHeight, LINE_HEIGHT * MAX_ROWS)}px`;
     });
   }, [terminalCwd]);
 
@@ -649,47 +625,48 @@ export default function ChatInputBar({
   useEffect(() => persist("thinking", thinking), [thinking]);
   useEffect(() => persist("plan_mode", planMode), [planMode]);
 
-  // Show slash picker when input looks like a command (starts with "/" with no space yet)
+  // ⌘L focus shortcut
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "l") { e.preventDefault(); textareaRef.current?.focus(); }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, []);
+
   const isSlashTrigger = (val: string) => val.startsWith("/") && !val.includes(" ");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setInput(val);
-    // Slash picker
     setSlashOpen(isSlashTrigger(val));
-    // @mention picker — check cursor position
     const cursor = e.target.selectionStart ?? val.length;
     const aq = getAtQuery(val, cursor);
     setAtQuery(aq !== null ? aq : null);
-    // Reset chip dismiss when user types new content
     if (chipDismissed) setChipDismissed(false);
   };
 
   const selectSlashCommand = useCallback((cmd: SlashCommand) => {
     setSlashOpen(false);
     if (cmd.action) {
-      // Studio action — run it, clear the input
       cmd.action();
       setInput("");
       if (textareaRef.current) textareaRef.current.style.height = "auto";
       return;
     }
     if (cmd.category === "mode") {
-      // These are handled by action above, but as a fallback just clear
       setInput("");
       return;
     }
-    // Claude CLI pass-through: set input to the command text so user can add args or just send
     const hasArgs = cmd.argHint;
     if (hasArgs) {
       setInput(`/${cmd.name} `);
       requestAnimationFrame(() => textareaRef.current?.focus());
     } else {
       setInput(`/${cmd.name}`);
-      // Send immediately for no-arg commands
       requestAnimationFrame(() => void sendMessageWithText(`/${cmd.name}`));
     }
-  }, [streaming]); // sendMessageWithText closes over streaming
+  }, [streaming]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const applyAgentSuggestion = useCallback((agentId: string) => {
     const mention = `@${agentId}`;
@@ -703,29 +680,18 @@ export default function ChatInputBar({
     const ta = textareaRef.current;
     if (!ta) return;
     const cursor = ta.selectionStart ?? input.length;
-    // Replace "@<query>" with "@<path> "
     const before = input.slice(0, cursor);
     const atIdx = before.lastIndexOf("@");
     const after = input.slice(cursor);
     const newVal = `${input.slice(0, atIdx)}@${file.path} ${after}`;
     setInput(newVal);
-    // Move cursor after the inserted mention
     requestAnimationFrame(() => {
       if (!ta) return;
-      const pos = atIdx + file.path.length + 2; // "@" + path + " "
+      const pos = atIdx + file.path.length + 2;
       ta.focus();
       ta.setSelectionRange(pos, pos);
     });
   }, [input]);
-
-  // ⌘L focus shortcut
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "l") { e.preventDefault(); textareaRef.current?.focus(); }
-    };
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, []);
 
   const sendMessage = async () => {
     if (!input.trim() || streaming) return;
@@ -757,7 +723,7 @@ export default function ChatInputBar({
 
     let systemPrompt = "";
     if (thinking) systemPrompt += "\n\nUse extended thinking before responding.";
-    if (planMode) systemPrompt += "\n\nEnter plan mode: respond with a structured plan only, do not write code.";
+    if (planMode)  systemPrompt += "\n\nEnter plan mode: respond with a structured plan only, do not write code.";
 
     const res = await fetch(`/api/sessions/${sid}/chat`, {
       method: "POST",
@@ -810,12 +776,10 @@ export default function ChatInputBar({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); setPlanMode(v => !v); return; }
-    // Enter submits; Cmd+Enter also submits; Shift+Enter inserts newline
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void sendMessage(); return; }
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendMessage(); }
   };
 
-  // Auto-resize: 1 row base, max 6 rows (~120px at 20px line-height)
   const LINE_HEIGHT = 20;
   const MAX_ROWS = 6;
   const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
@@ -824,183 +788,246 @@ export default function ChatInputBar({
     el.style.height = `${Math.min(el.scrollHeight, LINE_HEIGHT * MAX_ROWS)}px`;
   };
 
+  const hasText = input.trim().length > 0;
+  const currentModelLabel = (MODELS.find(m => m.id === selectedModel) ?? MODELS[1]).label;
+
   return (
-    <div style={{ background: "var(--bg)", borderTop: "1px solid var(--border-dim)", flexShrink: 0, padding: "12px 16px 10px" }}>
-      <div style={{ position: "relative" }}>
+    <div style={{
+      background: "#0d0d0d",
+      borderTop: "1px solid rgba(255,255,255,0.08)",
+      flexShrink: 0,
+    }}>
+      <div style={{ position: "relative", padding: "0 0 0 0" }}>
+        {/* Popups */}
         {slashOpen && (
-          <SlashPicker
-            query={input}
-            commands={slashCommands}
-            onSelect={selectSlashCommand}
-            onDismiss={() => setSlashOpen(false)}
-          />
+          <div style={{ position: "absolute", bottom: "100%", left: 0, right: 0, padding: "0 14px" }}>
+            <SlashPicker
+              query={input}
+              commands={slashCommands}
+              onSelect={selectSlashCommand}
+              onDismiss={() => setSlashOpen(false)}
+            />
+          </div>
         )}
         {!slashOpen && atQuery !== null && (
-          <MentionPicker
-            query={atQuery}
-            files={mentionFiles}
-            onSelect={selectMentionFile}
-            onDismiss={() => setAtQuery(null)}
-          />
+          <div style={{ position: "absolute", bottom: "100%", left: 0, right: 0, padding: "0 14px" }}>
+            <MentionPicker
+              query={atQuery}
+              files={mentionFiles}
+              onSelect={selectMentionFile}
+              onDismiss={() => setAtQuery(null)}
+            />
+          </div>
         )}
+
+        {/* Agent chip — sits just above the input */}
         {agentSuggestion && !chipDismissed && !slashOpen && atQuery === null && (
-          <AgentChip
-            suggestion={agentSuggestion}
-            onApply={applyAgentSuggestion}
-            onDismiss={() => setChipDismissed(true)}
-          />
+          <div style={{ padding: "8px 14px 0" }}>
+            <AgentChip
+              suggestion={agentSuggestion}
+              onApply={applyAgentSuggestion}
+              onDismiss={() => setChipDismissed(true)}
+            />
+          </div>
         )}
-      <div
-        style={{
-          background: "var(--bg-2)", border: "1px solid var(--border)",
-          borderRadius: "var(--radius-lg)", overflow: "hidden", transition: "border-color 0.15s",
-        }}
-        onFocusCapture={e => (e.currentTarget as HTMLDivElement).style.borderColor = "var(--accent-border)"}
-        onBlurCapture={e => (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border)"}
-      >
-        {/* Textarea */}
-        <div style={{ padding: "10px 14px 2px", position: "relative" }}>
+
+        {/* Textarea row */}
+        <div style={{
+          display: "flex",
+          alignItems: "flex-start",
+          padding: "12px 14px 4px",
+          gap: 8,
+        }}>
           <textarea
             ref={textareaRef}
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onInput={handleInput}
-            placeholder={streaming ? "" : PLACEHOLDERS[placeholderIdx]}
+            placeholder="Ask to make changes, @mention files, run /commands"
             disabled={streaming}
             rows={1}
             style={{
-              width: "100%", background: "none", border: "none", outline: "none",
-              color: "var(--text)", fontSize: 13, fontFamily: "var(--font)",
-              resize: "none", maxHeight: `${LINE_HEIGHT * MAX_ROWS}px`, overflowY: "auto",
-              lineHeight: `${LINE_HEIGHT}px`, display: "block",
+              flex: 1,
+              background: "none",
+              border: "none",
+              outline: "none",
+              color: "rgba(255,255,255,0.88)",
+              fontSize: 13,
+              fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+              resize: "none",
+              maxHeight: `${LINE_HEIGHT * MAX_ROWS}px`,
+              overflowY: "auto",
+              lineHeight: `${LINE_HEIGHT}px`,
+              display: "block",
+              padding: 0,
             }}
           />
-          {/* Char / token count — shows when > 100 chars */}
-          {input.length > 100 && (
-            <div style={{
-              position: "absolute",
-              bottom: 4,
-              right: 14,
-              fontSize: 10,
-              color: "var(--text-dimmer)",
-              fontFamily: "var(--font)",
-              opacity: 0.5,
+          {/* ⌘L hint — right side of textarea row */}
+          {!streaming && !hasText && (
+            <span style={{
+              fontSize: 11,
+              color: "rgba(255,255,255,0.25)",
+              fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+              whiteSpace: "nowrap",
+              marginTop: 1,
               userSelect: "none",
-              pointerEvents: "none",
+              flexShrink: 0,
             }}>
-              {input.length}c / ~{estimateTokens(input)}t
-            </div>
+              ⌘L to focus
+            </span>
           )}
         </div>
 
-        {/* Streaming line */}
-        {streaming && (
-          <div style={{ padding: "0 14px 6px", fontSize: 11, color: "var(--accent)", display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", animation: "stream-pulse 1s ease-in-out infinite" }} />
-            Claude is responding...
-          </div>
-        )}
-
-        {/* Toolbar */}
+        {/* Bottom action row */}
         <div style={{
-          display: "flex", alignItems: "center", padding: "4px 6px 6px", gap: 0,
-          borderTop: "1px solid var(--border-dim)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "4px 14px 10px",
+          gap: 8,
         }}>
-          <ProviderSelector />
-          <ToolbarToggle active={thinking} onClick={() => setThinking(v => !v)} icon={<span style={{ fontSize: 13, lineHeight: 1 }}>◐</span>} label="Thinking" />
-          <ToolbarToggle active={planMode} onClick={() => setPlanMode(v => !v)} icon={<span style={{ fontSize: 11, lineHeight: 1 }}>▦</span>} label="Plan" />
-          {terminalCwd && (
+          {/* Left: model indicator + thinking badge */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <ModelPill selected={selectedModel} onChange={setSelectedModel} />
+            <ThinkingBadge visible={streaming && thinking} />
+            {/* Provider selector inline, muted */}
+            <div style={{ opacity: 0.6 }}>
+              <ProviderSelector />
+            </div>
+            {terminalCwd && (
+              <button
+                onClick={injectTerminalCwd}
+                title={`Inject terminal path: ${terminalCwd}`}
+                style={{
+                  display: "flex", alignItems: "center", gap: 4,
+                  padding: "2px 6px", background: "none", border: "none", borderRadius: 4,
+                  color: "rgba(255,255,255,0.25)", fontSize: 11,
+                  fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+                  cursor: "pointer", transition: "color 0.1s", whiteSpace: "nowrap",
+                  maxWidth: 160, overflow: "hidden",
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.55)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.25)"; }}
+              >
+                <span style={{ fontSize: 12, lineHeight: 1 }}>⊡</span>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {terminalCwd.split("/").pop() || terminalCwd}
+                </span>
+              </button>
+            )}
+          </div>
+
+          {/* Right: + button + stop/send */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {/* Plan mode indicator chip */}
+            {planMode && (
+              <button
+                onClick={() => setPlanMode(false)}
+                title="Plan mode active — click to disable"
+                style={{
+                  padding: "2px 7px",
+                  background: "rgba(251, 191, 36, 0.1)",
+                  border: "1px solid rgba(251, 191, 36, 0.25)",
+                  borderRadius: 99,
+                  fontSize: 11,
+                  fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+                  color: "rgba(253, 224, 71, 0.75)",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Plan
+              </button>
+            )}
+
+            {/* + (new session / attachments) */}
             <button
-              onClick={injectTerminalCwd}
-              title={`Inject terminal path: ${terminalCwd}`}
+              onClick={onNewSession}
+              title="New conversation"
               style={{
-                display: "flex", alignItems: "center", gap: 4,
-                padding: "3px 8px", background: "none", border: "none", borderRadius: 4,
-                color: "var(--text-dimmer)", fontSize: 11, fontFamily: "var(--font-ui)",
-                cursor: "pointer", transition: "background 0.1s, color 0.1s", whiteSpace: "nowrap",
-                maxWidth: 180, overflow: "hidden",
+                width: 28,
+                height: 28,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "none",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 6,
+                color: "rgba(255,255,255,0.35)",
+                cursor: "pointer",
+                transition: "border-color 0.1s, color 0.1s",
+                flexShrink: 0,
               }}
               onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
-                (e.currentTarget as HTMLButtonElement).style.color = "var(--text)";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.2)";
+                (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.65)";
               }}
               onMouseLeave={e => {
-                (e.currentTarget as HTMLButtonElement).style.background = "none";
-                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.1)";
+                (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.35)";
               }}
             >
-              <span style={{ fontSize: 12, lineHeight: 1 }}>⊡</span>
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-                {terminalCwd.split("/").pop() || terminalCwd}
-              </span>
+              <Plus size={14} />
             </button>
-          )}
 
-          <div style={{ flex: 1 }} />
-
-          {!streaming && !input && (
-            <span style={{ fontSize: 10, color: "var(--text-dimmer)", marginRight: 8, opacity: 0.4 }}>⌘L to focus</span>
-          )}
-
-          {/* New */}
-          <button
-            onClick={onNewSession}
-            title="New conversation"
-            style={{
-              width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
-              background: "none", border: "none", borderRadius: 4,
-              color: "var(--text-dimmer)", cursor: "pointer", transition: "background 0.1s, color 0.1s",
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "none"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)"; }}
-          >
-            <Plus size={14} />
-          </button>
-
-          {/* Stop / Send */}
-          {streaming ? (
-            <button
-              onClick={() => abortRef.current?.()}
-              title="Stop"
-              style={{
-                width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
-                background: "var(--red-bg)", border: "none", borderRadius: 4,
-                color: "var(--red)", cursor: "pointer",
-              }}
-            >
-              <Square size={12} />
-            </button>
-          ) : (
-            /* Slide in from right when text is present */
-            <div style={{
-              overflow: "hidden",
-              width: input.trim() ? 28 : 0,
-              opacity: input.trim() ? 1 : 0,
-              transform: input.trim() ? "translateX(0)" : "translateX(8px)",
-              transition: "width 0.15s ease, opacity 0.15s ease, transform 0.15s ease",
-            }}>
+            {/* Stop / Send */}
+            {streaming ? (
               <button
-                onClick={() => void sendMessage()}
-                disabled={!input.trim()}
-                title="Send (⌘↵)"
+                onClick={() => abortRef.current?.()}
+                title="Stop generation"
                 style={{
-                  width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
-                  background: "var(--accent)", border: "none", borderRadius: 4,
-                  color: "#000", cursor: "pointer",
-                  transition: "background 0.1s",
+                  width: 28,
+                  height: 28,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "rgba(239, 68, 68, 0.15)",
+                  border: "1px solid rgba(239, 68, 68, 0.3)",
+                  borderRadius: 6,
+                  color: "rgba(252, 165, 165, 0.9)",
+                  cursor: "pointer",
                   flexShrink: 0,
                 }}
               >
-                <Send size={12} />
+                <Square size={11} />
               </button>
-            </div>
-          )}
+            ) : (
+              <button
+                onClick={() => void sendMessage()}
+                disabled={!hasText}
+                title="Send (⌘↵)"
+                style={{
+                  width: 28,
+                  height: 28,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: hasText ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.07)",
+                  border: "none",
+                  borderRadius: 6,
+                  color: hasText ? "#0d0d0d" : "rgba(255,255,255,0.2)",
+                  cursor: hasText ? "pointer" : "default",
+                  transition: "background 0.15s, color 0.15s",
+                  flexShrink: 0,
+                }}
+              >
+                <ArrowUp size={14} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
-      </div>{/* end position:relative wrapper */}
 
-      <style>{`@keyframes stream-pulse { 0%,100%{opacity:.4;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }`}</style>
+      <style>{`
+        @keyframes thinking-pulse {
+          0%, 100% { opacity: 0.4; transform: scale(0.85); }
+          50%       { opacity: 1;   transform: scale(1.15); }
+        }
+        textarea::placeholder {
+          color: rgba(255,255,255,0.22);
+        }
+      `}</style>
     </div>
   );
 }
