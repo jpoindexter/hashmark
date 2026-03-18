@@ -10,7 +10,7 @@ interface GitData {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  M: "#f59e0b", A: "var(--accent)", D: "var(--red)", "?": "#6366f1",
+  M: "var(--yellow)", A: "var(--accent)", D: "var(--red)", "?": "var(--blue)",
   R: "#8b5cf6", C: "#06b6d4", U: "#f97316",
 };
 
