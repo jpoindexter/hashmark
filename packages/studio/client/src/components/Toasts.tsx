@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { Info, CheckCircle, AlertTriangle, XCircle, X } from "lucide-react";
 
@@ -33,13 +33,13 @@ interface ToastItem extends Required<Omit<ToastOptions, "duration">> {
 // ---------------------------------------------------------------------------
 
 const DEFAULT_DURATIONS: Record<ToastVariant, number> = {
-  info: 5000,
-  success: 5000,
-  warning: 8000,
-  error: 0, // persistent by default
+  info: 4000,
+  success: 4000,
+  warning: 4000,
+  error: 6000,
 };
 
-const MAX_TOASTS = 5;
+const MAX_TOASTS = 4;
 
 const VARIANT_COLORS: Record<ToastVariant, string> = {
   info: "var(--blue)",
@@ -72,8 +72,11 @@ function nextId() {
 
 function emit(message: string, options: ToastOptions = {}) {
   const variant: ToastVariant = options.variant ?? "info";
+  const hasActions = (options.actions ?? []).length > 0;
+  // Warnings with actions are persistent (never auto-dismiss)
+  const defaultDuration = variant === "warning" && hasActions ? 0 : DEFAULT_DURATIONS[variant];
   const duration =
-    options.duration !== undefined ? options.duration : DEFAULT_DURATIONS[variant];
+    options.duration !== undefined ? options.duration : defaultDuration;
 
   const item: ToastItem = {
     id: nextId(),
@@ -117,6 +120,34 @@ toast.dismiss = (id: string) => {
 export { toast };
 
 // ---------------------------------------------------------------------------
+// Global toast store (for useToasts hook)
+// ---------------------------------------------------------------------------
+
+let _toasts: ToastItem[] = [];
+const _storeListeners = new Set<() => void>();
+
+function _notifyStore() {
+  _storeListeners.forEach((fn) => fn());
+}
+
+function _getSnapshot() {
+  return _toasts;
+}
+
+function _subscribe(listener: () => void) {
+  _storeListeners.add(listener);
+  return () => { _storeListeners.delete(listener); };
+}
+
+export function useToasts() {
+  const toasts = useSyncExternalStore(_subscribe, _getSnapshot, _getSnapshot);
+  return {
+    toasts,
+    dismiss: (id: string) => toast.dismiss(id),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // CSS keyframes injected once
 // ---------------------------------------------------------------------------
 
@@ -128,7 +159,7 @@ function injectStyles() {
   style.id = STYLE_ID;
   style.textContent = `
     @keyframes toast-slide-in {
-      from { opacity: 0; transform: translateX(110%); }
+      from { opacity: 0; transform: translateX(100%); }
       to   { opacity: 1; transform: translateX(0); }
     }
     @keyframes toast-slide-out {
@@ -247,8 +278,8 @@ function ToastCard({ item, onDismiss }: ToastCardProps) {
         overflow: "hidden",
         pointerEvents: "auto",
         animation: exiting
-          ? "toast-slide-out 100ms ease-in forwards"
-          : "toast-slide-in 150ms ease-out",
+          ? "toast-slide-out 150ms ease-in forwards"
+          : "toast-slide-in 200ms ease-out",
         flexShrink: 0,
       }}
     >
@@ -395,7 +426,16 @@ function ToastCard({ item, onDismiss }: ToastCardProps) {
 // ---------------------------------------------------------------------------
 
 export function ToastContainer() {
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [toasts, setToastsRaw] = useState<ToastItem[]>([]);
+
+  const setToasts: typeof setToastsRaw = (updater) => {
+    setToastsRaw((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      _toasts = next;
+      _notifyStore();
+      return next;
+    });
+  };
 
   useEffect(() => {
     injectStyles();
@@ -434,7 +474,7 @@ export function ToastContainer() {
     // Remove after exit animation completes
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 110);
+    }, 160);
   }, []);
 
   if (toasts.length === 0) return null;
@@ -448,7 +488,7 @@ export function ToastContainer() {
         zIndex: 9999,
         display: "flex",
         flexDirection: "column",
-        gap: 6,
+        gap: 8,
         pointerEvents: "none",
         // Newest on top: column-reverse would flip visual order but we push
         // newest to front of array, so normal column order is correct.

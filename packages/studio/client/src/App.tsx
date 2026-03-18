@@ -16,6 +16,7 @@ import Git from "./pages/Git.tsx";
 import SourceControlPage from "./components/SourceControlPage.tsx";
 import ProjectPicker from "./components/ProjectPicker.tsx";
 import { ToastContainer } from "./components/Toasts.tsx";
+import { PageTransition } from "./components/PageTransition.tsx";
 
 interface InfoResponse {
   projectName: string;
@@ -51,19 +52,19 @@ function AppShell() {
     <>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="files" element={<Files />} />
-          <Route path="git" element={<Git />} />
-          <Route path="source-control" element={<SourceControlPage />} />
-          <Route path="agents" element={<Agents />} />
-          <Route path="generate" element={<Generate />} />
-          <Route path="run" element={<Run />} />
-          <Route path="history" element={<History />} />
-          <Route path="company" element={<Company />} />
-          <Route path="governance" element={<Governance />} />
+          <Route index element={<PageTransition><Home /></PageTransition>} />
+          <Route path="files" element={<PageTransition><Files /></PageTransition>} />
+          <Route path="git" element={<PageTransition><Git /></PageTransition>} />
+          <Route path="source-control" element={<PageTransition><SourceControlPage /></PageTransition>} />
+          <Route path="agents" element={<PageTransition><Agents /></PageTransition>} />
+          <Route path="generate" element={<PageTransition><Generate /></PageTransition>} />
+          <Route path="run" element={<PageTransition><Run /></PageTransition>} />
+          <Route path="history" element={<PageTransition><History /></PageTransition>} />
+          <Route path="company" element={<PageTransition><Company /></PageTransition>} />
+          <Route path="governance" element={<PageTransition><Governance /></PageTransition>} />
           <Route path="sessions" element={<Navigate to="/" replace />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="setup" element={<WorkspaceSetup />} />
+          <Route path="settings" element={<PageTransition><Settings /></PageTransition>} />
+          <Route path="setup" element={<PageTransition><WorkspaceSetup /></PageTransition>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
