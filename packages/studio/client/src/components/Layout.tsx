@@ -1,10 +1,11 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { Home, FolderTree, GitBranch, MessageSquare, Bot, Zap, Settings, TerminalSquare, Play } from "lucide-react";
+import { Home, FolderTree, GitBranch, MessageSquare, Bot, Zap, Settings, TerminalSquare, Play, Clock } from "lucide-react";
 import WorkspaceSidebar from "./WorkspaceSidebar.tsx";
 import ChatMessages from "./ChatMessages.tsx";
 import ChatInputBar from "./ChatInputBar.tsx";
 import { ContextBar } from "./ContextBar.tsx";
+import CheckpointPanel from "./CheckpointPanel.tsx";
 
 import TerminalTabs from "./TerminalTabs.tsx";
 
@@ -45,6 +46,7 @@ export default function Layout() {
   const [termBig,       setTermBig]       = useState(() => restore("termBig",       false));
   const [activeTab,     setActiveTab]     = useState<PanelTab>("TERMINAL");
   const [workspaceOpen, setWorkspaceOpen] = useState(() => restore("workspaceOpen", false));
+  const [checkpointOpen, setCheckpointOpen] = useState(() => restore("checkpointOpen", false));
 
   // Active chat session — persisted to dedicated key
   const [activeSessionId, setActiveSessionId] = useState<string | null>(() =>
@@ -58,6 +60,7 @@ export default function Layout() {
   useEffect(() => persist("termHeight",    termHeight),    [termHeight]);
   useEffect(() => persist("termBig",       termBig),       [termBig]);
   useEffect(() => persist("workspaceOpen", workspaceOpen), [workspaceOpen]);
+  useEffect(() => persist("checkpointOpen", checkpointOpen), [checkpointOpen]);
 
   // Persist active session
   useEffect(() => {
@@ -256,6 +259,23 @@ export default function Layout() {
 
           <div style={{ flex: 1 }} />
 
+          {/* Checkpoints toggle */}
+          <div className="nav-tooltip-wrap" style={{ marginBottom: 2 }}>
+            <button
+              onClick={() => setCheckpointOpen(v => !v)}
+              style={{
+                background: checkpointOpen ? "var(--accent-bg)" : "none",
+                border: "none", cursor: "pointer",
+                color: checkpointOpen ? "var(--accent)" : "var(--text-dimmer)",
+                borderLeft: checkpointOpen ? "2px solid var(--accent)" : "2px solid transparent",
+                fontSize: 20, height: 44, width: 52,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "all 0.1s",
+              }}
+            ><Clock size={20} /></button>
+            <span className="nav-tooltip">Checkpoints</span>
+          </div>
+
           {/* Terminal toggle */}
           <div className="nav-tooltip-wrap" style={{ marginBottom: 8 }}>
             <button
@@ -423,6 +443,22 @@ export default function Layout() {
             streaming={streaming}
           />
         </div>
+
+        {/* Checkpoint panel (right side) */}
+        {checkpointOpen && (
+          <div style={{
+            width: 260,
+            minWidth: 260,
+            borderLeft: "1px solid var(--border-dim)",
+            background: "var(--bg-2)",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            flexShrink: 0,
+          }}>
+            <CheckpointPanel onClose={() => setCheckpointOpen(false)} />
+          </div>
+        )}
       </div>
 
       {/* STATUS BAR */}

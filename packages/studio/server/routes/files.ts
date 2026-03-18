@@ -106,11 +106,59 @@ export function filesRoutes(projectDir: string) {
     }
   });
 
+  app.post("/unstage", async (c) => {
+    const body = await c.req.json<{ paths?: string[] }>().catch(() => ({ paths: undefined }));
+    try {
+      if (body.paths?.length) {
+        for (const p of body.paths) {
+          const fullPath = join(projectDir, p);
+          if (!fullPath.startsWith(projectDir)) continue;
+          await execAsync("git", ["restore", "--staged", p], { cwd: projectDir });
+        }
+      } else {
+        await execAsync("git", ["restore", "--staged", "."], { cwd: projectDir });
+      }
+      return c.json({ ok: true });
+    } catch (err) {
+      return c.json({ error: String(err) }, 500);
+    }
+  });
+
+  app.post("/discard", async (c) => {
+    const body = await c.req.json<{ paths: string[] }>().catch(() => ({ paths: [] as string[] }));
+    if (!body.paths?.length) return c.json({ error: "paths required" }, 400);
+    try {
+      for (const p of body.paths) {
+        const fullPath = join(projectDir, p);
+        if (!fullPath.startsWith(projectDir)) continue;
+        try {
+          // Try checkout first (tracked files)
+          await execAsync("git", ["checkout", "--", p], { cwd: projectDir });
+        } catch {
+          // Untracked file — clean it
+          await execAsync("git", ["clean", "-f", p], { cwd: projectDir });
+        }
+      }
+      return c.json({ ok: true });
+    } catch (err) {
+      return c.json({ error: String(err) }, 500);
+    }
+  });
+
   app.post("/commit", async (c) => {
     const body = await c.req.json<{ message: string }>();
     if (!body.message?.trim()) return c.json({ error: "message required" }, 400);
     try {
       await execAsync("git", ["commit", "-m", body.message], { cwd: projectDir });
+      return c.json({ ok: true });
+    } catch (err) {
+      return c.json({ error: String(err) }, 500);
+    }
+  });
+
+  app.post("/push", async (c) => {
+    try {
+      await execAsync("git", ["push"], { cwd: projectDir });
       return c.json({ ok: true });
     } catch (err) {
       return c.json({ error: String(err) }, 500);

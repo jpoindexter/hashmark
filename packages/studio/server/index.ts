@@ -17,6 +17,7 @@ import { sessionsRoutes } from "./routes/sessions.js";
 import { attachTerminalWS } from "./routes/terminal.js";
 import { filesRoutes } from "./routes/files.js";
 import { workspaceRoutes } from "./routes/workspace.js";
+import { checkpointRoutes } from "./routes/checkpoints.js";
 
 export interface ServerOptions {
   projectDir: string;
@@ -59,6 +60,7 @@ export function createServer(opts: ServerOptions) {
   app.route("/api/sessions", sessionsRoutes(opts.projectDir));
   app.route("/api/files", filesRoutes(opts.projectDir));
   app.route("/api/workspace", workspaceRoutes(opts.projectDir));
+  app.route("/api/checkpoints", checkpointRoutes(opts.projectDir));
 
   // Serve static client files
   app.use(
