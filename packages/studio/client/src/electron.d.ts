@@ -6,5 +6,6 @@ interface Window {
     pickFolder: () => Promise<string | null>;
     getProjectDir: () => Promise<string | null>;
     setProjectDir: (dir: string) => Promise<boolean>;
+    getRecentProjects?: () => Promise<string[]>;
   };
 }

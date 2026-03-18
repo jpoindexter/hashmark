@@ -1,6 +1,7 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Home, FolderTree, GitBranch, MessageSquare, Bot, Zap, Settings, TerminalSquare, Play, Clock } from "lucide-react";
+import { basename } from "../lib/path.js";
 import WorkspaceSidebar from "./WorkspaceSidebar.tsx";
 import ChatMessages from "./ChatMessages.tsx";
 import ChatInputBar from "./ChatInputBar.tsx";
@@ -500,9 +501,7 @@ export default function Layout() {
 
         <div style={{ flex: 1 }} />
 
-        <StatusItem>
-          {info?.projectName ?? "hashmark studio"}
-        </StatusItem>
+        <ProjectSwitcher projectName={info?.projectName ?? null} />
 
         <StatusItem>
           Ln 1, Col 1
@@ -549,6 +548,147 @@ function StatusItem({
       onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
     >
       {children}
+    </div>
+  );
+}
+
+function ProjectSwitcher({ projectName }: { projectName: string | null }) {
+  const isElectron = typeof window.studio !== "undefined";
+  const [open, setOpen] = useState(false);
+  const [recent, setRecent] = useState<string[]>([]);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const loadRecent = useCallback(() => {
+    window.studio?.getRecentProjects?.().then(r => setRecent(r ?? [])).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!isElectron || !open) return;
+    loadRecent();
+  }, [isElectron, open, loadRecent]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  const handleOpenRecent = async (path: string) => {
+    setOpen(false);
+    await window.studio?.setProjectDir(path);
+  };
+
+  const handlePickFolder = async () => {
+    setOpen(false);
+    const dir = await window.studio?.pickFolder();
+    if (dir) await window.studio?.setProjectDir(dir);
+  };
+
+  if (!isElectron) {
+    return (
+      <div style={{
+        display: "flex", alignItems: "center", gap: 4,
+        padding: "0 8px", height: "100%",
+        color: "rgba(16,185,129,0.75)",
+        whiteSpace: "nowrap",
+      }}>
+        {projectName ?? "hashmark studio"}
+      </div>
+    );
+  }
+
+  return (
+    <div ref={ref} style={{ position: "relative", height: "100%" }}>
+      <div
+        onClick={() => setOpen(v => !v)}
+        title="Switch project"
+        style={{
+          display: "flex", alignItems: "center", gap: 4,
+          padding: "0 8px", height: "100%",
+          color: "rgba(16,185,129,0.75)",
+          cursor: "pointer",
+          transition: "background 0.1s",
+          whiteSpace: "nowrap",
+          background: open ? "rgba(16,185,129,0.12)" : "transparent",
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "rgba(16,185,129,0.12)"; }}
+        onMouseLeave={e => { if (!open) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+      >
+        {projectName ?? "hashmark studio"}
+        <span style={{ fontSize: 9, opacity: 0.6, marginLeft: 2 }}>▲</span>
+      </div>
+
+      {open && (
+        <div style={{
+          position: "fixed",
+          bottom: 22,
+          right: 0,
+          zIndex: 9999,
+          background: "var(--bg-2)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius)",
+          minWidth: 280,
+          maxWidth: 400,
+          boxShadow: "0 -4px 16px rgba(0,0,0,0.4)",
+          fontFamily: "var(--font)",
+          overflow: "hidden",
+        }}>
+          {recent.length > 0 && (
+            <>
+              <div style={{
+                padding: "6px 12px 4px",
+                fontSize: 10,
+                color: "var(--text-dimmer)",
+                letterSpacing: "0.08em",
+                borderBottom: "1px solid var(--border-dim)",
+              }}>
+                RECENT PROJECTS
+              </div>
+              {recent.map(path => (
+                <div
+                  key={path}
+                  onClick={() => void handleOpenRecent(path)}
+                  style={{
+                    display: "flex", flexDirection: "column",
+                    padding: "7px 12px",
+                    cursor: "pointer",
+                    borderBottom: "1px solid var(--border-dim)",
+                    transition: "background 0.1s",
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "var(--accent-bg)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+                >
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {basename(path)}
+                  </span>
+                  <span style={{ fontSize: 10, color: "var(--text-dimmer)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 1 }}>
+                    {path}
+                  </span>
+                </div>
+              ))}
+            </>
+          )}
+          <div
+            onClick={() => void handlePickFolder()}
+            style={{
+              padding: "8px 12px",
+              fontSize: 12,
+              color: "var(--accent)",
+              cursor: "pointer",
+              transition: "background 0.1s",
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "var(--accent-bg)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+          >
+            &gt; Open Different Project...
+          </div>
+        </div>
+      )}
     </div>
   );
 }

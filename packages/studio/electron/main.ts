@@ -17,18 +17,30 @@ const PORT = 3200;
 const CONFIG_DIR = `${app.getPath("home")}/.hashmark`;
 const CONFIG_FILE = `${CONFIG_DIR}/studio-config.json`;
 
-function readConfig(): { projectDir?: string } {
-  try {
-    if (existsSync(CONFIG_FILE)) {
-      return JSON.parse(readFileSync(CONFIG_FILE, "utf-8")) as { projectDir?: string };
-    }
-  } catch {}
-  return {};
+interface StudioConfig {
+  projectDir?: string;
+  recent: string[];
 }
 
-function writeConfig(config: { projectDir?: string }) {
+function readConfig(): StudioConfig {
+  try {
+    if (existsSync(CONFIG_FILE)) {
+      const parsed = JSON.parse(readFileSync(CONFIG_FILE, "utf-8")) as Partial<StudioConfig>;
+      return { recent: [], ...parsed };
+    }
+  } catch {}
+  return { recent: [] };
+}
+
+function writeConfig(config: StudioConfig) {
   mkdirSync(CONFIG_DIR, { recursive: true });
   writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
+}
+
+function addToRecent(config: StudioConfig, dir: string): StudioConfig {
+  const filtered = config.recent.filter(p => p !== dir);
+  const recent = [dir, ...filtered].slice(0, 10);
+  return { ...config, recent };
 }
 
 // Resolve project dir: env > config file > sentinel
@@ -84,7 +96,7 @@ function createWindow() {
       preload: resolve(__dirname, "preload.cjs"),
     },
     title: "hashmark studio",
-    icon: resolve(__dirname, "../public/icon.png"),
+    icon: resolve(__dirname, "../../assets/icon.svg"),
   });
 
   win.loadURL(`http://localhost:${PORT}`);
@@ -176,8 +188,15 @@ ipcMain.handle("get-project-dir", () => {
 });
 
 ipcMain.handle("set-project-dir", async (_event, dir: string) => {
-  writeConfig({ projectDir: dir });
+  const config = readConfig();
+  const updated = addToRecent({ ...config, projectDir: dir }, dir);
+  writeConfig(updated);
   process.env.HASHMARK_PROJECT_DIR = dir;
   win?.webContents.reload();
   return true;
+});
+
+ipcMain.handle("get-recent-projects", () => {
+  const config = readConfig();
+  return config.recent;
 });

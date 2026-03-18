@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld("studio", {
   pickFolder: () => ipcRenderer.invoke("pick-folder"),
   getProjectDir: () => ipcRenderer.invoke("get-project-dir"),
   setProjectDir: (dir: string) => ipcRenderer.invoke("set-project-dir", dir),
+  getRecentProjects: () => ipcRenderer.invoke("get-recent-projects"),
 });

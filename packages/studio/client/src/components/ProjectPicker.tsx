@@ -1,10 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { basename } from "../lib/path.js";
 
 export default function ProjectPicker() {
   const [loading, setLoading] = useState(false);
+  const [openingPath, setOpeningPath] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [recent, setRecent] = useState<string[]>([]);
 
   const isElectron = typeof window.studio !== "undefined";
+
+  useEffect(() => {
+    if (!isElectron) return;
+    window.studio?.getRecentProjects?.().then(r => setRecent(r ?? [])).catch(() => {});
+  }, [isElectron]);
 
   const handlePick = async () => {
     setLoading(true);
@@ -20,6 +28,17 @@ export default function ProjectPicker() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to open project");
       setLoading(false);
+    }
+  };
+
+  const handleOpenRecent = async (path: string) => {
+    setOpeningPath(path);
+    setError(null);
+    try {
+      await window.studio?.setProjectDir(path);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to open project");
+      setOpeningPath(null);
     }
   };
 
@@ -59,14 +78,83 @@ export default function ProjectPicker() {
         </button>
       )}
 
-      <div style={{
-        marginTop: 40,
-        color: "var(--text-dimmer)",
-        fontSize: 11,
-        opacity: 0.4,
-      }}>
-        {isElectron ? "or drag a folder here" : ""}
-      </div>
+      {isElectron && recent.length > 0 && (
+        <div style={{
+          marginTop: 40,
+          width: 400,
+          maxWidth: "90vw",
+        }}>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 12,
+          }}>
+            <div style={{ flex: 1, height: 1, background: "var(--border-dim)" }} />
+            <span style={{ fontSize: 10, color: "var(--text-dimmer)", letterSpacing: "0.08em" }}>RECENT</span>
+            <div style={{ flex: 1, height: 1, background: "var(--border-dim)" }} />
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {recent.map(path => (
+              <div
+                key={path}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "8px 12px",
+                  background: "var(--bg-2)",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "var(--radius)",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "var(--text)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}>
+                    {basename(path)}
+                  </div>
+                  <div style={{
+                    fontSize: 10,
+                    color: "var(--text-dimmer)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    marginTop: 2,
+                  }}>
+                    {path}
+                  </div>
+                </div>
+                <button
+                  className="btn"
+                  onClick={() => void handleOpenRecent(path)}
+                  disabled={openingPath === path}
+                  style={{ fontSize: 11, padding: "4px 12px", flexShrink: 0 }}
+                >
+                  {openingPath === path ? "..." : "Open"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!isElectron && (
+        <div style={{
+          marginTop: 40,
+          color: "var(--text-dimmer)",
+          fontSize: 11,
+          opacity: 0.4,
+        }}>
+          {""}
+        </div>
+      )}
 
       {error && (
         <div style={{ marginTop: 16, color: "var(--red)", fontSize: 12 }}>

@@ -4,12 +4,43 @@
  */
 
 import { Hono } from "hono";
-import { randomUUID } from "crypto";
+import { randomUUID, createHash } from "crypto";
 import { spawn } from "child_process";
-import { existsSync } from "fs";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
+import { tmpdir, homedir } from "os";
 import { getDb } from "../db.js";
 import { loadScanContext } from "../context.js";
+
+/**
+ * Resolve MCP config from project-level or global Claude config.
+ * Writes a temp file and returns its path, or null if no MCP servers found.
+ */
+function resolveMcpConfig(projectDir: string): string | null {
+  const candidates = [
+    join(projectDir, ".mcp.json"),
+    join(homedir(), ".claude", "claude_desktop_config.json"),
+  ];
+
+  for (const filePath of candidates) {
+    if (!existsSync(filePath)) continue;
+    try {
+      const raw = readFileSync(filePath, "utf-8");
+      const parsed = JSON.parse(raw) as { mcpServers?: Record<string, unknown> };
+      if (parsed.mcpServers && Object.keys(parsed.mcpServers).length > 0) {
+        const hash = createHash("md5").update(raw).digest("hex");
+        const tmpPath = join(tmpdir(), `studio-mcp-${hash}.json`);
+        if (!existsSync(tmpPath)) {
+          writeFileSync(tmpPath, raw, "utf-8");
+        }
+        return tmpPath;
+      }
+    } catch {
+      // Malformed JSON — skip
+    }
+  }
+  return null;
+}
 
 // Candidates for the claude binary — same as runner.ts
 function findClaudeBin(projectDir: string): string {
@@ -188,6 +219,7 @@ export function sessionsRoutes(projectDir: string) {
     const fullPrompt = buildConversationPrompt(history, body.message, effectiveSystemPrompt);
 
     const claudeBin = findClaudeBin(projectDir);
+    const mcpConfigPath = resolveMcpConfig(projectDir);
 
     const stream = new ReadableStream({
       start(controller) {
@@ -199,9 +231,13 @@ export function sessionsRoutes(projectDir: string) {
         db.prepare("UPDATE sessions SET status = 'streaming', updated_at = ? WHERE id = ?")
           .run(Date.now(), sessionId);
 
+        const claudeArgs = mcpConfigPath
+          ? ["--mcp-config", mcpConfigPath, "--print", fullPrompt]
+          : ["--print", fullPrompt];
+
         const proc = spawn(
           claudeBin,
-          ["--print", fullPrompt],
+          claudeArgs,
           {
             cwd: projectDir,
             stdio: ["ignore", "pipe", "pipe"],
