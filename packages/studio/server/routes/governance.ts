@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { getDb } from "../db.js";
 import { randomUUID } from "crypto";
+import { existsSync, readFileSync } from "fs";
+import { join } from "path";
 
 export function governanceRoutes(dataDir: string) {
   const app = new Hono();
@@ -89,6 +91,25 @@ export function governanceRoutes(dataDir: string) {
     const byType = db.prepare("SELECT action_type, COUNT(*) as count FROM agent_actions GROUP BY action_type").all();
     const recentBlocked = db.prepare("SELECT * FROM agent_actions WHERE outcome IN ('blocked','flagged') ORDER BY created_at DESC LIMIT 5").all();
     return c.json({ total, blocked, flagged, byType, recentBlocked });
+  });
+
+  // GET /api/governance/action-log?limit=100&offset=0&runId=&agentId=
+  app.get("/action-log", (c) => {
+    const logPath = join(dataDir, "agent-actions.jsonl");
+    if (!existsSync(logPath)) return c.json({ events: [], total: 0 });
+
+    const limit = parseInt(c.req.query("limit") ?? "100");
+    const offset = parseInt(c.req.query("offset") ?? "0");
+    const filterRunId = c.req.query("runId");
+    const filterAgentId = c.req.query("agentId");
+
+    const lines = readFileSync(logPath, "utf-8").trim().split("\n").filter(Boolean);
+    let events = lines.map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+    events.reverse();
+    if (filterRunId) events = events.filter((e: { runId: string }) => e.runId === filterRunId);
+    if (filterAgentId) events = events.filter((e: { agentId: string }) => e.agentId === filterAgentId);
+    const total = events.length;
+    return c.json({ events: events.slice(offset, offset + limit), total });
   });
 
   return app;

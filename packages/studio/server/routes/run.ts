@@ -11,6 +11,7 @@ import { join, relative } from "path";
 import { randomUUID } from "crypto";
 import { promisify } from "util";
 import { tmpdir } from "os";
+import { logAgentAction, parseActionsFromOutput } from "../lib/action-log.js";
 
 const execFile = promisify(execFileCb);
 
@@ -80,6 +81,7 @@ let activeRun = false;
 
 export function runRoutes(projectDir: string) {
   const app = new Hono();
+  const dataDir = `${projectDir}/.hashmark`;
 
   app.get("/status", (c) => c.json({ active: activeRun }));
 
@@ -120,8 +122,10 @@ export function runRoutes(projectDir: string) {
             await execFile("git", ["worktree", "add", worktreeDir, "-b", branchName], {
               cwd: projectDir,
             });
+            logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "worktree_create", target: branchName, outcome: "success" });
           } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
+            logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "worktree_create", target: branchName, outcome: "failure", detail: msg });
             send({ type: "error", error: `Worktree failed: ${msg}` });
             activeRun = false;
             controller.close();
@@ -141,6 +145,7 @@ export function runRoutes(projectDir: string) {
           const prompt = `${planPrefix}${agentContext}${body.task}\n\nWork in the current directory. Make the necessary code changes, create or modify files as needed.`;
 
           // Spawn claude and stream output
+          let fullOutput = "";
           await new Promise<void>((resolve) => {
             const proc = spawn(claudeBin, ["--print", prompt], {
               cwd: worktreeDir,
@@ -149,7 +154,9 @@ export function runRoutes(projectDir: string) {
             });
 
             proc.stdout.on("data", (chunk: Buffer) => {
-              send({ type: "chunk", text: chunk.toString() });
+              const text = chunk.toString();
+              fullOutput += text;
+              send({ type: "chunk", text });
             });
 
             proc.stderr.on("data", () => {});
@@ -179,6 +186,10 @@ export function runRoutes(projectDir: string) {
             return;
           }
 
+          // Parse and log file write / bash events from agent output
+          const actionEvents = parseActionsFromOutput(fullOutput, runId, body.agentId ?? "general");
+          for (const ev of actionEvents) logAgentAction(dataDir, ev);
+
           // Commit if there are changes
           try {
             const { stdout: statusOut } = await execFile("git", ["status", "--porcelain"], { cwd: worktreeDir });
@@ -186,6 +197,7 @@ export function runRoutes(projectDir: string) {
             if (hasChanges) {
               await execFile("git", ["add", "-A"], { cwd: worktreeDir });
               await execFile("git", ["commit", "-m", `feat(run/${runId}): ${body.task.slice(0, 72)}`], { cwd: worktreeDir });
+              logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "git_commit", target: branchName, outcome: "success" });
               send({ type: "committed", hasChanges: true, branch: branchName });
             } else {
               send({ type: "committed", hasChanges: false, branch: branchName });
@@ -202,9 +214,11 @@ export function runRoutes(projectDir: string) {
                 "merge", branchName, "--no-ff",
                 "-m", `feat(run): merge ${branchName}`,
               ], { cwd: projectDir });
+              logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "git_merge", target: branchName, outcome: "success" });
               send({ type: "merged" });
             } catch {
               try { await execFile("git", ["merge", "--abort"], { cwd: projectDir }); } catch {}
+              logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "git_merge", target: branchName, outcome: "failure", detail: "merge conflict" });
               send({ type: "merge_conflict", branch: branchName });
             }
           }
@@ -212,6 +226,7 @@ export function runRoutes(projectDir: string) {
           // Cleanup worktree + branch (skip if conflict — branch preserved intentionally)
           try {
             await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: projectDir });
+            logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "worktree_remove", target: branchName, outcome: "success" });
           } catch {}
 
           if (hasChanges) {

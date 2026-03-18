@@ -12,6 +12,7 @@ import { randomUUID } from "crypto";
 import { promisify } from "util";
 import { tmpdir } from "os";
 import { getDb } from "../db.js";
+import { logAgentAction, parseActionsFromOutput } from "../lib/action-log.js";
 
 const execFile = promisify(execFileCb);
 
@@ -198,8 +199,10 @@ Respond with ONLY a JSON array, no markdown, no explanation:
             await execFile("git", ["worktree", "add", worktreeDir, "-b", branchName], {
               cwd: projectDir,
             });
+            logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "worktree_create", target: branchName, outcome: "success" });
           } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
+            logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "worktree_create", target: branchName, outcome: "failure", detail: msg });
             send({ type: "worker_error", id: subtask.id, error: `Worktree failed: ${msg}` });
             try {
               const db = getDb(dataDir);
@@ -267,8 +270,13 @@ Work in the current directory. Make the necessary code changes, create or modify
                 if (hasChanges) {
                   await execFile("git", ["add", "-A"], { cwd: worktreeDir });
                   await execFile("git", ["commit", "-m", `feat(swarm/${runId}): agent ${subtask.id} - ${subtask.title}`], { cwd: worktreeDir });
+                  logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "git_commit", target: branchName, outcome: "success" });
                 }
               } catch {}
+
+              // Parse and log file write / bash events from agent output
+              const actionEvents = parseActionsFromOutput(fullOutput, runId, subtask.agentId, subtask.id);
+              for (const ev of actionEvents) logAgentAction(dataDir, ev);
 
               // Test verification step
               let testResult: { passed: boolean; output: string; skipped: boolean } = { passed: true, output: "", skipped: false };
@@ -361,9 +369,11 @@ Work in the current directory. Make the necessary code changes, create or modify
                 "-m", `feat(swarm): merge agent ${subtask.id} - ${subtask.title}`,
               ], { cwd: projectDir });
               merged.push(subtask.id);
+              logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "git_merge", target: branchName, outcome: "success" });
             } catch {
               try { await execFile("git", ["merge", "--abort"], { cwd: projectDir }); } catch {}
               conflicts.push(subtask.id);
+              logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "git_merge", target: branchName, outcome: "failure", detail: "merge conflict" });
             }
           }
 
@@ -372,7 +382,10 @@ Work in the current directory. Make the necessary code changes, create or modify
             const branchName = `studio-swarm-${runId}-${subtask.id}`;
             const worktreeDir = worktreeDirs.get(subtask.id);
             try {
-              if (worktreeDir) await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: projectDir });
+              if (worktreeDir) {
+                await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: projectDir });
+                logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "worktree_remove", target: branchName, outcome: "success" });
+              }
             } catch {}
             try { await execFile("git", ["branch", "-D", branchName], { cwd: projectDir }); } catch {}
           }

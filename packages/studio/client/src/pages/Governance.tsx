@@ -567,10 +567,215 @@ function ActionLogTab() {
 }
 
 // ---------------------------------------------------------------------------
+// Action Journal tab (JSONL audit trail from agent runs)
+// ---------------------------------------------------------------------------
+
+interface JournalEvent {
+  timestamp: number;
+  runId: string;
+  agentId: string;
+  workerId?: number;
+  action: string;
+  target: string;
+  outcome: "success" | "failure" | "skipped";
+  detail?: string;
+}
+
+function relativeTime(ts: number): string {
+  const diff = Date.now() - ts;
+  if (diff < 60_000) return `${Math.floor(diff / 1000)}s ago`;
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+  return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function ActionBadge({ action }: { action: string }) {
+  const colorMap: Record<string, string> = {
+    file_write:      "#10b981",
+    file_read:       "#6366f1",
+    bash_exec:       "#f59e0b",
+    git_commit:      "#3b82f6",
+    git_merge:       "#8b5cf6",
+    test_run:        "#ec4899",
+    worktree_create: "#14b8a6",
+    worktree_remove: "#71717a",
+  };
+  const color = colorMap[action] ?? "#71717a";
+  return (
+    <span style={{
+      display: "inline-block",
+      padding: "1px 7px",
+      fontSize: 10,
+      fontFamily: "var(--font)",
+      fontWeight: 700,
+      letterSpacing: "0.05em",
+      textTransform: "uppercase",
+      background: `${color}1a`,
+      color,
+      borderRadius: 2,
+    }}>
+      {action.replace(/_/g, " ")}
+    </span>
+  );
+}
+
+function JournalOutcomeBadge({ outcome }: { outcome: string }) {
+  const map: Record<string, { bg: string; color: string }> = {
+    success: { bg: "rgba(16,185,129,0.12)", color: "#10b981" },
+    failure: { bg: "rgba(239,68,68,0.12)",  color: "#ef4444" },
+    skipped: { bg: "rgba(113,113,122,0.15)", color: "#71717a" },
+  };
+  const s = map[outcome] ?? map.skipped;
+  return (
+    <span style={{
+      display: "inline-block",
+      padding: "1px 7px",
+      fontSize: 10,
+      fontFamily: "var(--font)",
+      fontWeight: 700,
+      letterSpacing: "0.06em",
+      textTransform: "uppercase",
+      background: s.bg,
+      color: s.color,
+      borderRadius: 2,
+    }}>
+      {outcome}
+    </span>
+  );
+}
+
+function ActionJournalTab() {
+  const [events, setEvents] = useState<JournalEvent[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const LIMIT = 100;
+
+  const load = useCallback((off: number) => {
+    setLoading(true);
+    fetch(`/api/governance/action-log?limit=${LIMIT}&offset=${off}`)
+      .then(r => r.json())
+      .then((d: { events: JournalEvent[]; total: number }) => {
+        if (off === 0) setEvents(d.events);
+        else setEvents(prev => [...prev, ...d.events]);
+        setTotal(d.total);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { load(0); }, [load]);
+
+  const loadMore = () => {
+    const next = offset + LIMIT;
+    setOffset(next);
+    load(next);
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <span style={{ fontSize: 11, color: "var(--text-dimmer)", letterSpacing: "0.04em" }}>
+          Append-only JSONL audit trail from agent runs
+        </span>
+        <span style={{ fontSize: 11, color: "var(--text-dimmer)" }}>
+          {events.length} / {total}
+        </span>
+      </div>
+
+      {loading && events.length === 0 ? (
+        <div style={{ color: "var(--text-dimmer)", fontSize: 12, padding: "24px 0" }}>Loading…</div>
+      ) : events.length === 0 ? (
+        <div style={{ padding: "40px 0", textAlign: "center", color: "var(--text-dimmer)", fontSize: 12, fontFamily: "var(--font)" }}>
+          No actions logged yet.
+        </div>
+      ) : (
+        <>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
+                {["WHEN", "RUN", "AGENT", "ACTION", "TARGET", "OUTCOME"].map(h => (
+                  <th key={h} style={{
+                    padding: "6px 10px", textAlign: "left",
+                    fontSize: 10, letterSpacing: "0.06em",
+                    color: "var(--text-dimmer)", fontWeight: 600,
+                  }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {events.map((e, i) => (
+                <tr
+                  key={i}
+                  style={{ borderBottom: "1px solid var(--border-dim)" }}
+                  onMouseEnter={ev => (ev.currentTarget.style.background = "var(--accent-bg)")}
+                  onMouseLeave={ev => (ev.currentTarget.style.background = "transparent")}
+                  title={e.detail}
+                >
+                  <td style={{ padding: "7px 10px", color: "var(--text-dimmer)", fontSize: 11, fontFamily: "var(--font)", whiteSpace: "nowrap" }}>
+                    {relativeTime(e.timestamp)}
+                  </td>
+                  <td style={{ padding: "7px 10px", color: "var(--text-dim)", fontFamily: "var(--font)", fontSize: 11 }}>
+                    {e.runId}
+                    {e.workerId !== undefined && (
+                      <span style={{ opacity: 0.5, marginLeft: 4 }}>#{e.workerId}</span>
+                    )}
+                  </td>
+                  <td style={{ padding: "7px 10px", color: "var(--text-dim)", fontFamily: "var(--font)", fontSize: 11 }}>
+                    {e.agentId}
+                  </td>
+                  <td style={{ padding: "7px 10px" }}>
+                    <ActionBadge action={e.action} />
+                  </td>
+                  <td style={{
+                    padding: "7px 10px", color: "var(--text-dim)",
+                    fontFamily: "var(--font)", fontSize: 11,
+                    maxWidth: 260, overflow: "hidden",
+                    textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}
+                    title={e.target}
+                  >
+                    {e.target}
+                  </td>
+                  <td style={{ padding: "7px 10px" }}>
+                    <JournalOutcomeBadge outcome={e.outcome} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {events.length < total && (
+            <div style={{ padding: "12px 0", textAlign: "center" }}>
+              <button
+                onClick={loadMore}
+                disabled={loading}
+                style={{
+                  background: "none", border: "1px solid var(--border-dim)",
+                  color: "var(--text-dim)", padding: "5px 16px",
+                  fontFamily: "var(--font)", fontSize: 11,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  letterSpacing: "0.04em",
+                  opacity: loading ? 0.6 : 1,
+                }}
+              >
+                {loading ? "LOADING…" : `LOAD MORE (${total - events.length} remaining)`}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main Governance page
 // ---------------------------------------------------------------------------
 
-type Tab = "policies" | "actions";
+type Tab = "policies" | "actions" | "journal";
 
 export default function Governance() {
   const [tab, setTab] = useState<Tab>("policies");
@@ -613,9 +818,12 @@ export default function Governance() {
         <button style={tabStyle(tab === "actions")} onClick={() => setTab("actions")}>
           ACTION LOG
         </button>
+        <button style={tabStyle(tab === "journal")} onClick={() => setTab("journal")}>
+          ACTION LOG (JSONL)
+        </button>
       </div>
 
-      {tab === "policies" ? <PoliciesTab /> : <ActionLogTab />}
+      {tab === "policies" ? <PoliciesTab /> : tab === "actions" ? <ActionLogTab /> : <ActionJournalTab />}
     </div>
   );
 }
