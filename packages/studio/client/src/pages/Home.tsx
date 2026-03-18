@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Zap, Play, GitBranch, History, Bot, FileText, Clock, CheckCircle, XCircle, Loader } from "lucide-react";
+import { Zap, Play, GitBranch, History, Bot, Clock, CheckCircle, XCircle, Loader } from "lucide-react";
 import { SkeletonCard, SkeletonLine, SkeletonBlock } from "../components/Skeleton";
+
+// ── Types ───────────────────────────────────────────────────────────────────
 
 interface Agent {
   id: string;
@@ -41,6 +43,16 @@ interface Staleness {
   daysStale: number | null;
 }
 
+interface RecentProject {
+  path: string;
+  name: string;
+  lastOpened: number;
+}
+
+// ── Constants ───────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = "studio:recent_projects";
+
 const DEPT_COLORS: Record<string, string> = {
   engineering: "var(--blue)",
   product: "#8b5cf6",
@@ -50,6 +62,8 @@ const DEPT_COLORS: Record<string, string> = {
   operations: "#6366f1",
   pr: "#06b6d4",
 };
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatRelativeTime(ms: number): string {
   const diff = Date.now() - ms;
@@ -62,10 +76,33 @@ function formatRelativeTime(ms: number): string {
   return `${days}d ago`;
 }
 
-function formatDuration(startMs: number): string {
-  const diff = Math.floor((Date.now() - startMs) / 1000);
-  if (diff < 60) return `${diff}s`;
-  return `${Math.floor(diff / 60)}m ${diff % 60}s`;
+function loadRecentProjects(): RecentProject[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as RecentProject[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+// ── Sub-components ──────────────────────────────────────────────────────────
+
+function FolderIcon({ size = 16, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ flexShrink: 0 }}
+    >
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+    </svg>
+  );
 }
 
 function StatusDot({ status }: { status: string }) {
@@ -109,299 +146,6 @@ function FreshnessTag({ staleness }: { staleness: Staleness | null }) {
   return <span className="badge badge-green">FRESH</span>;
 }
 
-export default function Home() {
-  const navigate = useNavigate();
-  const [info, setInfo] = useState<ProjectInfo | null>(null);
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [runs, setRuns] = useState<Run[]>([]);
-  const [snapshot, setSnapshot] = useState<ScanSnapshot | null>(null);
-  const [staleness, setStaleness] = useState<Staleness | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [runsLoading, setRunsLoading] = useState(true);
-
-  const fetchData = useCallback(() => {
-    Promise.all([
-      fetch("/api/info").then((r) => r.json()),
-      fetch("/api/agents").then((r) => r.json()),
-      fetch("/api/scan/history").then((r) => r.json()),
-      fetch("/api/scan/staleness").then((r) => r.json()).catch(() => null),
-    ]).then(([infoData, agentsData, historyData, stalenessData]) => {
-      setInfo(infoData);
-      setAgents(agentsData.agents ?? []);
-      const snaps: ScanSnapshot[] = historyData.snapshots ?? [];
-      setSnapshot(snaps[0] ?? null);
-      setStaleness(stalenessData);
-    }).finally(() => setLoading(false));
-
-    fetch("/api/runs")
-      .then((r) => r.json())
-      .then((d) => setRuns((d.runs ?? []).slice(0, 5)))
-      .catch(() => {})
-      .finally(() => setRunsLoading(false));
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
-
-  // Group agents by department
-  const byDept = agents.reduce<Record<string, Agent[]>>((acc, a) => {
-    if (!acc[a.department]) acc[a.department] = [];
-    acc[a.department].push(a);
-    return acc;
-  }, {});
-  const depts = Object.entries(byDept).sort((a, b) => b[1].length - a[1].length);
-
-  const lastRunAt = runs[0]?.created_at ?? null;
-  const lastScanAt = snapshot?.scannedAt ?? null;
-
-  // Compute avg complexity score placeholder — aiReadiness as proxy
-  const avgComplexity = snapshot?.aiReadiness != null ? `${snapshot.aiReadiness}%` : "—";
-
-  return (
-    <div style={{ padding: "32px", maxWidth: "1040px" }}>
-      {/* Header */}
-      <div style={{ marginBottom: "28px" }}>
-        <div style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "6px" }}>
-          hashmark studio
-        </div>
-        <h1 style={{ fontSize: "22px", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>
-          {loading ? <SkeletonLine width={180} height={22} /> : (info?.projectName ?? "Project")}
-        </h1>
-        {info && (
-          <div style={{ fontSize: "11px", color: "var(--text-dimmer)", marginTop: "4px", fontFamily: "var(--font)" }}>
-            {info.projectDir}
-          </div>
-        )}
-      </div>
-
-      {/* Top row — 3 stat cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "24px" }}>
-        {/* Context health */}
-        <div style={{
-          background: "var(--bg-2)",
-          border: "1px solid var(--border-dim)",
-          borderRadius: "var(--radius)",
-          padding: "16px",
-        }}>
-          <div style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>
-            Context Health
-          </div>
-          {loading ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <SkeletonLine width={80} height={20} />
-              <SkeletonLine width={120} height={11} />
-              <SkeletonLine width={100} height={11} />
-            </div>
-          ) : (
-            <>
-              <div style={{ marginBottom: "8px" }}>
-                <FreshnessTag staleness={staleness} />
-              </div>
-              <div style={{ fontSize: "12px", color: "var(--text-dim)", marginBottom: "4px", fontFamily: "var(--font)" }}>
-                {snapshot
-                  ? `~${Math.round((snapshot.totalLines * 5) / 1000)}k tokens est.`
-                  : "No scan yet"}
-              </div>
-              <div style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
-                {lastScanAt
-                  ? `Last scanned ${formatRelativeTime(lastScanAt)}`
-                  : "Never scanned"}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Recent activity */}
-        <div style={{
-          background: "var(--bg-2)",
-          border: "1px solid var(--border-dim)",
-          borderRadius: "var(--radius)",
-          padding: "16px",
-        }}>
-          <div style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>
-            Recent Activity
-          </div>
-          {runsLoading ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <SkeletonLine width="90%" height={13} />
-              <SkeletonLine width={80} height={11} />
-            </div>
-          ) : runs.length > 0 ? (
-            <>
-              <div style={{ fontSize: "13px", color: "var(--text)", marginBottom: "6px", lineHeight: 1.4 }}>
-                <span style={{ fontFamily: "var(--font)", fontSize: "12px" }}>
-                  {runs[0].task.length > 60 ? runs[0].task.slice(0, 60) + "…" : runs[0].task}
-                </span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <StatusDot status={runs[0].status} />
-                <span style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
-                  {formatRelativeTime(runs[0].created_at)}
-                </span>
-              </div>
-            </>
-          ) : (
-            <div style={{ fontSize: "12px", color: "var(--text-dimmer)" }}>No runs yet</div>
-          )}
-          {lastRunAt && (
-            <div style={{ marginTop: "8px" }}>
-              <button
-                onClick={() => navigate("/history")}
-                style={{ background: "none", border: "none", color: "var(--blue)", fontSize: "11px", cursor: "pointer", padding: 0 }}
-              >
-                View all runs →
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Project size */}
-        <div style={{
-          background: "var(--bg-2)",
-          border: "1px solid var(--border-dim)",
-          borderRadius: "var(--radius)",
-          padding: "16px",
-        }}>
-          <div style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>
-            Project Size
-          </div>
-          {loading ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <SkeletonLine width={100} height={20} />
-              <SkeletonLine width={80} height={11} />
-              <SkeletonLine width={110} height={11} />
-            </div>
-          ) : snapshot ? (
-            <>
-              <div style={{ fontSize: "22px", fontWeight: 700, color: "var(--text)", letterSpacing: "-0.02em", marginBottom: "6px" }}>
-                {snapshot.totalFiles.toLocaleString()}
-                <span style={{ fontSize: "12px", fontWeight: 400, color: "var(--text-dimmer)", marginLeft: "6px" }}>files</span>
-              </div>
-              <div style={{ fontSize: "12px", color: "var(--text-dim)", marginBottom: "4px", fontFamily: "var(--font)" }}>
-                {snapshot.totalLines.toLocaleString()} lines
-              </div>
-              <div style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
-                AI Readiness: <span style={{ color: "var(--accent)", fontWeight: 600 }}>{avgComplexity}</span>
-              </div>
-            </>
-          ) : (
-            <div style={{ fontSize: "12px", color: "var(--text-dimmer)" }}>Run a scan to see stats</div>
-          )}
-        </div>
-      </div>
-
-      {/* Quick actions bar */}
-      <div style={{ marginBottom: "28px" }}>
-        <SectionHeader>Quick Actions</SectionHeader>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          <QuickAction
-            icon={<Zap size={13} />}
-            label="Scan project"
-            shortcut="⌘S"
-            primary
-            onClick={() => navigate("/generate")}
-          />
-          <QuickAction
-            icon={<Play size={13} />}
-            label="Run agent"
-            shortcut="⌘R"
-            onClick={() => navigate("/run")}
-          />
-          <QuickAction
-            icon={<GitBranch size={13} />}
-            label="Launch swarm"
-            shortcut="⌘W"
-            onClick={() => navigate("/swarm")}
-          />
-          <QuickAction
-            icon={<History size={13} />}
-            label="View history"
-            shortcut="⌘H"
-            onClick={() => navigate("/history")}
-          />
-        </div>
-      </div>
-
-      {/* Bottom split: recent runs + agent roster */}
-      <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: "20px" }}>
-        {/* Recent runs — left 60% */}
-        <div>
-          <SectionHeader>Recent Runs</SectionHeader>
-          {runsLoading ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {[0, 1, 2].map((i) => (
-                <SkeletonBlock key={i} height={48} style={{ borderRadius: "var(--radius)" }} />
-              ))}
-            </div>
-          ) : runs.length === 0 ? (
-            <EmptyState
-              icon={<History size={22} />}
-              title="No runs yet"
-              body="Start a run from the Run Agent page."
-              action="Run agent"
-              onAction={() => navigate("/run")}
-            />
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-              {runs.map((run) => (
-                <RunRow key={run.id} run={run} />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Agent roster — right 40% */}
-        <div>
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "12px",
-            paddingBottom: "8px",
-            borderBottom: "1px solid var(--border-dim)",
-          }}>
-            <span style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-              Agent Roster
-            </span>
-            <button
-              onClick={() => navigate("/agents")}
-              style={{ background: "none", border: "none", color: "var(--blue)", fontSize: "11px", cursor: "pointer", padding: 0 }}
-            >
-              View all →
-            </button>
-          </div>
-
-          {loading ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {[0, 1, 2, 3].map((i) => <SkeletonBlock key={i} height={42} style={{ borderRadius: "var(--radius)" }} />)}
-            </div>
-          ) : depts.length === 0 ? (
-            <EmptyState
-              icon={<Bot size={22} />}
-              title="No agents found"
-              body=".claude/agents/ is empty."
-              action="Generate agents"
-              onAction={() => navigate("/generate")}
-            />
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-              {depts.map(([dept, deptAgents]) => (
-                <DeptRow
-                  key={dept}
-                  dept={dept}
-                  agents={deptAgents}
-                  onClick={() => navigate("/agents")}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Sub-components ─────────────────────────────────────────────────────────────
-
 function QuickAction({
   icon,
   label,
@@ -411,7 +155,7 @@ function QuickAction({
 }: {
   icon: React.ReactNode;
   label: string;
-  shortcut: string;
+  shortcut?: string;
   primary?: boolean;
   onClick: () => void;
 }) {
@@ -423,20 +167,21 @@ function QuickAction({
     >
       {icon}
       <span>{label}</span>
-      <span style={{
-        fontSize: "10px",
-        opacity: 0.55,
-        marginLeft: "2px",
-        fontFamily: "var(--font)",
-      }}>
-        {shortcut}
-      </span>
+      {shortcut && (
+        <span style={{
+          fontSize: "10px",
+          opacity: 0.55,
+          marginLeft: "2px",
+          fontFamily: "var(--font)",
+        }}>
+          {shortcut}
+        </span>
+      )}
     </button>
   );
 }
 
 function RunRow({ run }: { run: Run }) {
-  const durationMs = run.created_at;
   return (
     <div style={{
       display: "flex",
@@ -463,7 +208,7 @@ function RunRow({ run }: { run: Run }) {
       </div>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, flexShrink: 0 }}>
         <span style={{ fontSize: "10px", color: "var(--text-dimmer)" }}>
-          {formatRelativeTime(durationMs)}
+          {formatRelativeTime(run.created_at)}
         </span>
         <span style={{ fontSize: "10px", color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>
           {run.id}
@@ -523,33 +268,570 @@ function DeptRow({
   );
 }
 
-function EmptyState({
-  icon,
-  title,
-  body,
-  action,
-  onAction,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  body: string;
-  action: string;
-  onAction: () => void;
+// ── Folder picker section ────────────────────────────────────────────────────
+
+function FolderPickerSection({ info, onFolderChanged }: {
+  info: ProjectInfo | null;
+  onFolderChanged: () => void;
 }) {
+  const [showPathInput, setShowPathInput] = useState(false);
+  const [pathValue, setPathValue] = useState("");
+  const [pathError, setPathError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleChangeFolderClick = async () => {
+    if (window.studio?.pickFolder) {
+      const picked = await window.studio.pickFolder();
+      if (!picked) return;
+      await activateFolder(picked);
+    } else {
+      setShowPathInput(true);
+      setPathValue("");
+      setPathError(null);
+    }
+  };
+
+  const activateFolder = async (dir: string) => {
+    setSubmitting(true);
+    setPathError(null);
+    try {
+      const createRes = await fetch("/api/workspaces", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dir }),
+      });
+      if (!createRes.ok) {
+        const d = await createRes.json() as { error?: string };
+        setPathError(d.error ?? "Invalid path");
+        setSubmitting(false);
+        return;
+      }
+      const created = await createRes.json() as { id?: string };
+      if (created.id) {
+        await fetch(`/api/workspaces/${created.id}/activate`, { method: "POST" });
+      }
+      window.location.reload();
+    } catch {
+      setPathError("Could not reach server");
+      setSubmitting(false);
+    }
+  };
+
+  const handlePathSubmit = () => {
+    const trimmed = pathValue.trim();
+    if (!trimmed) return;
+    void activateFolder(trimmed);
+  };
+
+  return (
+    <div style={{ marginBottom: "28px" }}>
+      {/* Studio label */}
+      <div style={{
+        fontSize: "10px",
+        color: "var(--text-dimmer)",
+        textTransform: "uppercase",
+        letterSpacing: "0.1em",
+        marginBottom: "8px",
+      }}>
+        hashmark studio
+      </div>
+
+      {/* Project name + path row */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px" }}>
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{
+            fontSize: "22px",
+            fontWeight: 700,
+            letterSpacing: "-0.02em",
+            color: "var(--text)",
+            marginBottom: "4px",
+            lineHeight: 1.2,
+          }}>
+            {info == null ? <SkeletonLine width={180} height={22} /> : (info.projectName || "Project")}
+          </h1>
+          {info && (
+            <div style={{
+              fontSize: "12px",
+              color: "var(--text-dimmer)",
+              fontFamily: "var(--font)",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              maxWidth: "460px",
+            }}>
+              {info.projectDir}
+            </div>
+          )}
+        </div>
+
+        <button
+          className="btn"
+          style={{ flexShrink: 0, fontSize: "11px", marginTop: "2px" }}
+          onClick={() => void handleChangeFolderClick()}
+        >
+          <FolderIcon size={12} />
+          Change Folder
+        </button>
+      </div>
+
+      {/* Inline path input (web fallback) */}
+      {showPathInput && (
+        <div style={{
+          marginTop: "12px",
+          display: "flex",
+          gap: "8px",
+          alignItems: "center",
+        }}>
+          <input
+            type="text"
+            value={pathValue}
+            autoFocus
+            placeholder="/path/to/project"
+            onChange={(e) => { setPathValue(e.target.value); setPathError(null); }}
+            onKeyDown={(e) => { if (e.key === "Enter") handlePathSubmit(); if (e.key === "Escape") setShowPathInput(false); }}
+            style={{
+              flex: 1,
+              background: "var(--bg-3)",
+              border: `1px solid ${pathError ? "var(--red)" : "var(--border)"}`,
+              color: "var(--text)",
+              fontFamily: "var(--font)",
+              fontSize: "12px",
+              padding: "7px 12px",
+              borderRadius: "var(--radius)",
+              outline: "none",
+            }}
+          />
+          <button
+            className="btn btn-primary"
+            style={{ fontSize: "11px", padding: "0 14px" }}
+            disabled={submitting || !pathValue.trim()}
+            onClick={handlePathSubmit}
+          >
+            {submitting ? "Opening..." : "Open"}
+          </button>
+          <button
+            className="btn"
+            style={{ fontSize: "11px" }}
+            onClick={() => setShowPathInput(false)}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+      {pathError && (
+        <div style={{ marginTop: "6px", fontSize: "11px", color: "var(--red)" }}>{pathError}</div>
+      )}
+    </div>
+  );
+}
+
+// ── No-agents empty state ────────────────────────────────────────────────────
+
+function NoAgentsEmptyState({ onGenerate }: { onGenerate: () => void }) {
   return (
     <div style={{
-      background: "var(--bg-2)",
-      border: "1px dashed var(--border)",
-      borderRadius: "var(--radius)",
-      padding: "28px 20px",
+      border: "1px dashed rgba(255,255,255,0.1)",
+      borderRadius: "8px",
+      minHeight: "180px",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "32px 24px",
+      marginBottom: "28px",
       textAlign: "center",
     }}>
-      <div style={{ color: "var(--text-dimmer)", marginBottom: "10px", display: "flex", justifyContent: "center" }}>
-        {icon}
+      <div style={{ fontSize: "28px", marginBottom: "12px", lineHeight: 1 }}>
+        <FolderIcon size={28} color="var(--text-dimmer)" />
       </div>
-      <div style={{ fontSize: "13px", color: "var(--text-dim)", marginBottom: "4px" }}>{title}</div>
-      <div style={{ fontSize: "11px", color: "var(--text-dimmer)", marginBottom: "14px" }}>{body}</div>
-      <button className="btn btn-primary" onClick={onAction}>{action}</button>
+      <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-dim)", marginBottom: "4px" }}>
+        No agents found
+      </div>
+      <div style={{ fontSize: "12px", color: "var(--text-dimmer)", marginBottom: "18px" }}>
+        .claude/agents/ is empty
+      </div>
+      <button className="btn btn-primary" onClick={onGenerate}>
+        &gt; GENERATE AGENTS
+      </button>
+    </div>
+  );
+}
+
+// ── Recent projects ──────────────────────────────────────────────────────────
+
+function RecentProjectsSection() {
+  const [recent, setRecent] = useState<RecentProject[]>([]);
+  const [activating, setActivating] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRecent(loadRecentProjects());
+  }, []);
+
+  if (recent.length === 0) return null;
+
+  const handleOpen = async (proj: RecentProject) => {
+    setActivating(proj.path);
+    try {
+      const createRes = await fetch("/api/workspaces", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dir: proj.path }),
+      });
+      if (createRes.ok) {
+        const created = await createRes.json() as { id?: string };
+        if (created.id) {
+          await fetch(`/api/workspaces/${created.id}/activate`, { method: "POST" });
+        }
+      }
+      window.location.reload();
+    } catch {
+      setActivating(null);
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: "28px" }}>
+      <SectionHeader>Recent Projects</SectionHeader>
+      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+        {recent.map((proj) => (
+          <button
+            key={proj.path}
+            onClick={() => void handleOpen(proj)}
+            disabled={activating === proj.path}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "9px 12px",
+              background: "transparent",
+              border: "1px solid transparent",
+              borderRadius: "var(--radius)",
+              cursor: activating === proj.path ? "wait" : "pointer",
+              textAlign: "left",
+              width: "100%",
+              opacity: activating === proj.path ? 0.6 : 1,
+              transition: "background 0.1s, border-color 0.1s",
+            }}
+            onMouseEnter={(e) => {
+              if (activating !== proj.path) {
+                e.currentTarget.style.background = "var(--bg-2)";
+                e.currentTarget.style.borderColor = "var(--border-dim)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.borderColor = "transparent";
+            }}
+          >
+            <FolderIcon size={14} color="var(--text-dimmer)" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "var(--text)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}>
+                {proj.name}
+              </div>
+              <div style={{
+                fontSize: "11px",
+                color: "var(--text-dimmer)",
+                fontFamily: "var(--font)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                marginTop: "1px",
+              }}>
+                {proj.path}
+              </div>
+            </div>
+            <div style={{ fontSize: "11px", color: "var(--text-dimmer)", flexShrink: 0, whiteSpace: "nowrap" }}>
+              {formatRelativeTime(proj.lastOpened)}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Stat cards (has-agents state) ────────────────────────────────────────────
+
+function StatCards({
+  loading,
+  agents,
+  snapshot,
+  staleness,
+  runs,
+  runsLoading,
+  onViewHistory,
+}: {
+  loading: boolean;
+  agents: Agent[];
+  snapshot: ScanSnapshot | null;
+  staleness: Staleness | null;
+  runs: Run[];
+  runsLoading: boolean;
+  onViewHistory: () => void;
+}) {
+  const deptCount = new Set(agents.map((a) => a.department)).size;
+  const lastScanAt = snapshot?.scannedAt ?? null;
+  const avgComplexity = snapshot?.aiReadiness != null ? `${snapshot.aiReadiness}%` : "—";
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "24px" }}>
+      {/* Agents */}
+      <div style={{ background: "var(--bg-2)", border: "1px solid var(--border-dim)", borderRadius: "var(--radius)", padding: "16px" }}>
+        <div style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>
+          Agents
+        </div>
+        {loading ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <SkeletonLine width={60} height={22} />
+            <SkeletonLine width={80} height={11} />
+          </div>
+        ) : (
+          <>
+            <div style={{ fontSize: "22px", fontWeight: 700, color: "var(--text)", letterSpacing: "-0.02em", marginBottom: "4px" }}>
+              {agents.length}
+            </div>
+            <div style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
+              {deptCount} department{deptCount !== 1 ? "s" : ""}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Context health */}
+      <div style={{ background: "var(--bg-2)", border: "1px solid var(--border-dim)", borderRadius: "var(--radius)", padding: "16px" }}>
+        <div style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>
+          Context Health
+        </div>
+        {loading ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <SkeletonLine width={80} height={20} />
+            <SkeletonLine width={100} height={11} />
+          </div>
+        ) : (
+          <>
+            <div style={{ marginBottom: "6px" }}>
+              <FreshnessTag staleness={staleness} />
+            </div>
+            <div style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
+              {lastScanAt ? `Scanned ${formatRelativeTime(lastScanAt)}` : "Never scanned"}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Project size */}
+      <div style={{ background: "var(--bg-2)", border: "1px solid var(--border-dim)", borderRadius: "var(--radius)", padding: "16px" }}>
+        <div style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>
+          Project Size
+        </div>
+        {loading ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <SkeletonLine width={100} height={20} />
+            <SkeletonLine width={80} height={11} />
+          </div>
+        ) : snapshot ? (
+          <>
+            <div style={{ fontSize: "22px", fontWeight: 700, color: "var(--text)", letterSpacing: "-0.02em", marginBottom: "4px" }}>
+              {snapshot.totalFiles.toLocaleString()}
+              <span style={{ fontSize: "12px", fontWeight: 400, color: "var(--text-dimmer)", marginLeft: "6px" }}>files</span>
+            </div>
+            <div style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
+              AI Readiness: <span style={{ color: "var(--accent)", fontWeight: 600 }}>{avgComplexity}</span>
+            </div>
+          </>
+        ) : (
+          <div style={{ fontSize: "12px", color: "var(--text-dimmer)" }}>Run a scan to see stats</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ───────────────────────────────────────────────────────────
+
+export default function Home() {
+  const navigate = useNavigate();
+  const [info, setInfo] = useState<ProjectInfo | null>(null);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [runs, setRuns] = useState<Run[]>([]);
+  const [snapshot, setSnapshot] = useState<ScanSnapshot | null>(null);
+  const [staleness, setStaleness] = useState<Staleness | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [runsLoading, setRunsLoading] = useState(true);
+
+  const fetchData = useCallback(() => {
+    Promise.all([
+      fetch("/api/info").then((r) => r.json()),
+      fetch("/api/agents").then((r) => r.json()),
+      fetch("/api/scan/history").then((r) => r.json()),
+      fetch("/api/scan/staleness").then((r) => r.json()).catch(() => null),
+    ]).then(([infoData, agentsData, historyData, stalenessData]) => {
+      setInfo(infoData as ProjectInfo);
+      setAgents((agentsData as { agents?: Agent[] }).agents ?? []);
+      const snaps: ScanSnapshot[] = (historyData as { snapshots?: ScanSnapshot[] }).snapshots ?? [];
+      setSnapshot(snaps[0] ?? null);
+      setStaleness(stalenessData as Staleness | null);
+    }).finally(() => setLoading(false));
+
+    fetch("/api/runs")
+      .then((r) => r.json())
+      .then((d) => setRuns(((d as { runs?: Run[] }).runs ?? []).slice(0, 5)))
+      .catch(() => {})
+      .finally(() => setRunsLoading(false));
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const byDept = agents.reduce<Record<string, Agent[]>>((acc, a) => {
+    if (!acc[a.department]) acc[a.department] = [];
+    acc[a.department].push(a);
+    return acc;
+  }, {});
+  const depts = Object.entries(byDept).sort((a, b) => b[1].length - a[1].length);
+
+  const hasAgents = !loading && agents.length > 0;
+  const lastRunAt = runs[0]?.created_at ?? null;
+
+  return (
+    <div style={{ padding: "32px 24px", maxWidth: "680px", margin: "0 auto" }}>
+
+      {/* Folder picker header */}
+      <FolderPickerSection info={info} onFolderChanged={fetchData} />
+
+      {/* State 1: No agents */}
+      {!loading && agents.length === 0 && (
+        <>
+          <NoAgentsEmptyState onGenerate={() => navigate("/generate")} />
+
+          <RecentProjectsSection />
+
+          <div style={{ marginBottom: "8px" }}>
+            <SectionHeader>Start</SectionHeader>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <button className="btn btn-primary" onClick={() => navigate("/generate")}>
+                &gt; GENERATE AGENTS
+              </button>
+              <button className="btn" onClick={() => navigate("/agents")}>
+                &#9647; VIEW AGENTS
+              </button>
+              <button className="btn" onClick={() => navigate("/generate")}>
+                @ RUN SCAN
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* State 2: Has agents (compact) */}
+      {hasAgents && (
+        <>
+          <StatCards
+            loading={loading}
+            agents={agents}
+            snapshot={snapshot}
+            staleness={staleness}
+            runs={runs}
+            runsLoading={runsLoading}
+            onViewHistory={() => navigate("/history")}
+          />
+
+          {/* Quick actions */}
+          <div style={{ marginBottom: "28px" }}>
+            <SectionHeader>Quick Actions</SectionHeader>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <QuickAction icon={<Zap size={13} />} label="Scan project" shortcut="⌘S" primary onClick={() => navigate("/generate")} />
+              <QuickAction icon={<Play size={13} />} label="Run agent" shortcut="⌘R" onClick={() => navigate("/run")} />
+              <QuickAction icon={<GitBranch size={13} />} label="Launch swarm" shortcut="⌘W" onClick={() => navigate("/swarm")} />
+              <QuickAction icon={<History size={13} />} label="View history" shortcut="⌘H" onClick={() => navigate("/history")} />
+            </div>
+          </div>
+
+          {/* Bottom split: recent runs + agent roster */}
+          <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: "20px", marginBottom: "28px" }}>
+            <div>
+              <SectionHeader>Recent Runs</SectionHeader>
+              {runsLoading ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {[0, 1, 2].map((i) => (
+                    <SkeletonBlock key={i} height={48} style={{ borderRadius: "var(--radius)" }} />
+                  ))}
+                </div>
+              ) : runs.length === 0 ? (
+                <div style={{
+                  background: "var(--bg-2)",
+                  border: "1px dashed var(--border)",
+                  borderRadius: "var(--radius)",
+                  padding: "20px",
+                  textAlign: "center",
+                  fontSize: "12px",
+                  color: "var(--text-dimmer)",
+                }}>
+                  No runs yet
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                  {runs.map((run) => <RunRow key={run.id} run={run} />)}
+                </div>
+              )}
+              {lastRunAt && (
+                <button
+                  onClick={() => navigate("/history")}
+                  style={{ background: "none", border: "none", color: "var(--blue)", fontSize: "11px", cursor: "pointer", padding: "8px 0 0", display: "block" }}
+                >
+                  View all runs →
+                </button>
+              )}
+            </div>
+
+            <div>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "12px",
+                paddingBottom: "8px",
+                borderBottom: "1px solid var(--border-dim)",
+              }}>
+                <span style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                  Agent Roster
+                </span>
+                <button
+                  onClick={() => navigate("/agents")}
+                  style={{ background: "none", border: "none", color: "var(--blue)", fontSize: "11px", cursor: "pointer", padding: 0 }}
+                >
+                  View all →
+                </button>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                {depts.map(([dept, deptAgents]) => (
+                  <DeptRow key={dept} dept={dept} agents={deptAgents} onClick={() => navigate("/agents")} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <RecentProjectsSection />
+        </>
+      )}
+
+      {/* Loading skeleton state */}
+      {loading && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+            {[0, 1, 2].map((i) => <SkeletonBlock key={i} height={80} style={{ borderRadius: "var(--radius)" }} />)}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[0, 1, 2, 3].map((i) => <SkeletonBlock key={i} height={32} style={{ borderRadius: "var(--radius)", width: 100 }} />)}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
