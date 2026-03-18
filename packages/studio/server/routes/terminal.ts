@@ -8,8 +8,7 @@ import type { IncomingMessage, Server } from "http";
 import os from "os";
 import { mkdtempSync, writeFileSync, rmSync } from "fs";
 import { join } from "path";
-
-type WebSocketMessage = { type: "input"; data: string } | { type: "resize"; cols: number; rows: number };
+import { decodeTerminalMsg } from "../../shared/ws-contracts.js";
 
 // OSC 633 sequence constants (VSCode shell integration protocol)
 // A=prompt start, B=prompt end, C=command start, D=command done, E=command line, P=property
@@ -182,21 +181,18 @@ export function attachTerminalWS(httpServer: Server, projectDir: string) {
         try { ws.close(); } catch {}
       });
 
-      // WebSocket → PTY
+      // WebSocket → PTY (typed via shared ws-contracts)
       ws.on("message", (raw) => {
         const msg = raw.toString();
-        try {
-          const parsed = JSON.parse(msg) as WebSocketMessage;
-          if (parsed.type === "resize" && parsed.cols && parsed.rows) {
-            proc.resize(parsed.cols, parsed.rows);
-            return;
-          }
-          if (parsed.type === "input" && parsed.data) {
-            proc.write(parsed.data);
-            return;
-          }
-        } catch {}
-        proc.write(msg);
+        const parsed = decodeTerminalMsg(msg);
+        if (parsed?.type === "resize") {
+          proc.resize(parsed.cols, parsed.rows);
+        } else if (parsed?.type === "input") {
+          proc.write(parsed.data);
+        } else {
+          // Fallback: treat as raw input (xterm sends raw keystrokes as plain strings)
+          proc.write(msg);
+        }
       });
 
       ws.on("close", () => {

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
+import { encodeTerminalMsg } from "../../../../shared/ws-contracts";
 
 interface TerminalProps {
   tabId?: string;
@@ -140,7 +141,7 @@ export default function TerminalPane({ tabId, onCwdChange }: TerminalProps) {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      ws.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
+      ws.send(encodeTerminalMsg({ type: "resize", cols: term.cols, rows: term.rows }));
     };
 
     ws.onmessage = (evt) => {
@@ -157,14 +158,14 @@ export default function TerminalPane({ tabId, onCwdChange }: TerminalProps) {
 
     term.onData((data) => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: "input", data }));
+        ws.send(encodeTerminalMsg({ type: "input", data }));
       }
     });
 
     const observer = new ResizeObserver(() => {
       fit.fit();
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
+        ws.send(encodeTerminalMsg({ type: "resize", cols: term.cols, rows: term.rows }));
       }
     });
     observer.observe(containerRef.current);

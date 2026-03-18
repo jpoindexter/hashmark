@@ -10,6 +10,6 @@
     "resolveJsonModule": true,
     "declaration": true
   },
-  "include": ["bin.ts", "server/**/*.ts", "electron/**/*.ts"],
+  "include": ["bin.ts", "server/**/*.ts", "electron/**/*.ts", "shared/**/*.ts"],
   "exclude": ["node_modules", "dist", "client"]
 }
