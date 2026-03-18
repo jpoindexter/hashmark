@@ -300,6 +300,45 @@ function StreamingBubble({ text }: { text: string }) {
   );
 }
 
+const SUGGESTIONS = [
+  "Explain the architecture of this project",
+  "Review recent changes for issues",
+  "Write tests for the main module",
+  "Commit staged changes with a message",
+];
+
+function SuggestionItem({ text }: { text: string }) {
+  const [hovered, setHovered] = useState(false);
+
+  const handleClick = () => {
+    window.dispatchEvent(new CustomEvent("studio:suggest", { detail: { text } }));
+  };
+
+  return (
+    <div
+      onClick={handleClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "6px 10px",
+        borderRadius: "var(--radius)",
+        background: hovered ? "var(--bg-2)" : "transparent",
+        cursor: "pointer",
+        transition: "background 0.1s",
+        fontSize: 12,
+        fontFamily: "var(--font)",
+        userSelect: "none",
+      }}
+    >
+      <span style={{ color: "var(--accent)", flexShrink: 0 }}>&gt;</span>
+      <span style={{ color: "var(--text-dim)" }}>{text}</span>
+    </div>
+  );
+}
+
 function EmptyState() {
   return (
     <div style={{
@@ -308,31 +347,69 @@ function EmptyState() {
       flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
-      color: "var(--text-dimmer)",
-      gap: 12,
       padding: 32,
     }}>
       <div style={{
-        fontFamily: "var(--font)",
-        fontSize: 13,
-        color: "var(--text-dim)",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         gap: 0,
       }}>
-        Start a conversation
-        <span style={{
-          display: "inline-block",
-          width: 8,
-          height: 14,
-          background: "var(--accent)",
-          marginLeft: 4,
-          verticalAlign: "text-bottom",
-          animation: "cursor-blink 1s step-end infinite",
+        {/* Model indicator */}
+        <div style={{
+          fontSize: 11,
+          color: "var(--text-dimmer)",
+          fontFamily: "var(--font)",
+          marginBottom: 16,
+          display: "flex",
+          alignItems: "center",
+          gap: 5,
+        }}>
+          <span>✦</span>
+          <span>Sonnet 4.6</span>
+        </div>
+
+        {/* Main prompt text */}
+        <div style={{
+          fontSize: 13,
+          color: "var(--text-dim)",
+          fontFamily: "var(--font-ui)",
+          textAlign: "center",
+          lineHeight: 1.6,
+          marginBottom: 16,
+        }}>
+          Ask me to build, fix, or explain anything.
+          <br />
+          I can read and edit files, run commands,
+          <br />
+          and work through complex tasks.
+        </div>
+
+        {/* Separator */}
+        <div style={{
+          width: 240,
+          height: 1,
+          background: "var(--border-dim)",
+          margin: "16px auto",
         }} />
-      </div>
-      <div style={{ fontSize: 11, color: "var(--text-dimmer)", textAlign: "center", maxWidth: 280, lineHeight: 1.7 }}>
-        Ask about your codebase, request changes, or run /commands.
+
+        {/* Suggestions */}
+        <div style={{ width: 240 }}>
+          <div style={{
+            fontSize: 10,
+            color: "var(--text-dimmer)",
+            fontFamily: "var(--font)",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            marginBottom: 8,
+            paddingLeft: 10,
+          }}>
+            Suggested
+          </div>
+          {SUGGESTIONS.map((text) => (
+            <SuggestionItem key={text} text={text} />
+          ))}
+        </div>
       </div>
     </div>
   );
