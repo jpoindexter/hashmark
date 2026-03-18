@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ScanProgress, { type ScanResult, type ScanDelta } from "../components/ScanProgress";
+import { SkeletonCard, SkeletonLine } from "../components/Skeleton";
 
 interface Agent {
   id: string;
@@ -94,7 +95,7 @@ export default function Home() {
           hashmark studio
         </div>
         <h1 style={{ fontSize: "22px", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>
-          {loading ? "..." : (info?.projectName ?? "Project")}
+          {loading ? <SkeletonLine width={180} height={22} /> : (info?.projectName ?? "Project")}
         </h1>
         {info && (
           <div style={{ fontSize: "11px", color: "var(--text-dimmer)", marginTop: "6px" }}>
@@ -110,8 +111,21 @@ export default function Home() {
         <StatCard label="Status" value={hasAgents ? "ACTIVE" : "EMPTY"} color={hasAgents ? "var(--accent)" : "var(--text-dimmer)"} />
       </div>
 
-      {/* Department breakdown */}
-      {hasAgents ? (
+      {/* Department breakdown — skeleton while loading */}
+      {loading ? (
+        <>
+          <div style={{
+            fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase",
+            letterSpacing: "0.1em", marginBottom: "12px", paddingBottom: "8px",
+            borderBottom: "1px solid var(--border-dim)",
+          }}>
+            Agent Company
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "12px", marginBottom: "32px" }}>
+            {[0, 1, 2, 3].map(i => <SkeletonCard key={i} />)}
+          </div>
+        </>
+      ) : hasAgents ? (
         <>
           <SectionHeader>Agent Company</SectionHeader>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "12px", marginBottom: "32px" }}>

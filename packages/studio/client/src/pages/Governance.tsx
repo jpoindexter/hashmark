@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Shield } from "lucide-react";
+import { SkeletonLine, SkeletonBlock } from "../components/Skeleton";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -293,7 +294,36 @@ function PoliciesTab() {
       )}
 
       {loading ? (
-        <div style={{ color: "var(--text-dimmer)", fontSize: 12, padding: "24px 0" }}>Loading…</div>
+        <div style={{
+          border: "1px solid var(--border-dim)",
+          overflow: "hidden",
+        }}>
+          {/* header row */}
+          <div style={{
+            display: "grid", gridTemplateColumns: "1fr 80px 60px 60px 120px 32px",
+            padding: "6px 10px", background: "var(--bg-3)",
+            borderBottom: "1px solid var(--border-dim)",
+          }}>
+            <SkeletonLine width={30} height={8} />
+          </div>
+          {[0, 1, 2].map(i => (
+            <div key={i} style={{
+              display: "grid", gridTemplateColumns: "1fr 80px 60px 60px 120px 32px",
+              alignItems: "center", padding: "10px 10px", gap: 8,
+              borderBottom: i < 2 ? "1px solid var(--border-dim)" : "none",
+            }}>
+              <div>
+                <SkeletonLine height={11} width={`${50 + i * 20}%`} style={{ marginBottom: 5 }} />
+                <SkeletonLine height={9} width="70%" />
+              </div>
+              <SkeletonLine height={10} width={50} />
+              <SkeletonLine height={10} width={20} />
+              <SkeletonBlock width={32} height={16} />
+              <SkeletonLine height={10} width={90} />
+              <SkeletonLine height={10} width={12} />
+            </div>
+          ))}
+        </div>
       ) : policies.length === 0 ? (
         <div style={{
           padding: "40px 0", textAlign: "center",
@@ -488,7 +518,28 @@ function ActionLogTab() {
 
       {/* Table */}
       {loading && actions.length === 0 ? (
-        <div style={{ color: "var(--text-dimmer)", fontSize: 12, padding: "24px 0" }}>Loading…</div>
+        <div style={{ border: "1px solid var(--border-dim)", overflow: "hidden" }}>
+          <div style={{
+            display: "grid", gridTemplateColumns: "160px 120px 100px 1fr 80px",
+            padding: "6px 10px", background: "var(--bg-3)",
+            borderBottom: "1px solid var(--border-dim)",
+          }}>
+            <SkeletonLine width={60} height={8} />
+          </div>
+          {[0, 1, 2, 3, 4].map(i => (
+            <div key={i} style={{
+              display: "grid", gridTemplateColumns: "160px 120px 100px 1fr 80px",
+              alignItems: "center", padding: "9px 10px", gap: 8,
+              borderBottom: i < 4 ? "1px solid var(--border-dim)" : "none",
+            }}>
+              <SkeletonLine height={10} width={100} />
+              <SkeletonLine height={10} width={70} />
+              <SkeletonBlock width={60} height={18} />
+              <SkeletonLine height={10} width={`${40 + (i % 3) * 20}%`} />
+              <SkeletonBlock width={52} height={18} />
+            </div>
+          ))}
+        </div>
       ) : actions.length === 0 ? (
         <div style={{ padding: "40px 0", textAlign: "center", color: "var(--text-dimmer)", fontSize: 12 }}>
           No actions logged yet.
@@ -684,7 +735,29 @@ function ActionJournalTab() {
       </div>
 
       {loading && events.length === 0 ? (
-        <div style={{ color: "var(--text-dimmer)", fontSize: 12, padding: "24px 0" }}>Loading…</div>
+        <div style={{ border: "1px solid var(--border-dim)", overflow: "hidden" }}>
+          <div style={{
+            display: "grid", gridTemplateColumns: "80px 100px 100px 100px 1fr 80px",
+            padding: "6px 10px", background: "var(--bg-3)",
+            borderBottom: "1px solid var(--border-dim)",
+          }}>
+            <SkeletonLine width={30} height={8} />
+          </div>
+          {[0, 1, 2, 3, 4].map(i => (
+            <div key={i} style={{
+              display: "grid", gridTemplateColumns: "80px 100px 100px 100px 1fr 80px",
+              alignItems: "center", padding: "9px 10px", gap: 8,
+              borderBottom: i < 4 ? "1px solid var(--border-dim)" : "none",
+            }}>
+              <SkeletonLine height={10} width={50} />
+              <SkeletonLine height={10} width={70} />
+              <SkeletonLine height={10} width={60} />
+              <SkeletonBlock width={72} height={18} />
+              <SkeletonLine height={10} width={`${35 + (i % 4) * 15}%`} />
+              <SkeletonBlock width={52} height={18} />
+            </div>
+          ))}
+        </div>
       ) : events.length === 0 ? (
         <div style={{ padding: "40px 0", textAlign: "center", color: "var(--text-dimmer)", fontSize: 12, fontFamily: "var(--font)" }}>
           No actions logged yet.

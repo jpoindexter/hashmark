@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { DiffPanel } from "../components/DiffPanel.tsx";
+import { SkeletonLine, SkeletonBlock } from "../components/Skeleton";
 
 interface AgentRun {
   id: string;
@@ -139,7 +140,42 @@ export default function History() {
           </div>
         </div>
 
-        {loading && <div style={monoMuted}>Loading...</div>}
+        {loading && (
+          <div style={{
+            border: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+            borderRadius: "var(--radius, 0)",
+            overflow: "hidden",
+          }}>
+            {/* Table header */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 120px 100px 90px",
+              padding: "6px 14px",
+              background: "var(--bg-3, #27272a)",
+              borderBottom: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+            }}>
+              <SkeletonLine width={40} height={8} />
+            </div>
+            {[0, 1, 2, 3, 4].map(i => (
+              <div
+                key={i}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 120px 100px 90px",
+                  alignItems: "center",
+                  padding: "10px 14px",
+                  gap: 8,
+                  borderBottom: i < 4 ? "1px solid var(--border-dim, rgba(255,255,255,0.06))" : "none",
+                }}
+              >
+                <SkeletonLine height={10} width={`${60 + (i % 3) * 15}%`} />
+                <SkeletonLine height={10} width={80} />
+                <SkeletonBlock width={56} height={18} />
+                <SkeletonLine height={10} width={60} />
+              </div>
+            ))}
+          </div>
+        )}
         {error && (
           <div style={{ ...monoMuted, color: "var(--red, #ef4444)" }}>
             Failed to load runs: {error}
