@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Plus, Send, Square } from "lucide-react";
+import ProviderSelector from "./ProviderSelector.tsx";
 
 // ─── Slash command registry ───────────────────────────────────────────────────
 
@@ -862,7 +863,7 @@ export default function ChatInputBar({
           display: "flex", alignItems: "center", padding: "4px 6px 6px", gap: 0,
           borderTop: "1px solid var(--border-dim)",
         }}>
-          <ModelPill selected={selectedModel} onChange={setSelectedModel} />
+          <ProviderSelector />
           <ToolbarToggle active={thinking} onClick={() => setThinking(v => !v)} icon={<span style={{ fontSize: 13, lineHeight: 1 }}>◐</span>} label="Thinking" />
           <ToolbarToggle active={planMode} onClick={() => setPlanMode(v => !v)} icon={<span style={{ fontSize: 11, lineHeight: 1 }}>▦</span>} label="Plan" />
           {terminalCwd && (

@@ -12,6 +12,8 @@ import { tmpdir, homedir } from "os";
 import { getDb } from "../db.js";
 import { loadScanContext } from "../context.js";
 import { analyzeSessionLoop } from "../lib/loop-detector.js";
+import { loadProviders } from "../lib/providers.js";
+import { streamAIResponse } from "../lib/ai-stream.js";
 
 /**
  * Expand @file mentions in a message.
@@ -301,8 +303,9 @@ export function sessionsRoutes(projectDir: string) {
     // Build the full prompt with conversation history
     const fullPrompt = buildConversationPrompt(history, expandedMessage, effectiveSystemPrompt);
 
-    const claudeBin = findClaudeBin(projectDir);
-    const mcpConfigPath = resolveMcpConfig(projectDir);
+    const providersStore = loadProviders(dataDir);
+    const activeProvider = providersStore.providers.find(p => p.id === providersStore.active);
+    const useApiStream = providersStore.active !== "claude" || (activeProvider?.apiKey && activeProvider.apiKey.length > 0);
 
     const stream = new ReadableStream({
       start(controller) {
@@ -314,87 +317,152 @@ export function sessionsRoutes(projectDir: string) {
         db.prepare("UPDATE sessions SET status = 'streaming', updated_at = ? WHERE id = ?")
           .run(Date.now(), sessionId);
 
-        const claudeArgs = mcpConfigPath
-          ? ["--mcp-config", mcpConfigPath, "--print", fullPrompt]
-          : ["--print", fullPrompt];
+        if (useApiStream && activeProvider) {
+          // ── Direct API stream path ──────────────────────────────────────────
+          const apiMessages = history.map(m => ({
+            role: m.role as "user" | "assistant",
+            content: m.content,
+          }));
+          apiMessages.push({ role: "user", content: expandedMessage });
 
-        const proc = spawn(
-          claudeBin,
-          claudeArgs,
-          {
+          let fullText = "";
+          let aborted = false;
+
+          activeProcesses.set(sessionId, {
+            kill: () => { aborted = true; },
+          });
+
+          streamAIResponse({
+            provider: providersStore.active,
+            model: providersStore.model,
+            apiKey: activeProvider.apiKey,
+            baseUrl: activeProvider.baseUrl,
+            messages: apiMessages,
+            systemPrompt: effectiveSystemPrompt,
+            onChunk: (text) => {
+              if (aborted) return;
+              fullText += text;
+              send({ type: "text", text });
+            },
+            onDone: () => {
+              activeProcesses.delete(sessionId);
+              const savedText = fullText.trim() || "[no response]";
+              const msgInputEstimate = Math.ceil(body.message.length / 4);
+              const msgOutputEstimate = Math.ceil(savedText.length / 4);
+
+              db.prepare(`
+                INSERT INTO session_messages (id, session_id, role, content, input_tokens, output_tokens, created_at)
+                VALUES (?, ?, 'assistant', ?, ?, ?, ?)
+              `).run(randomUUID(), sessionId, savedText, msgInputEstimate, msgOutputEstimate, Date.now());
+
+              db.prepare(`
+                UPDATE sessions
+                SET status = 'idle',
+                    total_input_tokens = total_input_tokens + ?,
+                    total_output_tokens = total_output_tokens + ?,
+                    updated_at = ?
+                WHERE id = ?
+              `).run(msgInputEstimate, msgOutputEstimate, Date.now(), sessionId);
+
+              send({ type: "done", success: true });
+              controller.close();
+            },
+            onError: (err) => {
+              activeProcesses.delete(sessionId);
+              send({ type: "error", message: err.message });
+
+              db.prepare(`
+                INSERT INTO session_messages (id, session_id, role, content, created_at)
+                VALUES (?, ?, 'assistant', ?, ?)
+              `).run(randomUUID(), sessionId, `Error: ${err.message}`, Date.now());
+
+              db.prepare("UPDATE sessions SET status = 'idle', updated_at = ? WHERE id = ?")
+                .run(Date.now(), sessionId);
+
+              controller.close();
+            },
+          }).catch((err: unknown) => {
+            const msg = err instanceof Error ? err.message : String(err);
+            send({ type: "error", message: msg });
+            controller.close();
+          });
+
+        } else {
+          // ── Claude CLI fallback path ────────────────────────────────────────
+          const claudeBin = findClaudeBin(projectDir);
+          const mcpConfigPath = resolveMcpConfig(projectDir);
+
+          const claudeArgs = mcpConfigPath
+            ? ["--mcp-config", mcpConfigPath, "--print", fullPrompt]
+            : ["--print", fullPrompt];
+
+          const proc = spawn(claudeBin, claudeArgs, {
             cwd: projectDir,
             stdio: ["ignore", "pipe", "pipe"],
-            env: {
-              ...process.env,
-              CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS: "1",
-            },
-          }
-        );
+            env: { ...process.env, CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS: "1" },
+          });
 
-        activeProcesses.set(sessionId, { kill: () => proc.kill("SIGTERM") });
+          activeProcesses.set(sessionId, { kill: () => proc.kill("SIGTERM") });
 
-        let fullText = "";
-        let buffer = "";
+          let fullText = "";
+          let buffer = "";
 
-        proc.stdout.on("data", (chunk: Buffer) => {
-          const text = chunk.toString();
-          buffer += text;
-          fullText += text;
-          send({ type: "text", text });
-        });
+          proc.stdout.on("data", (chunk: Buffer) => {
+            const text = chunk.toString();
+            buffer += text;
+            fullText += text;
+            send({ type: "text", text });
+          });
 
-        proc.stderr.on("data", (chunk: Buffer) => {
-          const line = chunk.toString().trim();
-          // Ignore typical claude CLI status lines
-          if (line && !line.startsWith("╭") && !line.startsWith("│") && !line.startsWith("╰")) {
-            send({ type: "progress", message: line });
-          }
-        });
+          proc.stderr.on("data", (chunk: Buffer) => {
+            const line = chunk.toString().trim();
+            if (line && !line.startsWith("╭") && !line.startsWith("│") && !line.startsWith("╰")) {
+              send({ type: "progress", message: line });
+            }
+          });
 
-        proc.on("close", (code: number | null) => {
-          activeProcesses.delete(sessionId);
+          proc.on("close", (code: number | null) => {
+            activeProcesses.delete(sessionId);
 
-          const killed = code === null || code === 130 || code === 143;
-          const finalText = fullText.trim();
+            const killed = code === null || code === 130 || code === 143;
+            const finalText = fullText.trim();
+            const savedText = finalText || (killed ? "[interrupted]" : "[no response]");
+            const msgInputEstimate = Math.ceil(body.message.length / 4);
+            const msgOutputEstimate = Math.ceil(savedText.length / 4);
 
-          // Save assistant message with token estimates
-          const savedText = finalText || (killed ? "[interrupted]" : "[no response]");
-          const msgInputEstimate = Math.ceil(body.message.length / 4);
-          const msgOutputEstimate = Math.ceil(savedText.length / 4);
+            db.prepare(`
+              INSERT INTO session_messages (id, session_id, role, content, input_tokens, output_tokens, created_at)
+              VALUES (?, ?, 'assistant', ?, ?, ?, ?)
+            `).run(randomUUID(), sessionId, savedText, msgInputEstimate, msgOutputEstimate, Date.now());
 
-          db.prepare(`
-            INSERT INTO session_messages (id, session_id, role, content, input_tokens, output_tokens, created_at)
-            VALUES (?, ?, 'assistant', ?, ?, ?, ?)
-          `).run(randomUUID(), sessionId, savedText, msgInputEstimate, msgOutputEstimate, Date.now());
+            db.prepare(`
+              UPDATE sessions
+              SET status = 'idle',
+                  total_input_tokens = total_input_tokens + ?,
+                  total_output_tokens = total_output_tokens + ?,
+                  updated_at = ?
+              WHERE id = ?
+            `).run(msgInputEstimate, msgOutputEstimate, Date.now(), sessionId);
 
-          // Update session totals + status
-          db.prepare(`
-            UPDATE sessions
-            SET status = 'idle',
-                total_input_tokens = total_input_tokens + ?,
-                total_output_tokens = total_output_tokens + ?,
-                updated_at = ?
-            WHERE id = ?
-          `).run(msgInputEstimate, msgOutputEstimate, Date.now(), sessionId);
+            send({ type: "done", success: code === 0 || killed });
+            controller.close();
+          });
 
-          send({ type: "done", success: code === 0 || killed });
-          controller.close();
-        });
+          proc.on("error", (err: Error) => {
+            activeProcesses.delete(sessionId);
+            send({ type: "error", message: err.message });
 
-        proc.on("error", (err: Error) => {
-          activeProcesses.delete(sessionId);
-          send({ type: "error", message: err.message });
+            db.prepare(`
+              INSERT INTO session_messages (id, session_id, role, content, created_at)
+              VALUES (?, ?, 'assistant', ?, ?)
+            `).run(randomUUID(), sessionId, `Error: ${err.message}`, Date.now());
 
-          db.prepare(`
-            INSERT INTO session_messages (id, session_id, role, content, created_at)
-            VALUES (?, ?, 'assistant', ?, ?)
-          `).run(randomUUID(), sessionId, `Error: ${err.message}`, Date.now());
+            db.prepare("UPDATE sessions SET status = 'idle', updated_at = ? WHERE id = ?")
+              .run(Date.now(), sessionId);
 
-          db.prepare("UPDATE sessions SET status = 'idle', updated_at = ? WHERE id = ?")
-            .run(Date.now(), sessionId);
-
-          controller.close();
-        });
+            controller.close();
+          });
+        }
       },
     });
 
