@@ -47,7 +47,7 @@ __studio_precmd() {
   printf '\\033]633;P;Cwd=%s\\007' "$PWD"
 }
 trap '__studio_preexec' DEBUG
-PROMPT_COMMAND='__studio_precmd'${PROMPT_COMMAND:+"; $PROMPT_COMMAND"}
+PROMPT_COMMAND='__studio_precmd'\${PROMPT_COMMAND:+"; $PROMPT_COMMAND"}
 PS1=$'\\033]633;A\\007'$PS1$'\\033]633;B\\007'
 `;
 

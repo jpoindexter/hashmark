@@ -1,5 +1,50 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useReducer } from "react";
 import AgentCard from "../components/AgentCard.tsx";
+
+// ---------------------------------------------------------------------------
+// Agent run state machine (#74)
+// ---------------------------------------------------------------------------
+
+type RunStatus =
+  | "idle"        // no run in progress
+  | "starting"    // session created, waiting for first response byte
+  | "running"     // streaming text
+  | "done"        // clean finish
+  | "error"       // run ended with error
+  | "stopped"     // user-initiated stop
+  | "interrupted" // loop-detected auto-stop
+
+type RunAction =
+  | { type: "START" }
+  | { type: "FIRST_CHUNK" }
+  | { type: "DONE" }
+  | { type: "ERROR" }
+  | { type: "STOP" }
+  | { type: "INTERRUPT" }
+  | { type: "RESET" }
+
+const VALID_TRANSITIONS: Record<RunStatus, RunStatus[]> = {
+  idle:        ["starting"],
+  starting:    ["running", "error", "stopped"],
+  running:     ["done", "error", "stopped", "interrupted"],
+  done:        ["idle"],
+  error:       ["idle"],
+  stopped:     ["idle"],
+  interrupted: ["idle"],
+};
+
+function runStatusReducer(state: RunStatus, action: RunAction): RunStatus {
+  const next: RunStatus =
+    action.type === "START"        ? "starting" :
+    action.type === "FIRST_CHUNK"  ? "running" :
+    action.type === "DONE"         ? "done" :
+    action.type === "ERROR"        ? "error" :
+    action.type === "STOP"         ? "stopped" :
+    action.type === "INTERRUPT"    ? "interrupted" :
+    action.type === "RESET"        ? "idle" : state;
+
+  return VALID_TRANSITIONS[state].includes(next) ? next : state;
+}
 
 interface Agent {
   id: string;
@@ -31,9 +76,9 @@ export default function Agents() {
   const [tab, setTab] = useState<"edit" | "run" | "gov">("edit");
   const [runPrompt, setRunPrompt] = useState("");
   const [runModel, setRunModel] = useState("claude-sonnet-4-6");
-  const [running, setRunning] = useState(false);
   const [output, setOutput] = useState("");
-  const [runStatus, setRunStatus] = useState<"idle" | "running" | "done" | "error" | "stopped">("idle");
+  const [runStatus, dispatchRunStatus] = useReducer(runStatusReducer, "idle" as RunStatus);
+  const running = runStatus === "starting" || runStatus === "running";
   const [runMeta, setRunMeta] = useState<{ startedAt: number; durationMs?: number; wordCount?: number } | null>(null);
   const [loopDetected, setLoopDetected] = useState<{ count: number; pattern: string } | null>(null);
   const [modelOpen, setModelOpen] = useState(false);
@@ -92,6 +137,7 @@ export default function Agents() {
     setRunPrompt("");
     setLoopDetected(null);
     loopCountRef.current = 0;
+    dispatchRunStatus({ type: "RESET" });
   }
 
   async function saveAgent() {
@@ -113,9 +159,8 @@ export default function Agents() {
   async function runAgent() {
     if (!selected || !runPrompt.trim() || running) return;
 
-    setRunning(true);
+    dispatchRunStatus({ type: "START" });
     setOutput("");
-    setRunStatus("running");
     setLoopDetected(null);
     loopCountRef.current = 0;
     const startedAt = Date.now();
@@ -142,9 +187,8 @@ export default function Agents() {
 
       if (!chatRes.ok || !chatRes.body) {
         setOutput("Error: failed to start agent run.");
-        setRunStatus("error");
+        dispatchRunStatus({ type: "ERROR" });
         setRunMeta(prev => prev ? { ...prev, durationMs: Date.now() - startedAt } : null);
-        setRunning(false);
         return;
       }
 
@@ -152,10 +196,11 @@ export default function Agents() {
       const dec = new TextDecoder();
       let buf = "";
       let assembled = "";
-      let stopped = false;
+      let userStopped = false;
+      let loopInterrupted = false;
 
       abortRef.current = () => {
-        stopped = true;
+        userStopped = true;
         reader.cancel().catch(() => {});
       };
 
@@ -173,6 +218,7 @@ export default function Agents() {
             try {
               const evt = JSON.parse(raw) as { type: string; text?: string; success?: boolean };
               if (evt.type === "text" && evt.text) {
+                if (runStatus === "starting") dispatchRunStatus({ type: "FIRST_CHUNK" });
                 assembled += evt.text;
                 setOutput(assembled);
                 // Loop detection: check if the last 250 chars repeat earlier in output
@@ -184,15 +230,17 @@ export default function Agents() {
                     if (loopCountRef.current === 1) {
                       setLoopDetected({ count: 1, pattern: tail.slice(0, 60).trim() });
                     } else if (loopCountRef.current >= 3) {
-                      stopped = true;
+                      loopInterrupted = true;
                       reader.cancel().catch(() => {});
                       setLoopDetected({ count: loopCountRef.current, pattern: tail.slice(0, 60).trim() });
                     }
                   }
                 }
               } else if (evt.type === "done") {
-                const status = stopped ? "stopped" : (evt.success ? "done" : "error");
-                setRunStatus(status);
+                const action: RunAction = loopInterrupted ? { type: "INTERRUPT" }
+                  : userStopped ? { type: "STOP" }
+                  : evt.success ? { type: "DONE" } : { type: "ERROR" };
+                dispatchRunStatus(action);
                 setRunMeta({ startedAt, durationMs: Date.now() - startedAt, wordCount: assembled.trim().split(/\s+/).length });
               }
             } catch {}
@@ -200,17 +248,16 @@ export default function Agents() {
         }
       } finally {
         abortRef.current = null;
-        setRunning(false);
-        if (runStatus === "running") {
-          setRunStatus(stopped ? "stopped" : "done");
-          setRunMeta(prev => prev ? { ...prev, durationMs: Date.now() - startedAt, wordCount: assembled.trim().split(/\s+/).length } : null);
-        }
+        // Ensure we always land in a terminal state
+        if (loopInterrupted) dispatchRunStatus({ type: "INTERRUPT" });
+        else if (userStopped) dispatchRunStatus({ type: "STOP" });
+        else dispatchRunStatus({ type: "DONE" });
+        setRunMeta(prev => prev ? { ...prev, durationMs: Date.now() - startedAt, wordCount: assembled.trim().split(/\s+/).length } : null);
       }
     } catch {
       setOutput("Error: agent run failed.");
-      setRunStatus("error");
-      setRunMeta(prev => prev ? { ...prev, durationMs: Date.now() - Date.now() } : null);
-      setRunning(false);
+      dispatchRunStatus({ type: "ERROR" });
+      setRunMeta(prev => prev ? { ...prev, durationMs: Date.now() - startedAt } : null);
     }
   }
 
@@ -377,8 +424,14 @@ export default function Agents() {
       return { label: "STOPPED", color: "var(--yellow)", detail: `Stopped at ${words} words` };
     }
 
+    if (runStatus === "interrupted") {
+      return { label: "LOOP DETECTED", color: "var(--yellow)", detail: loopDetected ? `Pattern repeated ×${loopDetected.count}` : "Auto-stopped on loop" };
+    }
+
+    if (runStatus === "starting") return null;
+
     return null;
-  }, [runStatus, output]);
+  }, [runStatus, output, loopDetected]);
 
   // #42 — parse agent definition for governance metadata
   const govInfo = useMemo(() => {
@@ -421,11 +474,13 @@ export default function Agents() {
   }, [selected?.content]);
 
   const STATUS_BADGE: Record<string, { label: string; color: string }> = {
-    done: { label: "DONE", color: "var(--accent)" },
-    error: { label: "ERROR", color: "var(--red)" },
-    stopped: { label: "STOPPED", color: "var(--yellow)" },
-    running: { label: "RUNNING", color: "var(--blue)" },
-    idle: { label: "IDLE", color: "var(--text-dimmer)" },
+    idle:        { label: "IDLE",        color: "var(--text-dimmer)" },
+    starting:    { label: "STARTING",    color: "var(--blue)" },
+    running:     { label: "RUNNING",     color: "var(--blue)" },
+    done:        { label: "DONE",        color: "var(--accent)" },
+    error:       { label: "ERROR",       color: "var(--red)" },
+    stopped:     { label: "STOPPED",     color: "var(--yellow)" },
+    interrupted: { label: "INTERRUPTED", color: "var(--yellow)" },
   };
 
   return (
