@@ -12,6 +12,7 @@ import Files from "./pages/Files.tsx";
 import Git from "./pages/Git.tsx";
 import SourceControlPage from "./components/SourceControlPage.tsx";
 import ProjectPicker from "./components/ProjectPicker.tsx";
+import { ToastContainer } from "./components/Toasts.tsx";
 
 interface InfoResponse {
   projectName: string;
@@ -44,21 +45,24 @@ function AppShell() {
   if (!configured) return <ProjectPicker />;
 
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Home />} />
-        <Route path="files" element={<Files />} />
-        <Route path="git" element={<Git />} />
-        <Route path="source-control" element={<SourceControlPage />} />
-        <Route path="agents" element={<Agents />} />
-        <Route path="generate" element={<Generate />} />
-        <Route path="company" element={<Company />} />
-        <Route path="sessions" element={<Navigate to="/" replace />} />
-        <Route path="settings" element={<Settings />} />
-        <Route path="setup" element={<WorkspaceSetup />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="files" element={<Files />} />
+          <Route path="git" element={<Git />} />
+          <Route path="source-control" element={<SourceControlPage />} />
+          <Route path="agents" element={<Agents />} />
+          <Route path="generate" element={<Generate />} />
+          <Route path="company" element={<Company />} />
+          <Route path="sessions" element={<Navigate to="/" replace />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="setup" element={<WorkspaceSetup />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+      <ToastContainer />
+    </>
   );
 }
 

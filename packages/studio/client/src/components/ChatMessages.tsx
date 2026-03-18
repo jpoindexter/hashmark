@@ -127,8 +127,8 @@ function AvatarBadge({ role }: { role: "user" | "assistant" }) {
   return (
     <div style={{
       width: 28, height: 28, borderRadius: "50%",
-      background: isUser ? "var(--bg-4)" : "rgba(16,185,129,0.12)",
-      border: `1px solid ${isUser ? "var(--border)" : "rgba(16,185,129,0.3)"}`,
+      background: isUser ? "var(--bg-4)" : "var(--accent-bg)",
+      border: `1px solid ${isUser ? "var(--border)" : "var(--accent-border)"}`,
       display: "flex", alignItems: "center", justifyContent: "center",
       fontSize: 10, color: isUser ? "var(--text-dim)" : "var(--accent)",
       flexShrink: 0, fontFamily: "var(--font)", letterSpacing: "0.05em",

@@ -21,7 +21,7 @@ function FileIcon({ ext }: { ext?: string }) {
   const isCode = ext && ["ts", "tsx", "js", "jsx", "py", "go", "rs"].includes(ext);
   return (
     <span style={{
-      fontSize: "9px", fontWeight: 700, color: isCode ? "#10b981" : "#52525b",
+      fontSize: "9px", fontWeight: 700, color: isCode ? "var(--accent)" : "var(--text-dimmer)",
       width: 18, display: "inline-block", textAlign: "center", flexShrink: 0,
     }}>
       {label}
@@ -51,22 +51,22 @@ function TreeNode({
           display: "flex", alignItems: "center", gap: 4,
           paddingLeft: 8 + depth * 12, paddingTop: 2, paddingBottom: 2,
           cursor: "pointer", userSelect: "none",
-          background: isSelected ? "#18181b" : "transparent",
-          color: isSelected ? "#f4f4f5" : "#a1a1aa",
-          fontSize: 12, fontFamily: "monospace",
-          borderLeft: isSelected ? "1px solid #10b981" : "1px solid transparent",
+          background: isSelected ? "var(--bg-3)" : "transparent",
+          color: isSelected ? "var(--text)" : "var(--text-dim)",
+          fontSize: 12, fontFamily: "var(--font)",
+          borderLeft: isSelected ? "2px solid var(--accent)" : "2px solid transparent",
         }}
-        onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = "#111113"; }}
+        onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = "var(--bg-3)"; }}
         onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
       >
         {node.type === "dir" ? (
-          <span style={{ width: 18, textAlign: "center", fontSize: 10, color: "#52525b" }}>
+          <span style={{ width: 18, textAlign: "center", fontSize: 10, color: "var(--text-dimmer)" }}>
             {open ? "▾" : "▸"}
           </span>
         ) : (
           <FileIcon ext={node.ext} />
         )}
-        <span style={{ color: node.type === "dir" ? "#d4d4d8" : "#a1a1aa" }}>{node.name}</span>
+        <span style={{ color: node.type === "dir" ? "var(--text)" : "var(--text-dim)" }}>{node.name}</span>
       </div>
       {node.type === "dir" && open && node.children?.map((child) => (
         <TreeNode key={child.path} node={child} depth={depth + 1} selected={selected} onSelect={onSelect} />
@@ -99,15 +99,15 @@ export default function FilesPage() {
   }, []);
 
   return (
-    <div style={{ display: "flex", height: "100%", overflow: "hidden", background: "#09090b" }}>
+    <div style={{ display: "flex", height: "100%", overflow: "hidden", background: "var(--bg)" }}>
       {/* Tree */}
       <div style={{
-        width: 240, flexShrink: 0, borderRight: "1px solid #18181b",
+        width: 240, flexShrink: 0, borderRight: "1px solid var(--border-dim)",
         overflowY: "auto", paddingTop: 8,
       }}>
         <div style={{
-          padding: "6px 12px 8px", fontSize: 10, fontFamily: "monospace",
-          color: "#52525b", letterSpacing: 1, textTransform: "uppercase",
+          padding: "6px 12px 8px", fontSize: 10, fontFamily: "var(--font)",
+          color: "var(--text-dimmer)", letterSpacing: 1, textTransform: "uppercase",
         }}>
           FILES
         </div>

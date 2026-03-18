@@ -1,6 +1,7 @@
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { Home, FolderTree, GitBranch, Bot, Zap, Settings, TerminalSquare, Play, Building2, ChevronRight } from "lucide-react";
+import CommandPalette from "./CommandPalette.tsx";
 import ActivitySidebar from "./ActivitySidebar.tsx";
 import ChatMessages from "./ChatMessages.tsx";
 import ChatInputBar from "./ChatInputBar.tsx";
@@ -39,6 +40,7 @@ export default function Layout() {
   const [info, setInfo] = useState<ProjectInfo | null>(null);
   const [git, setGit] = useState<GitStatus | null>(null);
 
+  const [cmdOpen, setCmdOpen] = useState(false);
   const [termOpen,   setTermOpen]   = useState(() => restore("termOpen",   false));
   const [termHeight, setTermHeight] = useState(() => restore("termHeight", 220));
   const [termBig,    setTermBig]    = useState(() => restore("termBig",    false));
@@ -77,6 +79,7 @@ export default function Layout() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "`") { e.preventDefault(); setTermOpen(v => !v); }
+      if ((e.metaKey || e.ctrlKey) && (e.key === "k" || (e.key === "p" && e.shiftKey))) { e.preventDefault(); setCmdOpen(v => !v); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -105,6 +108,7 @@ export default function Layout() {
         setTermOpen(true);
         window.dispatchEvent(new CustomEvent("studio:new-terminal"));
       }),
+      window.studio.onMenu("menu:command-palette", () => setCmdOpen(true)),
     ];
     return () => subs.forEach(unsub => unsub?.());
   }, [navigate]);
@@ -185,7 +189,7 @@ export default function Layout() {
                   display: "flex", alignItems: "center", justifyContent: "center",
                   height: 40, position: "relative",
                   color: isActive ? "var(--text)" : "var(--text-dimmer)",
-                  background: isActive ? "rgba(16,185,129,0.08)" : "transparent",
+                  background: isActive ? "var(--accent-bg)" : "transparent",
                   borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
                   transition: "all 0.1s", textDecoration: "none",
                 })}
@@ -214,7 +218,7 @@ export default function Layout() {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 height: 40, position: "relative",
                 color: isActive ? "var(--text)" : changedFiles > 0 ? "var(--text-dim)" : "var(--text-dimmer)",
-                background: isActive ? "rgba(16,185,129,0.08)" : "transparent",
+                background: isActive ? "var(--accent-bg)" : "transparent",
                 borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
                 transition: "all 0.1s", textDecoration: "none",
               })}
@@ -430,8 +434,8 @@ export default function Layout() {
       {/* ── Status bar ───────────────────────────────────────────────── */}
       <div style={{
         height: 22, minHeight: 22, flexShrink: 0,
-        background: "#0d1f17",
-        borderTop: "1px solid #0a1910",
+        background: "var(--bg-2)",
+        borderTop: "1px solid var(--border-dim)",
         display: "flex", alignItems: "center",
         padding: "0 8px",
         fontSize: 11, fontFamily: "var(--font)",
@@ -447,6 +451,8 @@ export default function Layout() {
         <div style={{ flex: 1 }} />
         <StatusItem>{info?.projectName ?? "hashmark studio"}</StatusItem>
       </div>
+
+      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
     </div>
   );
 }
@@ -478,12 +484,12 @@ function StatusItem({ children, title, onClick }: { children: React.ReactNode; t
       style={{
         display: "flex", alignItems: "center", gap: 4,
         padding: "0 8px", height: "100%",
-        color: "rgba(16,185,129,0.75)",
+        color: "var(--text-dim)",
         cursor: onClick ? "pointer" : "default",
         whiteSpace: "nowrap",
         transition: "background 0.1s",
       }}
-      onMouseEnter={e => { if (onClick) (e.currentTarget as HTMLDivElement).style.background = "rgba(16,185,129,0.12)"; }}
+      onMouseEnter={e => { if (onClick) (e.currentTarget as HTMLDivElement).style.background = "var(--accent-bg)"; }}
       onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
     >
       {children}
@@ -546,7 +552,7 @@ function ProjectSwitcher({ projectName }: { projectName: string | null }) {
                   key={path}
                   onClick={() => void openRecent(path)}
                   style={{ display: "flex", flexDirection: "column", padding: "6px 12px", cursor: "pointer", borderBottom: "1px solid var(--border-dim)", transition: "background 0.1s" }}
-                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(16,185,129,0.06)"}
+                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "var(--accent-bg)"}
                   onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
                 >
                   <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text)" }}>{lastName(path)}</span>
@@ -558,7 +564,7 @@ function ProjectSwitcher({ projectName }: { projectName: string | null }) {
           <div
             onClick={() => void pickFolder()}
             style={{ padding: "8px 12px", fontSize: 12, color: "var(--accent)", cursor: "pointer", transition: "background 0.1s" }}
-            onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(16,185,129,0.06)"}
+            onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "var(--accent-bg)"}
             onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
           >
             Open Different Project...

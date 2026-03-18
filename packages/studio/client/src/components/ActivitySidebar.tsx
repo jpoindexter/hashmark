@@ -277,8 +277,8 @@ function WorkspaceItem({
         </span>
         {(totalAdded > 0 || totalRemoved > 0) && (
           <span style={{ display: "flex", gap: 4, fontSize: 10 }}>
-            {totalAdded > 0 && <span style={{ color: "#10b981" }}>+{totalAdded}</span>}
-            {totalRemoved > 0 && <span style={{ color: "#ef4444" }}>-{totalRemoved}</span>}
+            {totalAdded > 0 && <span style={{ color: "var(--accent)" }}>+{totalAdded}</span>}
+            {totalRemoved > 0 && <span style={{ color: "var(--red)" }}>-{totalRemoved}</span>}
           </span>
         )}
       </div>
@@ -356,7 +356,7 @@ function AgentRow({
         padding: "4px 14px 4px 42px",
         cursor: "pointer",
         background: active
-          ? "rgba(16,185,129,0.08)"
+          ? "var(--accent-bg)"
           : hovered ? "rgba(255,255,255,0.04)" : "transparent",
         borderLeft: active ? "2px solid var(--accent)" : "2px solid transparent",
         transition: "background 0.1s",
@@ -476,7 +476,7 @@ function SessionRow({
         display: "flex", alignItems: "center", gap: 8,
         padding: "5px 14px 5px 16px",
         cursor: "pointer",
-        background: active ? "rgba(16,185,129,0.08)" : hovered ? "rgba(255,255,255,0.04)" : "transparent",
+        background: active ? "var(--accent-bg)" : hovered ? "rgba(255,255,255,0.04)" : "transparent",
         borderLeft: active ? "2px solid var(--accent)" : "2px solid transparent",
         transition: "background 0.1s",
       }}
