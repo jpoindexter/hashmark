@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 interface Message {
   id: string;
@@ -183,10 +184,51 @@ function MessageBubble({ msg }: { msg: Message }) {
   );
 }
 
+function StreamingBubble({ text }: { text: string }) {
+  return (
+    <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+      <AvatarBadge role="assistant" />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)" }}>Claude</span>
+          <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>typing...</span>
+        </div>
+        {text ? (
+          <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6, fontFamily: "var(--font-ui)" }}>
+            <AssistantContent text={text} />
+            <span style={{
+              display: "inline-block", width: 7, height: 13,
+              background: "var(--accent)", verticalAlign: "text-bottom",
+              marginLeft: 2, animation: "cursor-blink 1s step-end infinite",
+            }} />
+          </div>
+        ) : (
+          <div style={{ display: "flex", gap: 4, alignItems: "center", paddingTop: 4 }}>
+            {[0, 1, 2].map(i => (
+              <span key={i} style={{
+                width: 5, height: 5, background: "var(--accent)", borderRadius: "50%",
+                animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
+              }} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Sentinel ID for the streaming row
+const STREAMING_ID = "__streaming__";
+
+type VirtualItem = Message | { id: typeof STREAMING_ID; role: "assistant" };
+
 export default function ChatMessages({ sessionId, streamText, streaming }: ChatMessagesProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const parentRef = useRef<HTMLDivElement>(null);
+  // Track whether the user has manually scrolled up
+  const userScrolledUp = useRef(false);
+  const prevScrollTop = useRef(0);
 
   const loadMessages = useCallback(async (id: string) => {
     setLoading(true);
@@ -213,9 +255,41 @@ export default function ChatMessages({ sessionId, streamText, streaming }: ChatM
     }
   }, [streaming, sessionId, loadMessages]);
 
+  // Build the virtual items list: real messages + optional streaming row
+  const items: VirtualItem[] = streaming
+    ? [...messages, { id: STREAMING_ID, role: "assistant" as const }]
+    : messages;
+
+  const virtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 90,
+    overscan: 5,
+    measureElement: (el) => el.getBoundingClientRect().height,
+  });
+
+  // Auto-scroll to bottom on new items/stream updates, unless user scrolled up
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streamText]);
+    if (items.length === 0) return;
+    if (!userScrolledUp.current) {
+      virtualizer.scrollToIndex(items.length - 1, { behavior: "smooth" });
+    }
+  }, [items.length, streamText]);
+
+  // Detect manual scroll-up
+  useEffect(() => {
+    const el = parentRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      const scrollingUp = el.scrollTop < prevScrollTop.current;
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+      if (scrollingUp) userScrolledUp.current = true;
+      if (nearBottom) userScrolledUp.current = false;
+      prevScrollTop.current = el.scrollTop;
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
 
   if (loading && messages.length === 0) {
     return (
@@ -247,52 +321,49 @@ export default function ChatMessages({ sessionId, streamText, streaming }: ChatM
   }
 
   return (
-    <div style={{
-      flex: 1, overflow: "auto",
-      fontFamily: "var(--font)",
-    }}>
-      <div style={{
-        maxWidth: 760, margin: "0 auto",
-        padding: "20px 24px",
-        display: "flex", flexDirection: "column", gap: 20,
-      }}>
-      {messages.map((msg) => (
-        <MessageBubble key={msg.id} msg={msg} />
-      ))}
-
-      {streaming && (
-        <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-          <AvatarBadge role="assistant" />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)" }}>Claude</span>
-              <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>typing...</span>
+    <div
+      ref={parentRef}
+      style={{ flex: 1, overflow: "auto", fontFamily: "var(--font)" }}
+    >
+      {/* Outer spacer — virtualizer's total measured height */}
+      <div
+        style={{
+          height: virtualizer.getTotalSize(),
+          width: "100%",
+          position: "relative",
+        }}
+      >
+        {virtualizer.getVirtualItems().map((vrow) => {
+          const item = items[vrow.index];
+          return (
+            <div
+              key={vrow.key}
+              data-index={vrow.index}
+              ref={virtualizer.measureElement}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                transform: `translateY(${vrow.start}px)`,
+              }}
+            >
+              <div style={{
+                maxWidth: 760,
+                margin: "0 auto",
+                padding: vrow.index === 0 ? "20px 24px 10px" : "0 24px 20px",
+              }}>
+                {item.id === STREAMING_ID ? (
+                  <StreamingBubble text={streamText} />
+                ) : (
+                  <MessageBubble msg={item as Message} />
+                )}
+              </div>
             </div>
-            {streamText ? (
-              <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6, fontFamily: "var(--font-ui)" }}>
-                <AssistantContent text={streamText} />
-                <span style={{
-                  display: "inline-block", width: 7, height: 13,
-                  background: "var(--accent)", verticalAlign: "text-bottom",
-                  marginLeft: 2, animation: "cursor-blink 1s step-end infinite",
-                }} />
-              </div>
-            ) : (
-              <div style={{ display: "flex", gap: 4, alignItems: "center", paddingTop: 4 }}>
-                {[0, 1, 2].map(i => (
-                  <span key={i} style={{
-                    width: 5, height: 5, background: "var(--accent)", borderRadius: "50%",
-                    animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
-                  }} />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+          );
+        })}
+      </div>
 
-      <div ref={messagesEndRef} />
-      </div>{/* end inner max-width */}
       <style>{`
         @keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
         @keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
