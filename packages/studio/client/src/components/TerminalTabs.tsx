@@ -1,5 +1,6 @@
-import { useState, Suspense, lazy, useRef } from "react";
+import { useState, useEffect, Suspense, lazy, useRef } from "react";
 import { Plus, ChevronDown, SplitSquareHorizontal, Trash2, MoreHorizontal, Maximize2 } from "lucide-react";
+import type { TerminalHandle } from "./Terminal.tsx";
 
 const Terminal = lazy(() => import("./Terminal.tsx"));
 
@@ -14,6 +15,8 @@ function genId() {
 }
 
 const SHELLS = ["zsh", "bash", "node", "python"];
+const FONT_MIN = 12;
+const FONT_MAX = 16;
 
 function ToolbarBtn({
   onClick,
@@ -68,6 +71,10 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
   const [shellMenuOpen, setShellMenuOpen] = useState(false);
   const shellMenuRef = useRef<HTMLDivElement>(null);
   const [tabCwds, setTabCwds] = useState<Record<string, string>>({});
+  const [fontSize, setFontSize] = useState(12);
+
+  // One ref per tab id — keyed map of refs
+  const termRefs = useRef<Record<string, TerminalHandle | null>>({});
 
   // Bubble active tab's CWD to parent whenever it changes or active tab switches
   useEffect(() => {
@@ -87,12 +94,13 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
     const idx = tabs.findIndex(t => t.id === id);
     const next = tabs[idx - 1] ?? tabs[idx + 1];
     setTabs(prev => prev.filter(t => t.id !== id));
+    // Clean up ref
+    delete termRefs.current[id];
     if (activeTabId === id) setActiveTabId(next.id);
   };
 
   const killActive = () => {
     if (tabs.length === 1) {
-      // Reset rather than close the last tab
       const id = genId();
       setTabs([{ id, label: "zsh", shell: "zsh" }]);
       setActiveTabId(id);
@@ -100,6 +108,13 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
       closeTab(activeTabId);
     }
   };
+
+  const clearActive = () => {
+    termRefs.current[activeTabId]?.clear();
+  };
+
+  const decreaseFontSize = () => setFontSize(s => Math.max(FONT_MIN, s - 1));
+  const increaseFontSize = () => setFontSize(s => Math.min(FONT_MAX, s + 1));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden", minHeight: 0 }}>
@@ -131,6 +146,60 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
 
         {/* Right toolbar actions */}
         <div style={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0, paddingLeft: 4, borderLeft: "1px solid var(--border-dim)" }}>
+
+          {/* Font size controls */}
+          <button
+            onClick={decreaseFontSize}
+            disabled={fontSize <= FONT_MIN}
+            title={`Decrease font size (${fontSize}px)`}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: 22,
+              padding: "0 5px",
+              borderRadius: 4,
+              border: "none",
+              background: "none",
+              color: fontSize <= FONT_MIN ? "var(--text-dimmer)" : "var(--text-dim)",
+              cursor: fontSize <= FONT_MIN ? "not-allowed" : "pointer",
+              fontSize: 11,
+              fontFamily: "var(--font-ui)",
+              fontWeight: 600,
+              flexShrink: 0,
+            }}
+          >
+            A-
+          </button>
+          <button
+            onClick={increaseFontSize}
+            disabled={fontSize >= FONT_MAX}
+            title={`Increase font size (${fontSize}px)`}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: 22,
+              padding: "0 5px",
+              borderRadius: 4,
+              border: "none",
+              background: "none",
+              color: fontSize >= FONT_MAX ? "var(--text-dimmer)" : "var(--text-dim)",
+              cursor: fontSize >= FONT_MAX ? "not-allowed" : "pointer",
+              fontSize: 13,
+              fontFamily: "var(--font-ui)",
+              fontWeight: 600,
+              flexShrink: 0,
+            }}
+          >
+            A+
+          </button>
+
+          {/* Clear */}
+          <ToolbarBtn title="Clear Terminal" onClick={clearActive}>
+            <span style={{ fontSize: 10, fontFamily: "var(--font-ui)", fontWeight: 600, letterSpacing: "-0.02em" }}>CLR</span>
+          </ToolbarBtn>
+
           {/* New terminal + shell picker */}
           <div style={{ position: "relative" }}>
             <div style={{ display: "flex", alignItems: "center" }}>
@@ -218,7 +287,9 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
           >
             <Suspense fallback={null}>
               <Terminal
+                ref={(handle) => { termRefs.current[tab.id] = handle; }}
                 tabId={tab.id}
+                fontSize={fontSize}
                 onCwdChange={(cwd) => setTabCwds(prev => ({ ...prev, [tab.id]: cwd }))}
               />
             </Suspense>

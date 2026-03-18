@@ -1,16 +1,20 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
 import { encodeTerminalMsg } from "../../../../shared/ws-contracts";
 
+export interface TerminalHandle {
+  clear: () => void;
+}
+
 interface TerminalProps {
   tabId?: string;
+  fontSize?: number;
   onCwdChange?: (cwd: string) => void;
 }
 
 // OSC 633 sequence subtypes (VSCode shell integration)
-// A=prompt start, B=prompt end, C=command start, D=command done (with exit code), E=command line, P=property
 const enum Osc633 {
   PromptStart  = "A",
   PromptEnd    = "B",
@@ -20,18 +24,27 @@ const enum Osc633 {
   Property     = "P",
 }
 
-export default function TerminalPane({ tabId, onCwdChange }: TerminalProps) {
+const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function TerminalPane(
+  { tabId, fontSize = 12, onCwdChange },
+  ref
+) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef      = useRef<Terminal | null>(null);
   const wsRef        = useRef<WebSocket | null>(null);
   const fitRef       = useRef<FitAddon | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    clear: () => {
+      if (termRef.current) termRef.current.reset();
+    },
+  }));
 
   useEffect(() => {
     if (!containerRef.current || termRef.current) return;
 
     const term = new Terminal({
       fontFamily: "JetBrains Mono, Fira Code, Menlo, monospace",
-      fontSize: 12,
+      fontSize,
       lineHeight: 1.5,
       theme: {
         background: "#0d1117",
@@ -71,7 +84,6 @@ export default function TerminalPane({ tabId, onCwdChange }: TerminalProps) {
     fitRef.current  = fit;
 
     // --- VSCode shell integration (OSC 633) ---
-    // Track marker for the current command start so we can decorate on exit
     let commandStartMarker: ReturnType<Terminal["registerMarker"]> | null = null;
 
     term.parser.registerOscHandler(633, (data: string) => {
@@ -81,7 +93,6 @@ export default function TerminalPane({ tabId, onCwdChange }: TerminalProps) {
 
       switch (subtype) {
         case Osc633.CommandStart: {
-          // Mark the line where the command starts — used for overview ruler decoration
           const marker = term.registerMarker(0);
           if (marker) {
             commandStartMarker = marker;
@@ -94,7 +105,6 @@ export default function TerminalPane({ tabId, onCwdChange }: TerminalProps) {
         }
 
         case Osc633.CommandDone: {
-          // payload = exit code (may be empty string if interrupted)
           const exitCode = payload === "" ? 0 : parseInt(payload, 10);
           const marker = term.registerMarker(0);
           if (marker) {
@@ -109,7 +119,6 @@ export default function TerminalPane({ tabId, onCwdChange }: TerminalProps) {
         }
 
         case Osc633.Property: {
-          // payload = "key=value"
           const eq = payload.indexOf("=");
           if (eq === -1) return true;
           const key = payload.slice(0, eq);
@@ -120,7 +129,6 @@ export default function TerminalPane({ tabId, onCwdChange }: TerminalProps) {
           return true;
         }
 
-        // PromptStart (A), PromptEnd (B), CommandLine (E) — acknowledged but no action needed
         case Osc633.PromptStart:
         case Osc633.PromptEnd:
         case Osc633.CommandLine:
@@ -130,7 +138,6 @@ export default function TerminalPane({ tabId, onCwdChange }: TerminalProps) {
       return false;
     });
 
-    // Suppress unused warning — commandStartMarker is read in CommandDone case
     void commandStartMarker;
 
     // --- WebSocket connection ---
@@ -177,7 +184,14 @@ export default function TerminalPane({ tabId, onCwdChange }: TerminalProps) {
       termRef.current = null;
       wsRef.current   = null;
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Update font size when prop changes
+  useEffect(() => {
+    if (!termRef.current) return;
+    termRef.current.options.fontSize = fontSize;
+    fitRef.current?.fit();
+  }, [fontSize]);
 
   return (
     <div
@@ -190,4 +204,6 @@ export default function TerminalPane({ tabId, onCwdChange }: TerminalProps) {
       }}
     />
   );
-}
+});
+
+export default TerminalPane;
