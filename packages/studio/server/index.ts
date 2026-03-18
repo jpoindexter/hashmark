@@ -54,6 +54,34 @@ export function createServer(opts: ServerOptions) {
     });
   });
 
+  // Settings — env var keys (names only, never values)
+  app.get("/api/settings/env", async (c) => {
+    const { join: pjoin } = await import("path");
+    const { existsSync: fsExists, readFileSync: fsRead } = await import("fs");
+
+    const vars: Array<{ key: string; source: string; set: boolean }> = [];
+    const seen = new Set<string>();
+
+    for (const fname of [".env.local", ".env"]) {
+      const filePath = pjoin(opts.projectDir, fname);
+      if (!fsExists(filePath)) continue;
+      try {
+        for (const line of fsRead(filePath, "utf-8").split("\n")) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith("#")) continue;
+          const eq = trimmed.indexOf("=");
+          if (eq === -1) continue;
+          const key = trimmed.slice(0, eq).trim();
+          if (!key || seen.has(key)) continue;
+          seen.add(key);
+          vars.push({ key, source: fname, set: trimmed.slice(eq + 1).trim().length > 0 });
+        }
+      } catch {}
+    }
+
+    return c.json({ vars });
+  });
+
   // API routes
   app.route("/api/scan", scanRoutes(opts.projectDir));
   app.route("/api/agents", agentsRoutes(opts.projectDir));

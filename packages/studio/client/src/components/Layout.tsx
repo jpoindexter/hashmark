@@ -438,7 +438,7 @@ export default function Layout() {
         borderTop: "1px solid var(--border-dim)",
         display: "flex", alignItems: "center",
         padding: "0 8px",
-        fontSize: 11, fontFamily: "var(--font)",
+        fontSize: 11, fontFamily: "var(--font-ui)",
         userSelect: "none",
         WebkitAppRegion: "no-drag",
         zIndex: 10,

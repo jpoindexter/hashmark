@@ -169,12 +169,12 @@ function MessageBubble({ msg }: { msg: Message }) {
         {isUser ? (
           <div style={{
             fontSize: 13, color: "var(--text)", lineHeight: 1.6,
-            whiteSpace: "pre-wrap", fontFamily: "var(--font)",
+            whiteSpace: "pre-wrap", fontFamily: "var(--font-ui)",
           }}>
             {msg.content}
           </div>
         ) : (
-          <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6, fontFamily: "var(--font)" }}>
+          <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6, fontFamily: "var(--font-ui)" }}>
             <AssistantContent text={msg.content} />
           </div>
         )}
@@ -269,7 +269,7 @@ export default function ChatMessages({ sessionId, streamText, streaming }: ChatM
               <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>typing...</span>
             </div>
             {streamText ? (
-              <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6, fontFamily: "var(--font)" }}>
+              <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6, fontFamily: "var(--font-ui)" }}>
                 <AssistantContent text={streamText} />
                 <span style={{
                   display: "inline-block", width: 7, height: 13,

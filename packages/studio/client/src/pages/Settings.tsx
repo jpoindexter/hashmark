@@ -514,7 +514,7 @@ export default function Settings() {
                       <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>— {models}</span>
                     </div>
                   </div>
-                  <ApiKeyStatus envKey={key} />
+                  <ApiKeyStatus envKey={key} envVars={envVars} />
                 </div>
               ))}
             </div>
@@ -698,16 +698,16 @@ function EmptyState({ icon, title, description }: { icon: string; title: string;
   );
 }
 
-function ApiKeyStatus({ envKey }: { envKey: string }) {
-  // Check if env var appears in the loaded env vars (from /api/settings/env)
-  // Since we can't access env vars client-side, this is a visual placeholder
+function ApiKeyStatus({ envKey, envVars }: { envKey: string; envVars: EnvVar[] }) {
+  const found = envVars.find(v => v.key === envKey);
+  const isSet = found !== undefined;
   return (
     <span style={{
       fontSize: 10, textTransform: "uppercase", letterSpacing: "0.04em",
-      color: "var(--text-dimmer)", fontFamily: "var(--font-ui)",
-      whiteSpace: "nowrap",
+      color: isSet ? "var(--accent)" : "var(--text-dimmer)",
+      fontFamily: "var(--font-ui)", whiteSpace: "nowrap",
     }}>
-      {envKey.includes("ANTHROPIC") ? "✓ set" : "not set"}
+      {isSet ? "✓ set" : "not set"}
     </span>
   );
 }

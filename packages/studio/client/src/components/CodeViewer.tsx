@@ -78,7 +78,7 @@ export function CodeViewer({ content, ext, path: _path }: CodeViewerProps) {
     );
   }
 
-  const shouldHighlight = lang === "ts" || lang === "js" || lang === "json";
+  const shouldHighlight = lang === "ts" || lang === "js" || lang === "json" || lang === "css";
   let inBlockComment = false;
 
   return (
@@ -110,7 +110,7 @@ export function CodeViewer({ content, ext, path: _path }: CodeViewerProps) {
               minWidth: 44,
               textAlign: "right",
               paddingRight: 16,
-              color: "#3f3f46",
+              color: "var(--text-dimmer)",
               userSelect: "none",
               flexShrink: 0,
             }}>

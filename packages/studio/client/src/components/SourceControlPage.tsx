@@ -16,8 +16,13 @@ interface GitData {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  M: "#f59e0b", A: "#10b981", D: "#ef4444",
-  "?": "#6366f1", R: "#8b5cf6", C: "#06b6d4", U: "#f97316",
+  M: "var(--yellow)",
+  A: "var(--accent)",
+  D: "var(--red)",
+  "?": "var(--blue)",
+  R: "#8b5cf6",
+  C: "#06b6d4",
+  U: "#f97316",
 };
 
 function FileBadge({ status }: { status: string }) {
