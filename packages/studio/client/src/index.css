@@ -6,55 +6,63 @@
   padding: 0;
 }
 
+/* ── GitHub Dark Default palette ─────────────────────────── */
 :root {
-  --bg: #09090b;
-  --bg-2: #111113;
-  --bg-3: #18181b;
-  --bg-4: #27272a;
-  --border: #3f3f46;
-  --border-dim: #27272a;
-  --text: #fafafa;
-  --text-dim: #a1a1aa;
-  --text-dimmer: #52525b;
-  --accent: #10b981;
-  --accent-dim: #059669;
-  --accent-bg: rgba(16, 185, 129, 0.08);
-  --accent-border: rgba(16, 185, 129, 0.2);
-  --red: #ef4444;
-  --red-bg: rgba(239, 68, 68, 0.08);
-  --yellow: #f59e0b;
-  --font: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-  --radius: 2px;
-  --sidebar-w: 200px;
-  --border-focus: rgba(16, 185, 129, 0.4);
-}
+  --bg:          #0d1117;
+  --bg-2:        #161b22;
+  --bg-3:        #1c2128;
+  --bg-4:        #21262d;
+  --border:      #30363d;
+  --border-dim:  #21262d;
+  --text:        #e6edf3;
+  --text-dim:    #8b949e;
+  --text-dimmer: #484f58;
 
+  /* hashmark brand green, mapped to GitHub green scale */
+  --accent:        #3fb950;
+  --accent-dim:    #2ea043;
+  --accent-bg:     rgba(63, 185, 80, 0.08);
+  --accent-border: rgba(63, 185, 80, 0.2);
+
+  --blue:     #388bfd;
+  --blue-bg:  rgba(56, 139, 253, 0.1);
+  --red:      #f85149;
+  --red-bg:   rgba(248, 81, 73, 0.1);
+  --yellow:   #d29922;
+
+  --font:      'JetBrains Mono', 'Fira Code', Menlo, monospace;
+  --font-ui:   -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --radius:    4px;   /* VSCode button/input/dropdown radius */
+  --radius-sm: 3px;   /* icon buttons, badges */
+  --radius-lg: 6px;   /* cards, modals, toasts */
+}
 
 html, body, #root {
   height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font);
+  font-family: var(--font-ui);
   font-size: 13px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+/* Use mono only where it matters */
+code, pre, kbd, .mono, textarea, input[type="text"],
+input[type="search"], .font-mono {
+  font-family: var(--font);
 }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 2px;
-}
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-dimmer); }
 
-a { color: inherit; text-decoration: none; }
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
 
 button {
-  font-family: var(--font);
+  font-family: var(--font-ui);
   font-size: 12px;
   cursor: pointer;
   border: none;
@@ -67,159 +75,109 @@ input, textarea, select {
   background: var(--bg-3);
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 6px 10px;
+  padding: 5px 10px;
   border-radius: var(--radius);
   outline: none;
 }
 
 input:focus, textarea:focus, select:focus {
-  border-color: var(--accent);
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.12);
 }
 
-/* Utility classes */
-.mono { font-family: var(--font); }
-.dim { color: var(--text-dim); }
-.dimmer { color: var(--text-dimmer); }
-.accent { color: var(--accent); }
-.uppercase { text-transform: uppercase; letter-spacing: 0.05em; }
-
+/* ── Buttons ───────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
+  padding: 4px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  font-size: 11px;
-  font-family: var(--font);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 12px;
+  font-family: var(--font-ui);
   cursor: pointer;
-  background: var(--bg-3);
+  background: var(--bg-4);
   color: var(--text-dim);
-  transition: border-color 0.1s, color 0.1s, background 0.1s;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
 }
-
 .btn:hover {
-  border-color: var(--accent);
+  border-color: var(--border);
   color: var(--text);
-  background: var(--accent-bg);
+  background: var(--bg-3);
 }
-
 .btn-primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--bg);
+  color: #fff;
   font-weight: 600;
 }
-
 .btn-primary:hover {
   background: var(--accent-dim);
   border-color: var(--accent-dim);
-  color: var(--bg);
 }
-
 .btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
 }
 
+/* ── Cards / badges ────────────────────────────────────────── */
 .card {
   background: var(--bg-2);
-  border: 1px solid var(--border-dim);
-  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   padding: 16px;
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px 7px;
-  border-radius: var(--radius);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  padding: 1px 7px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-family: var(--font-ui);
   font-weight: 500;
 }
+.badge-green  { background: rgba(63,185,80,.12);  color: var(--accent); border: 1px solid rgba(63,185,80,.25); }
+.badge-blue   { background: var(--blue-bg);        color: var(--blue);   border: 1px solid rgba(56,139,253,.25); }
+.badge-zinc   { background: var(--bg-4);           color: var(--text-dim); border: 1px solid var(--border); }
+.badge-yellow { background: rgba(210,153,34,.1);   color: var(--yellow); border: 1px solid rgba(210,153,34,.25); }
 
-.badge-green {
-  background: var(--accent-bg);
-  color: var(--accent);
-  border: 1px solid var(--accent-border);
-}
+/* ── Animations ────────────────────────────────────────────── */
+@keyframes blink    { 0%,100%{opacity:1} 50%{opacity:0} }
+@keyframes fadeIn   { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideIn  { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
+@keyframes spin     { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+@keyframes pulse    { 0%,100%{opacity:.3;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }
+@keyframes cursor-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+@keyframes stream-pulse { 0%,100%{opacity:.4;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }
 
-.badge-zinc {
-  background: var(--bg-4);
-  color: var(--text-dim);
-  border: 1px solid var(--border);
-}
-
-.badge-yellow {
-  background: rgba(245, 158, 11, 0.08);
-  color: var(--yellow);
-  border: 1px solid rgba(245, 158, 11, 0.2);
-}
-
-/* Animations */
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.fade-in { animation: fadeIn 0.2s ease forwards; }
-.slide-in { animation: slideIn 0.15s ease forwards; }
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+.fade-in  { animation: fadeIn .15s ease forwards; }
+.slide-in { animation: slideIn .12s ease forwards; }
 
 .cursor {
-  display: inline-block;
-  width: 8px;
-  height: 14px;
-  background: var(--accent);
-  animation: blink 1s step-end infinite;
-  vertical-align: middle;
-  margin-left: 2px;
+  display: inline-block; width: 8px; height: 14px;
+  background: var(--accent); animation: blink 1s step-end infinite;
+  vertical-align: middle; margin-left: 2px;
 }
 
-/* Activity bar tooltips */
-.nav-tooltip-wrap {
-  position: relative;
-  width: 100%;
-}
+/* ── Nav tooltips ──────────────────────────────────────────── */
+.nav-tooltip-wrap { position: relative; width: 100%; }
 
 .nav-tooltip {
   position: absolute;
-  left: 56px;
-  top: 50%;
-  transform: translateY(-50%);
+  left: 52px; top: 50%; transform: translateY(-50%);
   padding: 4px 8px;
   background: var(--bg-4);
-  border: 1px solid var(--border-dim);
+  border: 1px solid var(--border);
   color: var(--text);
   font-size: 11px;
-  font-family: var(--font);
+  font-family: var(--font-ui);
   white-space: nowrap;
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.1s;
   z-index: 9999;
 }
-
-.nav-tooltip-wrap:hover .nav-tooltip {
-  opacity: 1;
-}
+.nav-tooltip-wrap:hover .nav-tooltip { opacity: 1; }
