@@ -9,6 +9,7 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { cors } from "hono/cors";
 import { readFileSync, existsSync } from "fs";
 import { join, basename } from "path";
+import { randomUUID } from "crypto";
 import { agentsRoutes } from "./routes/agents.js";
 import { generateRoutes } from "./routes/generate.js";
 import { scanRoutes } from "./routes/scan.js";
@@ -23,6 +24,8 @@ import { companyRoutes } from "./routes/company.js";
 import { driftRoutes } from "./routes/drift.js";
 import { providersRoutes } from "./routes/providers.js";
 import { governanceRoutes } from "./routes/governance.js";
+import { workspacesRoutes, type WorkspaceCtx } from "./routes/workspaces.js";
+import { getDb } from "./db.js";
 
 export interface ServerOptions {
   projectDir: string;
@@ -33,15 +36,53 @@ export interface ServerOptions {
 export function createServer(opts: ServerOptions) {
   const app = new Hono();
 
+  // Mutable context — routes that need dynamic project dir read from here
+  const ctx: WorkspaceCtx = {
+    projectDir: opts.projectDir,
+    dataDir: `${opts.projectDir}/.hashmark`,
+  };
+
+  // Global DB lives at the initial dataDir — workspace registry stored here
+  const globalDataDir = ctx.dataDir;
+
+  // Upsert startup workspace into the registry
+  if (opts.projectDir !== "__unset__") {
+    try {
+      const db = getDb(globalDataDir);
+      const pkgPath = join(opts.projectDir, "package.json");
+      let name = basename(opts.projectDir);
+      try {
+        if (existsSync(pkgPath)) {
+          const pkg = JSON.parse(readFileSync(pkgPath, "utf-8")) as { name?: string };
+          if (pkg.name) name = pkg.name;
+        }
+      } catch {}
+
+      const existing = db.prepare("SELECT id FROM workspaces WHERE path = ?").get(opts.projectDir) as
+        | { id: string } | undefined;
+
+      if (existing) {
+        db.prepare("UPDATE workspaces SET name = ?, last_opened = ?, is_active = 1 WHERE id = ?")
+          .run(name, Date.now(), existing.id);
+        db.prepare("UPDATE workspaces SET is_active = 0 WHERE id != ?").run(existing.id);
+      } else {
+        const id = randomUUID();
+        db.prepare("UPDATE workspaces SET is_active = 0").run();
+        db.prepare("INSERT INTO workspaces (id, name, path, last_opened, is_active) VALUES (?, ?, ?, ?, 1)")
+          .run(id, name, opts.projectDir, Date.now());
+      }
+    } catch {}
+  }
+
   app.use("*", cors({ origin: "*" }));
 
-  // Project info
+  // Project info — reads from mutable ctx so it reflects workspace switches
   app.get("/api/info", async (c) => {
     const { join: pathJoin, basename: pathBasename } = await import("path");
     const { existsSync: fsExists, readFileSync: fsRead } = await import("fs");
 
-    const pkgPath = pathJoin(opts.projectDir, "package.json");
-    let projectName = pathBasename(opts.projectDir);
+    const pkgPath = pathJoin(ctx.projectDir, "package.json");
+    let projectName = pathBasename(ctx.projectDir);
 
     try {
       if (fsExists(pkgPath)) {
@@ -52,8 +93,8 @@ export function createServer(opts: ServerOptions) {
 
     return c.json({
       projectName,
-      projectDir: opts.projectDir,
-      configured: opts.projectDir !== "__unset__",
+      projectDir: ctx.projectDir,
+      configured: ctx.projectDir !== "__unset__",
     });
   });
 
@@ -66,7 +107,7 @@ export function createServer(opts: ServerOptions) {
     const seen = new Set<string>();
 
     for (const fname of [".env.local", ".env"]) {
-      const filePath = pjoin(opts.projectDir, fname);
+      const filePath = pjoin(ctx.projectDir, fname);
       if (!fsExists(filePath)) continue;
       try {
         for (const line of fsRead(filePath, "utf-8").split("\n")) {
@@ -99,6 +140,7 @@ export function createServer(opts: ServerOptions) {
   app.route("/api/drift", driftRoutes(opts.projectDir));
   app.route("/api/providers", providersRoutes(opts.projectDir));
   app.route("/api/governance", governanceRoutes(opts.projectDir));
+  app.route("/api/workspaces", workspacesRoutes(globalDataDir, ctx));
 
   // Serve static client files
   app.use(

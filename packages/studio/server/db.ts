@@ -9,6 +9,13 @@ import { mkdirSync } from "fs";
 
 let _db: Database.Database | null = null;
 
+export function resetDb(): void {
+  if (_db) {
+    try { _db.close(); } catch {}
+    _db = null;
+  }
+}
+
 export function getDb(dataDir: string): Database.Database {
   if (_db) return _db;
 
@@ -122,6 +129,14 @@ function migrate(db: Database.Database) {
       outcome TEXT NOT NULL DEFAULT 'allowed',
       policy_id TEXT,
       created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS workspaces (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      path TEXT NOT NULL UNIQUE,
+      last_opened INTEGER NOT NULL,
+      is_active INTEGER NOT NULL DEFAULT 0
     );
   `);
 }
