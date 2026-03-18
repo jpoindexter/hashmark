@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { Home, FolderTree, GitBranch, Bot, Zap, Settings, TerminalSquare, Play, Building2, ChevronRight } from "lucide-react";
+import { Home, FolderTree, GitBranch, Bot, Zap, Settings, TerminalSquare, Play, Building2, ChevronRight, AlertTriangle } from "lucide-react";
 import CommandPalette from "./CommandPalette.tsx";
 import ActivitySidebar from "./ActivitySidebar.tsx";
 import ChatMessages from "./ChatMessages.tsx";
@@ -10,6 +10,37 @@ import TerminalTabs from "./TerminalTabs.tsx";
 
 interface ProjectInfo { projectName: string; projectDir: string; }
 interface GitStatus { branch: string; files: { status: string }[]; }
+
+type DriftLevel = "none" | "minor" | "major";
+interface DriftSignal {
+  type: "file_count_delta" | "age_days" | "commit_mismatch";
+  current?: number;
+  baseline?: number;
+  delta?: number;
+  days?: number;
+  fileCommit?: string;
+  headCommit?: string;
+}
+interface DriftResult {
+  hasContextFile: true;
+  fileName: string;
+  driftLevel: DriftLevel;
+  signals: DriftSignal[];
+  recommendation: string;
+}
+interface NoDriftResult { hasContextFile: false; }
+type DriftResponse = DriftResult | NoDriftResult;
+
+function isDismissed(): boolean {
+  try {
+    const raw = localStorage.getItem("studio:drift_dismissed_until");
+    if (!raw) return false;
+    return Date.now() < parseInt(raw, 10);
+  } catch { return false; }
+}
+function dismissFor24h() {
+  try { localStorage.setItem("studio:drift_dismissed_until", String(Date.now() + 86400000)); } catch {}
+}
 
 const NAV = [
   { to: "/",         icon: <Home size={18} />,        title: "Home",     end: true },
@@ -39,6 +70,8 @@ export default function Layout() {
   const navigate = useNavigate();
   const [info, setInfo] = useState<ProjectInfo | null>(null);
   const [git, setGit] = useState<GitStatus | null>(null);
+  const [drift, setDrift] = useState<DriftResult | null>(null);
+  const [driftDismissed, setDriftDismissed] = useState<boolean>(isDismissed);
 
   const [cmdOpen, setCmdOpen] = useState(false);
   const [termOpen,   setTermOpen]   = useState(() => restore("termOpen",   false));
@@ -75,6 +108,12 @@ export default function Layout() {
   useEffect(() => {
     fetch("/api/info").then(r => r.json()).then(setInfo).catch(() => {});
     fetch("/api/files/git").then(r => r.json()).then(setGit).catch(() => {});
+    fetch("/api/drift/check")
+      .then(r => r.json())
+      .then((d: DriftResponse) => {
+        if (d.hasContextFile && d.driftLevel !== "none") setDrift(d);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -306,6 +345,14 @@ export default function Layout() {
           )}
         </div>
 
+        {/* Drift warning banner */}
+        {drift && !driftDismissed && (
+          <DriftBanner
+            drift={drift}
+            onDismiss={() => { dismissFor24h(); setDriftDismissed(true); }}
+          />
+        )}
+
         {/* Tab bar (home view only) */}
         {isHome && (
           <div style={{
@@ -454,6 +501,58 @@ export default function Layout() {
       </div>
 
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
+    </div>
+  );
+}
+
+function DriftBanner({ drift, onDismiss }: { drift: DriftResult; onDismiss: () => void }) {
+  const isMajor = drift.driftLevel === "major";
+  const accentColor = isMajor ? "#ef4444" : "#eab308";
+  const bgColor = isMajor ? "rgba(239,68,68,0.08)" : "rgba(234,179,8,0.08)";
+  const borderColor = isMajor ? "rgba(239,68,68,0.3)" : "rgba(234,179,8,0.3)";
+  const signalCount = drift.signals.length;
+
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10,
+      padding: "6px 14px",
+      background: bgColor,
+      borderBottom: `1px solid ${borderColor}`,
+      flexShrink: 0,
+      fontSize: 11,
+      fontFamily: "var(--font-ui)",
+    }}>
+      <AlertTriangle size={13} style={{ color: accentColor, flexShrink: 0 }} />
+      <span style={{ color: "var(--text-dim)", flex: 1 }}>
+        <span style={{ color: accentColor, fontWeight: 600 }}>{drift.fileName}</span>
+        {" "}may be stale — {signalCount} signal{signalCount !== 1 ? "s" : ""}.{" "}
+        {drift.recommendation}
+      </span>
+      <a
+        href="/generate"
+        onClick={() => { window.location.href = "/generate"; }}
+        style={{
+          color: accentColor, textDecoration: "none", fontWeight: 600,
+          padding: "2px 8px", border: `1px solid ${borderColor}`,
+          borderRadius: 3, whiteSpace: "nowrap", cursor: "pointer",
+          transition: "background 0.1s",
+        }}
+        onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.background = bgColor}
+        onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.background = "transparent"}
+      >
+        Regenerate
+      </a>
+      <button
+        onClick={onDismiss}
+        title="Dismiss for 24h"
+        style={{
+          background: "none", border: "none", cursor: "pointer",
+          color: "var(--text-dimmer)", fontSize: 14, padding: "0 4px",
+          lineHeight: 1, flexShrink: 0,
+        }}
+      >
+        ×
+      </button>
     </div>
   );
 }

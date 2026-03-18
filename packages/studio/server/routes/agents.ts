@@ -5,6 +5,7 @@
 import { Hono } from "hono";
 import { readFileSync, readdirSync, existsSync, writeFileSync } from "fs";
 import { join, relative } from "path";
+import { getDb } from "../db.js";
 
 export interface AgentFile {
   id: string;
@@ -139,8 +140,148 @@ export function scanAgentSecurity(agents: AgentFile[]): SecurityFinding[] {
   return findings;
 }
 
+// ─── Agent router ─────────────────────────────────────────────────────────────
+
+// File extension to domain keywords for bonus scoring
+const EXT_DOMAIN_KEYWORDS: Record<string, string[]> = {
+  ts:   ["typescript", "ts", "type", "interface", "generic"],
+  tsx:  ["react", "component", "tsx", "frontend", "ui", "jsx"],
+  js:   ["javascript", "js", "node", "script"],
+  jsx:  ["react", "component", "frontend", "ui", "jsx"],
+  py:   ["python", "py", "script", "data", "ml", "machine learning"],
+  go:   ["go", "golang", "backend", "server", "api"],
+  rs:   ["rust", "rs", "performance", "systems"],
+  css:  ["css", "style", "design", "frontend", "ui"],
+  scss: ["css", "scss", "style", "design", "frontend"],
+  sql:  ["sql", "database", "db", "query", "postgres", "mysql"],
+  md:   ["docs", "documentation", "markdown", "readme"],
+  json: ["config", "configuration", "json"],
+  yaml: ["config", "configuration", "yaml", "yml", "devops", "ci", "cd"],
+  yml:  ["config", "configuration", "yaml", "yml", "devops", "ci", "cd"],
+  sh:   ["shell", "bash", "script", "devops", "cli"],
+};
+
+function extractKeywords(text: string): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s_-]/g, " ")
+      .split(/\s+/)
+      .filter(w => w.length > 2)
+  );
+}
+
+function scoreAgent(agent: AgentFile, queryWords: string[], fileExt?: string): { score: number; matches: string[] } {
+  const agentText = `${agent.name} ${agent.description} ${agent.content.slice(0, 500)}`;
+  const agentKeywords = extractKeywords(agentText);
+
+  const matches: string[] = [];
+  for (const word of queryWords) {
+    if (agentKeywords.has(word)) matches.push(word);
+  }
+
+  let score = queryWords.length > 0 ? matches.length / queryWords.length : 0;
+
+  // Bonus for file extension domain match
+  if (fileExt) {
+    const domainWords = EXT_DOMAIN_KEYWORDS[fileExt.toLowerCase()] ?? [];
+    const domainMatches = domainWords.filter(w => agentKeywords.has(w));
+    if (domainMatches.length > 0) {
+      score = Math.min(1, score + 0.15 * domainMatches.length);
+    }
+  }
+
+  return { score, matches };
+}
+
+// ─── Effectiveness helpers ────────────────────────────────────────────────────
+
+interface WorkerRow {
+  agent_id: string;
+  status: string;
+  output: string;
+  completed_at: number | null;
+}
+
+interface EffectivenessResult {
+  agentId: string;
+  totalRuns: number;
+  successRate: number;
+  recentTrend: "improving" | "stable" | "degrading" | "insufficient_data";
+  recentSuccessRate: number;
+  avgOutputLength: number;
+  lastRun: number | null;
+}
+
+function computeEffectiveness(agentId: string, rows: WorkerRow[]): EffectivenessResult {
+  const total = rows.length;
+  if (total === 0) {
+    return { agentId, totalRuns: 0, successRate: 0, recentTrend: "insufficient_data", recentSuccessRate: 0, avgOutputLength: 0, lastRun: null };
+  }
+
+  const successful = rows.filter(r => r.status === "done").length;
+  const successRate = successful / total;
+
+  // Recent trend: last 3 vs previous 3
+  const recent = rows.slice(0, 3);
+  const prior = rows.slice(3, 6);
+
+  let recentTrend: EffectivenessResult["recentTrend"] = "insufficient_data";
+  let recentSuccessRate = recent.filter(r => r.status === "done").length / recent.length;
+
+  if (recent.length >= 3 && prior.length >= 3) {
+    const recentRate = recent.filter(r => r.status === "done").length / recent.length;
+    const priorRate = prior.filter(r => r.status === "done").length / prior.length;
+    const delta = recentRate - priorRate;
+    recentTrend = delta > 0.15 ? "improving" : delta < -0.15 ? "degrading" : "stable";
+    recentSuccessRate = recentRate;
+  }
+
+  const doneRows = rows.filter(r => r.status === "done");
+  const avgOutputLength = doneRows.length > 0
+    ? Math.round(doneRows.reduce((sum, r) => sum + (r.output?.length ?? 0), 0) / doneRows.length)
+    : 0;
+
+  const lastRun = rows[0]?.completed_at ?? null;
+
+  return { agentId, totalRuns: total, successRate, recentTrend, recentSuccessRate, avgOutputLength, lastRun };
+}
+
 export function agentsRoutes(projectDir: string) {
   const app = new Hono();
+  const dataDir = `${projectDir}/.hashmark`;
+
+  // GET /api/agents/route?q=<message>&file=<optional-path>
+  app.get("/route", (c) => {
+    const q = c.req.query("q") ?? "";
+    const file = c.req.query("file") ?? "";
+    const fileExt = file ? file.split(".").pop() : undefined;
+
+    const agents = readAgentsDir(projectDir);
+    if (agents.length === 0) return c.json({ suggestions: [] });
+
+    const queryWords = Array.from(extractKeywords(q)).filter(w => w.length > 2);
+    if (queryWords.length === 0) return c.json({ suggestions: [] });
+
+    const scored = agents
+      .map(agent => {
+        const { score, matches } = scoreAgent(agent, queryWords, fileExt);
+        return { agent, score, matches };
+      })
+      .filter(s => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+
+    const suggestions = scored.map(({ agent, score, matches }) => ({
+      id: agent.id,
+      name: agent.name || agent.id,
+      description: agent.description,
+      score: Math.round(score * 100) / 100,
+      reason: matches.length > 0 ? `matches: ${matches.slice(0, 4).join(", ")}` : "",
+    }));
+
+    return c.json({ suggestions });
+  });
 
   // GET /api/agents/security-scan — scan all agents for security issues
   app.get("/security-scan", (c) => {

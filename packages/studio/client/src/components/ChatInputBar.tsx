@@ -359,6 +359,108 @@ function getAtQuery(val: string, cursorPos: number): string | null {
   return segment;
 }
 
+// ─── Agent suggestion chip ────────────────────────────────────────────────────
+
+interface AgentSuggestion {
+  id: string;
+  name: string;
+  description: string;
+  score: number;
+  reason: string;
+}
+
+function useAgentSuggestion(query: string, currentFile?: string) {
+  const [suggestion, setSuggestion] = useState<AgentSuggestion | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    const trimmed = query.trim();
+    if (!trimmed || trimmed.startsWith("/")) {
+      setSuggestion(null);
+      return;
+    }
+    timerRef.current = setTimeout(() => {
+      const params = new URLSearchParams({ q: trimmed });
+      if (currentFile) params.set("file", currentFile);
+      fetch(`/api/agents/route?${params}`)
+        .then(r => r.json())
+        .then((d: { suggestions?: AgentSuggestion[] }) => {
+          const top = d.suggestions?.[0];
+          setSuggestion(top && top.score > 0.3 ? top : null);
+        })
+        .catch(() => setSuggestion(null));
+    }, 500);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [query, currentFile]);
+
+  return suggestion;
+}
+
+function AgentChip({
+  suggestion,
+  onApply,
+  onDismiss,
+}: {
+  suggestion: AgentSuggestion;
+  onApply: (id: string) => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      padding: "3px 8px 3px 6px",
+      background: "var(--bg-2)",
+      border: "1px solid var(--border-dim)",
+      borderRadius: 4,
+      fontSize: 10,
+      fontFamily: "var(--font)",
+      color: "var(--text-dimmer)",
+      marginBottom: 4,
+      width: "fit-content",
+      userSelect: "none",
+    }}>
+      <span style={{ color: "var(--accent)", fontSize: 11, lineHeight: 1 }}>⚡</span>
+      <span>Try:</span>
+      <button
+        onClick={() => onApply(suggestion.id)}
+        title={suggestion.description || suggestion.reason}
+        style={{
+          background: "none",
+          border: "none",
+          padding: 0,
+          cursor: "pointer",
+          color: "var(--accent)",
+          fontFamily: "var(--font)",
+          fontSize: 10,
+          fontWeight: 600,
+        }}
+      >
+        {suggestion.name}
+      </button>
+      <span>for this task</span>
+      <button
+        onClick={onDismiss}
+        style={{
+          background: "none",
+          border: "none",
+          padding: "0 0 0 2px",
+          cursor: "pointer",
+          color: "var(--text-dimmer)",
+          fontFamily: "var(--font)",
+          fontSize: 11,
+          lineHeight: 1,
+        }}
+        title="Dismiss"
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
 // ─── ──────────────────────────────────────────────────────────────────────────
 
 interface Session {
@@ -375,6 +477,7 @@ interface ChatInputBarProps {
   onStreamingChange: (streaming: boolean) => void;
   streaming: boolean;
   terminalCwd?: string;
+  currentFile?: string;
 }
 
 const MODELS = [
@@ -489,7 +592,7 @@ function ToolbarToggle({
 }
 
 export default function ChatInputBar({
-  sessionId, onNewSession, onSessionCreated, onStreamText, onStreamingChange, streaming, terminalCwd,
+  sessionId, onNewSession, onSessionCreated, onStreamText, onStreamingChange, streaming, terminalCwd, currentFile,
 }: ChatInputBarProps) {
   const [input, setInput] = useState("");
   const [selectedModel, setSelectedModel] = useState(() => restore("model", "claude-sonnet-4-6"));
@@ -497,8 +600,11 @@ export default function ChatInputBar({
   const [planMode, setPlanMode] = useState(() => restore("plan_mode", false));
   const [slashOpen, setSlashOpen] = useState(false);
   const [atQuery, setAtQuery] = useState<string | null>(null); // null = closed
+  const [chipDismissed, setChipDismissed] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
+
+  const agentSuggestion = useAgentSuggestion(input, currentFile);
 
   const slashCommands = useSlashCommands(onNewSession, () => setPlanMode(v => !v), () => setThinking(v => !v));
   const mentionFiles = useMentionFiles();
@@ -532,6 +638,8 @@ export default function ChatInputBar({
     const cursor = e.target.selectionStart ?? val.length;
     const aq = getAtQuery(val, cursor);
     setAtQuery(aq !== null ? aq : null);
+    // Reset chip dismiss when user types new content
+    if (chipDismissed) setChipDismissed(false);
   };
 
   const selectSlashCommand = useCallback((cmd: SlashCommand) => {
@@ -559,6 +667,13 @@ export default function ChatInputBar({
       requestAnimationFrame(() => void sendMessageWithText(`/${cmd.name}`));
     }
   }, [streaming]); // sendMessageWithText closes over streaming
+
+  const applyAgentSuggestion = useCallback((agentId: string) => {
+    const mention = `@${agentId}`;
+    setInput(prev => prev ? `${prev.trimEnd()} ${mention} ` : `${mention} `);
+    setChipDismissed(true);
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  }, []);
 
   const selectMentionFile = useCallback((file: FileEntry) => {
     setAtQuery(null);
@@ -698,6 +813,13 @@ export default function ChatInputBar({
             files={mentionFiles}
             onSelect={selectMentionFile}
             onDismiss={() => setAtQuery(null)}
+          />
+        )}
+        {agentSuggestion && !chipDismissed && !slashOpen && atQuery === null && (
+          <AgentChip
+            suggestion={agentSuggestion}
+            onApply={applyAgentSuggestion}
+            onDismiss={() => setChipDismissed(true)}
           />
         )}
       <div
