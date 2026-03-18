@@ -24,6 +24,7 @@ import { detectMonorepo, formatMonorepoOverview } from "./scanners/monorepo.js";
 import { scanGraphQL } from "./scanners/graphql.js";
 import { scanLatentHooks } from "./scanners/latent-hooks.js";
 import { analyzeComplexity, loadPreviousComplexity, saveComplexitySnapshot, computeComplexityDelta } from "./scanners/complexity.js";
+import { validateContext } from "./scanners/context-validator.js";
 import { generateAgentsMd } from "./generator.js";
 import { generateAgentsIndex } from "./json-generator.js";
 import { generateAllFormats, generateFormat, FORMAT_REGISTRY, type FormatId } from "./formats/index.js";
@@ -131,7 +132,14 @@ cli
         saveComplexitySnapshot(targetDir, scanResult.aiRecommendations);
       }
 
-      // 5. Report & Generate
+      // 5. Context validation (TypeScript, lint, build, deps, tests)
+      try {
+        scanResult.contextValidation = await validateContext(targetDir);
+      } catch {
+        // non-fatal — validation failure should never abort the scan
+      }
+
+      // 6. Report & Generate
       if (!quiet) reportFindings(scanResult);
 
       const outputDir = options.output ? resolve(options.output) : targetDir;

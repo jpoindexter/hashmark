@@ -762,4 +762,6 @@ export interface ScanResult {
   git?: GitInfo | null;
   /** Complexity delta vs last scan (optional) */
   complexityDelta?: ComplexityDelta | null;
+  /** Context validation results (TypeScript, lint, build, tests) */
+  contextValidation?: import("./scanners/context-validator.js").ContextValidation;
 }

@@ -14,7 +14,32 @@
  */
 
 import type { ScanResult, ComplexityDelta } from "../types.js";
+import type { ContextValidation, ValidationResult } from "../scanners/context-validator.js";
 import { getStackPatternSections } from "../templates/stack-patterns.js";
+
+function statusIcon(status: ValidationResult["status"]): string {
+  switch (status) {
+    case "pass": return "✅";
+    case "warn": return "⚠️";
+    case "fail": return "❌";
+    case "skip": return "⏭️";
+  }
+}
+
+function renderBuildHealth(validation: ContextValidation): string[] {
+  const lines: string[] = [];
+  lines.push("## Build Health");
+  lines.push("");
+  lines.push("> Auto-validated at scan time — reflects actual project state.");
+  lines.push("");
+  lines.push("| Check | Status | Detail |");
+  lines.push("|-------|--------|--------|");
+  for (const r of validation.results) {
+    lines.push(`| ${r.check} | ${statusIcon(r.status)} ${r.status} | ${r.detail} |`);
+  }
+  lines.push("");
+  return lines;
+}
 
 /** Returns a rationale annotation for a hub file based on heuristics. */
 function hubRationale(file: string, importedByCount: number, scan: ScanResult): string {
@@ -473,6 +498,12 @@ export function generateContextMd(scan: ScanResult): string {
     lines.push(`*${stats.totalFiles} files · ${stats.totalLines.toLocaleString()} lines*`);
   }
 
+  // Build Health
+  if (scan.contextValidation) {
+    lines.push("");
+    for (const l of renderBuildHealth(scan.contextValidation)) lines.push(l);
+  }
+
   return lines.join("\n");
 }
 
@@ -865,6 +896,11 @@ export function generateClaudeMd(scan: ScanResult, customRules: string[] = []): 
       lines.push(`- **${hook.event}**: \`${hook.command}\`${patternDesc}`);
     }
     lines.push("");
+  }
+
+  // Build Health
+  if (scan.contextValidation) {
+    for (const l of renderBuildHealth(scan.contextValidation)) lines.push(l);
   }
 
   return lines.join("\n");
