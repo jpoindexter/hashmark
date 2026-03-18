@@ -11,6 +11,7 @@ import { join, relative } from "path";
 import { randomUUID } from "crypto";
 import { promisify } from "util";
 import { tmpdir } from "os";
+import { getDb } from "../db.js";
 
 const execFile = promisify(execFileCb);
 
@@ -91,6 +92,7 @@ function findClaudeBin(projectDir: string): string {
 
 export function companyRoutes(projectDir: string) {
   const app = new Hono();
+  const dataDir = `${projectDir}/.hashmark`;
 
   // GET /api/company/status
   app.get("/status", (c) => {
@@ -184,6 +186,14 @@ Respond with ONLY a JSON array, no markdown, no explanation:
 
           send({ type: "worker_start", id: subtask.id, title: subtask.title, agentId: subtask.agentId });
 
+          // Update worker status to running in DB
+          try {
+            const db = getDb(dataDir);
+            db.prepare(
+              "UPDATE swarm_workers SET status='running', started_at=? WHERE run_id=? AND worker_id=?"
+            ).run(Date.now(), runId, subtask.id);
+          } catch {}
+
           try {
             await execFile("git", ["worktree", "add", worktreeDir, "-b", branchName], {
               cwd: projectDir,
@@ -191,6 +201,12 @@ Respond with ONLY a JSON array, no markdown, no explanation:
           } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             send({ type: "worker_error", id: subtask.id, error: `Worktree failed: ${msg}` });
+            try {
+              const db = getDb(dataDir);
+              db.prepare(
+                "UPDATE swarm_workers SET status='error', error=?, completed_at=? WHERE run_id=? AND worker_id=?"
+              ).run(`Worktree failed: ${msg}`, Date.now(), runId, subtask.id);
+            } catch {}
             throw err;
           }
 
@@ -221,6 +237,12 @@ Work in the current directory. Make the necessary code changes, create or modify
               const text = chunk.toString();
               fullOutput += text;
               send({ type: "worker_chunk", id: subtask.id, text });
+              try {
+                const db = getDb(dataDir);
+                db.prepare(
+                  "UPDATE swarm_workers SET output = output || ? WHERE run_id=? AND worker_id=?"
+                ).run(text, runId, subtask.id);
+              } catch {}
             });
 
             proc.stderr.on("data", () => {});
@@ -228,6 +250,12 @@ Work in the current directory. Make the necessary code changes, create or modify
             proc.on("close", async (code: number | null) => {
               if (code !== 0 && code !== null) {
                 send({ type: "worker_error", id: subtask.id, error: `Exit code ${code}` });
+                try {
+                  const db = getDb(dataDir);
+                  db.prepare(
+                    "UPDATE swarm_workers SET status='error', error=?, completed_at=? WHERE run_id=? AND worker_id=?"
+                  ).run(`Exit code ${code}`, Date.now(), runId, subtask.id);
+                } catch {}
                 reject(new Error(`Exit ${code}`));
                 return;
               }
@@ -242,18 +270,45 @@ Work in the current directory. Make the necessary code changes, create or modify
                 }
               } catch {}
 
+              try {
+                const db = getDb(dataDir);
+                db.prepare(
+                  "UPDATE swarm_workers SET status='done', completed_at=? WHERE run_id=? AND worker_id=?"
+                ).run(Date.now(), runId, subtask.id);
+              } catch {}
+
               send({ type: "worker_done", id: subtask.id, output: fullOutput, hasChanges });
               resolve({ id: subtask.id, output: fullOutput, hasChanges });
             });
 
             proc.on("error", (err: Error) => {
               send({ type: "worker_error", id: subtask.id, error: err.message });
+              try {
+                const db = getDb(dataDir);
+                db.prepare(
+                  "UPDATE swarm_workers SET status='error', error=?, completed_at=? WHERE run_id=? AND worker_id=?"
+                ).run(err.message, Date.now(), runId, subtask.id);
+              } catch {}
               reject(err);
             });
           });
         }
 
         async function orchestrate() {
+          // Insert run + workers into DB
+          try {
+            const db = getDb(dataDir);
+            db.prepare(
+              "INSERT INTO swarm_runs (id, task, status, worker_count, created_at) VALUES (?, ?, 'running', ?, ?)"
+            ).run(runId, body.task, plan.length, Date.now());
+            for (const subtask of plan) {
+              const agentDef = agentMap.get(subtask.agentId);
+              db.prepare(
+                "INSERT INTO swarm_workers (run_id, worker_id, title, agent_id, agent_name, status) VALUES (?, ?, ?, ?, ?, 'pending')"
+              ).run(runId, subtask.id, subtask.title, subtask.agentId, agentDef?.name ?? subtask.agentId);
+            }
+          } catch {}
+
           const results = await Promise.allSettled(plan.map(runWorker));
 
           send({ type: "phase", phase: "merging" });
@@ -292,6 +347,14 @@ Work in the current directory. Make the necessary code changes, create or modify
             try { await execFile("git", ["branch", "-D", branchName], { cwd: projectDir }); } catch {}
           }
 
+          // Persist merge result
+          try {
+            const db = getDb(dataDir);
+            db.prepare(
+              "UPDATE swarm_runs SET merged_count=?, conflict_count=?, skipped_count=?, status='done', completed_at=? WHERE id=?"
+            ).run(merged.length, conflicts.length, skipped.length, Date.now(), runId);
+          } catch {}
+
           send({ type: "merge_result", merged, conflicts, skipped });
           send({ type: "complete" });
 
@@ -301,6 +364,12 @@ Work in the current directory. Make the necessary code changes, create or modify
 
         orchestrate().catch((err) => {
           send({ type: "error", error: err instanceof Error ? err.message : String(err) });
+          try {
+            const db = getDb(dataDir);
+            db.prepare(
+              "UPDATE swarm_runs SET status='error', completed_at=? WHERE id=?"
+            ).run(Date.now(), runId);
+          } catch {}
           activeRun = false;
           controller.close();
         });
@@ -314,6 +383,45 @@ Work in the current directory. Make the necessary code changes, create or modify
         "Connection": "keep-alive",
       },
     });
+  });
+
+  // GET /api/company/runs — list past swarm runs with workers
+  app.get("/runs", (c) => {
+    const db = getDb(dataDir);
+    const runs = db.prepare(
+      "SELECT * FROM swarm_runs ORDER BY created_at DESC LIMIT 50"
+    ).all() as Record<string, unknown>[];
+    const workers = db.prepare(
+      "SELECT * FROM swarm_workers WHERE run_id IN (SELECT id FROM swarm_runs ORDER BY created_at DESC LIMIT 50) ORDER BY worker_id"
+    ).all() as Record<string, unknown>[];
+
+    const workersByRun = new Map<string, Record<string, unknown>[]>();
+    for (const w of workers) {
+      const rid = w.run_id as string;
+      if (!workersByRun.has(rid)) workersByRun.set(rid, []);
+      workersByRun.get(rid)!.push(w);
+    }
+
+    const result = runs.map(r => ({ ...r, workers: workersByRun.get(r.id as string) ?? [] }));
+    return c.json({ runs: result });
+  });
+
+  // GET /api/company/runs/:id — single run + workers
+  app.get("/runs/:id", (c) => {
+    const db = getDb(dataDir);
+    const run = db.prepare("SELECT * FROM swarm_runs WHERE id=?").get(c.req.param("id")) as Record<string, unknown> | undefined;
+    if (!run) return c.json({ error: "Not found" }, 404);
+    const workers = db.prepare(
+      "SELECT * FROM swarm_workers WHERE run_id=? ORDER BY worker_id"
+    ).all(c.req.param("id")) as Record<string, unknown>[];
+    return c.json({ run, workers });
+  });
+
+  // DELETE /api/company/runs/:id — delete run (cascades to workers)
+  app.delete("/runs/:id", (c) => {
+    const db = getDb(dataDir);
+    db.prepare("DELETE FROM swarm_runs WHERE id=?").run(c.req.param("id"));
+    return c.json({ ok: true });
   });
 
   return app;

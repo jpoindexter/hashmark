@@ -32,6 +32,27 @@ interface MergeResult {
   skipped: number[];
 }
 
+interface RunRecord {
+  id: string;
+  task: string;
+  status: 'running' | 'done' | 'error';
+  worker_count: number;
+  merged_count: number;
+  conflict_count: number;
+  skipped_count: number;
+  created_at: number;
+  completed_at: number | null;
+  workers: {
+    worker_id: number;
+    title: string;
+    agent_id: string;
+    agent_name: string;
+    status: string;
+    output: string;
+    error: string | null;
+  }[];
+}
+
 const STATUS_COLORS: Record<WorkerStatus, string> = {
   pending:  "var(--text-dimmer)",
   running:  "var(--accent)",
@@ -202,6 +223,9 @@ export default function Company() {
   const [mergeResult, setMergeResult] = useState<MergeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [availableAgents, setAvailableAgents] = useState<AgentDef[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [runs, setRuns] = useState<RunRecord[]>([]);
+  const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
 
   // Load available agents for preview
   useEffect(() => {
@@ -210,6 +234,26 @@ export default function Company() {
       .then((d: { agents: AgentDef[] }) => setAvailableAgents(d.agents ?? []))
       .catch(() => {});
   }, []);
+
+  const loadRuns = useCallback(() => {
+    fetch('/api/company/runs')
+      .then(r => r.json())
+      .then((d: { runs: RunRecord[] }) => setRuns(d.runs ?? []))
+      .catch(() => {});
+  }, []);
+
+  // Poll for in-progress runs while history panel is open
+  useEffect(() => {
+    if (!historyOpen) return;
+    loadRuns();
+    const interval = setInterval(loadRuns, 3000);
+    return () => clearInterval(interval);
+  }, [historyOpen, loadRuns]);
+
+  // Reload runs when a swarm completes
+  useEffect(() => {
+    if (phase === 'done') loadRuns();
+  }, [phase, loadRuns]);
 
   const agentName = useCallback((agentId: string): string => {
     const a = availableAgents.find(x => x.id === agentId);
@@ -600,6 +644,104 @@ export default function Company() {
           </div>
         </div>
       )}
+
+      {/* History */}
+      <div>
+        <div
+          onClick={() => { setHistoryOpen(v => !v); if (!historyOpen) loadRuns(); }}
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+            fontSize: 10, color: 'var(--text-dimmer)', textTransform: 'uppercase',
+            letterSpacing: '0.1em', padding: '8px 0', borderTop: '1px solid var(--border-dim)',
+            userSelect: 'none' }}
+        >
+          <span>{historyOpen ? '▾' : '▸'}</span>
+          <span>PAST RUNS</span>
+          {runs.length > 0 && <span>({runs.length})</span>}
+        </div>
+
+        {historyOpen && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {runs.length === 0 && (
+              <div style={{ fontSize: 11, color: 'var(--text-dimmer)', padding: '12px 0' }}>No past runs</div>
+            )}
+            {runs.map(run => {
+              const isExpanded = expandedRunId === run.id;
+              const runCols = run.workers.length <= 2 ? run.workers.length : run.workers.length <= 4 ? 2 : 3;
+              return (
+                <div key={run.id} style={{ border: '1px solid var(--border-dim)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+                  {/* Run header */}
+                  <div
+                    onClick={() => setExpandedRunId(isExpanded ? null : run.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                      cursor: 'pointer', background: 'var(--bg-2)', userSelect: 'none' }}
+                  >
+                    {/* Status dot */}
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                      background: run.status === 'done' ? 'var(--accent)' : run.status === 'error' ? 'var(--red)' : 'var(--yellow)',
+                      ...(run.status === 'running' ? { animation: 'swarm-pulse 1s ease-in-out infinite' } : {})
+                    }} />
+                    {/* Task text */}
+                    <span style={{ flex: 1, fontSize: 11, color: 'var(--text)', overflow: 'hidden',
+                      textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {run.task.slice(0, 80)}
+                    </span>
+                    {/* Stats */}
+                    <span style={{ fontSize: 10, color: 'var(--text-dimmer)', flexShrink: 0 }}>
+                      {run.worker_count} agents
+                      {run.merged_count > 0 && <span style={{ color: 'var(--accent)' }}> · {run.merged_count} merged</span>}
+                      {run.conflict_count > 0 && <span style={{ color: 'var(--yellow)' }}> · {run.conflict_count} conflicts</span>}
+                    </span>
+                    {/* Date */}
+                    <span style={{ fontSize: 9, color: 'var(--text-dimmer)', flexShrink: 0 }}>
+                      {new Date(run.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    {/* Delete */}
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        fetch(`/api/company/runs/${run.id}`, { method: 'DELETE' })
+                          .then(() => loadRuns())
+                          .catch(() => {});
+                      }}
+                      style={{ background: 'none', border: 'none', color: 'var(--text-dimmer)',
+                        cursor: 'pointer', fontSize: 12, padding: '0 2px', flexShrink: 0 }}
+                      title="Delete run"
+                    >
+                      ×
+                    </button>
+                    <span style={{ fontSize: 10, color: 'var(--text-dimmer)', flexShrink: 0 }}>
+                      {isExpanded ? '▴' : '▾'}
+                    </span>
+                  </div>
+
+                  {/* Expanded worker grid */}
+                  {isExpanded && (
+                    <div style={{ padding: '10px 12px', background: 'var(--bg)',
+                      display: 'grid', gridTemplateColumns: `repeat(${runCols}, 1fr)`, gap: 8 }}>
+                      {run.workers.map(w => (
+                        <WorkerCard
+                          key={w.worker_id}
+                          worker={{
+                            id: w.worker_id,
+                            title: w.title,
+                            agentId: w.agent_id,
+                            agentName: w.agent_name,
+                            status: w.status as WorkerStatus,
+                            output: w.output,
+                            error: w.error ?? undefined,
+                          }}
+                          isExpanded={true}
+                          onToggle={() => {}}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       <style>{`
         @keyframes swarm-pulse { 0%,100%{opacity:.5;transform:scale(.8)} 50%{opacity:1;transform:scale(1.3)} }

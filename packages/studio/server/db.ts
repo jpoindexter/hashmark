@@ -76,5 +76,31 @@ function migrate(db: Database.Database) {
       started_at INTEGER NOT NULL,
       ended_at INTEGER
     );
+
+    CREATE TABLE IF NOT EXISTS swarm_runs (
+      id TEXT PRIMARY KEY,
+      task TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'running',
+      worker_count INTEGER NOT NULL DEFAULT 0,
+      merged_count INTEGER NOT NULL DEFAULT 0,
+      conflict_count INTEGER NOT NULL DEFAULT 0,
+      skipped_count INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      completed_at INTEGER
+    );
+
+    CREATE TABLE IF NOT EXISTS swarm_workers (
+      run_id TEXT NOT NULL REFERENCES swarm_runs(id) ON DELETE CASCADE,
+      worker_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      agent_id TEXT NOT NULL,
+      agent_name TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      output TEXT NOT NULL DEFAULT '',
+      error TEXT,
+      started_at INTEGER,
+      completed_at INTEGER,
+      PRIMARY KEY (run_id, worker_id)
+    );
   `);
 }
