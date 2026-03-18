@@ -296,6 +296,43 @@ export function agentsRoutes(projectDir: string) {
     return c.json({ agents });
   });
 
+  // GET /api/agents/effectiveness — all agents' stats
+  app.get("/effectiveness", (c) => {
+    try {
+      const db = getDb(dataDir);
+      const rows = db.prepare(
+        "SELECT agent_id, status, output, completed_at FROM swarm_workers WHERE completed_at IS NOT NULL ORDER BY completed_at DESC"
+      ).all() as WorkerRow[];
+
+      const byAgent = new Map<string, WorkerRow[]>();
+      for (const row of rows) {
+        if (!byAgent.has(row.agent_id)) byAgent.set(row.agent_id, []);
+        byAgent.get(row.agent_id)!.push(row);
+      }
+
+      const stats = Array.from(byAgent.entries()).map(([agentId, agentRows]) =>
+        computeEffectiveness(agentId, agentRows)
+      );
+      return c.json({ stats });
+    } catch {
+      return c.json({ stats: [] });
+    }
+  });
+
+  // GET /api/agents/:id/effectiveness — single agent stats
+  app.get("/:id/effectiveness", (c) => {
+    const id = c.req.param("id");
+    try {
+      const db = getDb(dataDir);
+      const rows = db.prepare(
+        "SELECT agent_id, status, output, completed_at FROM swarm_workers WHERE agent_id = ? AND completed_at IS NOT NULL ORDER BY completed_at DESC"
+      ).all(id) as WorkerRow[];
+      return c.json(computeEffectiveness(id, rows));
+    } catch {
+      return c.json(computeEffectiveness(id, []));
+    }
+  });
+
   // GET /api/agents/:id — get single agent
   app.get("/:id", (c) => {
     const id = c.req.param("id");
