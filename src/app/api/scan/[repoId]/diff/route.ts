@@ -2,7 +2,6 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { createTwoFilesPatch } from "diff";
-import { Button } from '@/components/ui/button'
 
 export async function GET(
   request: Request,
