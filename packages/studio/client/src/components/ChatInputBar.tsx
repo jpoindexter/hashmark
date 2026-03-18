@@ -1,5 +1,218 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Plus, Send, Square } from "lucide-react";
+
+// ─── Slash command registry ───────────────────────────────────────────────────
+
+interface SlashCommand {
+  name: string;
+  description: string;
+  argHint?: string;
+  category: "claude" | "studio" | "mode";
+  /** If set, run this action instead of sending the command text */
+  action?: () => void;
+}
+
+const BUILTIN_COMMANDS: SlashCommand[] = [
+  // Claude CLI pass-throughs
+  { name: "compact",  description: "Compact conversation to save context",    category: "claude" },
+  { name: "clear",    description: "Clear conversation context",              category: "claude" },
+  { name: "help",     description: "Show available commands",                 category: "claude" },
+  { name: "init",     description: "Initialize or update CLAUDE.md",         category: "claude" },
+  { name: "debug",    description: "Troubleshoot the current session",        category: "claude" },
+  { name: "review",   description: "Review recent code changes",              category: "claude" },
+  { name: "commit",   description: "Commit staged changes with a message",    category: "claude" },
+  { name: "simplify", description: "Review and simplify recently changed code", category: "claude" },
+  { name: "batch",    description: "Orchestrate large-scale parallel changes", argHint: "<instruction>", category: "claude" },
+  // Mode toggles (inserted as system context)
+  { name: "plan",     description: "Toggle plan mode — respond with a plan, no code", category: "mode" },
+  { name: "think",    description: "Toggle extended thinking",                category: "mode" },
+  // Studio actions
+  { name: "new",      description: "Start a new chat session",               category: "studio" },
+  { name: "checkpoint", description: "Save a checkpoint of the current session", category: "studio" },
+  { name: "scan",     description: "Trigger a codebase scan",                category: "studio" },
+];
+
+const CATEGORY_LABEL: Record<SlashCommand["category"], string> = {
+  claude: "Claude",
+  mode:   "Mode",
+  studio: "Studio",
+};
+
+function useSlashCommands(onNewSession: () => void, onTogglePlan: () => void, onToggleThink: () => void) {
+  const [customCmds, setCustomCmds] = useState<SlashCommand[]>([]);
+
+  useEffect(() => {
+    fetch("/api/agents")
+      .then(r => r.json())
+      .then((d: { agents?: Array<{ id: string; name: string; description: string }> }) => {
+        const agents = d.agents ?? [];
+        setCustomCmds(agents.map(a => ({
+          name: a.id,
+          description: a.description || a.name,
+          category: "studio" as const,
+        })));
+      })
+      .catch(() => {});
+  }, []);
+
+  return [
+    ...BUILTIN_COMMANDS.map(cmd => {
+      if (cmd.name === "new") return { ...cmd, action: onNewSession };
+      if (cmd.name === "plan") return { ...cmd, action: onTogglePlan };
+      if (cmd.name === "think") return { ...cmd, action: onToggleThink };
+      return cmd;
+    }),
+    ...customCmds,
+  ];
+}
+
+// ─── Inline slash picker ──────────────────────────────────────────────────────
+
+function SlashPicker({
+  query,
+  commands,
+  onSelect,
+  onDismiss,
+}: {
+  query: string;
+  commands: SlashCommand[];
+  onSelect: (cmd: SlashCommand) => void;
+  onDismiss: () => void;
+}) {
+  const q = query.slice(1).toLowerCase(); // strip leading "/"
+  const filtered = q
+    ? commands.filter(c => c.name.startsWith(q) || c.description.toLowerCase().includes(q))
+    : commands;
+
+  const [activeIdx, setActiveIdx] = useState(0);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setActiveIdx(0); }, [query]);
+
+  // Scroll active into view
+  useEffect(() => {
+    const el = listRef.current?.querySelector("[data-active='true']") as HTMLElement | null;
+    el?.scrollIntoView({ block: "nearest" });
+  }, [activeIdx]);
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape")    { e.preventDefault(); onDismiss(); return; }
+      if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, filtered.length - 1)); return; }
+      if (e.key === "ArrowUp")   { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)); return; }
+      if (e.key === "Tab" || e.key === "Enter") {
+        if (filtered.length === 0) return;
+        e.preventDefault();
+        onSelect(filtered[activeIdx]);
+      }
+    };
+    window.addEventListener("keydown", h, { capture: true });
+    return () => window.removeEventListener("keydown", h, { capture: true });
+  }, [filtered, activeIdx, onSelect, onDismiss]);
+
+  if (filtered.length === 0) return null;
+
+  // Group by category
+  const grouped = filtered.reduce<Record<string, SlashCommand[]>>((acc, cmd) => {
+    if (!acc[cmd.category]) acc[cmd.category] = [];
+    acc[cmd.category].push(cmd);
+    return acc;
+  }, {});
+
+  let globalIdx = 0;
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        bottom: "calc(100% + 4px)",
+        left: 0,
+        right: 0,
+        background: "var(--bg-3)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-lg)",
+        boxShadow: "0 -8px 24px rgba(0,0,0,0.5)",
+        zIndex: 500,
+        maxHeight: 320,
+        overflow: "auto",
+      }}
+      ref={listRef}
+    >
+      {Object.entries(grouped).map(([cat, cmds]) => (
+        <div key={cat}>
+          <div style={{
+            padding: "5px 12px 2px",
+            fontSize: 10,
+            fontWeight: 600,
+            color: "var(--text-dimmer)",
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+            userSelect: "none",
+          }}>
+            {CATEGORY_LABEL[cat as SlashCommand["category"]] ?? cat}
+          </div>
+          {cmds.map(cmd => {
+            const idx = globalIdx++;
+            const isActive = idx === activeIdx;
+            return (
+              <div
+                key={cmd.name}
+                data-active={isActive}
+                onClick={() => onSelect(cmd)}
+                onMouseEnter={() => setActiveIdx(idx)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "6px 12px",
+                  cursor: "pointer",
+                  background: isActive ? "var(--accent-bg)" : "transparent",
+                  borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
+                  transition: "background 0.05s",
+                }}
+              >
+                <span style={{
+                  fontFamily: "var(--font)",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: isActive ? "var(--accent)" : "var(--text-dim)",
+                  minWidth: 90,
+                  flexShrink: 0,
+                }}>
+                  /{cmd.name}
+                  {cmd.argHint && (
+                    <span style={{ color: "var(--text-dimmer)", fontWeight: 400 }}> {cmd.argHint}</span>
+                  )}
+                </span>
+                <span style={{
+                  fontSize: 12,
+                  color: "var(--text-dimmer)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}>
+                  {cmd.description}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+      <div style={{
+        padding: "4px 12px 6px",
+        fontSize: 10,
+        color: "var(--text-dimmer)",
+        borderTop: "1px solid var(--border-dim)",
+        display: "flex",
+        gap: 10,
+      }}>
+        <span>↑↓ navigate</span>
+        <span>↵ / Tab select</span>
+        <span>Esc dismiss</span>
+      </div>
+    </div>
+  );
+}
 
 interface Session {
   id: string;
@@ -134,12 +347,47 @@ export default function ChatInputBar({
   const [selectedModel, setSelectedModel] = useState(() => restore("model", "claude-sonnet-4-6"));
   const [thinking, setThinking] = useState(() => restore("thinking", false));
   const [planMode, setPlanMode] = useState(() => restore("plan_mode", false));
+  const [slashOpen, setSlashOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
+
+  const slashCommands = useSlashCommands(onNewSession, () => setPlanMode(v => !v), () => setThinking(v => !v));
 
   useEffect(() => persist("model", selectedModel), [selectedModel]);
   useEffect(() => persist("thinking", thinking), [thinking]);
   useEffect(() => persist("plan_mode", planMode), [planMode]);
+
+  // Show slash picker when input looks like a command (starts with "/" with no space yet)
+  const isSlashTrigger = (val: string) => val.startsWith("/") && !val.includes(" ");
+  useEffect(() => {
+    setSlashOpen(isSlashTrigger(input));
+  }, [input]);
+
+  const selectSlashCommand = useCallback((cmd: SlashCommand) => {
+    setSlashOpen(false);
+    if (cmd.action) {
+      // Studio action — run it, clear the input
+      cmd.action();
+      setInput("");
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
+      return;
+    }
+    if (cmd.category === "mode") {
+      // These are handled by action above, but as a fallback just clear
+      setInput("");
+      return;
+    }
+    // Claude CLI pass-through: set input to the command text so user can add args or just send
+    const hasArgs = cmd.argHint;
+    if (hasArgs) {
+      setInput(`/${cmd.name} `);
+      requestAnimationFrame(() => textareaRef.current?.focus());
+    } else {
+      setInput(`/${cmd.name}`);
+      // Send immediately for no-arg commands
+      requestAnimationFrame(() => void sendMessageWithText(`/${cmd.name}`));
+    }
+  }, [streaming]); // sendMessageWithText closes over streaming
 
   // ⌘L focus shortcut
   useEffect(() => {
@@ -152,9 +400,16 @@ export default function ChatInputBar({
 
   const sendMessage = async () => {
     if (!input.trim() || streaming) return;
-    const text = input.trim();
-    setInput("");
-    if (textareaRef.current) textareaRef.current.style.height = "auto";
+    return sendMessageWithText();
+  };
+
+  const sendMessageWithText = async (overrideText?: string) => {
+    const text = overrideText ?? input.trim();
+    if (!text || streaming) return;
+    if (!overrideText) {
+      setInput("");
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
+    }
 
     let sid = sessionId;
     if (!sid) {
@@ -237,6 +492,15 @@ export default function ChatInputBar({
 
   return (
     <div style={{ background: "var(--bg)", borderTop: "1px solid var(--border-dim)", flexShrink: 0, padding: "12px 16px 10px" }}>
+      <div style={{ position: "relative" }}>
+        {slashOpen && (
+          <SlashPicker
+            query={input}
+            commands={slashCommands}
+            onSelect={selectSlashCommand}
+            onDismiss={() => setSlashOpen(false)}
+          />
+        )}
       <div
         style={{
           background: "var(--bg-2)", border: "1px solid var(--border)",
@@ -334,6 +598,7 @@ export default function ChatInputBar({
           )}
         </div>
       </div>
+      </div>{/* end position:relative wrapper */}
 
       <style>{`@keyframes stream-pulse { 0%,100%{opacity:.4;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }`}</style>
     </div>
