@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { ScanHistoryPage } from "@/components/dashboard/scan-history-page";
+import { Button } from '@/components/ui/button'
 
 export const metadata = {
   title: "Scan History — Hashmark",
@@ -41,5 +42,5 @@ export default async function HistoryPage({
           take: 50,
         });
 
-  return <ScanHistoryPage scans={scans} plan={plan} />;
+  return <ScanHistoryPage repoId={repoId} scans={scans} plan={plan} />;
 }

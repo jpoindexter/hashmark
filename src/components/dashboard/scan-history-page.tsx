@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import type { Scan } from "@prisma/client";
-import { EmptyState } from "@fabrk/components";
-import { Clock } from "lucide-react";
+import { EmptyState, Button } from "@fabrk/components";
+import { Clock, GitCompareArrows } from "lucide-react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { UpgradeGate } from "@/components/shared/upgrade-gate";
+import { ScanDiffModal } from "./scan-diff-modal";
 
 type DiffValue = { value: number | null; delta: number | null };
 
@@ -41,13 +43,23 @@ function DeltaBadge({ delta }: { delta: number | null }) {
   );
 }
 
+interface DiffTarget {
+  fromScanId: string;
+  toScanId: string;
+  fromLabel: string;
+  toLabel: string;
+}
+
 export function ScanHistoryPage({
+  repoId,
   scans,
   plan,
 }: {
+  repoId: string;
   scans: Scan[];
   plan: string;
 }) {
+  const [diffTarget, setDiffTarget] = useState<DiffTarget | null>(null);
   if (plan === "FREE") {
     return (
       <UpgradeGate
@@ -70,6 +82,15 @@ export function ScanHistoryPage({
 
   const diffs = computeDiffs(scans);
 
+  // Build ordered list of completed scans for diff targeting
+  const completed = scans.filter(s => s.status === "COMPLETED");
+
+  function fmtLabel(scan: Scan) {
+    return new Date(scan.createdAt).toLocaleString([], {
+      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+    });
+  }
+
   return (
     <section>
       <h2 className="mono-section-title">SCAN HISTORY</h2>
@@ -82,11 +103,19 @@ export function ScanHistoryPage({
             <th className="text-right type-label text-muted-foreground">LINES</th>
             <th className="text-right type-label text-muted-foreground">COMPONENTS</th>
             <th className="text-right type-label text-muted-foreground">DURATION</th>
+            <th className="w-10" />
           </tr>
         </thead>
         <tbody>
           {scans.map((scan) => {
             const d = diffs.get(scan.id);
+            // Find the previous completed scan for diffing
+            const idx = completed.findIndex(s => s.id === scan.id);
+            const prevCompleted = idx !== -1 && idx < completed.length - 1
+              ? completed[idx + 1]
+              : null;
+            const canDiff = scan.status === "COMPLETED" && prevCompleted != null;
+
             return (
               <tr key={scan.id}>
                 <td><StatusBadge status={scan.status} /></td>
@@ -113,6 +142,24 @@ export function ScanHistoryPage({
                 <td className="text-right type-caption text-muted-foreground">
                   {scan.duration ? `${(scan.duration / 1000).toFixed(1)}s` : "—"}
                 </td>
+                <td className="text-right">
+                  {canDiff && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setDiffTarget({
+                        fromScanId: prevCompleted!.id,
+                        toScanId: scan.id,
+                        fromLabel: fmtLabel(prevCompleted!),
+                        toLabel: fmtLabel(scan),
+                      })}
+                      title="Compare with previous scan"
+                      aria-label="Compare with previous scan"
+                    >
+                      <GitCompareArrows size={14} />
+                    </Button>
+                  )}
+                </td>
               </tr>
             );
           })}
@@ -120,8 +167,19 @@ export function ScanHistoryPage({
       </table>
       {scans.length > 1 && (
         <p className="mt-[var(--grid-3)] type-caption text-muted-foreground">
-          Deltas show change vs. previous completed scan.
+          Deltas show change vs. previous completed scan. Click <GitCompareArrows size={11} className="inline" /> to view a full diff.
         </p>
+      )}
+
+      {diffTarget && (
+        <ScanDiffModal
+          repoId={repoId}
+          fromScanId={diffTarget.fromScanId}
+          toScanId={diffTarget.toScanId}
+          fromLabel={diffTarget.fromLabel}
+          toLabel={diffTarget.toLabel}
+          onClose={() => setDiffTarget(null)}
+        />
       )}
     </section>
   );
