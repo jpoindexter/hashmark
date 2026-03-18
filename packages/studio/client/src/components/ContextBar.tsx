@@ -17,6 +17,12 @@ interface LoopAnalysis {
   messageCount: number;
 }
 
+interface StageBreakdown {
+  early: number;
+  middle: number;
+  recent: number;
+}
+
 interface TokenInfo {
   inputTokens: number;
   outputTokens: number;
@@ -29,6 +35,8 @@ interface TokenInfo {
   pct: number;
   messageCount: number;
   wasteEstimatePct: number;
+  stageBreakdown?: StageBreakdown;
+  avgMessageTokens?: number;
 }
 
 interface ContextBarProps {
@@ -179,6 +187,55 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
               ))}
             </div>
           </div>
+
+          {/* Conversation stages */}
+          {info.stageBreakdown && (() => {
+            const { early, middle, recent } = info.stageBreakdown;
+            const stageTotal = early + middle + recent;
+            const earlyPct = stageTotal > 0 ? Math.round((early / stageTotal) * 100) : 0;
+            const midPct = stageTotal > 0 ? Math.round((middle / stageTotal) * 100) : 0;
+            const recentPct = stageTotal > 0 ? 100 - earlyPct - midPct : 0;
+            const recencyRatio = stageTotal > 0 ? recent / stageTotal : 0;
+            const recencyLabel = recencyRatio > 0.5
+              ? { text: "recent-heavy", color: "var(--accent)" }
+              : recencyRatio < 0.2
+              ? { text: "front-heavy", color: "var(--yellow)" }
+              : null;
+            return (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                  <span style={{ color: "var(--text-dimmer)" }}>Conversation stages</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {recencyLabel && (
+                      <span style={{ color: recencyLabel.color, fontSize: 9 }}>{recencyLabel.text}</span>
+                    )}
+                    {info.avgMessageTokens !== undefined && (
+                      <span style={{ color: "var(--text-dimmer)" }}>~{fmt(info.avgMessageTokens)}t avg/msg</span>
+                    )}
+                  </span>
+                </div>
+                <div style={{ height: 4, background: "var(--border-dim)", display: "flex", overflow: "hidden" }}>
+                  <div style={{ width: `${earlyPct}%`, background: "var(--text-dimmer)", opacity: 0.6, flexShrink: 0 }} title={`Early: ${fmt(early)}`} />
+                  <div style={{ width: `${midPct}%`, background: "var(--blue)", opacity: 0.6, flexShrink: 0 }} title={`Middle: ${fmt(middle)}`} />
+                  <div style={{ flex: 1, background: "var(--accent)" }} title={`Recent: ${fmt(recent)}`} />
+                </div>
+                <div style={{ display: "flex", gap: 10, marginTop: 4, flexWrap: "wrap" }}>
+                  {([
+                    ["Early", "var(--text-dimmer)", earlyPct, early],
+                    ["Mid", "var(--blue)", midPct, middle],
+                    ["Recent", "var(--accent)", recentPct, recent],
+                  ] as [string, string, number, number][]).map(([label, color, p, tokens]) => (
+                    <span key={label} style={{ display: "flex", alignItems: "center", gap: 3, color: "var(--text-dimmer)" }}>
+                      <span style={{ width: 6, height: 6, background: color, opacity: 0.8, borderRadius: 1, flexShrink: 0 }} />
+                      <span>{label}</span>
+                      <span style={{ color }}>{fmt(tokens)}</span>
+                      <span style={{ color: "var(--text-dimmer)", opacity: 0.6 }}>({p}%)</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Structural waste estimate */}
           <div style={{

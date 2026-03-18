@@ -421,6 +421,7 @@ export function sessionsRoutes(projectDir: string) {
   // GET /api/sessions/:id/tokens
   app.get("/:id/tokens", (c) => {
     const db = getDb(dataDir);
+    const sessionId = c.req.param("id");
     const session = db.prepare(`
       SELECT total_input_tokens, total_output_tokens,
         (SELECT COUNT(*) FROM session_messages WHERE session_id = ?) as message_count,
@@ -430,8 +431,8 @@ export function sessionsRoutes(projectDir: string) {
         (SELECT COALESCE(SUM(output_tokens),0) FROM session_messages WHERE session_id = ? AND role = 'assistant') as assistant_output_tokens
       FROM sessions WHERE id = ?
     `).get(
-      c.req.param("id"), c.req.param("id"), c.req.param("id"),
-      c.req.param("id"), c.req.param("id"), c.req.param("id")
+      sessionId, sessionId, sessionId,
+      sessionId, sessionId, sessionId
     ) as {
       total_input_tokens: number;
       total_output_tokens: number;
@@ -453,6 +454,25 @@ export function sessionsRoutes(projectDir: string) {
     // Average measured waste: 21.8%. Scales with message count — more turns = more dead output.
     const wasteEstimatePct = Math.min(35, Math.round(session.message_count * 1.2));
 
+    // Stage breakdown: divide conversation into early/middle/recent thirds by message position
+    const messages = db.prepare(
+      "SELECT content FROM session_messages WHERE session_id = ? ORDER BY created_at ASC"
+    ).all(sessionId) as Array<{ content: string }>;
+
+    const msgCount = messages.length;
+    const earlyEnd = Math.floor(msgCount * 0.33);
+    const midEnd = Math.floor(msgCount * 0.66);
+
+    const stageBreakdown = { early: 0, middle: 0, recent: 0 };
+    for (let i = 0; i < msgCount; i++) {
+      const tokens = Math.ceil(messages[i].content.length / 4);
+      if (i < earlyEnd) stageBreakdown.early += tokens;
+      else if (i < midEnd) stageBreakdown.middle += tokens;
+      else stageBreakdown.recent += tokens;
+    }
+
+    const avgMessageTokens = msgCount > 0 ? Math.round(total / msgCount) : 0;
+
     return c.json({
       inputTokens: session.total_input_tokens,
       outputTokens: session.total_output_tokens,
@@ -465,6 +485,8 @@ export function sessionsRoutes(projectDir: string) {
       pct,
       messageCount: session.message_count,
       wasteEstimatePct,
+      stageBreakdown,
+      avgMessageTokens,
     });
   });
 
