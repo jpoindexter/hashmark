@@ -1006,6 +1006,22 @@ cli
     }
   });
 
+// --- publish command ---
+cli
+  .command("publish", "Bundle context files into a shareable JSON envelope")
+  .option("--copy", "Copy CLAUDE.md content to clipboard")
+  .option("--output <path>", "Custom output path for the bundle")
+  .option("--include-all", "Include all format files, not just main context files")
+  .action(async (opts: { copy?: boolean; output?: string; includeAll?: boolean }) => {
+    try {
+      const { runPublish } = await import("./commands/publish.js");
+      await runPublish(process.cwd(), opts as Parameters<typeof runPublish>[1]);
+    } catch (error) {
+      console.error(pc.red(`\n  publish failed: ${error instanceof Error ? error.message : error}\n`));
+      process.exit(1);
+    }
+  });
+
 // --- doctor command ---
 cli
   .command("doctor", "Run a 9-point health check on the project")
