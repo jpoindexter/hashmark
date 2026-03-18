@@ -411,12 +411,23 @@ export function sessionsRoutes(projectDir: string) {
     const db = getDb(dataDir);
     const session = db.prepare(`
       SELECT total_input_tokens, total_output_tokens,
-        (SELECT COUNT(*) FROM session_messages WHERE session_id = ?) as message_count
+        (SELECT COUNT(*) FROM session_messages WHERE session_id = ?) as message_count,
+        (SELECT COUNT(*) FROM session_messages WHERE session_id = ? AND role = 'user') as user_count,
+        (SELECT COUNT(*) FROM session_messages WHERE session_id = ? AND role = 'assistant') as assistant_count,
+        (SELECT COALESCE(SUM(input_tokens),0) FROM session_messages WHERE session_id = ? AND role = 'user') as user_input_tokens,
+        (SELECT COALESCE(SUM(output_tokens),0) FROM session_messages WHERE session_id = ? AND role = 'assistant') as assistant_output_tokens
       FROM sessions WHERE id = ?
-    `).get(c.req.param("id"), c.req.param("id")) as {
+    `).get(
+      c.req.param("id"), c.req.param("id"), c.req.param("id"),
+      c.req.param("id"), c.req.param("id"), c.req.param("id")
+    ) as {
       total_input_tokens: number;
       total_output_tokens: number;
       message_count: number;
+      user_count: number;
+      assistant_count: number;
+      user_input_tokens: number;
+      assistant_output_tokens: number;
     } | undefined;
 
     if (!session) return c.json({ error: "Not found" }, 404);
@@ -425,13 +436,23 @@ export function sessionsRoutes(projectDir: string) {
     const contextWindow = 200000;
     const pct = Math.min(100, Math.round((total / contextWindow) * 100));
 
+    // Structural waste estimate based on Missing Memory Hierarchy paper (2603.09023):
+    // Sessions accumulate dead tool output (~26.5%), unused schemas (~20.2%), static re-sends (~11%).
+    // Average measured waste: 21.8%. Scales with message count — more turns = more dead output.
+    const wasteEstimatePct = Math.min(35, Math.round(session.message_count * 1.2));
+
     return c.json({
       inputTokens: session.total_input_tokens,
       outputTokens: session.total_output_tokens,
+      userInputTokens: session.user_input_tokens,
+      assistantOutputTokens: session.assistant_output_tokens,
+      userCount: session.user_count,
+      assistantCount: session.assistant_count,
       total,
       contextWindow,
       pct,
       messageCount: session.message_count,
+      wasteEstimatePct,
     });
   });
 
