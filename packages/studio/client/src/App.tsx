@@ -7,6 +7,7 @@ import Sessions from "./pages/Sessions.tsx";
 import Settings from "./pages/Settings.tsx";
 import Files from "./pages/Files.tsx";
 import Git from "./pages/Git.tsx";
+import SourceControlPage from "./components/SourceControlPage.tsx";
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="files" element={<Files />} />
         <Route path="git" element={<Git />} />
+        <Route path="source-control" element={<SourceControlPage />} />
         <Route path="agents" element={<Agents />} />
         <Route path="generate" element={<Generate />} />
         <Route path="sessions" element={<Sessions />} />

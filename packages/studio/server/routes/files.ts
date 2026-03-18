@@ -65,6 +65,58 @@ export function filesRoutes(projectDir: string) {
     } catch { return c.json({ error: "not found" }, 404); }
   });
 
+  app.get("/diff", async (c) => {
+    const relPath = c.req.query("path");
+    if (!relPath) return c.json({ error: "path required" }, 400);
+    const fullPath = join(projectDir, relPath);
+    if (!fullPath.startsWith(projectDir)) return c.json({ error: "forbidden" }, 403);
+    try {
+      const { stdout } = await execAsync("git", ["diff", "HEAD", "--", relPath], { cwd: projectDir });
+      if (!stdout) {
+        try {
+          const content = await readFile(fullPath, "utf-8");
+          const lines = content.split("\n").map(l => `+${l}`).join("\n");
+          const fakeDiff = `--- /dev/null\n+++ b/${relPath}\n@@ -0,0 +1,${content.split("\n").length} @@\n${lines}`;
+          return c.json({ diff: fakeDiff, path: relPath });
+        } catch {
+          return c.json({ diff: "", path: relPath });
+        }
+      }
+      return c.json({ diff: stdout, path: relPath });
+    } catch {
+      return c.json({ diff: "", path: relPath, error: "failed to get diff" });
+    }
+  });
+
+  app.post("/stage", async (c) => {
+    const body = await c.req.json<{ paths?: string[] }>().catch(() => ({ paths: undefined }));
+    try {
+      if (body.paths?.length) {
+        for (const p of body.paths) {
+          const fullPath = join(projectDir, p);
+          if (!fullPath.startsWith(projectDir)) continue;
+          await execAsync("git", ["add", p], { cwd: projectDir });
+        }
+      } else {
+        await execAsync("git", ["add", "-A"], { cwd: projectDir });
+      }
+      return c.json({ ok: true });
+    } catch (err) {
+      return c.json({ error: String(err) }, 500);
+    }
+  });
+
+  app.post("/commit", async (c) => {
+    const body = await c.req.json<{ message: string }>();
+    if (!body.message?.trim()) return c.json({ error: "message required" }, 400);
+    try {
+      await execAsync("git", ["commit", "-m", body.message], { cwd: projectDir });
+      return c.json({ ok: true });
+    } catch (err) {
+      return c.json({ error: String(err) }, 500);
+    }
+  });
+
   app.get("/git", async (c) => {
     try {
       const [statusOut, logOut, branchOut] = await Promise.all([
@@ -73,15 +125,24 @@ export function filesRoutes(projectDir: string) {
         execAsync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: projectDir }),
       ]);
       const branch = branchOut.stdout.trim();
-      const files = statusOut.stdout.trim().split("\n").filter(Boolean).map((line) => ({
+      const rawFiles = statusOut.stdout.trim().split("\n").filter(Boolean).map((line) => ({
         status: line.slice(0, 2).trim(),
         file: line.slice(3).trim(),
+      }));
+      const filesWithStats = await Promise.all(rawFiles.map(async (f) => {
+        try {
+          const { stdout } = await execAsync("git", ["diff", "--numstat", "HEAD", "--", f.file], { cwd: projectDir });
+          const parts = stdout.trim().split("\t");
+          return { ...f, added: parseInt(parts[0]) || 0, removed: parseInt(parts[1]) || 0 };
+        } catch {
+          return { ...f, added: 0, removed: 0 };
+        }
       }));
       const commits = logOut.stdout.trim().split("\n").filter(Boolean).map((line) => {
         const i = line.indexOf(" ");
         return { hash: line.slice(0, i), message: line.slice(i + 1) };
       });
-      return c.json({ branch, files, commits });
+      return c.json({ branch, files: filesWithStats, commits });
     } catch {
       return c.json({ branch: "unknown", files: [], commits: [], error: "not a git repo" });
     }

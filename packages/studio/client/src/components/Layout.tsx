@@ -1,7 +1,9 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef, Suspense, lazy } from "react";
-import { Home, FolderTree, GitBranch, MessageSquare, Bot, Zap, Settings, TerminalSquare, MessageCircle } from "lucide-react";
-import ChatPanel from "./ChatPanel.tsx";
+import { Home, FolderTree, GitBranch, MessageSquare, Bot, Zap, Settings, TerminalSquare } from "lucide-react";
+import WorkspaceSidebar from "./WorkspaceSidebar.tsx";
+import ChatMessages from "./ChatMessages.tsx";
+import ChatInputBar from "./ChatInputBar.tsx";
 
 const TerminalPane = lazy(() => import("./Terminal.tsx"));
 
@@ -10,12 +12,11 @@ interface GitStatus { branch: string; files: { status: string }[]; }
 
 const NAV = [
   { to: "/",         icon: <Home size={20} />,          title: "Home",     end: true },
-  { to: "/files",    icon: <FolderTree size={20} />,    title: "Explorer"  },
-  { to: "/git",      icon: <GitBranch size={20} />,     title: "Source Control" },
-  { to: "/sessions", icon: <MessageSquare size={20} />, title: "Chat"      },
-  { to: "/agents",   icon: <Bot size={20} />,           title: "Agents"    },
-  { to: "/generate", icon: <Zap size={20} />,           title: "Generate"  },
-  { to: "/settings", icon: <Settings size={20} />,      title: "Settings"  },
+  { to: "/files",    icon: <FolderTree size={20} />,    title: "Explorer"            },
+  { to: "/sessions", icon: <MessageSquare size={20} />, title: "Chat"                },
+  { to: "/agents",   icon: <Bot size={20} />,           title: "Agents"              },
+  { to: "/generate", icon: <Zap size={20} />,           title: "Generate"            },
+  { to: "/settings", icon: <Settings size={20} />,      title: "Settings"            },
 ];
 
 const PANEL_TABS = ["TERMINAL", "OUTPUT"] as const;
@@ -37,19 +38,46 @@ export default function Layout() {
   const [git, setGit] = useState<GitStatus | null>(null);
 
   // Panel state — persisted
-  const [termOpen,   setTermOpen]   = useState(() => restore("termOpen",   false));
-  const [termHeight, setTermHeight] = useState(() => restore("termHeight", 220));
-  const [termBig,    setTermBig]    = useState(() => restore("termBig",    false));
-  const [activeTab,  setActiveTab]  = useState<PanelTab>("TERMINAL");
-  const [chatOpen,   setChatOpen]   = useState(() => restore("chatOpen",   true));
-  const [chatWidth,  setChatWidth]  = useState(() => restore("chatWidth",  320));
+  const [termOpen,      setTermOpen]      = useState(() => restore("termOpen",      false));
+  const [termHeight,    setTermHeight]    = useState(() => restore("termHeight",    220));
+  const [termBig,       setTermBig]       = useState(() => restore("termBig",       false));
+  const [activeTab,     setActiveTab]     = useState<PanelTab>("TERMINAL");
+  const [workspaceOpen, setWorkspaceOpen] = useState(() => restore("workspaceOpen", false));
 
-  // Persist on change
-  useEffect(() => persist("termOpen",   termOpen),   [termOpen]);
-  useEffect(() => persist("termHeight", termHeight), [termHeight]);
-  useEffect(() => persist("termBig",    termBig),    [termBig]);
-  useEffect(() => persist("chatOpen",   chatOpen),   [chatOpen]);
-  useEffect(() => persist("chatWidth",  chatWidth),  [chatWidth]);
+  // Active chat session — persisted to dedicated key
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(() =>
+    localStorage.getItem("studio_active_session_id") ?? null
+  );
+  const [streamText, setStreamText] = useState("");
+  const [streaming,  setStreaming]  = useState(false);
+
+  // Persist panel state
+  useEffect(() => persist("termOpen",      termOpen),      [termOpen]);
+  useEffect(() => persist("termHeight",    termHeight),    [termHeight]);
+  useEffect(() => persist("termBig",       termBig),       [termBig]);
+  useEffect(() => persist("workspaceOpen", workspaceOpen), [workspaceOpen]);
+
+  // Persist active session
+  useEffect(() => {
+    if (activeSessionId) {
+      localStorage.setItem("studio_active_session_id", activeSessionId);
+    } else {
+      localStorage.removeItem("studio_active_session_id");
+    }
+  }, [activeSessionId]);
+
+  // Auto-create a session on mount if none exists
+  useEffect(() => {
+    if (activeSessionId) return;
+    fetch("/api/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    })
+      .then((r) => r.json())
+      .then((d: { session: { id: string } }) => setActiveSessionId(d.session.id))
+      .catch(() => {});
+  }, [activeSessionId]);
 
   // Load project info + git branch
   useEffect(() => {
@@ -57,41 +85,27 @@ export default function Layout() {
     fetch("/api/files/git").then(r => r.json()).then(setGit).catch(() => {});
   }, []);
 
-  // Keyboard shortcuts
+  // Keyboard shortcut: terminal toggle
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "`") {
         e.preventDefault();
         setTermOpen(v => !v);
       }
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "j") {
-        e.preventDefault();
-        setChatOpen(v => !v);
-      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Drag refs
+  // Drag refs — terminal only
   const draggingTerm = useRef(false);
-  const draggingChat = useRef(false);
   const dragStartY   = useRef(0);
   const dragStartH   = useRef(0);
-  const dragStartX   = useRef(0);
-  const dragStartW   = useRef(0);
 
   const onTermDragStart = (e: React.MouseEvent) => {
     draggingTerm.current = true;
     dragStartY.current   = e.clientY;
     dragStartH.current   = termHeight;
-    e.preventDefault();
-  };
-
-  const onChatDragStart = (e: React.MouseEvent) => {
-    draggingChat.current = true;
-    dragStartX.current   = e.clientX;
-    dragStartW.current   = chatWidth;
     e.preventDefault();
   };
 
@@ -101,15 +115,8 @@ export default function Layout() {
         const delta = dragStartY.current - e.clientY;
         setTermHeight(Math.max(80, Math.min(600, dragStartH.current + delta)));
       }
-      if (draggingChat.current) {
-        const delta = dragStartX.current - e.clientX;
-        setChatWidth(Math.max(240, Math.min(600, dragStartW.current + delta)));
-      }
     };
-    const onUp = () => {
-      draggingTerm.current = false;
-      draggingChat.current = false;
-    };
+    const onUp = () => { draggingTerm.current = false; };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
     return () => {
@@ -118,12 +125,24 @@ export default function Layout() {
     };
   }, []);
 
+  const handleNewSession = () => {
+    fetch("/api/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    })
+      .then((r) => r.json())
+      .then((d: { session: { id: string } }) => setActiveSessionId(d.session.id))
+      .catch(() => {});
+  };
+
   const changedFiles = git?.files?.length ?? 0;
 
-  // Route label for breadcrumb
   const routeTitle = NAV.find(n => n.to === location.pathname)?.title
     ?? location.pathname.slice(1).toUpperCase()
     ?? "HOME";
+
+  const isSessionsRoute = location.pathname === "/sessions";
 
   return (
     <div style={{
@@ -135,10 +154,10 @@ export default function Layout() {
       WebkitAppRegion: "no-drag",
     } as React.CSSProperties}>
 
-      {/* ─── TOP: titlebar + main body ─────────────────────── */}
+      {/* TOP: activity bar + content area */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
 
-        {/* ── Activity bar ── */}
+        {/* Activity bar */}
         <aside style={{
           width: 52,
           minWidth: 52,
@@ -172,8 +191,7 @@ export default function Layout() {
                   })}
                 >
                   <span style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{item.icon}</span>
-                  {/* Badge for git changes */}
-                  {item.to === "/git" && changedFiles > 0 && (
+                  {item.to === "/source-control" && changedFiles > 0 && (
                     <span style={{
                       position: "absolute", top: 6, right: 4,
                       background: "var(--accent)", color: "var(--bg)",
@@ -189,10 +207,41 @@ export default function Layout() {
             ))}
           </nav>
 
+          {/* Workspace sidebar toggle */}
+          <div className="nav-tooltip-wrap" style={{ marginTop: 4 }}>
+            <button
+              onClick={() => setWorkspaceOpen(v => !v)}
+              style={{
+                background: workspaceOpen ? "var(--accent-bg)" : "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: workspaceOpen ? "var(--text)" : "var(--text-dimmer)",
+                borderLeft: workspaceOpen ? "2px solid var(--accent)" : "2px solid transparent",
+                fontSize: 20, height: 44, width: 52,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "all 0.1s",
+                position: "relative",
+              }}
+            >
+              <GitBranch size={20} />
+              {changedFiles > 0 && (
+                <span style={{
+                  position: "absolute", top: 6, right: 4,
+                  background: "var(--accent)", color: "var(--bg)",
+                  fontSize: 9, fontWeight: 700, borderRadius: 8,
+                  padding: "0 4px", minWidth: 14, textAlign: "center", lineHeight: "14px",
+                }}>
+                  {changedFiles}
+                </span>
+              )}
+            </button>
+            <span className="nav-tooltip">Source Control</span>
+          </div>
+
           <div style={{ flex: 1 }} />
 
           {/* Terminal toggle */}
-          <div className="nav-tooltip-wrap">
+          <div className="nav-tooltip-wrap" style={{ marginBottom: 8 }}>
             <button
               onClick={() => setTermOpen(v => !v)}
               style={{
@@ -204,166 +253,162 @@ export default function Layout() {
             ><TerminalSquare size={20} /></button>
             <span className="nav-tooltip">Terminal  ⌃`</span>
           </div>
-
-          {/* Chat toggle */}
-          <div className="nav-tooltip-wrap" style={{ marginBottom: 8 }}>
-            <button
-              onClick={() => setChatOpen(v => !v)}
-              style={{
-                background: "none", border: "none", cursor: "pointer",
-                color: chatOpen ? "var(--accent)" : "var(--text-dimmer)",
-                fontSize: 20, height: 44, width: 52,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}
-            ><MessageCircle size={20} /></button>
-            <span className="nav-tooltip">Chat  ⌘⇧J</span>
-          </div>
         </aside>
 
-        {/* ── Main + chat ── */}
-        <div style={{ flex: 1, display: "flex", overflow: "hidden", minWidth: 0 }}>
+        {/* Workspace sidebar panel */}
+        {workspaceOpen && (
+          <div style={{
+            width: 260,
+            minWidth: 260,
+            borderRight: "1px solid var(--border-dim)",
+            background: "var(--bg-2)",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            flexShrink: 0,
+          }}>
+            <WorkspaceSidebar onClose={() => setWorkspaceOpen(false)} />
+          </div>
+        )}
 
-          {/* ── Workspace ── */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+        {/* Content column: titlebar + page/messages + terminal + chat input */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
 
-            {/* Titlebar / breadcrumb */}
-            <div style={{
-              height: 38, minHeight: 38,
-              background: "var(--bg-2)",
-              borderBottom: "1px solid var(--border-dim)",
-              display: "flex", alignItems: "center",
-              padding: "0 12px",
-              WebkitAppRegion: "drag",
-              gap: 8, flexShrink: 0,
-            } as React.CSSProperties}>
-              <span style={{ fontSize: 11, color: "var(--text-dimmer)", marginLeft: 60, fontFamily: "var(--font)" }}>
-                {info?.projectName ?? "…"}
-              </span>
-              <span style={{ fontSize: 10, color: "var(--text-dimmer)", opacity: 0.4 }}>›</span>
-              <span style={{ fontSize: 11, color: "var(--text-dim)", fontFamily: "var(--font)" }}>
-                {routeTitle}
-              </span>
-            </div>
+          {/* Titlebar / breadcrumb */}
+          <div style={{
+            height: 38, minHeight: 38,
+            background: "var(--bg-2)",
+            borderBottom: "1px solid var(--border-dim)",
+            display: "flex", alignItems: "center",
+            padding: "0 12px",
+            WebkitAppRegion: "drag",
+            gap: 8, flexShrink: 0,
+          } as React.CSSProperties}>
+            <span style={{ fontSize: 11, color: "var(--text-dimmer)", marginLeft: 60, fontFamily: "var(--font)" }}>
+              {info?.projectName ?? "…"}
+            </span>
+            <span style={{ fontSize: 10, color: "var(--text-dimmer)", opacity: 0.4 }}>›</span>
+            <span style={{ fontSize: 11, color: "var(--text-dim)", fontFamily: "var(--font)" }}>
+              {routeTitle}
+            </span>
+          </div>
 
-            {/* Content */}
-            <div style={{
-              flex: termBig ? 0 : 1,
-              overflow: "auto",
-              minHeight: termBig ? 0 : undefined,
-              display: termBig ? "none" : "block",
-            }}>
-              <Outlet />
-            </div>
-
-            {/* Bottom panel */}
-            {termOpen && (
-              <>
-                {!termBig && (
-                  <div
-                    onMouseDown={onTermDragStart}
-                    style={{ height: 4, background: "var(--border-dim)", cursor: "ns-resize", flexShrink: 0, transition: "background 0.1s" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "var(--accent)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "var(--border-dim)")}
-                  />
-                )}
-                <div style={{
-                  height: termBig ? "100%" : `${termHeight}px`,
-                  flex: termBig ? 1 : undefined,
-                  minHeight: 80, background: "var(--bg)", flexShrink: 0,
-                  display: "flex", flexDirection: "column",
-                  borderTop: "1px solid var(--border-dim)",
-                }}>
-                  {/* Panel tab bar — VSCode style */}
-                  <div style={{
-                    height: 30, background: "var(--bg-3)",
-                    borderBottom: "1px solid var(--border-dim)",
-                    display: "flex", alignItems: "stretch",
-                    flexShrink: 0, userSelect: "none",
-                  }}>
-                    {PANEL_TABS.map(tab => (
-                      <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        style={{
-                          background: "none", border: "none", cursor: "pointer",
-                          padding: "0 14px", fontSize: 11, fontFamily: "var(--font)",
-                          color: activeTab === tab ? "var(--text)" : "var(--text-dimmer)",
-                          borderBottom: activeTab === tab ? "1px solid var(--accent)" : "1px solid transparent",
-                          letterSpacing: "0.05em", transition: "color 0.1s",
-                        }}
-                      >
-                        {tab}
-                      </button>
-                    ))}
-                    <div style={{ flex: 1 }} />
-                    {/* Big terminal mode — like Conductor */}
-                    <button
-                      onClick={() => setTermBig(v => !v)}
-                      title={termBig ? "Restore panel" : "Maximize panel"}
-                      style={{
-                        background: "none", border: "none", cursor: "pointer",
-                        color: termBig ? "var(--accent)" : "var(--text-dimmer)",
-                        fontSize: 13, padding: "0 10px",
-                        transition: "color 0.1s",
-                      }}
-                    >
-                      {termBig ? "⊡" : "⊞"}
-                    </button>
-                    <button
-                      onClick={() => setTermOpen(false)}
-                      style={{
-                        background: "none", border: "none", cursor: "pointer",
-                        color: "var(--text-dimmer)", fontSize: 14,
-                        padding: "0 10px", lineHeight: 1,
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-
-                  <div style={{ flex: 1, overflow: "hidden", display: activeTab === "TERMINAL" ? "flex" : "none", flexDirection: "column" }}>
-                    <Suspense fallback={null}>
-                      <TerminalPane />
-                    </Suspense>
-                  </div>
-
-                  {activeTab === "OUTPUT" && (
-                    <div style={{
-                      flex: 1, padding: "12px 16px", overflow: "auto",
-                      fontSize: 12, color: "var(--text-dimmer)", fontFamily: "var(--font)",
-                    }}>
-                      No output yet.
-                    </div>
-                  )}
-                </div>
-              </>
+          {/* Page content — sessions route shows message history, others show Outlet */}
+          <div style={{
+            flex: termBig ? 0 : 1,
+            overflow: "hidden",
+            minHeight: termBig ? 0 : undefined,
+            display: termBig ? "none" : "flex",
+            flexDirection: "column",
+          }}>
+            {isSessionsRoute ? (
+              <ChatMessages
+                sessionId={activeSessionId}
+                streamText={streamText}
+                streaming={streaming}
+              />
+            ) : (
+              <div style={{ flex: 1, overflow: "auto" }}>
+                <Outlet />
+              </div>
             )}
           </div>
 
-          {/* ── Chat panel ── */}
-          {chatOpen && (
+          {/* Bottom terminal panel */}
+          {termOpen && (
             <>
-              <div
-                onMouseDown={onChatDragStart}
-                style={{ width: 4, background: "var(--border-dim)", cursor: "ew-resize", flexShrink: 0, transition: "background 0.1s" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "var(--accent)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "var(--border-dim)")}
-              />
+              {!termBig && (
+                <div
+                  onMouseDown={onTermDragStart}
+                  style={{ height: 4, background: "var(--border-dim)", cursor: "ns-resize", flexShrink: 0, transition: "background 0.1s" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "var(--accent)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "var(--border-dim)")}
+                />
+              )}
               <div style={{
-                width: chatWidth, minWidth: 240, maxWidth: 600,
-                background: "var(--bg-2)",
-                borderLeft: "1px solid var(--border-dim)",
+                height: termBig ? "100%" : `${termHeight}px`,
+                flex: termBig ? 1 : undefined,
+                minHeight: 80, background: "var(--bg)", flexShrink: 0,
                 display: "flex", flexDirection: "column",
-                flexShrink: 0, overflow: "hidden",
+                borderTop: "1px solid var(--border-dim)",
               }}>
-                <ChatPanel />
+                <div style={{
+                  height: 30, background: "var(--bg-3)",
+                  borderBottom: "1px solid var(--border-dim)",
+                  display: "flex", alignItems: "stretch",
+                  flexShrink: 0, userSelect: "none",
+                }}>
+                  {PANEL_TABS.map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        padding: "0 14px", fontSize: 11, fontFamily: "var(--font)",
+                        color: activeTab === tab ? "var(--text)" : "var(--text-dimmer)",
+                        borderBottom: activeTab === tab ? "1px solid var(--accent)" : "1px solid transparent",
+                        letterSpacing: "0.05em", transition: "color 0.1s",
+                      }}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                  <div style={{ flex: 1 }} />
+                  <button
+                    onClick={() => setTermBig(v => !v)}
+                    title={termBig ? "Restore panel" : "Maximize panel"}
+                    style={{
+                      background: "none", border: "none", cursor: "pointer",
+                      color: termBig ? "var(--accent)" : "var(--text-dimmer)",
+                      fontSize: 13, padding: "0 10px",
+                      transition: "color 0.1s",
+                    }}
+                  >
+                    {termBig ? "⊡" : "⊞"}
+                  </button>
+                  <button
+                    onClick={() => setTermOpen(false)}
+                    style={{
+                      background: "none", border: "none", cursor: "pointer",
+                      color: "var(--text-dimmer)", fontSize: 14,
+                      padding: "0 10px", lineHeight: 1,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div style={{ flex: 1, overflow: "hidden", display: activeTab === "TERMINAL" ? "flex" : "none", flexDirection: "column" }}>
+                  <Suspense fallback={null}>
+                    <TerminalPane />
+                  </Suspense>
+                </div>
+
+                {activeTab === "OUTPUT" && (
+                  <div style={{
+                    flex: 1, padding: "12px 16px", overflow: "auto",
+                    fontSize: 12, color: "var(--text-dimmer)", fontFamily: "var(--font)",
+                  }}>
+                    No output yet.
+                  </div>
+                )}
               </div>
             </>
           )}
+
+          {/* Bottom chat input bar — always visible */}
+          <ChatInputBar
+            sessionId={activeSessionId}
+            onNewSession={handleNewSession}
+            onSessionCreated={setActiveSessionId}
+            onStreamText={setStreamText}
+            onStreamingChange={setStreaming}
+            streaming={streaming}
+          />
         </div>
       </div>
 
-      {/* ─── STATUS BAR (VSCode-style) ────────────────────── */}
+      {/* STATUS BAR */}
       <div style={{
         height: 22, minHeight: 22,
         background: "#0d1f17",
@@ -375,7 +420,6 @@ export default function Layout() {
         WebkitAppRegion: "no-drag",
         zIndex: 200,
       } as React.CSSProperties}>
-        {/* Git branch */}
         <StatusItem
           onClick={() => { window.location.hash = "/git"; }}
           title="Source Control"
@@ -389,27 +433,22 @@ export default function Layout() {
 
         <div style={{ flex: 1 }} />
 
-        {/* Project name */}
         <StatusItem>
           {info?.projectName ?? "hashmark studio"}
         </StatusItem>
 
-        {/* Ln/Col placeholder */}
         <StatusItem>
           Ln 1, Col 1
         </StatusItem>
 
-        {/* Spaces */}
         <StatusItem>
           Spaces: 2
         </StatusItem>
 
-        {/* UTF-8 */}
         <StatusItem>
           UTF-8
         </StatusItem>
 
-        {/* TypeScript indicator */}
         <StatusItem>
           TS
         </StatusItem>
