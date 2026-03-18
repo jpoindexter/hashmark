@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout.tsx";
 import Home from "./pages/Home.tsx";
@@ -5,11 +6,42 @@ import Agents from "./pages/Agents.tsx";
 import Generate from "./pages/Generate.tsx";
 import Sessions from "./pages/Sessions.tsx";
 import Settings from "./pages/Settings.tsx";
+import WorkspaceSetup from "./pages/WorkspaceSetup.tsx";
 import Files from "./pages/Files.tsx";
 import Git from "./pages/Git.tsx";
 import SourceControlPage from "./components/SourceControlPage.tsx";
+import ProjectPicker from "./components/ProjectPicker.tsx";
 
-export default function App() {
+interface InfoResponse {
+  projectName: string;
+  projectDir: string;
+  configured: boolean;
+}
+
+function AppShell() {
+  const [configured, setConfigured] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch("/api/info")
+      .then((r) => r.json())
+      .then((d: InfoResponse) => setConfigured(d.configured))
+      .catch(() => setConfigured(true));
+  }, []);
+
+  if (configured === null) {
+    return (
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100vh",
+        background: "#09090b",
+      }} />
+    );
+  }
+
+  if (!configured) return <ProjectPicker />;
+
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
@@ -25,4 +57,8 @@ export default function App() {
       </Route>
     </Routes>
   );
+}
+
+export default function App() {
+  return <AppShell />;
 }

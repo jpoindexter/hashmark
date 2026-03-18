@@ -16,6 +16,7 @@ import { tasksRoutes } from "./routes/tasks.js";
 import { sessionsRoutes } from "./routes/sessions.js";
 import { attachTerminalWS } from "./routes/terminal.js";
 import { filesRoutes } from "./routes/files.js";
+import { workspaceRoutes } from "./routes/workspace.js";
 
 export interface ServerOptions {
   projectDir: string;
@@ -43,7 +44,11 @@ export function createServer(opts: ServerOptions) {
       }
     } catch {}
 
-    return c.json({ projectName, projectDir: opts.projectDir });
+    return c.json({
+      projectName,
+      projectDir: opts.projectDir,
+      configured: opts.projectDir !== "__unset__",
+    });
   });
 
   // API routes
@@ -53,6 +58,7 @@ export function createServer(opts: ServerOptions) {
   app.route("/api/tasks", tasksRoutes(opts.projectDir));
   app.route("/api/sessions", sessionsRoutes(opts.projectDir));
   app.route("/api/files", filesRoutes(opts.projectDir));
+  app.route("/api/workspace", workspaceRoutes(opts.projectDir));
 
   // Serve static client files
   app.use(

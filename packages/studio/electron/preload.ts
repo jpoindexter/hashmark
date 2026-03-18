@@ -8,4 +8,7 @@ contextBridge.exposeInMainWorld("studio", {
   showInFinder: (path: string) => ipcRenderer.invoke("show-in-finder", path),
   openExternal: (url: string) => ipcRenderer.invoke("open-external", url),
   platform: process.platform,
+  pickFolder: () => ipcRenderer.invoke("pick-folder"),
+  getProjectDir: () => ipcRenderer.invoke("get-project-dir"),
+  setProjectDir: (dir: string) => ipcRenderer.invoke("set-project-dir", dir),
 });

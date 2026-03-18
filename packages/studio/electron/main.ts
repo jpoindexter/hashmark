@@ -3,18 +3,47 @@
  * Starts Hono server, opens native window
  */
 
-import { app, BrowserWindow, Menu, shell, ipcMain } from "electron";
+import { app, BrowserWindow, Menu, shell, ipcMain, dialog } from "electron";
 import { createServer } from "../server/index.js";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isDev = process.env.NODE_ENV === "development";
 const PORT = 3200;
 
-// Load .env.local from project dir
-const PROJECT_DIR = process.env.HASHMARK_PROJECT_DIR ?? process.cwd();
+// Config persistence
+const CONFIG_DIR = `${app.getPath("home")}/.hashmark`;
+const CONFIG_FILE = `${CONFIG_DIR}/studio-config.json`;
+
+function readConfig(): { projectDir?: string } {
+  try {
+    if (existsSync(CONFIG_FILE)) {
+      return JSON.parse(readFileSync(CONFIG_FILE, "utf-8")) as { projectDir?: string };
+    }
+  } catch {}
+  return {};
+}
+
+function writeConfig(config: { projectDir?: string }) {
+  mkdirSync(CONFIG_DIR, { recursive: true });
+  writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
+}
+
+// Resolve project dir: env > config file > sentinel
+if (!process.env.HASHMARK_PROJECT_DIR) {
+  const config = readConfig();
+  if (config.projectDir && existsSync(config.projectDir)) {
+    process.env.HASHMARK_PROJECT_DIR = config.projectDir;
+  } else {
+    process.env.HASHMARK_PROJECT_DIR = "__unset__";
+  }
+}
+
+const PROJECT_DIR = process.env.HASHMARK_PROJECT_DIR;
+
+// Load .env.local from project dir (skip when unset)
 function loadEnvFile(path: string) {
   if (!existsSync(path)) return;
   const lines = readFileSync(path, "utf-8").split("\n");
@@ -28,8 +57,11 @@ function loadEnvFile(path: string) {
     if (key && !(key in process.env)) process.env[key] = val;
   }
 }
-loadEnvFile(`${PROJECT_DIR}/.env.local`);
-loadEnvFile(`${PROJECT_DIR}/.env`);
+
+if (PROJECT_DIR !== "__unset__") {
+  loadEnvFile(`${PROJECT_DIR}/.env.local`);
+  loadEnvFile(`${PROJECT_DIR}/.env`);
+}
 
 // Start Hono server
 const STATIC_DIR = resolve(__dirname, "..", "public");
@@ -57,13 +89,11 @@ function createWindow() {
 
   win.loadURL(`http://localhost:${PORT}`);
 
-  // Open external links in default browser
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("http")) shell.openExternal(url);
     return { action: "deny" };
   });
 
-  // DevTools: only open if explicitly requested via env var
   if (process.env.STUDIO_DEVTOOLS === "1") win.webContents.openDevTools({ mode: "detach" });
 }
 
@@ -109,7 +139,6 @@ function buildMenu() {
 }
 
 app.whenReady().then(() => {
-  // Server is already started by createServer() via @hono/node-server serve()
   buildMenu();
   createWindow();
 });
@@ -129,4 +158,26 @@ ipcMain.handle("show-in-finder", (_, path: string) => {
 
 ipcMain.handle("open-external", (_, url: string) => {
   shell.openExternal(url);
+});
+
+// IPC: project picker
+ipcMain.handle("pick-folder", async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ["openDirectory"],
+    title: "Select Project Folder",
+    buttonLabel: "Open Project",
+  });
+  if (result.canceled || !result.filePaths[0]) return null;
+  return result.filePaths[0];
+});
+
+ipcMain.handle("get-project-dir", () => {
+  return process.env.HASHMARK_PROJECT_DIR ?? null;
+});
+
+ipcMain.handle("set-project-dir", async (_event, dir: string) => {
+  writeConfig({ projectDir: dir });
+  process.env.HASHMARK_PROJECT_DIR = dir;
+  win?.webContents.reload();
+  return true;
 });
