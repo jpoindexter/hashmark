@@ -7,10 +7,49 @@ import { Hono } from "hono";
 import { randomUUID, createHash } from "crypto";
 import { spawn } from "child_process";
 import { existsSync, readFileSync, writeFileSync } from "fs";
-import { join } from "path";
+import { join, extname } from "path";
 import { tmpdir, homedir } from "os";
 import { getDb } from "../db.js";
 import { loadScanContext } from "../context.js";
+
+/**
+ * Expand @file mentions in a message.
+ * Each "@path/to/file" found in the message gets its file content appended as a
+ * fenced code block so Claude has full context.
+ */
+function expandMentions(message: string, projectDir: string): string {
+  const MAX_FILE_BYTES = 100_000;
+  const mentionRe = /@([\w./\-]+)/g;
+  const seen = new Set<string>();
+  const blocks: string[] = [];
+
+  let match: RegExpExecArray | null;
+  while ((match = mentionRe.exec(message)) !== null) {
+    const relPath = match[1];
+    if (seen.has(relPath)) continue;
+    seen.add(relPath);
+
+    // Prevent path traversal
+    const fullPath = join(projectDir, relPath);
+    if (!fullPath.startsWith(projectDir + "/") && fullPath !== projectDir) continue;
+    if (!existsSync(fullPath)) continue;
+
+    try {
+      const raw = readFileSync(fullPath);
+      if (raw.length > MAX_FILE_BYTES) {
+        blocks.push(`\n\n**@${relPath}** (file too large to inline, ${raw.length} bytes)`);
+        continue;
+      }
+      const content = raw.toString("utf-8");
+      const ext = extname(relPath).slice(1) || "text";
+      blocks.push(`\n\n**@${relPath}**\n\`\`\`${ext}\n${content}\n\`\`\``);
+    } catch {
+      // skip unreadable files
+    }
+  }
+
+  return blocks.length > 0 ? message + blocks.join("") : message;
+}
 
 /**
  * Resolve MCP config from project-level or global Claude config.
@@ -215,8 +254,11 @@ export function sessionsRoutes(projectDir: string) {
       .filter(Boolean)
       .join("\n\n---\n\n") || undefined;
 
+    // Expand @file mentions — inlines file content as fenced code blocks
+    const expandedMessage = expandMentions(body.message, projectDir);
+
     // Build the full prompt with conversation history
-    const fullPrompt = buildConversationPrompt(history, body.message, effectiveSystemPrompt);
+    const fullPrompt = buildConversationPrompt(history, expandedMessage, effectiveSystemPrompt);
 
     const claudeBin = findClaudeBin(projectDir);
     const mcpConfigPath = resolveMcpConfig(projectDir);

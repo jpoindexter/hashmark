@@ -214,6 +214,164 @@ function SlashPicker({
   );
 }
 
+// ─── @mention file picker ─────────────────────────────────────────────────────
+
+interface FileEntry {
+  name: string;
+  path: string;
+  type: "file" | "dir";
+  ext?: string;
+}
+
+function flattenTree(nodes: FileEntry[], out: FileEntry[] = []): FileEntry[] {
+  for (const n of nodes) {
+    if (n.type === "file") out.push(n);
+    if (n.type === "dir" && (n as { children?: FileEntry[] }).children) {
+      flattenTree((n as { children?: FileEntry[] }).children!, out);
+    }
+  }
+  return out;
+}
+
+function useMentionFiles() {
+  const [files, setFiles] = useState<FileEntry[]>([]);
+  useEffect(() => {
+    fetch("/api/files/tree")
+      .then(r => r.json())
+      .then((d: { tree?: FileEntry[] }) => setFiles(flattenTree(d.tree ?? [])))
+      .catch(() => {});
+  }, []);
+  return files;
+}
+
+function MentionPicker({
+  query,
+  files,
+  onSelect,
+  onDismiss,
+}: {
+  query: string;           // everything after "@"
+  files: FileEntry[];
+  onSelect: (file: FileEntry) => void;
+  onDismiss: () => void;
+}) {
+  const q = query.toLowerCase();
+  const filtered = q
+    ? files.filter(f => f.path.toLowerCase().includes(q) || f.name.toLowerCase().includes(q))
+    : files.slice(0, 20);
+
+  const [activeIdx, setActiveIdx] = useState(0);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setActiveIdx(0); }, [query]);
+
+  useEffect(() => {
+    const el = listRef.current?.querySelector("[data-active='true']") as HTMLElement | null;
+    el?.scrollIntoView({ block: "nearest" });
+  }, [activeIdx]);
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape")    { e.preventDefault(); onDismiss(); return; }
+      if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, filtered.length - 1)); return; }
+      if (e.key === "ArrowUp")   { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)); return; }
+      if (e.key === "Tab" || e.key === "Enter") {
+        if (filtered.length === 0) return;
+        e.preventDefault();
+        onSelect(filtered[activeIdx]);
+      }
+    };
+    window.addEventListener("keydown", h, { capture: true });
+    return () => window.removeEventListener("keydown", h, { capture: true });
+  }, [filtered, activeIdx, onSelect, onDismiss]);
+
+  if (filtered.length === 0) return null;
+
+  const EXT_COLORS: Record<string, string> = {
+    ts: "var(--blue)", tsx: "var(--blue)", js: "var(--yellow)", jsx: "var(--yellow)",
+    py: "var(--accent)", go: "#00add8", rs: "#dea584", md: "var(--text-dim)",
+    json: "var(--text-dim)", css: "#264de4", html: "#e34c26",
+  };
+
+  return (
+    <div
+      ref={listRef}
+      style={{
+        position: "absolute",
+        bottom: "calc(100% + 4px)",
+        left: 0,
+        right: 0,
+        background: "var(--bg-3)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-lg)",
+        boxShadow: "0 -8px 24px rgba(0,0,0,0.5)",
+        zIndex: 500,
+        maxHeight: 280,
+        overflow: "auto",
+      }}
+    >
+      <div style={{ padding: "4px 12px 2px", fontSize: 10, fontWeight: 600, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", userSelect: "none" }}>
+        Files
+      </div>
+      {filtered.map((file, idx) => {
+        const isActive = idx === activeIdx;
+        const color = file.ext ? (EXT_COLORS[file.ext] ?? "var(--text-dimmer)") : "var(--text-dimmer)";
+        const dir = file.path.includes("/") ? file.path.slice(0, file.path.lastIndexOf("/") + 1) : "";
+        return (
+          <div
+            key={file.path}
+            data-active={isActive}
+            onClick={() => onSelect(file)}
+            onMouseEnter={() => setActiveIdx(idx)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "5px 12px",
+              cursor: "pointer",
+              background: isActive ? "var(--accent-bg)" : "transparent",
+              borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
+              transition: "background 0.05s",
+            }}
+          >
+            <span style={{ fontFamily: "var(--font)", fontSize: 10, fontWeight: 700, color, minWidth: 22, textAlign: "center", flexShrink: 0 }}>
+              {file.ext ? file.ext.toUpperCase().slice(0, 2) : "  "}
+            </span>
+            <span style={{ fontFamily: "var(--font)", fontSize: 12, color: isActive ? "var(--text)" : "var(--text-dim)", flexShrink: 0 }}>
+              {file.name}
+            </span>
+            {dir && (
+              <span style={{ fontFamily: "var(--font)", fontSize: 11, color: "var(--text-dimmer)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {dir}
+              </span>
+            )}
+          </div>
+        );
+      })}
+      <div style={{ padding: "4px 12px 6px", fontSize: 10, color: "var(--text-dimmer)", borderTop: "1px solid var(--border-dim)", display: "flex", gap: 10 }}>
+        <span>↑↓ navigate</span>
+        <span>↵ / Tab select</span>
+        <span>Esc dismiss</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+/** Find the @word the cursor is currently inside, returns null if not in an @mention */
+function getAtQuery(val: string, cursorPos: number): string | null {
+  const before = val.slice(0, cursorPos);
+  const atIdx = before.lastIndexOf("@");
+  if (atIdx === -1) return null;
+  // There must be no space between @ and cursor
+  const segment = before.slice(atIdx + 1);
+  if (segment.includes(" ") || segment.includes("\n")) return null;
+  return segment;
+}
+
+// ─── ──────────────────────────────────────────────────────────────────────────
+
 interface Session {
   id: string;
   title: string;
@@ -348,10 +506,12 @@ export default function ChatInputBar({
   const [thinking, setThinking] = useState(() => restore("thinking", false));
   const [planMode, setPlanMode] = useState(() => restore("plan_mode", false));
   const [slashOpen, setSlashOpen] = useState(false);
+  const [atQuery, setAtQuery] = useState<string | null>(null); // null = closed
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
 
   const slashCommands = useSlashCommands(onNewSession, () => setPlanMode(v => !v), () => setThinking(v => !v));
+  const mentionFiles = useMentionFiles();
 
   useEffect(() => persist("model", selectedModel), [selectedModel]);
   useEffect(() => persist("thinking", thinking), [thinking]);
@@ -359,9 +519,17 @@ export default function ChatInputBar({
 
   // Show slash picker when input looks like a command (starts with "/" with no space yet)
   const isSlashTrigger = (val: string) => val.startsWith("/") && !val.includes(" ");
-  useEffect(() => {
-    setSlashOpen(isSlashTrigger(input));
-  }, [input]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setInput(val);
+    // Slash picker
+    setSlashOpen(isSlashTrigger(val));
+    // @mention picker — check cursor position
+    const cursor = e.target.selectionStart ?? val.length;
+    const aq = getAtQuery(val, cursor);
+    setAtQuery(aq !== null ? aq : null);
+  };
 
   const selectSlashCommand = useCallback((cmd: SlashCommand) => {
     setSlashOpen(false);
@@ -388,6 +556,26 @@ export default function ChatInputBar({
       requestAnimationFrame(() => void sendMessageWithText(`/${cmd.name}`));
     }
   }, [streaming]); // sendMessageWithText closes over streaming
+
+  const selectMentionFile = useCallback((file: FileEntry) => {
+    setAtQuery(null);
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const cursor = ta.selectionStart ?? input.length;
+    // Replace "@<query>" with "@<path> "
+    const before = input.slice(0, cursor);
+    const atIdx = before.lastIndexOf("@");
+    const after = input.slice(cursor);
+    const newVal = `${input.slice(0, atIdx)}@${file.path} ${after}`;
+    setInput(newVal);
+    // Move cursor after the inserted mention
+    requestAnimationFrame(() => {
+      if (!ta) return;
+      const pos = atIdx + file.path.length + 2; // "@" + path + " "
+      ta.focus();
+      ta.setSelectionRange(pos, pos);
+    });
+  }, [input]);
 
   // ⌘L focus shortcut
   useEffect(() => {
@@ -501,6 +689,14 @@ export default function ChatInputBar({
             onDismiss={() => setSlashOpen(false)}
           />
         )}
+        {!slashOpen && atQuery !== null && (
+          <MentionPicker
+            query={atQuery}
+            files={mentionFiles}
+            onSelect={selectMentionFile}
+            onDismiss={() => setAtQuery(null)}
+          />
+        )}
       <div
         style={{
           background: "var(--bg-2)", border: "1px solid var(--border)",
@@ -514,7 +710,7 @@ export default function ChatInputBar({
           <textarea
             ref={textareaRef}
             value={input}
-            onChange={e => setInput(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onInput={handleInput}
             placeholder={streaming ? "" : "Ask to make changes, @mention files, run /commands"}
