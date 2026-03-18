@@ -21,6 +21,7 @@ import { workspaceRoutes } from "./routes/workspace.js";
 import { checkpointRoutes } from "./routes/checkpoints.js";
 import { mcpRoutes } from "./routes/mcp.js";
 import { companyRoutes } from "./routes/company.js";
+import { runRoutes } from "./routes/run.js";
 import { driftRoutes } from "./routes/drift.js";
 import { providersRoutes } from "./routes/providers.js";
 import { governanceRoutes } from "./routes/governance.js";
@@ -136,6 +137,7 @@ export function createServer(opts: ServerOptions) {
   app.route("/api/workspace", workspaceRoutes(opts.projectDir));
   app.route("/api/checkpoints", checkpointRoutes(opts.projectDir));
   app.route("/api/mcp", mcpRoutes(opts.projectDir));
+  app.route("/api/run", runRoutes(opts.projectDir));
   app.route("/api/company", companyRoutes(opts.projectDir));
   app.route("/api/drift", driftRoutes(opts.projectDir));
   app.route("/api/providers", providersRoutes(opts.projectDir));
