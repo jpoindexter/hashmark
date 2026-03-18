@@ -527,6 +527,42 @@ function buildKnowledgeLayer(scan: ScanResult): string[] {
     }
   }
 
+  // Rule compliance
+  if (scan.ruleCompliance && scan.ruleCompliance.totalRules > 0) {
+    for (const l of buildComplianceLayer(scan.ruleCompliance)) lines.push(l);
+  }
+
+  return lines;
+}
+
+/** Render a rule compliance table into the Knowledge layer. */
+function buildComplianceLayer(compliance: import("../types.js").RuleCompliance): string[] {
+  const lines: string[] = [];
+
+  lines.push("### Rule Compliance");
+  lines.push("");
+  lines.push("| Rule | Severity | Violations |");
+  lines.push("|------|----------|-----------|");
+
+  for (const v of compliance.violations) {
+    const files = v.matchedFiles.length > 0
+      ? v.matchedFiles.slice(0, 2).join(", ") + (v.matchedFiles.length > 2 ? ` +${v.matchedFiles.length - 2}` : "")
+      : v.count > 0 ? String(v.count) : "—";
+    lines.push(`| ${v.ruleName} | ${v.severity} | ${files} |`);
+  }
+
+  lines.push("");
+
+  const errorViolations = compliance.violations.filter(v => v.severity === "error" && v.count > 0);
+  if (errorViolations.length > 0) {
+    lines.push(`> Fix ${errorViolations.length} error violation${errorViolations.length === 1 ? "" : "s"} before delegating to agents.`);
+  } else if (compliance.failed > 0) {
+    lines.push(`> ${compliance.failed}/${compliance.totalRules} rules triggered violations.`);
+  } else {
+    lines.push(`> All ${compliance.totalRules} rules configured. No violations detected.`);
+  }
+
+  lines.push("");
   return lines;
 }
 

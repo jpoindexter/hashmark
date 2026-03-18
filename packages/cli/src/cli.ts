@@ -250,7 +250,7 @@ cli
         // non-fatal
       }
 
-      // 7. Report & Generate
+      // 8. Report & Generate
       if (!quiet) reportFindings(scanResult);
 
       const outputDir = options.output ? resolve(options.output) : targetDir;
