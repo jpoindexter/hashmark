@@ -1,6 +1,21 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { basename } from "../lib/path.js";
 
+declare global {
+  interface Window {
+    studio?: {
+      pickFolder: () => Promise<string | null>;
+      getRecentProjects: () => Promise<Array<{ name: string; dir: string; lastOpened: number }>>;
+    };
+  }
+}
+
+interface RecentProject {
+  name: string;
+  dir: string;
+  lastOpened: number;
+}
+
 interface Workspace {
   id: string;
   name: string;
@@ -10,11 +25,8 @@ interface Workspace {
 }
 
 interface ProjectPickerProps {
-  /** When used as an inline dropdown inside a sidebar, pass the current project name */
   currentName?: string;
-  /** When used as an inline dropdown, call this to close */
   onClose?: () => void;
-  /** Dropdown anchor mode: renders just the trigger+dropdown, not the full splash */
   mode?: "dropdown";
 }
 
@@ -63,143 +75,527 @@ function ChevronDown({ open }: { open: boolean }) {
   );
 }
 
+// SVG icons to avoid lucide dependency
+function ClockIcon({ size = 28, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  );
+}
+
+function TerminalIcon({ size = 28, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="4 17 10 11 4 5" />
+      <line x1="12" y1="19" x2="20" y2="19" />
+    </svg>
+  );
+}
+
+const cardBase: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  width: 152,
+  height: 110,
+  background: "var(--bg-2)",
+  border: "1px solid var(--border-dim)",
+  borderRadius: "var(--radius-lg)",
+  padding: 18,
+  cursor: "pointer",
+  transition: "background 0.12s, border-color 0.12s",
+  textAlign: "left",
+  boxSizing: "border-box",
+};
+
+function ActionCard({
+  icon,
+  label,
+  sub,
+  onClick,
+  disabled,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  sub: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        ...cardBase,
+        opacity: disabled ? 0.5 : 1,
+        cursor: disabled ? "default" : "pointer",
+        background: hovered && !disabled ? "var(--bg-3)" : "var(--bg-2)",
+        borderColor: hovered && !disabled ? "var(--border)" : "var(--border-dim)",
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div style={{ color: "var(--text-dim)" }}>{icon}</div>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 3 }}>
+          {label}
+        </div>
+        <div style={{ fontSize: 10, color: "var(--text-dimmer)", lineHeight: 1.4 }}>
+          {sub}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function loadLocalRecent(): RecentProject[] {
+  try {
+    const raw = localStorage.getItem("studio:recent_projects");
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return (parsed as RecentProject[]).filter(
+      (r) => typeof r.name === "string" && typeof r.dir === "string" && typeof r.lastOpened === "number"
+    );
+  } catch {
+    return [];
+  }
+}
+
+async function openWorkspace(dir: string): Promise<void> {
+  const res = await fetch("/api/workspaces", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path: dir }),
+  });
+  const data = await res.json() as { workspace?: { id: string }; error?: string };
+  if (!res.ok) throw new Error(data.error ?? "Failed to open workspace");
+  const id = data.workspace!.id;
+  const activateRes = await fetch(`/api/workspaces/${id}/activate`, { method: "POST" });
+  if (!activateRes.ok) throw new Error("Failed to activate workspace");
+  window.location.reload();
+}
+
 /** Full-page splash shown when no project is configured */
 export default function ProjectPicker(_props: ProjectPickerProps = {}) {
-  const isElectron = typeof window.studio !== "undefined";
-  const [loading, setLoading] = useState(false);
-  const [openingPath, setOpeningPath] = useState<string | null>(null);
+  const isElectron = typeof window !== "undefined" && typeof window.studio !== "undefined";
+  const [recent, setRecent] = useState<RecentProject[]>([]);
+  const [showPathInput, setShowPathInput] = useState(false);
+  const [showNewWorkspace, setShowNewWorkspace] = useState(false);
+  const [pathInput, setPathInput] = useState("");
+  const [newWsInput, setNewWsInput] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [recent, setRecent] = useState<string[]>([]);
+  const [newWsError, setNewWsError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [openingDir, setOpeningDir] = useState<string | null>(null);
+  const recentRef = useRef<HTMLDivElement>(null);
+  const pathInputRef = useRef<HTMLInputElement>(null);
+  const newWsInputRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => {
-    if (!isElectron) return;
-    window.studio?.getRecentProjects?.().then(r => setRecent(r ?? [])).catch(() => {});
+    const local = loadLocalRecent();
+    if (isElectron) {
+      window.studio?.getRecentProjects()
+        .then((r) => {
+          const merged = [...r, ...local].reduce<RecentProject[]>((acc, item) => {
+            if (!acc.find((a) => a.dir === item.dir)) acc.push(item);
+            return acc;
+          }, []);
+          merged.sort((a, b) => b.lastOpened - a.lastOpened);
+          setRecent(merged);
+        })
+        .catch(() => setRecent(local));
+    } else {
+      setRecent(local);
+    }
   }, [isElectron]);
 
-  const handlePick = async () => {
+  useEffect(() => {
+    if (showPathInput) setTimeout(() => pathInputRef.current?.focus(), 20);
+  }, [showPathInput]);
+
+  useEffect(() => {
+    if (showNewWorkspace) setTimeout(() => newWsInputRef.current?.focus(), 20);
+  }, [showNewWorkspace]);
+
+  const handleOpenProject = async () => {
+    if (isElectron) {
+      setLoading(true);
+      setError(null);
+      try {
+        const dir = await window.studio!.pickFolder();
+        if (!dir) { setLoading(false); return; }
+        await openWorkspace(dir);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to open project");
+        setLoading(false);
+      }
+    } else {
+      setShowPathInput((v) => !v);
+      setShowNewWorkspace(false);
+      setError(null);
+    }
+  };
+
+  const handleSubmitPath = async () => {
+    const dir = pathInput.trim();
+    if (!dir) return;
     setLoading(true);
     setError(null);
     try {
-      const dir = await window.studio?.pickFolder();
-      if (!dir) { setLoading(false); return; }
-      await window.studio?.setProjectDir(dir);
+      await openWorkspace(dir);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to open project");
       setLoading(false);
     }
   };
 
-  const handleOpenRecent = async (path: string) => {
-    setOpeningPath(path);
-    setError(null);
+  const handleNewWorkspace = async () => {
+    const dir = newWsInput.trim();
+    if (!dir) return;
+    setLoading(true);
+    setNewWsError(null);
     try {
-      await window.studio?.setProjectDir(path);
+      await openWorkspace(dir);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to open project");
-      setOpeningPath(null);
+      setNewWsError(e instanceof Error ? e.message : "Failed to create workspace");
+      setLoading(false);
     }
   };
 
-  return (
-    <div style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      height: "100vh",
-      background: "var(--bg)",
-      fontFamily: "var(--font-ui)",
-      WebkitAppRegion: "drag" as React.CSSProperties["WebkitAppRegion"],
-    }}>
+  const handleRecentClick = async (proj: RecentProject) => {
+    setOpeningDir(proj.dir);
+    setError(null);
+    try {
+      await openWorkspace(proj.dir);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to open project");
+      setOpeningDir(null);
+    }
+  };
 
+  const handleRecentCardClick = () => {
+    if (recent.length === 0) return;
+    recentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const items = Array.from(e.dataTransfer.items);
+    for (const item of items) {
+      if (item.kind === "file") {
+        const file = item.getAsFile();
+        if (file) {
+          // In Electron, file.path is available
+          const filePath = (file as File & { path?: string }).path;
+          if (filePath) {
+            setPathInput(filePath);
+            setShowPathInput(true);
+          }
+        }
+        break;
+      }
+    }
+  };
+
+  const noInteract: React.CSSProperties = {
+    WebkitAppRegion: "no-drag" as React.CSSProperties["WebkitAppRegion"],
+  };
+
+  return (
+    <div
+      style={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 32,
+        background: "var(--bg)",
+        fontFamily: "var(--font-ui)",
+        WebkitAppRegion: "drag" as React.CSSProperties["WebkitAppRegion"],
+        overflowY: "auto",
+        padding: "40px 0",
+        boxSizing: "border-box",
+      }}
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+    >
       {/* Logo */}
-      <div style={{ marginBottom: 48, textAlign: "center", userSelect: "none" }}>
-        <div style={{ fontSize: 42, fontWeight: 900, color: "var(--accent)", letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>
+      <div style={{ textAlign: "center", userSelect: "none" }}>
+        <div style={{
+          fontSize: 44,
+          fontWeight: 900,
+          color: "var(--accent)",
+          letterSpacing: "-0.04em",
+          lineHeight: 1,
+          marginBottom: 10,
+        }}>
           #
         </div>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-          hashmark studio
+        <div style={{
+          fontSize: 13,
+          fontWeight: 700,
+          color: "var(--text)",
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          marginBottom: 4,
+        }}>
+          HASHMARK STUDIO
+        </div>
+        <div style={{ fontSize: 10, color: "var(--text-dimmer)", letterSpacing: "0.04em" }}>
+          v0.1.0
         </div>
       </div>
 
-      {isElectron ? (
-        <div style={{ WebkitAppRegion: "no-drag" as React.CSSProperties["WebkitAppRegion"] }}>
-          {/* Open button */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: recent.length > 0 ? 40 : 0 }}>
-            <button
-              onClick={() => void handlePick()}
-              disabled={loading}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
-                width: 160,
-                height: 110,
-                background: "var(--bg-2)",
-                border: "1px solid var(--border-dim)",
-                borderRadius: "var(--radius-lg)",
-                cursor: loading ? "not-allowed" : "pointer",
-                opacity: loading ? 0.6 : 1,
-                transition: "background 0.15s, border-color 0.15s",
-              }}
-              onMouseEnter={e => {
-                if (!loading) {
-                  e.currentTarget.style.background = "var(--bg-3)";
-                  e.currentTarget.style.borderColor = "var(--border)";
-                }
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = "var(--bg-2)";
-                e.currentTarget.style.borderColor = "var(--border-dim)";
-              }}
-            >
-              <div style={{ color: loading ? "var(--accent)" : "var(--text-dim)" }}>
-                <FolderIcon size={24} color="currentColor" />
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", marginBottom: 2 }}>
-                  {loading ? "Opening..." : "Open project"}
-                </div>
-                <div style={{ fontSize: 10, color: "var(--text-dimmer)" }}>Select a folder</div>
-              </div>
-            </button>
-          </div>
+      {/* Action cards */}
+      <div style={{ ...noInteract, display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
+        <ActionCard
+          icon={<FolderIcon size={28} color="var(--text-dim)" />}
+          label="Open Project"
+          sub={loading && !showNewWorkspace ? "Opening..." : "Select a folder"}
+          onClick={() => void handleOpenProject()}
+          disabled={loading}
+        />
+        <ActionCard
+          icon={<ClockIcon size={28} color="var(--text-dim)" />}
+          label="Recent"
+          sub={recent.length > 0 ? recent[0].name : "No recent projects"}
+          onClick={handleRecentCardClick}
+          disabled={recent.length === 0}
+        />
+        <ActionCard
+          icon={<TerminalIcon size={28} color="var(--text-dim)" />}
+          label="New Workspace"
+          sub="Configure from path"
+          onClick={() => {
+            setShowNewWorkspace((v) => !v);
+            setShowPathInput(false);
+            setNewWsError(null);
+          }}
+          disabled={loading}
+        />
+      </div>
 
-          {/* Recent projects */}
-          {recent.length > 0 && (
-            <div style={{ width: 400, maxWidth: "90vw" }}>
-              <div style={{
-                fontSize: 10, color: "var(--text-dimmer)", letterSpacing: "0.1em",
-                textTransform: "uppercase", marginBottom: 10, textAlign: "center",
-              }}>
-                Recent
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {recent.map(path => (
-                  <RecentRow
-                    key={path}
-                    path={path}
-                    opening={openingPath === path}
-                    onOpen={() => void handleOpenRecent(path)}
-                  />
-                ))}
-              </div>
+      {/* Inline path input for web "Open Project" */}
+      {showPathInput && (
+        <div style={{ ...noInteract, width: "100%", maxWidth: 480, padding: "0 20px", boxSizing: "border-box" }}>
+          <div
+            style={{
+              background: "var(--bg-2)",
+              border: dragOver ? "1px solid var(--accent)" : "1px solid var(--border)",
+              borderRadius: "var(--radius-lg)",
+              padding: 16,
+              transition: "border-color 0.12s",
+            }}
+          >
+            <input
+              ref={pathInputRef}
+              type="text"
+              value={pathInput}
+              onChange={(e) => setPathInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void handleSubmitPath();
+                if (e.key === "Escape") { setShowPathInput(false); setPathInput(""); setError(null); }
+              }}
+              placeholder="/path/to/your/project"
+              style={{
+                width: "100%",
+                background: "var(--bg-3)",
+                border: "1px solid var(--border-dim)",
+                color: "var(--text)",
+                fontFamily: "var(--font)",
+                fontSize: 12,
+                padding: "8px 10px",
+                outline: "none",
+                borderRadius: "var(--radius)",
+                boxSizing: "border-box",
+                marginBottom: 8,
+              }}
+            />
+            <div style={{
+              fontSize: 10,
+              color: "var(--text-dimmer)",
+              marginBottom: 10,
+              textAlign: "center",
+            }}>
+              or drag a folder here
             </div>
-          )}
-        </div>
-      ) : (
-        <div style={{ fontSize: 12, color: "var(--text-dimmer)", textAlign: "center", letterSpacing: "0.03em" }}>
-          Start studio from the CLI:<br />
-          <span style={{ color: "var(--accent)", fontWeight: 600 }}>hashmark studio</span>
+            {error && (
+              <div style={{ fontSize: 11, color: "var(--red)", marginBottom: 8 }}>
+                {error}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => void handleSubmitPath()}
+                disabled={loading || !pathInput.trim()}
+                style={{
+                  flex: 1,
+                  padding: "7px 12px",
+                  background: "var(--accent)",
+                  border: "none",
+                  borderRadius: "var(--radius)",
+                  color: "var(--accent-fg, #000)",
+                  fontFamily: "var(--font)",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.06em",
+                  cursor: loading || !pathInput.trim() ? "default" : "pointer",
+                  opacity: loading || !pathInput.trim() ? 0.5 : 1,
+                  transition: "opacity 0.12s",
+                }}
+              >
+                {loading ? "OPENING..." : "> OPEN"}
+              </button>
+              <button
+                onClick={() => { setShowPathInput(false); setPathInput(""); setError(null); }}
+                style={{
+                  padding: "7px 14px",
+                  background: "var(--bg-3)",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "var(--radius)",
+                  color: "var(--text-dim)",
+                  fontFamily: "var(--font)",
+                  fontSize: 11,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {error && (
+      {/* Inline path input for New Workspace */}
+      {showNewWorkspace && (
+        <div style={{ ...noInteract, width: "100%", maxWidth: 480, padding: "0 20px", boxSizing: "border-box" }}>
+          <div style={{
+            background: "var(--bg-2)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-lg)",
+            padding: 16,
+          }}>
+            <div style={{ fontSize: 10, color: "var(--text-dimmer)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>
+              New Workspace
+            </div>
+            <input
+              ref={newWsInputRef}
+              type="text"
+              value={newWsInput}
+              onChange={(e) => setNewWsInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void handleNewWorkspace();
+                if (e.key === "Escape") { setShowNewWorkspace(false); setNewWsInput(""); setNewWsError(null); }
+              }}
+              placeholder="/path/to/your/project"
+              style={{
+                width: "100%",
+                background: "var(--bg-3)",
+                border: "1px solid var(--border-dim)",
+                color: "var(--text)",
+                fontFamily: "var(--font)",
+                fontSize: 12,
+                padding: "8px 10px",
+                outline: "none",
+                borderRadius: "var(--radius)",
+                boxSizing: "border-box",
+                marginBottom: 8,
+              }}
+            />
+            {newWsError && (
+              <div style={{ fontSize: 11, color: "var(--red)", marginBottom: 8 }}>
+                {newWsError}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => void handleNewWorkspace()}
+                disabled={loading || !newWsInput.trim()}
+                style={{
+                  flex: 1,
+                  padding: "7px 12px",
+                  background: "var(--accent)",
+                  border: "none",
+                  borderRadius: "var(--radius)",
+                  color: "var(--accent-fg, #000)",
+                  fontFamily: "var(--font)",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.06em",
+                  cursor: loading || !newWsInput.trim() ? "default" : "pointer",
+                  opacity: loading || !newWsInput.trim() ? 0.5 : 1,
+                  transition: "opacity 0.12s",
+                }}
+              >
+                {loading ? "CREATING..." : "> CREATE"}
+              </button>
+              <button
+                onClick={() => { setShowNewWorkspace(false); setNewWsInput(""); setNewWsError(null); }}
+                style={{
+                  padding: "7px 14px",
+                  background: "var(--bg-3)",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "var(--radius)",
+                  color: "var(--text-dim)",
+                  fontFamily: "var(--font)",
+                  fontSize: 11,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recent projects list */}
+      {recent.length > 0 && (
+        <div
+          ref={recentRef}
+          style={{ ...noInteract, width: "100%", maxWidth: 480, padding: "0 20px", boxSizing: "border-box" }}
+        >
+          <div style={{
+            fontSize: 10,
+            color: "var(--text-dimmer)",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            marginBottom: 8,
+            paddingLeft: 2,
+          }}>
+            RECENT
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {recent.map((proj) => (
+              <RecentProjectRow
+                key={proj.dir}
+                proj={proj}
+                opening={openingDir === proj.dir}
+                onOpen={() => void handleRecentClick(proj)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Global error (not tied to a specific panel) */}
+      {error && !showPathInput && !showNewWorkspace && (
         <div style={{
-          marginTop: 20, fontSize: 11, color: "var(--red)", textAlign: "center",
-          WebkitAppRegion: "no-drag" as React.CSSProperties["WebkitAppRegion"],
+          ...noInteract,
+          fontSize: 11,
+          color: "var(--red)",
+          textAlign: "center",
+          maxWidth: 400,
         }}>
           {error}
         </div>
@@ -208,7 +604,17 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
   );
 }
 
-function RecentRow({ path, opening, onOpen }: { path: string; opening: boolean; onOpen: () => void }) {
+function RecentProjectRow({
+  proj,
+  opening,
+  onOpen,
+}: {
+  proj: RecentProject;
+  opening: boolean;
+  onOpen: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+
   return (
     <button
       onClick={onOpen}
@@ -217,35 +623,47 @@ function RecentRow({ path, opening, onOpen }: { path: string; opening: boolean; 
         display: "flex",
         alignItems: "center",
         gap: 12,
-        padding: "9px 14px",
-        background: "transparent",
+        height: 36,
+        padding: "0 12px",
+        background: hovered ? "var(--bg-3)" : "transparent",
         border: "1px solid transparent",
         borderRadius: "var(--radius)",
-        cursor: "pointer",
+        cursor: opening ? "default" : "pointer",
         textAlign: "left",
         width: "100%",
         opacity: opening ? 0.5 : 1,
-        transition: "background 0.1s, border-color 0.1s",
+        transition: "background 0.1s",
+        boxSizing: "border-box",
       }}
-      onMouseEnter={e => {
-        e.currentTarget.style.background = "var(--bg-3)";
-        e.currentTarget.style.borderColor = "var(--border-dim)";
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.background = "transparent";
-        e.currentTarget.style.borderColor = "transparent";
-      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       <FolderIcon size={14} color="var(--text-dimmer)" />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-dim)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-          {basename(path)}
+        <div style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: "var(--text-dim)",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}>
+          {proj.name || basename(proj.dir)}
         </div>
-        <div style={{ fontSize: 10, color: "var(--text-dimmer)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 1 }}>
-          {path}
+        <div style={{
+          fontSize: 10,
+          color: "var(--text-dimmer)",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          marginTop: 1,
+        }}>
+          {truncatePath(proj.dir, 48)}
         </div>
       </div>
-      {opening && <div style={{ fontSize: 10, color: "var(--text-dimmer)", flexShrink: 0 }}>opening...</div>}
+      <div style={{ fontSize: 10, color: "var(--text-dimmer)", flexShrink: 0 }}>
+        {opening ? "opening..." : relativeTime(proj.lastOpened)}
+      </div>
     </button>
   );
 }
@@ -265,7 +683,7 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
 
   const loadWorkspaces = useCallback(() => {
     fetch("/api/workspaces")
-      .then(r => r.json())
+      .then((r) => r.json())
       .then((d: { workspaces: Workspace[] }) => setWorkspaces(d.workspaces ?? []))
       .catch(() => {});
   }, []);
@@ -274,7 +692,6 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
     if (open) { loadWorkspaces(); setFocusIdx(-1); }
   }, [open, loadWorkspaces]);
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return;
     const h = (e: MouseEvent) => {
@@ -289,11 +706,9 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
 
-  // Focus trap + keyboard nav
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!open) return;
-    if (addingPath) return; // let input handle its own keys
-
+    if (addingPath) return;
     if (e.key === "Escape") {
       e.preventDefault();
       setOpen(false);
@@ -351,15 +766,13 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
   const removeWorkspace = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     await fetch(`/api/workspaces/${id}`, { method: "DELETE" });
-    setWorkspaces(ws => ws.filter(w => w.id !== id));
+    setWorkspaces((ws) => ws.filter((w) => w.id !== id));
   };
 
   return (
     <div ref={ref} style={{ position: "relative" }} onKeyDown={handleKeyDown}>
-
-      {/* Trigger */}
       <button
-        onClick={() => { setOpen(v => !v); setAddingPath(false); setError(null); }}
+        onClick={() => { setOpen((v) => !v); setAddingPath(false); setError(null); }}
         style={{
           display: "flex",
           alignItems: "center",
@@ -373,8 +786,8 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
           textAlign: "left",
           transition: "background 0.1s",
         }}
-        onMouseEnter={e => { if (!open) e.currentTarget.style.background = "var(--accent-bg)"; }}
-        onMouseLeave={e => { if (!open) e.currentTarget.style.background = "transparent"; }}
+        onMouseEnter={(e) => { if (!open) e.currentTarget.style.background = "var(--accent-bg)"; }}
+        onMouseLeave={(e) => { if (!open) e.currentTarget.style.background = "transparent"; }}
       >
         <div style={{ color: "var(--accent)", flexShrink: 0 }}>
           <FolderIcon size={12} color="var(--accent)" />
@@ -400,7 +813,6 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
         <ChevronDown open={open} />
       </button>
 
-      {/* Dropdown */}
       {open && (
         <div style={{
           position: "absolute",
@@ -413,8 +825,6 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
           boxShadow: "0 6px 18px rgba(0,0,0,0.45)",
           animation: "fadeIn 0.1s ease forwards",
         }}>
-
-          {/* Workspace list */}
           {workspaces.length > 0 && (
             <div>
               <div style={{
@@ -432,9 +842,9 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
                     isActive={isActive}
                     switching={switching === ws.id}
                     focused={focusIdx === i}
-                    itemRef={el => { itemRefs.current[i] = el; }}
+                    itemRef={(el) => { itemRefs.current[i] = el; }}
                     onSwitch={() => { if (!isActive) void switchWorkspace(ws.id); }}
-                    onRemove={e => void removeWorkspace(e, ws.id)}
+                    onRemove={(e) => void removeWorkspace(e, ws.id)}
                   />
                 );
               })}
@@ -447,7 +857,6 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
             </div>
           )}
 
-          {/* Add workspace */}
           {addingPath ? (
             <div style={{ padding: "8px 12px", borderTop: "1px solid var(--border-dim)" }}>
               <input
@@ -455,8 +864,8 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
                 autoFocus
                 type="text"
                 value={pathInput}
-                onChange={e => setPathInput(e.target.value)}
-                onKeyDown={e => {
+                onChange={(e) => setPathInput(e.target.value)}
+                onKeyDown={(e) => {
                   if (e.key === "Enter") void addWorkspace();
                   if (e.key === "Escape") { setAddingPath(false); setPathInput(""); setError(null); }
                 }}
@@ -511,8 +920,8 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
                 textAlign: "left",
                 transition: "background 0.1s",
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = "var(--accent-bg)")}
-              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-bg)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
               <span style={{ fontSize: 14, lineHeight: 1, marginTop: -1 }}>+</span>
               Add workspace
@@ -562,7 +971,6 @@ function DropdownWorkspaceRow({
         <FolderIcon size={12} color={isActive ? "var(--accent)" : "var(--text-dimmer)"} />
       </div>
 
-      {/* Main content */}
       <button
         ref={itemRef}
         onClick={onSwitch}
@@ -612,7 +1020,6 @@ function DropdownWorkspaceRow({
         </div>
       </button>
 
-      {/* Right side: time + switch + remove */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
         {ws.last_opened > 0 && (
           <span style={{ fontSize: 9, color: "var(--text-dimmer)", whiteSpace: "nowrap" }}>
@@ -622,7 +1029,7 @@ function DropdownWorkspaceRow({
 
         {!isActive && (hovered || focused) && (
           <button
-            onClick={e => { e.stopPropagation(); onSwitch(); }}
+            onClick={(e) => { e.stopPropagation(); onSwitch(); }}
             disabled={switching}
             style={{
               background: "none",
@@ -656,8 +1063,8 @@ function DropdownWorkspaceRow({
             opacity: hovered || focused ? 0.7 : 0,
             transition: "opacity 0.1s",
           }}
-          onMouseEnter={e => (e.currentTarget.style.color = "var(--red)")}
-          onMouseLeave={e => (e.currentTarget.style.color = "var(--text-dimmer)")}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--red)")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-dimmer)")}
         >
           ×
         </button>
