@@ -54,6 +54,41 @@ export function filesRoutes(projectDir: string) {
     return c.json({ tree, root: projectDir });
   });
 
+  // Flat gitignore-aware file list for @mention completion.
+  // Uses `git ls-files --cached --others --exclude-standard` so .gitignore
+  // patterns are respected automatically.
+  app.get("/list", async (c) => {
+    try {
+      const { stdout } = await execAsync(
+        "git",
+        ["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+        { cwd: projectDir, maxBuffer: 4 * 1024 * 1024 }
+      );
+      const files = stdout
+        .split("\0")
+        .filter(Boolean)
+        .map(p => {
+          const parts = p.split("/");
+          const name = parts[parts.length - 1];
+          const ext = name.includes(".") ? name.slice(name.lastIndexOf(".") + 1) : undefined;
+          return { name, path: p, ext };
+        });
+      return c.json({ files });
+    } catch {
+      // Fallback: not a git repo — return flat tree walk
+      const tree = await buildTree(projectDir, projectDir);
+      const flat: { name: string; path: string; ext?: string }[] = [];
+      function flatten(nodes: FileNode[]) {
+        for (const n of nodes) {
+          if (n.type === "file") flat.push({ name: n.name, path: n.path, ext: n.ext });
+          if (n.children) flatten(n.children);
+        }
+      }
+      flatten(tree);
+      return c.json({ files: flat });
+    }
+  });
+
   app.get("/read", async (c) => {
     const relPath = c.req.query("path");
     if (!relPath) return c.json({ error: "path required" }, 400);

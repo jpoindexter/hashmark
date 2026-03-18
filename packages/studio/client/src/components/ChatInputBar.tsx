@@ -219,26 +219,15 @@ function SlashPicker({
 interface FileEntry {
   name: string;
   path: string;
-  type: "file" | "dir";
   ext?: string;
-}
-
-function flattenTree(nodes: FileEntry[], out: FileEntry[] = []): FileEntry[] {
-  for (const n of nodes) {
-    if (n.type === "file") out.push(n);
-    if (n.type === "dir" && (n as { children?: FileEntry[] }).children) {
-      flattenTree((n as { children?: FileEntry[] }).children!, out);
-    }
-  }
-  return out;
 }
 
 function useMentionFiles() {
   const [files, setFiles] = useState<FileEntry[]>([]);
   useEffect(() => {
-    fetch("/api/files/tree")
+    fetch("/api/files/list")
       .then(r => r.json())
-      .then((d: { tree?: FileEntry[] }) => setFiles(flattenTree(d.tree ?? [])))
+      .then((d: { files?: FileEntry[] }) => setFiles(d.files ?? []))
       .catch(() => {});
   }, []);
   return files;
