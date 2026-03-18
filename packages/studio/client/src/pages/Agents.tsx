@@ -294,6 +294,71 @@ export default function Agents() {
     });
   }
 
+  // #32 — quality guardrails for agent definitions
+  const qualityWarnings = useMemo(() => {
+    if (!editContent) return [];
+    const warnings: Array<{ message: string; severity: "warn" | "error" }> = [];
+    const lines = editContent.split("\n");
+
+    if (lines.length > 200) {
+      warnings.push({ message: `${lines.length} lines — very long, consider splitting`, severity: "warn" });
+    } else if (lines.length > 100) {
+      warnings.push({ message: `${lines.length} lines — may cause template anchoring`, severity: "warn" });
+    }
+
+    const hasRole = /^#\s+\S|you are\s/im.test(editContent);
+    if (!hasRole) {
+      warnings.push({ message: "No role definition — add 'You are...' or a heading", severity: "warn" });
+    }
+
+    if (/(?:^|\s)(\/src\/|\/app\/|\/components\/|\.tsx|\.ts\b|\.jsx|\.js\b)/.test(editContent)) {
+      warnings.push({ message: "Hardcoded file paths — template anchoring risk", severity: "warn" });
+    }
+
+    if (/(?:sk-[A-Za-z0-9]{20,}|Bearer\s+\S{20,}|api[_-]?key\s*[:=]\s*['"]?\S{10,})/i.test(editContent)) {
+      warnings.push({ message: "Potential secret detected — remove credentials", severity: "error" });
+    }
+
+    return warnings;
+  }, [editContent]);
+
+  // #56 — classify run failures when run ends in non-done state
+  const failureClass = useMemo(() => {
+    if (runStatus === "running" || runStatus === "idle") return null;
+
+    if (runStatus === "done") {
+      const words = output.trim().split(/\s+/).filter(Boolean).length;
+      if (words > 0 && words < 15) {
+        return { label: "MINIMAL OUTPUT", color: "var(--yellow)", detail: `Only ${words} words` };
+      }
+      return null;
+    }
+
+    if (!output.trim()) {
+      return { label: "NO OUTPUT", color: "var(--red)", detail: "Agent produced nothing" };
+    }
+
+    const words = output.trim().split(/\s+/).filter(Boolean).length;
+    const hedges = (output.match(/\b(I would|I could|I should|I might|we would|we could)\b/gi) ?? []).length;
+    if (hedges > 3 && words > 0 && hedges / words > 0.03) {
+      return { label: "PLANNING MODE", color: "var(--yellow)", detail: "Agent planned instead of executing" };
+    }
+
+    if (runStatus === "error") {
+      if (/\b(cannot|can't|unable to|don't have access|not able to)\b/i.test(output)) {
+        return { label: "AGENT BLOCKED", color: "var(--red)", detail: "Capability limitation reported" };
+      }
+      return { label: "RUN ERROR", color: "var(--red)", detail: "Run ended with error" };
+    }
+
+    if (runStatus === "stopped") {
+      if (words < 30) return { label: "PREMATURE STOP", color: "var(--yellow)", detail: "Stopped before meaningful output" };
+      return { label: "STOPPED", color: "var(--yellow)", detail: `Stopped at ${words} words` };
+    }
+
+    return null;
+  }, [runStatus, output]);
+
   const STATUS_BADGE: Record<string, { label: string; color: string }> = {
     done: { label: "DONE", color: "var(--accent)" },
     error: { label: "ERROR", color: "var(--red)" },
@@ -454,22 +519,42 @@ export default function Agents() {
 
           {/* EDIT tab */}
           {tab === "edit" && (
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              style={{
-                flex: 1,
-                resize: "none",
-                border: "none",
-                borderRadius: 0,
-                background: "var(--bg)",
-                padding: "16px 20px",
-                fontSize: "12px",
-                lineHeight: "1.6",
-                color: "var(--text)",
-                fontFamily: "var(--font)",
-              }}
-            />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                style={{
+                  flex: 1,
+                  resize: "none",
+                  border: "none",
+                  borderRadius: 0,
+                  background: "var(--bg)",
+                  padding: "16px 20px",
+                  fontSize: "12px",
+                  lineHeight: "1.6",
+                  color: "var(--text)",
+                  fontFamily: "var(--font)",
+                }}
+              />
+              {qualityWarnings.length > 0 && (
+                <div style={{
+                  borderTop: "1px solid var(--border-dim)",
+                  padding: "8px 16px",
+                  background: "var(--bg-2)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                  flexShrink: 0,
+                }}>
+                  {qualityWarnings.map((w, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, fontFamily: "var(--font)" }}>
+                      <span style={{ color: w.severity === "error" ? "var(--red)" : "var(--yellow)" }}>▲</span>
+                      <span style={{ color: w.severity === "error" ? "var(--red)" : "var(--text-dim)" }}>{w.message}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {/* RUN tab */}
@@ -648,6 +733,15 @@ export default function Agents() {
                     {running && (
                       <span style={{ color: "var(--accent)", marginLeft: "auto" }}>
                         ● streaming
+                      </span>
+                    )}
+                    {!running && failureClass && (
+                      <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 5 }}>
+                        <span style={{ color: failureClass.color, fontWeight: 600, letterSpacing: "0.08em" }}>
+                          {failureClass.label}
+                        </span>
+                        <span style={{ color: "var(--text-dimmer)" }}>—</span>
+                        <span style={{ color: "var(--text-dimmer)" }}>{failureClass.detail}</span>
                       </span>
                     )}
                   </div>
