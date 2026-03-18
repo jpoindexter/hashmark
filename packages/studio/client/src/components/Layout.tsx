@@ -156,7 +156,7 @@ export default function Layout() {
       overflow: "hidden",
       background: "var(--bg)",
       WebkitAppRegion: "no-drag",
-      fontFamily: "var(--font)",
+      fontFamily: "var(--font-ui)",
     } as React.CSSProperties}>
 
       {/* Main body row */}

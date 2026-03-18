@@ -32,9 +32,9 @@
 
   --font:      'JetBrains Mono', 'Fira Code', Menlo, monospace;
   --font-ui:   -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --radius:    4px;   /* VSCode button/input/dropdown radius */
-  --radius-sm: 3px;   /* icon buttons, badges */
-  --radius-lg: 6px;   /* cards, modals, toasts */
+  --radius:    6px;   /* buttons, inputs, dropdowns */
+  --radius-sm: 4px;   /* icon buttons, badges */
+  --radius-lg: 10px;  /* cards, modals, toasts, input container */
 }
 
 html, body, #root {
