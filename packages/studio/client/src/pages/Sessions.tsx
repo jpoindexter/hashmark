@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Search, X } from "lucide-react";
+import XTerminal from "../components/XTerminal";
 
 interface Session {
   id: string;
@@ -664,13 +665,8 @@ export default function Sessions() {
                 <AvatarBadge role="assistant" />
                 <div style={{ flex: 1, paddingTop: "2px" }}>
                   {streamText ? (
-                    <div style={{
-                      fontSize: "12px",
-                      color: "var(--text)",
-                      lineHeight: "1.6",
-                      fontFamily: "var(--font)",
-                    }}>
-                      <AssistantContent text={streamText} />
+                    <div style={{ height: "320px", minHeight: "120px" }}>
+                      <XTerminal output={streamText} />
                     </div>
                   ) : (
                     <div style={{ display: "flex", gap: "4px", alignItems: "center", paddingTop: "6px" }}>
@@ -683,13 +679,6 @@ export default function Sessions() {
                         }} />
                       ))}
                     </div>
-                  )}
-                  {streamText && (
-                    <span style={{
-                      display: "inline-block", width: "7px", height: "13px",
-                      background: "var(--accent)", verticalAlign: "text-bottom",
-                      marginLeft: "2px", animation: "cursor-blink 1s step-end infinite",
-                    }} />
                   )}
                 </div>
               </div>
