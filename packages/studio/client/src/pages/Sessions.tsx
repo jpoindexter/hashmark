@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Search, X } from "lucide-react";
 
 interface Session {
   id: string;
@@ -160,6 +161,15 @@ function renderInline(text: string): React.ReactNode {
   });
 }
 
+interface SearchResult {
+  id: string;
+  title: string;
+  model: string;
+  updatedAt: number;
+  snippet: string | null;
+  snippetRole: string | null;
+}
+
 export default function Sessions() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -170,9 +180,65 @@ export default function Sessions() {
   const [streamText, setStreamText] = useState("");
   const [newModel, setNewModel] = useState("claude-sonnet-4-6");
   const [claudeAvailable, setClaudeAvailable] = useState<boolean | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
+
+  // Debounced search
+  const handleSearchChange = (q: string) => {
+    setSearchQuery(q);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (q.trim().length < 2) {
+      setSearchResults(null);
+      return;
+    }
+    setSearchLoading(true);
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/sessions/search?q=${encodeURIComponent(q.trim())}`);
+        const data = await res.json() as { results: SearchResult[] };
+        setSearchResults(data.results ?? []);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchResults(null);
+    setSearchLoading(false);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+  };
+
+  // Highlight matching text in a snippet
+  const highlight = (text: string, q: string) => {
+    if (!q || q.length < 2) return text;
+    const idx = text.toLowerCase().indexOf(q.toLowerCase());
+    if (idx === -1) return text;
+    return (
+      <>
+        {text.slice(0, idx)}
+        <mark style={{ background: "var(--accent-bg)", color: "var(--accent)", padding: 0 }}>
+          {text.slice(idx, idx + q.length)}
+        </mark>
+        {text.slice(idx + q.length)}
+      </>
+    );
+  };
+
+  // Filtered session list (title match, client-side) when not in full search mode
+  const filteredSessions = useMemo(() => {
+    if (!searchQuery.trim() || searchQuery.trim().length < 2) return sessions;
+    const q = searchQuery.toLowerCase();
+    return sessions.filter((s) => s.title.toLowerCase().includes(q));
+  }, [sessions, searchQuery]);
 
   const loadSessions = useCallback(async () => {
     const res = await fetch("/api/sessions");
@@ -359,81 +425,172 @@ export default function Sessions() {
         flexDirection: "column",
         overflow: "hidden",
       }}>
+        {/* Top controls */}
         <div style={{
-          padding: "12px",
+          padding: "8px",
           borderBottom: "1px solid var(--border-dim)",
           display: "flex",
-          gap: "8px",
-          alignItems: "center",
+          flexDirection: "column",
+          gap: "6px",
         }}>
-          <select
-            value={newModel}
-            onChange={(e) => setNewModel(e.target.value)}
-            style={{
-              flex: 1,
-              background: "var(--bg-3)",
-              border: "1px solid var(--border)",
-              color: "var(--text-dim)",
-              padding: "4px 6px",
-              fontSize: "10px",
-              fontFamily: "var(--font)",
-            }}
-          >
-            {MODELS.map((m) => (
-              <option key={m.id} value={m.id}>{m.label}</option>
-            ))}
-          </select>
-          <button className="btn" onClick={() => void createSession()} style={{ padding: "4px 10px", fontSize: "10px", whiteSpace: "nowrap" }}>
-            + NEW
-          </button>
+          {/* Search bar */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            background: "var(--bg-3)",
+            border: "1px solid var(--border)",
+            padding: "4px 8px",
+          }}>
+            <Search size={11} style={{ color: "var(--text-dimmer)", flexShrink: 0 }} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search sessions…"
+              style={{
+                flex: 1, background: "none", border: "none", outline: "none",
+                color: "var(--text)", fontSize: "11px", fontFamily: "var(--font)",
+              }}
+            />
+            {searchQuery && (
+              <button
+                onClick={clearSearch}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "var(--text-dimmer)", display: "flex", alignItems: "center", padding: 0,
+                }}
+              >
+                <X size={11} />
+              </button>
+            )}
+          </div>
+
+          {/* New session controls — hidden while searching */}
+          {!searchQuery && (
+            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+              <select
+                value={newModel}
+                onChange={(e) => setNewModel(e.target.value)}
+                style={{
+                  flex: 1,
+                  background: "var(--bg-3)",
+                  border: "1px solid var(--border)",
+                  color: "var(--text-dim)",
+                  padding: "4px 6px",
+                  fontSize: "10px",
+                  fontFamily: "var(--font)",
+                }}
+              >
+                {MODELS.map((m) => (
+                  <option key={m.id} value={m.id}>{m.label}</option>
+                ))}
+              </select>
+              <button className="btn" onClick={() => void createSession()} style={{ padding: "4px 10px", fontSize: "10px", whiteSpace: "nowrap" }}>
+                + NEW
+              </button>
+            </div>
+          )}
         </div>
 
         <div style={{ flex: 1, overflow: "auto" }}>
-          {sessions.length === 0 && (
-            <div style={{ padding: "20px 12px", color: "var(--text-dimmer)", fontSize: "11px", textAlign: "center" }}>
-              No sessions yet
-            </div>
-          )}
-          {sessions.map((s) => (
-            <div
-              key={s.id}
-              onClick={() => void loadSession(s.id)}
-              style={{
-                padding: "10px 12px",
-                cursor: "pointer",
-                background: s.id === activeId ? "var(--accent-bg)" : "transparent",
-                borderLeft: s.id === activeId ? "2px solid var(--accent)" : "2px solid transparent",
-                borderBottom: "1px solid var(--border-dim)",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "4px" }}>
+          {/* Search results mode */}
+          {searchQuery.trim().length >= 2 ? (
+            searchLoading ? (
+              <div style={{ padding: "16px 12px", color: "var(--text-dimmer)", fontSize: "11px", textAlign: "center" }}>
+                Searching…
+              </div>
+            ) : searchResults !== null && searchResults.length === 0 ? (
+              <div style={{ padding: "16px 12px", color: "var(--text-dimmer)", fontSize: "11px", textAlign: "center" }}>
+                No results for "{searchQuery}"
+              </div>
+            ) : (searchResults ?? filteredSessions.map((s) => ({
+                id: s.id, title: s.title, model: s.model,
+                updatedAt: s.updated_at, snippet: null, snippetRole: null,
+              }))).map((r) => (
+              <div
+                key={r.id}
+                onClick={() => { void loadSession(r.id); clearSearch(); }}
+                style={{
+                  padding: "8px 12px",
+                  cursor: "pointer",
+                  background: r.id === activeId ? "var(--accent-bg)" : "transparent",
+                  borderLeft: r.id === activeId ? "2px solid var(--accent)" : "2px solid transparent",
+                  borderBottom: "1px solid var(--border-dim)",
+                }}
+              >
                 <div style={{
                   fontSize: "11px",
-                  color: s.id === activeId ? "var(--text)" : "var(--text-dim)",
+                  color: r.id === activeId ? "var(--text)" : "var(--text-dim)",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
-                  flex: 1,
                 }}>
-                  {s.title}
+                  {highlight(r.title, searchQuery)}
                 </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); void deleteSession(s.id); }}
+                {r.snippet && (
+                  <div style={{
+                    marginTop: "3px", fontSize: "10px", color: "var(--text-dimmer)",
+                    overflow: "hidden", display: "-webkit-box",
+                    WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                    lineHeight: "1.4",
+                  }}>
+                    {r.snippetRole === "user" ? "You: " : "AI: "}
+                    {highlight(r.snippet, searchQuery)}
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            /* Normal session list */
+            <>
+              {sessions.length === 0 && (
+                <div style={{ padding: "20px 12px", color: "var(--text-dimmer)", fontSize: "11px", textAlign: "center" }}>
+                  No sessions yet
+                </div>
+              )}
+              {filteredSessions.map((s) => (
+                <div
+                  key={s.id}
+                  onClick={() => void loadSession(s.id)}
                   style={{
-                    background: "none", border: "none", color: "var(--text-dimmer)",
-                    cursor: "pointer", fontSize: "14px", lineHeight: 1,
-                    padding: "0 2px", flexShrink: 0,
+                    padding: "10px 12px",
+                    cursor: "pointer",
+                    background: s.id === activeId ? "var(--accent-bg)" : "transparent",
+                    borderLeft: s.id === activeId ? "2px solid var(--accent)" : "2px solid transparent",
+                    borderBottom: "1px solid var(--border-dim)",
                   }}
                 >
-                  ×
-                </button>
-              </div>
-              <div style={{ marginTop: "4px", fontSize: "10px", color: "var(--text-dimmer)", display: "flex", gap: "8px" }}>
-                <span>{s.message_count ?? 0} msgs</span>
-                {s.status === "streaming" && <span style={{ color: "var(--accent)" }}>● live</span>}
-              </div>
-            </div>
-          ))}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "4px" }}>
+                    <div style={{
+                      fontSize: "11px",
+                      color: s.id === activeId ? "var(--text)" : "var(--text-dim)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      flex: 1,
+                    }}>
+                      {s.title}
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); void deleteSession(s.id); }}
+                      style={{
+                        background: "none", border: "none", color: "var(--text-dimmer)",
+                        cursor: "pointer", fontSize: "14px", lineHeight: 1,
+                        padding: "0 2px", flexShrink: 0,
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div style={{ marginTop: "4px", fontSize: "10px", color: "var(--text-dimmer)", display: "flex", gap: "8px" }}>
+                    <span>{s.message_count ?? 0} msgs</span>
+                    {s.status === "streaming" && <span style={{ color: "var(--accent)" }}>● live</span>}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       </div>
 

@@ -135,6 +135,46 @@ export function sessionsRoutes(projectDir: string) {
     return c.json({ claudeAvailable, claudeBin });
   });
 
+  // GET /api/sessions/search?q=
+  app.get("/search", (c) => {
+    const q = (c.req.query("q") ?? "").trim();
+    if (q.length < 2) return c.json({ results: [] });
+
+    const db = getDb(dataDir);
+    const like = `%${q}%`;
+
+    // Search titles + message content; return one snippet per session
+    const rows = db.prepare(`
+      SELECT s.id, s.title, s.model, s.updated_at, s.total_input_tokens, s.total_output_tokens,
+        m.content as snippet, m.role as snippet_role
+      FROM sessions s
+      LEFT JOIN session_messages m ON m.id = (
+        SELECT id FROM session_messages
+        WHERE session_id = s.id AND content LIKE ?
+        ORDER BY created_at ASC LIMIT 1
+      )
+      WHERE s.title LIKE ? OR m.content LIKE ?
+      GROUP BY s.id
+      ORDER BY s.updated_at DESC
+      LIMIT 30
+    `).all(like, like, like) as Array<{
+      id: string; title: string; model: string;
+      updated_at: number; total_input_tokens: number; total_output_tokens: number;
+      snippet: string | null; snippet_role: string | null;
+    }>;
+
+    const results = rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      model: r.model,
+      updatedAt: r.updated_at,
+      snippet: r.snippet ? r.snippet.slice(0, 120) : null,
+      snippetRole: r.snippet_role,
+    }));
+
+    return c.json({ results });
+  });
+
   // GET /api/sessions
   app.get("/", (c) => {
     const db = getDb(dataDir);
