@@ -99,7 +99,7 @@ function createWindow() {
     icon: resolve(__dirname, "../../assets/icon.svg"),
   });
 
-  win.loadURL(`http://localhost:${PORT}`);
+  win.loadURL(isDev ? `http://localhost:5173` : `http://localhost:${PORT}`);
 
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("http")) shell.openExternal(url);

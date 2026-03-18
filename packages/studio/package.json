@@ -16,7 +16,7 @@
     "dev:client": "vite client",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "electron": "lsof -ti :3200 | xargs kill -9 2>/dev/null; sleep 0.5; NODE_ENV=development electron dist/electron/main.js",
-    "electron:dev": "concurrently \"npm run dev:server\" \"npm run dev:electron\" \"npm run dev:client\" \"wait-on http://localhost:3200 && wait-on dist/electron/preload.js && electron dist/electron/main.js\"",
+    "electron:dev": "concurrently \"npm run dev:server\" \"npm run dev:electron\" \"npm run dev:client\" \"wait-on http://localhost:3200 && wait-on http://localhost:5173 && wait-on dist/electron/preload.cjs && electron dist/electron/main.js\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

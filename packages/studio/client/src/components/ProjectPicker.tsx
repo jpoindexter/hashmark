@@ -24,7 +24,6 @@ export default function ProjectPicker() {
         return;
       }
       await window.studio?.setProjectDir(dir);
-      // setProjectDir triggers window reload — nothing else needed
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to open project");
       setLoading(false);
@@ -49,71 +48,118 @@ export default function ProjectPicker() {
       alignItems: "center",
       justifyContent: "center",
       height: "100vh",
-      background: "var(--bg)",
+      background: "#09090b",
       fontFamily: "var(--font)",
+      WebkitAppRegion: "drag" as React.CSSProperties["WebkitAppRegion"],
     }}>
-      <div style={{ marginBottom: 48, textAlign: "center" }}>
+
+      {/* Logo + title */}
+      <div style={{ marginBottom: 48, textAlign: "center", userSelect: "none" }}>
         <div style={{
-          fontSize: 28,
+          fontSize: 42,
           fontWeight: 900,
           color: "var(--accent)",
-          letterSpacing: "-0.03em",
-          marginBottom: 8,
+          letterSpacing: "-0.04em",
+          lineHeight: 1,
+          marginBottom: 10,
         }}>
-          # hashmark studio
+          #
         </div>
-        <div style={{ fontSize: 12, color: "var(--text-dimmer)" }}>
-          {isElectron ? "Open a project to get started" : "Start studio from the CLI: hashmark studio"}
+        <div style={{
+          fontSize: 15,
+          fontWeight: 700,
+          color: "rgba(255,255,255,0.85)",
+          letterSpacing: "0.04em",
+          textTransform: "uppercase",
+        }}>
+          hashmark studio
         </div>
       </div>
 
+      {/* Action cards */}
       {isElectron && (
-        <button
-          className="btn btn-primary"
-          onClick={() => void handlePick()}
-          disabled={loading}
-          style={{ padding: "10px 28px", fontSize: 12 }}
-        >
-          {loading ? "Opening..." : "> OPEN PROJECT"}
-        </button>
+        <div style={{
+          display: "flex",
+          gap: 12,
+          WebkitAppRegion: "no-drag" as React.CSSProperties["WebkitAppRegion"],
+        }}>
+          <ActionCard
+            icon={<FolderIcon />}
+            label="Open project"
+            sublabel="Select a folder"
+            onClick={() => void handlePick()}
+            disabled={loading}
+            loading={loading}
+          />
+        </div>
       )}
 
+      {!isElectron && (
+        <div style={{
+          fontSize: 12,
+          color: "rgba(255,255,255,0.3)",
+          textAlign: "center",
+          letterSpacing: "0.03em",
+        }}>
+          Start studio from the CLI:<br />
+          <span style={{ color: "var(--accent)", fontWeight: 600 }}>hashmark studio</span>
+        </div>
+      )}
+
+      {/* Recent projects */}
       {isElectron && recent.length > 0 && (
         <div style={{
           marginTop: 40,
           width: 400,
           maxWidth: "90vw",
+          WebkitAppRegion: "no-drag" as React.CSSProperties["WebkitAppRegion"],
         }}>
           <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            marginBottom: 12,
+            fontSize: 10,
+            color: "rgba(255,255,255,0.25)",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            marginBottom: 10,
+            textAlign: "center",
           }}>
-            <div style={{ flex: 1, height: 1, background: "var(--border-dim)" }} />
-            <span style={{ fontSize: 10, color: "var(--text-dimmer)", letterSpacing: "0.08em" }}>RECENT</span>
-            <div style={{ flex: 1, height: 1, background: "var(--border-dim)" }} />
+            Recent
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {recent.map(path => (
-              <div
+              <button
                 key={path}
+                onClick={() => void handleOpenRecent(path)}
+                disabled={openingPath === path}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 12,
-                  padding: "8px 12px",
-                  background: "var(--bg-2)",
-                  border: "1px solid var(--border-dim)",
-                  borderRadius: "var(--radius)",
+                  padding: "9px 14px",
+                  background: "transparent",
+                  border: "1px solid transparent",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  width: "100%",
+                  transition: "background 0.1s, border-color 0.1s",
+                  opacity: openingPath === path ? 0.5 : 1,
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.08)";
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "transparent";
                 }}
               >
+                <FolderSmallIcon />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: "var(--text)",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "rgba(255,255,255,0.75)",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -122,45 +168,109 @@ export default function ProjectPicker() {
                   </div>
                   <div style={{
                     fontSize: 10,
-                    color: "var(--text-dimmer)",
+                    color: "rgba(255,255,255,0.3)",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
-                    marginTop: 2,
+                    marginTop: 1,
                   }}>
                     {path}
                   </div>
                 </div>
-                <button
-                  className="btn"
-                  onClick={() => void handleOpenRecent(path)}
-                  disabled={openingPath === path}
-                  style={{ fontSize: 11, padding: "4px 12px", flexShrink: 0 }}
-                >
-                  {openingPath === path ? "..." : "Open"}
-                </button>
-              </div>
+                {openingPath === path && (
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>opening...</div>
+                )}
+              </button>
             ))}
           </div>
         </div>
       )}
 
-      {!isElectron && (
-        <div style={{
-          marginTop: 40,
-          color: "var(--text-dimmer)",
-          fontSize: 11,
-          opacity: 0.4,
-        }}>
-          {""}
-        </div>
-      )}
-
       {error && (
-        <div style={{ marginTop: 16, color: "var(--red)", fontSize: 12 }}>
+        <div style={{
+          marginTop: 20,
+          fontSize: 11,
+          color: "var(--red)",
+          textAlign: "center",
+          WebkitAppRegion: "no-drag" as React.CSSProperties["WebkitAppRegion"],
+        }}>
           {error}
         </div>
       )}
     </div>
+  );
+}
+
+interface ActionCardProps {
+  icon: React.ReactNode;
+  label: string;
+  sublabel: string;
+  onClick: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+}
+
+function ActionCard({ icon, label, sublabel, onClick, disabled, loading }: ActionCardProps) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        width: 160,
+        height: 110,
+        background: hovered ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.04)",
+        border: `1px solid ${hovered ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.07)"}`,
+        borderRadius: 10,
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.6 : 1,
+        transition: "background 0.15s, border-color 0.15s",
+        padding: 0,
+      }}
+    >
+      <div style={{ color: loading ? "var(--accent)" : "rgba(255,255,255,0.6)", transition: "color 0.15s" }}>
+        {icon}
+      </div>
+      <div>
+        <div style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: "rgba(255,255,255,0.8)",
+          marginBottom: 2,
+        }}>
+          {loading ? "Opening..." : label}
+        </div>
+        <div style={{
+          fontSize: 10,
+          color: "rgba(255,255,255,0.35)",
+        }}>
+          {sublabel}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function FolderIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+function FolderSmallIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+    </svg>
   );
 }
