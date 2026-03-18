@@ -977,6 +977,21 @@ cli
     }
   });
 
+// --- stats command ---
+cli
+  .command("stats", "Print a project statistics dashboard from .hashmark/ cache")
+  .option("--json", "Output raw JSON instead of formatted table")
+  .option("--project-dir <path>", "Path to the project (defaults to cwd)")
+  .action(async (opts: { json?: boolean; projectDir?: string }) => {
+    try {
+      const { runStats } = await import("./commands/stats.js");
+      await runStats({ json: opts.json, projectDir: opts.projectDir });
+    } catch (error) {
+      console.error(pc.red(`\n  stats failed: ${error instanceof Error ? error.message : error}\n`));
+      process.exit(1);
+    }
+  });
+
 // --- studio command ---
 cli
   .command("studio", "Open the visual agent studio in your browser")
