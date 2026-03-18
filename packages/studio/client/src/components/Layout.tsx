@@ -247,7 +247,6 @@ export default function Layout() {
         width: 48,
         minWidth: 48,
         background: "var(--bg-2)",
-        borderRight: "1px solid var(--border-dim)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -255,7 +254,7 @@ export default function Layout() {
         flexShrink: 0,
         zIndex: 10,
       }}>
-        <div style={{ fontSize: 16, fontWeight: 900, color: "var(--accent)", marginBottom: 16, letterSpacing: "-0.02em", lineHeight: 1 }}>
+        <div style={{ fontSize: 16, fontWeight: 900, color: "var(--accent)", marginBottom: 16, letterSpacing: "-0.02em", lineHeight: 1, fontFamily: "var(--font-ui)" }}>
           #
         </div>
 
@@ -267,11 +266,10 @@ export default function Layout() {
                 end={item.end}
                 style={({ isActive }) => ({
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  height: 40, position: "relative",
+                  height: 36, width: 36, margin: "2px auto", borderRadius: 6, position: "relative",
                   color: isActive ? "var(--text)" : "var(--text-dimmer)",
-                  background: isActive ? "var(--accent-bg)" : "transparent",
-                  borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
-                  transition: "all 0.1s", textDecoration: "none",
+                  background: isActive ? "rgba(255,255,255,0.08)" : "transparent",
+                  transition: "background 0.1s, color 0.1s", textDecoration: "none",
                 })}
               >
                 {item.icon}
@@ -296,11 +294,10 @@ export default function Layout() {
               to="/git"
               style={({ isActive }) => ({
                 display: "flex", alignItems: "center", justifyContent: "center",
-                height: 40, position: "relative",
+                height: 36, width: 36, margin: "2px auto", borderRadius: 6, position: "relative",
                 color: isActive ? "var(--text)" : changedFiles > 0 ? "var(--text-dim)" : "var(--text-dimmer)",
-                background: isActive ? "var(--accent-bg)" : "transparent",
-                borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
-                transition: "all 0.1s", textDecoration: "none",
+                background: isActive ? "rgba(255,255,255,0.08)" : "transparent",
+                transition: "background 0.1s, color 0.1s", textDecoration: "none",
               })}
             >
               <GitBranch size={18} />
