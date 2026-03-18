@@ -592,6 +592,18 @@ function ToolbarToggle({
   );
 }
 
+const PLACEHOLDERS = [
+  "Ask anything...",
+  "Run a task...",
+  "Analyze codebase...",
+  "Generate context...",
+];
+
+// Rough approximation: 1 token ≈ 4 chars
+function estimateTokens(text: string) {
+  return Math.round(text.length / 4);
+}
+
 export default function ChatInputBar({
   sessionId, onNewSession, onSessionCreated, onStreamText, onStreamingChange, streaming, terminalCwd, currentFile,
 }: ChatInputBarProps) {
@@ -602,8 +614,18 @@ export default function ChatInputBar({
   const [slashOpen, setSlashOpen] = useState(false);
   const [atQuery, setAtQuery] = useState<string | null>(null); // null = closed
   const [chipDismissed, setChipDismissed] = useState(false);
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
+
+  // Cycle placeholder every 4s when input is empty
+  useEffect(() => {
+    if (input || streaming) return;
+    const id = setInterval(() => {
+      setPlaceholderIdx(i => (i + 1) % PLACEHOLDERS.length);
+    }, 4000);
+    return () => clearInterval(id);
+  }, [input, streaming]);
 
   const agentSuggestion = useAgentSuggestion(input, currentFile);
 
@@ -788,13 +810,18 @@ export default function ChatInputBar({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); setPlanMode(v => !v); return; }
+    // Enter submits; Cmd+Enter also submits; Shift+Enter inserts newline
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void sendMessage(); return; }
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendMessage(); }
   };
 
+  // Auto-resize: 1 row base, max 6 rows (~120px at 20px line-height)
+  const LINE_HEIGHT = 20;
+  const MAX_ROWS = 6;
   const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
     const el = e.currentTarget;
     el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+    el.style.height = `${Math.min(el.scrollHeight, LINE_HEIGHT * MAX_ROWS)}px`;
   };
 
   return (
@@ -832,22 +859,39 @@ export default function ChatInputBar({
         onBlurCapture={e => (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border)"}
       >
         {/* Textarea */}
-        <div style={{ padding: "10px 14px 2px" }}>
+        <div style={{ padding: "10px 14px 2px", position: "relative" }}>
           <textarea
             ref={textareaRef}
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onInput={handleInput}
-            placeholder={streaming ? "" : "Ask to make changes, @mention files, run /commands"}
+            placeholder={streaming ? "" : PLACEHOLDERS[placeholderIdx]}
             disabled={streaming}
             rows={1}
             style={{
               width: "100%", background: "none", border: "none", outline: "none",
               color: "var(--text)", fontSize: 13, fontFamily: "var(--font)",
-              resize: "none", maxHeight: 140, overflowY: "auto", lineHeight: 1.5, display: "block",
+              resize: "none", maxHeight: `${LINE_HEIGHT * MAX_ROWS}px`, overflowY: "auto",
+              lineHeight: `${LINE_HEIGHT}px`, display: "block",
             }}
           />
+          {/* Char / token count — shows when > 100 chars */}
+          {input.length > 100 && (
+            <div style={{
+              position: "absolute",
+              bottom: 4,
+              right: 14,
+              fontSize: 10,
+              color: "var(--text-dimmer)",
+              fontFamily: "var(--font)",
+              opacity: 0.5,
+              userSelect: "none",
+              pointerEvents: "none",
+            }}>
+              {input.length}c / ~{estimateTokens(input)}t
+            </div>
+          )}
         </div>
 
         {/* Streaming line */}
@@ -928,21 +972,29 @@ export default function ChatInputBar({
               <Square size={12} />
             </button>
           ) : (
-            <button
-              onClick={() => void sendMessage()}
-              disabled={!input.trim()}
-              title="Send (Enter)"
-              style={{
-                width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
-                background: input.trim() ? "var(--accent)" : "rgba(255,255,255,0.06)",
-                border: "none", borderRadius: 4,
-                color: input.trim() ? "#000" : "var(--text-dimmer)",
-                cursor: input.trim() ? "pointer" : "default",
-                transition: "all 0.15s",
-              }}
-            >
-              <Send size={12} />
-            </button>
+            /* Slide in from right when text is present */
+            <div style={{
+              overflow: "hidden",
+              width: input.trim() ? 28 : 0,
+              opacity: input.trim() ? 1 : 0,
+              transform: input.trim() ? "translateX(0)" : "translateX(8px)",
+              transition: "width 0.15s ease, opacity 0.15s ease, transform 0.15s ease",
+            }}>
+              <button
+                onClick={() => void sendMessage()}
+                disabled={!input.trim()}
+                title="Send (⌘↵)"
+                style={{
+                  width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "var(--accent)", border: "none", borderRadius: 4,
+                  color: "#000", cursor: "pointer",
+                  transition: "background 0.1s",
+                  flexShrink: 0,
+                }}
+              >
+                <Send size={12} />
+              </button>
+            </div>
           )}
         </div>
       </div>

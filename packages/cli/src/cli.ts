@@ -869,7 +869,11 @@ cli
 // --- mcp command ---
 cli
   .command("mcp", "Start the hashmark MCP server (stdio transport for Claude Code, Cursor, etc.)")
-  .action(async () => {
+  .option("--project-dir <path>", "Project root directory (defaults to cwd)")
+  .action(async (options: { projectDir?: string }) => {
+    if (options.projectDir) {
+      process.env.HASHMARK_PROJECT_DIR = resolve(options.projectDir);
+    }
     try {
       const { startMcpServer } = await import("./mcp-server.js");
       await startMcpServer();

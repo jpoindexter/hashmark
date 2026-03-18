@@ -546,6 +546,87 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["filePath"],
         },
       },
+      // --- Context file tools (CLAUDE.md / AGENTS.md) ---
+      {
+        name: "get_context",
+        description:
+          "Returns the full CLAUDE.md (or AGENTS.md) content for the project. Reads from CLAUDE.md, then .claude/CLAUDE.md, then AGENTS.md. Re-reads on each call so regenerated files are always fresh.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectDir: {
+              type: "string",
+              description: "Project root directory (defaults to process.cwd())",
+            },
+          },
+        },
+      },
+      {
+        name: "get_section",
+        description:
+          "Returns a specific section from the project's CLAUDE.md. Case-insensitive match on the section heading (e.g. 'Architecture', 'Commands', 'Database Models').",
+        inputSchema: {
+          type: "object",
+          properties: {
+            section: {
+              type: "string",
+              description: "Section heading to find (case-insensitive)",
+            },
+            projectDir: {
+              type: "string",
+              description: "Project root directory (defaults to process.cwd())",
+            },
+          },
+          required: ["section"],
+        },
+      },
+      {
+        name: "search_context",
+        description:
+          "Fuzzy search across all sections of the project's CLAUDE.md. Splits on ## / ### boundaries, scores by word overlap with the query, returns top 3 matching chunks.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            query: {
+              type: "string",
+              description: "Search query — natural language or keywords",
+            },
+            projectDir: {
+              type: "string",
+              description: "Project root directory (defaults to process.cwd())",
+            },
+          },
+          required: ["query"],
+        },
+      },
+      {
+        name: "get_metrics",
+        description:
+          "Returns scan metrics from the project's .hashmark/last-scan.json — file count, line count, framework, token estimate, and complexity scores if available.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectDir: {
+              type: "string",
+              description: "Project root directory (defaults to process.cwd())",
+            },
+          },
+        },
+      },
+      {
+        name: "list_sections",
+        description:
+          "Returns all top-level section headings (## level) from the project's CLAUDE.md.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectDir: {
+              type: "string",
+              description: "Project root directory (defaults to process.cwd())",
+            },
+          },
+        },
+      },
     ],
   };
 });
@@ -1799,6 +1880,97 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: lines.join("\n") }] };
       }
 
+      case "get_context": {
+        const projectDir = resolve((args?.projectDir as string | undefined) || process.env.HASHMARK_PROJECT_DIR || process.cwd());
+        const content = readContextFile(projectDir);
+        if (!content) {
+          return { content: [{ type: "text", text: `No CLAUDE.md or AGENTS.md found in ${projectDir}` }], isError: true };
+        }
+        return { content: [{ type: "text", text: content }] };
+      }
+
+      case "get_section": {
+        const projectDir = resolve((args?.projectDir as string | undefined) || process.env.HASHMARK_PROJECT_DIR || process.cwd());
+        const sectionQuery = (args?.section as string || "").toLowerCase().trim();
+        const content = readContextFile(projectDir);
+        if (!content) {
+          return { content: [{ type: "text", text: `No CLAUDE.md or AGENTS.md found in ${projectDir}` }], isError: true };
+        }
+        const chunks = splitSections(content);
+        const match = chunks.find(c => c.heading.toLowerCase() === sectionQuery)
+          || chunks.find(c => c.heading.toLowerCase().includes(sectionQuery));
+        if (!match) {
+          const available = chunks.map(c => `"${c.heading}"`).join(", ");
+          return { content: [{ type: "text", text: `Section "${args?.section}" not found. Available: ${available}` }], isError: true };
+        }
+        return { content: [{ type: "text", text: match.content }] };
+      }
+
+      case "search_context": {
+        const projectDir = resolve((args?.projectDir as string | undefined) || process.env.HASHMARK_PROJECT_DIR || process.cwd());
+        const query = (args?.query as string || "").toLowerCase();
+        const content = readContextFile(projectDir);
+        if (!content) {
+          return { content: [{ type: "text", text: `No CLAUDE.md or AGENTS.md found in ${projectDir}` }], isError: true };
+        }
+        const queryWords = query.split(/\s+/).filter(w => w.length > 2);
+        const chunks = splitSections(content);
+        const scored = chunks.map(c => {
+          const text = (c.heading + " " + c.content).toLowerCase();
+          const score = queryWords.reduce((acc, w) => acc + (text.includes(w) ? 1 : 0), 0);
+          return { ...c, score };
+        });
+        const top = scored.sort((a, b) => b.score - a.score).slice(0, 3).filter(c => c.score > 0);
+        if (top.length === 0) {
+          return { content: [{ type: "text", text: `No sections matched "${args?.query}"` }] };
+        }
+        const result = top.map(c => `## ${c.heading}\n\n${c.content.trim()}`).join("\n\n---\n\n");
+        return { content: [{ type: "text", text: result }] };
+      }
+
+      case "get_metrics": {
+        const projectDir = resolve((args?.projectDir as string | undefined) || process.env.HASHMARK_PROJECT_DIR || process.cwd());
+        const snapshotPath = join(projectDir, ".hashmark", "last-scan.json");
+        if (!existsSync(snapshotPath)) {
+          return { content: [{ type: "text", text: `No scan found in ${projectDir}. Run \`hashmark\` first to generate metrics.` }], isError: true };
+        }
+        let snapshot: Record<string, unknown>;
+        try {
+          snapshot = JSON.parse(readFileSync(snapshotPath, "utf-8"));
+        } catch {
+          return { content: [{ type: "text", text: `Failed to read .hashmark/last-scan.json` }], isError: true };
+        }
+        const stats = snapshot.stats as Record<string, unknown> | undefined;
+        const framework = snapshot.framework as Record<string, unknown> | undefined;
+        const tokens = snapshot.tokens as Record<string, unknown> | undefined;
+        const ai = snapshot.aiRecommendations as Record<string, unknown> | undefined;
+        const lines: string[] = [
+          `## Scan Metrics`,
+          `- **Framework**: ${framework?.name ?? "unknown"} (${framework?.language ?? "unknown"})`,
+          `- **Files**: ${stats?.totalFiles ?? "—"}`,
+          `- **Lines**: ${stats?.totalLines ?? "—"}`,
+          `- **Tokens**: ${tokens?.total ?? "—"}`,
+          `- **Generated**: ${snapshot.generatedAt ?? "—"}`,
+        ];
+        if (ai) {
+          lines.push(`- **Complexity model**: ${ai.complexModel ?? "—"}`);
+          lines.push(`- **Simple model**: ${ai.simpleModel ?? "—"}`);
+          if (ai.extendedThinkingRecommended) lines.push(`- **Extended thinking recommended**: yes`);
+        }
+        return { content: [{ type: "text", text: lines.join("\n") }] };
+      }
+
+      case "list_sections": {
+        const projectDir = resolve((args?.projectDir as string | undefined) || process.env.HASHMARK_PROJECT_DIR || process.cwd());
+        const content = readContextFile(projectDir);
+        if (!content) {
+          return { content: [{ type: "text", text: `No CLAUDE.md or AGENTS.md found in ${projectDir}` }], isError: true };
+        }
+        const chunks = splitSections(content);
+        const headings = chunks.map(c => `- ${c.heading}`).join("\n");
+        return { content: [{ type: "text", text: `Sections in context file:\n\n${headings}` }] };
+      }
+
       default:
         return {
           content: [{ type: "text", text: `Unknown tool: ${name}` }],
@@ -1857,6 +2029,31 @@ function formatSchemaDetailed(schema: ApiSchema): string {
   }
 
   return lines.join("\n");
+}
+
+// Helper: read CLAUDE.md from standard locations
+function readContextFile(projectDir: string): string | null {
+  const candidates = [
+    join(projectDir, "CLAUDE.md"),
+    join(projectDir, ".claude", "CLAUDE.md"),
+    join(projectDir, "AGENTS.md"),
+  ];
+  for (const p of candidates) {
+    if (existsSync(p)) return readFileSync(p, "utf-8");
+  }
+  return null;
+}
+
+// Helper: split markdown into heading + content chunks on ## / ###
+function splitSections(content: string): Array<{ heading: string; content: string }> {
+  const parts = content.split(/\n(?=#{2,3} )/);
+  return parts.map(part => {
+    const headingMatch = part.match(/^(#{2,3}) (.+)/);
+    if (!headingMatch) return { heading: "(intro)", content: part };
+    const heading = headingMatch[2].trim();
+    const body = part.slice(headingMatch[0].length).trim();
+    return { heading, content: body };
+  }).filter(c => c.content.length > 0);
 }
 
 export async function startMcpServer() {

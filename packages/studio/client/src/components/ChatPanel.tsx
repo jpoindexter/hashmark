@@ -174,7 +174,11 @@ export default function ChatPanel() {
         </div>
       )}
 
-      <div style={{ flex: 1, overflow: "auto", padding: "12px 10px", display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div style={{
+        flex: 1, overflow: "auto", padding: "12px 10px",
+        display: "flex", flexDirection: "column", gap: "12px",
+        borderTop: messages.length > 0 || streaming ? "1px solid var(--border-dim)" : "none",
+      }}>
         {messages.length === 0 && !streaming && (
           <div style={{ textAlign: "center", color: "var(--text-dimmer)", fontSize: "11px", marginTop: "40px", lineHeight: 1.8 }}>
             <div style={{ fontSize: "20px", color: "var(--accent-dim)", marginBottom: "8px" }}>◌</div>

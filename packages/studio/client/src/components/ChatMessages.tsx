@@ -49,6 +49,46 @@ function renderInline(text: string): React.ReactNode {
   });
 }
 
+function CodeBlock({ lang, code }: { lang: string; code: string }) {
+  return (
+    <div style={{
+      position: "relative",
+      background: "var(--bg-3)",
+      border: "1px solid var(--border-dim)",
+      margin: "8px 0",
+      overflow: "hidden",
+    }}>
+      {lang && (
+        <div style={{
+          position: "absolute",
+          top: 6,
+          right: 8,
+          fontSize: "9px",
+          fontFamily: "var(--font)",
+          color: "var(--accent)",
+          background: "var(--bg-4)",
+          border: "1px solid var(--border-dim)",
+          padding: "1px 6px",
+          letterSpacing: "0.05em",
+          textTransform: "uppercase",
+          userSelect: "none",
+        }}>
+          {lang}
+        </div>
+      )}
+      <pre style={{
+        padding: lang ? "28px 12px 10px" : "10px 12px",
+        overflow: "auto",
+        fontSize: "11px",
+        lineHeight: "1.5",
+        margin: 0,
+      }}>
+        <code style={{ color: "var(--text)", fontFamily: "var(--font)" }}>{code}</code>
+      </pre>
+    </div>
+  );
+}
+
 function AssistantContent({ text }: { text: string }) {
   const lines = text.split("\n");
   const nodes: React.ReactNode[] = [];
@@ -66,20 +106,7 @@ function AssistantContent({ text }: { text: string }) {
         codeLines.push(lines[i]);
         i++;
       }
-      nodes.push(
-        <pre key={key++} style={{
-          background: "var(--bg-3)",
-          border: "1px solid var(--border-dim)",
-          padding: "10px 12px",
-          margin: "8px 0",
-          overflow: "auto",
-          fontSize: "11px",
-          lineHeight: "1.5",
-        }}>
-          {lang && <div style={{ color: "var(--text-dimmer)", fontSize: "10px", marginBottom: "6px", textTransform: "uppercase" }}>{lang}</div>}
-          <code style={{ color: "var(--text)", fontFamily: "var(--font)" }}>{codeLines.join("\n")}</code>
-        </pre>
-      );
+      nodes.push(<CodeBlock key={key++} lang={lang} code={codeLines.join("\n")} />);
       i++;
       continue;
     }
@@ -123,95 +150,189 @@ function AssistantContent({ text }: { text: string }) {
   return <>{nodes}</>;
 }
 
-function AvatarBadge({ role }: { role: "user" | "assistant" }) {
-  const isUser = role === "user";
+function UserBubble({ msg }: { msg: Message }) {
+  const [hovered, setHovered] = useState(false);
   return (
-    <div style={{
-      width: 28, height: 28, borderRadius: "50%",
-      background: isUser ? "var(--bg-4)" : "var(--accent-bg)",
-      border: `1px solid ${isUser ? "var(--border)" : "var(--accent-border)"}`,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 10, color: isUser ? "var(--text-dim)" : "var(--accent)",
-      flexShrink: 0, fontFamily: "var(--font)", letterSpacing: "0.05em",
-      fontWeight: 700,
-    }}>
-      {isUser ? "U" : "✸"}
+    <div
+      style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 8, maxWidth: "80%" }}>
+        <div style={{ flex: 1 }}>
+          <div style={{
+            background: "var(--bg-4)",
+            border: "1px solid var(--border)",
+            padding: "8px 12px 8px 14px",
+            fontSize: 13,
+            color: "var(--text)",
+            lineHeight: 1.6,
+            whiteSpace: "pre-wrap",
+            fontFamily: "var(--font-ui)",
+          }}>
+            {msg.content}
+          </div>
+        </div>
+        {/* Avatar — top-right of bubble */}
+        <div style={{
+          width: 22,
+          height: 22,
+          borderRadius: "50%",
+          background: "var(--bg-4)",
+          border: "1px solid var(--border)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 9,
+          color: "var(--text-dim)",
+          flexShrink: 0,
+          fontFamily: "var(--font)",
+          fontWeight: 700,
+          letterSpacing: "0.05em",
+          marginTop: 2,
+        }}>
+          U
+        </div>
+      </div>
+      {/* Timestamp — show on hover */}
+      <div style={{
+        fontSize: 10,
+        color: "var(--text-dimmer)",
+        marginTop: 3,
+        marginRight: 30,
+        opacity: hovered ? 1 : 0,
+        transition: "opacity 0.15s",
+        userSelect: "none",
+      }}>
+        {fmtTime(msg.created_at)}
+      </div>
     </div>
   );
 }
 
-function MessageBubble({ msg }: { msg: Message }) {
-  const isUser = msg.role === "user";
+function AssistantBubble({ msg }: { msg: Message }) {
+  const [hovered, setHovered] = useState(false);
   return (
-    <div style={{
-      display: "flex", gap: 10, alignItems: "flex-start",
-      animation: "fadeIn 0.2s ease forwards",
-    }}>
-      <AvatarBadge role={msg.role} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4,
-        }}>
-          <span style={{
-            fontSize: 12, fontWeight: 600,
-            color: isUser ? "var(--text-dim)" : "var(--accent)",
-          }}>
-            {isUser ? "You" : "Claude"}
-          </span>
-          <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>
-            {fmtTime(msg.created_at)}
-          </span>
-          {msg.output_tokens != null && msg.output_tokens > 0 && (
-            <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>
-              {fmtTokens(msg.output_tokens)} tok
-            </span>
-          )}
-        </div>
-        {isUser ? (
-          <div style={{
-            fontSize: 13, color: "var(--text)", lineHeight: 1.6,
-            whiteSpace: "pre-wrap", fontFamily: "var(--font-ui)",
-          }}>
-            {msg.content}
-          </div>
-        ) : (
-          <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6, fontFamily: "var(--font-ui)" }}>
-            <AssistantContent text={msg.content} />
-          </div>
+    <div
+      style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div style={{
+        borderLeft: "2px solid var(--accent)",
+        paddingLeft: 12,
+        fontSize: 13,
+        color: "var(--text)",
+        lineHeight: 1.6,
+        fontFamily: "var(--font-ui)",
+        animation: "fadeIn 0.2s ease forwards",
+      }}>
+        <AssistantContent text={msg.content} />
+      </div>
+      {/* Timestamp + tokens — show on hover */}
+      <div style={{
+        display: "flex",
+        gap: 8,
+        fontSize: 10,
+        color: "var(--text-dimmer)",
+        marginTop: 3,
+        paddingLeft: 14,
+        opacity: hovered ? 1 : 0,
+        transition: "opacity 0.15s",
+        userSelect: "none",
+      }}>
+        <span>{fmtTime(msg.created_at)}</span>
+        {msg.output_tokens != null && msg.output_tokens > 0 && (
+          <span>{fmtTokens(msg.output_tokens)} tok</span>
         )}
       </div>
     </div>
   );
 }
 
+function MessageBubble({ msg }: { msg: Message }) {
+  if (msg.role === "user") return <UserBubble msg={msg} />;
+  return <AssistantBubble msg={msg} />;
+}
+
 function StreamingBubble({ text }: { text: string }) {
   return (
-    <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-      <AvatarBadge role="assistant" />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)" }}>Claude</span>
-          <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>typing...</span>
-        </div>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+      <div style={{
+        borderLeft: "2px solid var(--accent)",
+        paddingLeft: 12,
+        fontSize: 13,
+        color: "var(--text)",
+        lineHeight: 1.6,
+        fontFamily: "var(--font-ui)",
+      }}>
         {text ? (
-          <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6, fontFamily: "var(--font-ui)" }}>
+          <>
             <AssistantContent text={text} />
             <span style={{
-              display: "inline-block", width: 7, height: 13,
-              background: "var(--accent)", verticalAlign: "text-bottom",
-              marginLeft: 2, animation: "cursor-blink 1s step-end infinite",
+              display: "inline-block",
+              width: 7,
+              height: 13,
+              background: "var(--accent)",
+              verticalAlign: "text-bottom",
+              marginLeft: 2,
+              animation: "cursor-blink 1s step-end infinite",
             }} />
-          </div>
+          </>
         ) : (
           <div style={{ display: "flex", gap: 4, alignItems: "center", paddingTop: 4 }}>
             {[0, 1, 2].map(i => (
               <span key={i} style={{
-                width: 5, height: 5, background: "var(--accent)", borderRadius: "50%",
+                width: 5,
+                height: 5,
+                background: "var(--accent)",
+                borderRadius: "50%",
                 animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
               }} />
             ))}
           </div>
         )}
+      </div>
+      <div style={{ fontSize: 10, color: "var(--text-dimmer)", marginTop: 3, paddingLeft: 14, userSelect: "none" }}>
+        typing...
+      </div>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div style={{
+      flex: 1,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      color: "var(--text-dimmer)",
+      gap: 12,
+      padding: 32,
+    }}>
+      <div style={{
+        fontFamily: "var(--font)",
+        fontSize: 13,
+        color: "var(--text-dim)",
+        display: "flex",
+        alignItems: "center",
+        gap: 0,
+      }}>
+        Start a conversation
+        <span style={{
+          display: "inline-block",
+          width: 8,
+          height: 14,
+          background: "var(--accent)",
+          marginLeft: 4,
+          verticalAlign: "text-bottom",
+          animation: "cursor-blink 1s step-end infinite",
+        }} />
+      </div>
+      <div style={{ fontSize: 11, color: "var(--text-dimmer)", textAlign: "center", maxWidth: 280, lineHeight: 1.7 }}>
+        Ask about your codebase, request changes, or run /commands.
       </div>
     </div>
   );
@@ -226,7 +347,6 @@ export default function ChatMessages({ sessionId, streamText, streaming }: ChatM
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const parentRef = useRef<HTMLDivElement>(null);
-  // Track whether the user has manually scrolled up
   const userScrolledUp = useRef(false);
   const prevScrollTop = useRef(0);
 
@@ -255,7 +375,6 @@ export default function ChatMessages({ sessionId, streamText, streaming }: ChatM
     }
   }, [streaming, sessionId, loadMessages]);
 
-  // Build the virtual items list: real messages + optional streaming row
   const items: VirtualItem[] = streaming
     ? [...messages, { id: STREAMING_ID, role: "assistant" as const }]
     : messages;
@@ -268,7 +387,7 @@ export default function ChatMessages({ sessionId, streamText, streaming }: ChatM
     measureElement: (el) => el.getBoundingClientRect().height,
   });
 
-  // Auto-scroll to bottom on new items/stream updates, unless user scrolled up
+  // Smooth scroll to bottom on new messages / stream updates
   useEffect(() => {
     if (items.length === 0) return;
     if (!userScrolledUp.current) {
@@ -276,7 +395,7 @@ export default function ChatMessages({ sessionId, streamText, streaming }: ChatM
     }
   }, [items.length, streamText]);
 
-  // Detect manual scroll-up
+  // Detect manual scroll-up to suppress auto-scroll
   useEffect(() => {
     const el = parentRef.current;
     if (!el) return;
@@ -303,21 +422,7 @@ export default function ChatMessages({ sessionId, streamText, streaming }: ChatM
   }
 
   if (!sessionId || (messages.length === 0 && !streaming)) {
-    return (
-      <div style={{
-        flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-        justifyContent: "center", color: "var(--text-dimmer)",
-        gap: 12, padding: 32,
-      }}>
-        <div style={{ fontSize: 32, color: "var(--accent)", opacity: 0.3, lineHeight: 1 }}>✸</div>
-        <div style={{ fontSize: 14, color: "var(--text-dim)", fontWeight: 500 }}>
-          How can I help?
-        </div>
-        <div style={{ fontSize: 12, color: "var(--text-dimmer)", textAlign: "center", maxWidth: 320, lineHeight: 1.6 }}>
-          Ask about your codebase, request changes, or run /commands.
-        </div>
-      </div>
-    );
+    return <EmptyState />;
   }
 
   return (
@@ -325,14 +430,7 @@ export default function ChatMessages({ sessionId, streamText, streaming }: ChatM
       ref={parentRef}
       style={{ flex: 1, overflow: "auto", fontFamily: "var(--font)" }}
     >
-      {/* Outer spacer — virtualizer's total measured height */}
-      <div
-        style={{
-          height: virtualizer.getTotalSize(),
-          width: "100%",
-          position: "relative",
-        }}
-      >
+      <div style={{ height: virtualizer.getTotalSize(), width: "100%", position: "relative" }}>
         {virtualizer.getVirtualItems().map((vrow) => {
           const item = items[vrow.index];
           return (
@@ -351,7 +449,7 @@ export default function ChatMessages({ sessionId, streamText, streaming }: ChatM
               <div style={{
                 maxWidth: 760,
                 margin: "0 auto",
-                padding: vrow.index === 0 ? "20px 24px 10px" : "0 24px 20px",
+                padding: vrow.index === 0 ? "20px 24px 14px" : "0 24px 20px",
               }}>
                 {item.id === STREAMING_ID ? (
                   <StreamingBubble text={streamText} />

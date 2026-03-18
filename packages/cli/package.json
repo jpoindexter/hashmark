@@ -6,7 +6,8 @@
   "bin": {
     "hashmark": "dist/cli.js",
     "agent-smith": "dist/cli.js",
-    "agentsmith": "dist/cli.js"
+    "agentsmith": "dist/cli.js",
+    "hashmark-mcp": "dist/mcp-server.js"
   },
   "scripts": {
     "build": "tsup src/cli.ts --format esm --dts",
