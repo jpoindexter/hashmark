@@ -17,6 +17,24 @@ interface EnvVar {
   key: string;
   source: string;
 }
+interface ProviderInfo {
+  id: string;
+  name: string;
+  enabled: boolean;
+  hasKey: boolean;
+  baseUrl?: string;
+}
+interface ProvidersData {
+  active: string;
+  model: string;
+  providers: ProviderInfo[];
+}
+interface ScanConfig {
+  formats: string[];
+  maxTokens: number;
+  watchDebounceMs: number;
+  autoRescan: boolean;
+}
 
 /* ─── nav sections ──────────────────────────────────────────────────────── */
 const SECTIONS = [
@@ -26,6 +44,8 @@ const SECTIONS = [
   { id: "git",          label: "Git",          group: "Workspace" },
   { id: "env",          label: "Environment",  group: "Workspace" },
   { id: "workspace",    label: "Workspace",    group: "Workspace" },
+  { id: "providers",    label: "Providers",    group: "AI" },
+  { id: "scan",         label: "Scan",         group: "AI" },
   { id: "claude-code",  label: "Claude Code",  group: "Integrations" },
   { id: "mcp",          label: "MCP Servers",  group: "Integrations" },
   { id: "api-keys",     label: "API Keys",     group: "Integrations" },
@@ -34,6 +54,33 @@ const SECTIONS = [
 ];
 
 const GROUPS = Array.from(new Set(SECTIONS.map(s => s.group)));
+
+/* ─── provider metadata ─────────────────────────────────────────────────── */
+const PROVIDER_ICONS: Record<string, string> = {
+  claude:  "✸",
+  openai:  "◎",
+  gemini:  "◈",
+  mistral: "◇",
+  grok:    "✦",
+  ollama:  "◉",
+  codex:   "⬡",
+};
+
+const PROVIDER_ENV_KEYS: Record<string, string> = {
+  openai:  "OPENAI_API_KEY",
+  gemini:  "GOOGLE_AI_API_KEY",
+  mistral: "MISTRAL_API_KEY",
+  grok:    "XAI_API_KEY",
+  codex:   "OPENAI_API_KEY",
+};
+
+const ALL_FORMATS = [
+  { id: "CLAUDE.md",             label: "CLAUDE.md",             desc: "Anthropic Claude Code" },
+  { id: "AGENTS.md",             label: "AGENTS.md",             desc: "OpenAI Agents / general" },
+  { id: ".cursorrules",          label: ".cursorrules",          desc: "Cursor IDE" },
+  { id: "openai-system-prompt",  label: "openai-system-prompt",  desc: "ChatGPT system prompt" },
+  { id: "json",                  label: "JSON",                  desc: "Machine-readable output" },
+];
 
 /* ─── persists ───────────────────────────────────────────────────────────── */
 function persist(key: string, val: unknown) {
@@ -65,6 +112,515 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
         transition: "left 0.15s",
       }} />
     </button>
+  );
+}
+
+/* ─── ProviderPanel ─────────────────────────────────────────────────────── */
+function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
+  const [data, setData] = useState<ProvidersData | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [keyInputs, setKeyInputs] = useState<Record<string, string>>({});
+  const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
+  const [baseUrlInputs, setBaseUrlInputs] = useState<Record<string, string>>({});
+  const [models, setModels] = useState<Record<string, string[]>>({});
+  const [testStatus, setTestStatus] = useState<Record<string, "idle" | "testing" | "ok" | "fail">>({});
+  const [saving, setSaving] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/providers")
+      .then(r => r.json())
+      .then((d: ProvidersData) => setData(d))
+      .catch(() => {});
+  }, []);
+
+  function loadModels(id: string) {
+    if (models[id]) return;
+    fetch(`/api/providers/models/${id}`)
+      .then(r => r.json())
+      .then((d: { models: string[] }) => setModels(prev => ({ ...prev, [id]: d.models ?? [] })))
+      .catch(() => {});
+  }
+
+  function toggleExpand(id: string) {
+    const next = expanded === id ? null : id;
+    setExpanded(next);
+    if (next) loadModels(next);
+  }
+
+  async function saveKey(providerId: string) {
+    const key = keyInputs[providerId] ?? "";
+    setSaving(providerId);
+    try {
+      await fetch(`/api/providers/${providerId}/key`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: key }),
+      });
+      setData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          providers: prev.providers.map(p =>
+            p.id === providerId ? { ...p, hasKey: key.length > 0, enabled: key.length > 0 } : p
+          ),
+        };
+      });
+      setKeyInputs(prev => ({ ...prev, [providerId]: "" }));
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  async function saveBaseUrl(providerId: string) {
+    const url = baseUrlInputs[providerId] ?? "";
+    if (!url) return;
+    setSaving(providerId);
+    try {
+      await fetch(`/api/providers/${providerId}/baseUrl`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ baseUrl: url }),
+      });
+      setData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          providers: prev.providers.map(p =>
+            p.id === providerId ? { ...p, baseUrl: url } : p
+          ),
+        };
+      });
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  async function setActive(providerId: string, model?: string) {
+    if (!data) return;
+    const provModels = models[providerId] ?? [];
+    const chosenModel = model ?? provModels[0] ?? data.model;
+    await fetch("/api/providers/active", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ providerId, model: chosenModel }),
+    });
+    setData(prev => prev ? { ...prev, active: providerId, model: chosenModel } : prev);
+  }
+
+  async function testConnection(providerId: string) {
+    setTestStatus(prev => ({ ...prev, [providerId]: "testing" }));
+    try {
+      const res = await fetch(`/api/providers/models/${providerId}`);
+      const d = await res.json() as { models?: string[]; error?: string };
+      if (d.models && d.models.length > 0) {
+        setModels(prev => ({ ...prev, [providerId]: d.models! }));
+        setTestStatus(prev => ({ ...prev, [providerId]: "ok" }));
+      } else {
+        setTestStatus(prev => ({ ...prev, [providerId]: "fail" }));
+      }
+    } catch {
+      setTestStatus(prev => ({ ...prev, [providerId]: "fail" }));
+    }
+    setTimeout(() => setTestStatus(prev => ({ ...prev, [providerId]: "idle" })), 3000);
+  }
+
+  if (!data) {
+    return <span style={{ fontSize: 12, color: "var(--text-dimmer)" }}>Loading...</span>;
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {data.providers.map(provider => {
+        const isExpanded = expanded === provider.id;
+        const isActive = data.active === provider.id;
+        const needsKey = provider.id !== "claude" && provider.id !== "ollama";
+        const hasEnvKey = envVars.some(v => v.key === PROVIDER_ENV_KEYS[provider.id]);
+        const effectivelyHasKey = provider.hasKey || hasEnvKey || provider.id === "claude" || provider.id === "ollama";
+        const icon = PROVIDER_ICONS[provider.id] ?? "◎";
+        const ts = testStatus[provider.id] ?? "idle";
+        const provModels = models[provider.id] ?? [];
+
+        return (
+          <div
+            key={provider.id}
+            style={{
+              background: "var(--bg-2)",
+              border: `1px solid ${isActive ? "var(--accent-border)" : "var(--border-dim)"}`,
+              borderRadius: "var(--radius)",
+              overflow: "hidden",
+              transition: "border-color 0.15s",
+            }}
+          >
+            {/* Row header */}
+            <div
+              onClick={() => toggleExpand(provider.id)}
+              style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
+                cursor: "pointer",
+                background: isActive ? "var(--accent-bg)" : "transparent",
+              }}
+            >
+              <span style={{ fontSize: 14, color: isActive ? "var(--accent)" : "var(--text-dimmer)", flexShrink: 0 }}>
+                {icon}
+              </span>
+              <span style={{
+                flex: 1, fontSize: 13, fontWeight: 500,
+                color: isActive ? "var(--accent)" : "var(--text)",
+              }}>
+                {provider.name}
+              </span>
+              {isActive && (
+                <span style={{
+                  fontSize: 9, textTransform: "uppercase", letterSpacing: "0.06em",
+                  color: "var(--accent)", background: "var(--accent-bg)",
+                  border: "1px solid var(--accent-border)", borderRadius: 3,
+                  padding: "1px 6px", flexShrink: 0,
+                }}>
+                  active
+                </span>
+              )}
+              {effectivelyHasKey && !isActive && (
+                <span style={{ fontSize: 9, color: "var(--accent)", opacity: 0.6, flexShrink: 0 }}>key set</span>
+              )}
+              {needsKey && !effectivelyHasKey && (
+                <span style={{ fontSize: 9, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.04em", flexShrink: 0 }}>
+                  no key
+                </span>
+              )}
+              <span style={{ fontSize: 10, color: "var(--text-dimmer)", flexShrink: 0, marginLeft: 4 }}>
+                {isExpanded ? "▲" : "▼"}
+              </span>
+            </div>
+
+            {/* Expanded body */}
+            {isExpanded && (
+              <div style={{ borderTop: "1px solid var(--border-dim)", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 12 }}>
+
+                {/* API key input */}
+                {needsKey && (
+                  <div>
+                    <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+                      API Key
+                      {PROVIDER_ENV_KEYS[provider.id] && (
+                        <span style={{ marginLeft: 6, opacity: 0.6 }}>
+                          (or set <code style={{ color: "var(--accent)", fontFamily: "var(--font)" }}>{PROVIDER_ENV_KEYS[provider.id]}</code> in .env)
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <div style={{ flex: 1, position: "relative" }}>
+                        <input
+                          type={showKeys[provider.id] ? "text" : "password"}
+                          value={keyInputs[provider.id] ?? ""}
+                          onChange={e => setKeyInputs(prev => ({ ...prev, [provider.id]: e.target.value }))}
+                          onKeyDown={e => { if (e.key === "Enter") void saveKey(provider.id); }}
+                          placeholder={provider.hasKey ? "••••••••••••••••" : "sk-..."}
+                          style={{
+                            width: "100%", background: "var(--bg-3)", border: "1px solid var(--border)",
+                            borderRadius: "var(--radius)", color: "var(--text)", fontSize: 11,
+                            fontFamily: "var(--font)", padding: "5px 32px 5px 8px", outline: "none",
+                          }}
+                        />
+                        <button
+                          onClick={() => setShowKeys(prev => ({ ...prev, [provider.id]: !prev[provider.id] }))}
+                          style={{
+                            position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)",
+                            background: "none", border: "none", cursor: "pointer",
+                            fontSize: 11, color: "var(--text-dimmer)", padding: 2,
+                          }}
+                          title={showKeys[provider.id] ? "Hide" : "Show"}
+                        >
+                          {showKeys[provider.id] ? "◉" : "○"}
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => void saveKey(provider.id)}
+                        disabled={saving === provider.id || !(keyInputs[provider.id] ?? "").trim()}
+                        style={{
+                          padding: "5px 12px", background: "var(--accent)", border: "none",
+                          borderRadius: "var(--radius)", color: "#000", fontSize: 11,
+                          fontFamily: "var(--font-ui)", fontWeight: 600,
+                          cursor: (keyInputs[provider.id] ?? "").trim() ? "pointer" : "default",
+                          opacity: (keyInputs[provider.id] ?? "").trim() ? 1 : 0.4,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {saving === provider.id ? "..." : "Save"}
+                      </button>
+                    </div>
+                    {hasEnvKey && (
+                      <div style={{ fontSize: 10, color: "var(--accent)", marginTop: 4, opacity: 0.7 }}>
+                        Key detected in environment
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Ollama base URL */}
+                {provider.id === "ollama" && (
+                  <div>
+                    <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+                      Ollama URL
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <input
+                        value={baseUrlInputs[provider.id] ?? provider.baseUrl ?? "http://localhost:11434"}
+                        onChange={e => setBaseUrlInputs(prev => ({ ...prev, [provider.id]: e.target.value }))}
+                        onKeyDown={e => { if (e.key === "Enter") void saveBaseUrl(provider.id); }}
+                        style={{
+                          flex: 1, background: "var(--bg-3)", border: "1px solid var(--border)",
+                          borderRadius: "var(--radius)", color: "var(--text)", fontSize: 11,
+                          fontFamily: "var(--font)", padding: "5px 8px", outline: "none",
+                        }}
+                      />
+                      <button
+                        onClick={() => void saveBaseUrl(provider.id)}
+                        disabled={saving === provider.id}
+                        style={{
+                          padding: "5px 10px", background: "none", border: "1px solid var(--border)",
+                          borderRadius: "var(--radius)", color: "var(--text-dim)", fontSize: 11,
+                          fontFamily: "var(--font-ui)", cursor: "pointer", flexShrink: 0,
+                        }}
+                      >
+                        Set
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Claude note */}
+                {provider.id === "claude" && (
+                  <div style={{ fontSize: 11, color: "var(--text-dimmer)", lineHeight: 1.5 }}>
+                    Uses CLI auth — no API key needed. Run <code style={{ color: "var(--accent)", fontFamily: "var(--font)" }}>claude auth</code> to authenticate.
+                  </div>
+                )}
+
+                {/* Model list */}
+                {provModels.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+                      Model
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                      {provModels.map(m => {
+                        const isCurrent = isActive && m === data.model;
+                        return (
+                          <div
+                            key={m}
+                            onClick={() => { if (isActive) void setActive(provider.id, m); }}
+                            style={{
+                              display: "flex", alignItems: "center", justifyContent: "space-between",
+                              padding: "5px 10px", borderRadius: "var(--radius-sm)",
+                              background: isCurrent ? "var(--accent-bg)" : "var(--bg-3)",
+                              border: `1px solid ${isCurrent ? "var(--accent-border)" : "var(--border-dim)"}`,
+                              cursor: isActive ? "pointer" : "default",
+                            }}
+                          >
+                            <code style={{ fontSize: 11, color: isCurrent ? "var(--accent)" : "var(--text-dim)", fontFamily: "var(--font)" }}>
+                              {m}
+                            </code>
+                            {isCurrent && <span style={{ fontSize: 9, color: "var(--accent)", opacity: 0.7 }}>active</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action row */}
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {!isActive && (
+                    <button
+                      onClick={() => void setActive(provider.id)}
+                      style={{
+                        padding: "5px 12px", background: effectivelyHasKey ? "var(--accent)" : "var(--bg-4)",
+                        border: effectivelyHasKey ? "none" : "1px solid var(--border)",
+                        borderRadius: "var(--radius)", color: effectivelyHasKey ? "#000" : "var(--text-dim)",
+                        fontSize: 11, fontFamily: "var(--font-ui)", fontWeight: 600, cursor: "pointer",
+                      }}
+                    >
+                      Set Active
+                    </button>
+                  )}
+                  <button
+                    onClick={() => void testConnection(provider.id)}
+                    disabled={ts === "testing"}
+                    style={{
+                      padding: "5px 12px", background: "none", border: "1px solid var(--border-dim)",
+                      borderRadius: "var(--radius)", fontSize: 11, fontFamily: "var(--font-ui)",
+                      cursor: "pointer",
+                      color: ts === "ok" ? "var(--accent)" : ts === "fail" ? "var(--red)" : "var(--text-dim)",
+                    }}
+                  >
+                    {ts === "testing" ? "Testing..." : ts === "ok" ? "Connected" : ts === "fail" ? "Failed" : "Test connection"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── ScanConfigPanel ────────────────────────────────────────────────────── */
+function ScanConfigPanel() {
+  const [config, setConfig] = useState<ScanConfig | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/config")
+      .then(r => r.json())
+      .then((d: ScanConfig) => setConfig(d))
+      .catch(() => {});
+  }, []);
+
+  function update(patch: Partial<ScanConfig>) {
+    setConfig(prev => prev ? { ...prev, ...patch } : prev);
+    setDirty(true);
+    setSaved(false);
+  }
+
+  function toggleFormat(id: string) {
+    if (!config) return;
+    const next = config.formats.includes(id)
+      ? config.formats.filter(f => f !== id)
+      : [...config.formats, id];
+    update({ formats: next });
+  }
+
+  async function save() {
+    if (!config) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config),
+      });
+      if (res.ok) {
+        setDirty(false);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!config) {
+    return <span style={{ fontSize: 12, color: "var(--text-dimmer)" }}>Loading...</span>;
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+      {/* Default formats */}
+      <div style={{ padding: "14px 0", borderBottom: "1px solid var(--border-dim)" }}>
+        <div style={{ fontSize: 13, color: "var(--text)", fontWeight: 500, marginBottom: 2 }}>Default Formats</div>
+        <div style={{ fontSize: 11, color: "var(--text-dimmer)", marginBottom: 12 }}>Which output files to generate on each scan</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {ALL_FORMATS.map(fmt => {
+            const checked = config.formats.includes(fmt.id);
+            return (
+              <label
+                key={fmt.id}
+                style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggleFormat(fmt.id)}
+                  style={{ accentColor: "var(--accent)", width: 14, height: 14 }}
+                />
+                <code style={{ fontSize: 12, color: checked ? "var(--text)" : "var(--text-dim)", fontFamily: "var(--font)", flex: 1 }}>
+                  {fmt.label}
+                </code>
+                <span style={{ fontSize: 11, color: "var(--text-dimmer)" }}>{fmt.desc}</span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Max tokens */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        gap: 16, padding: "14px 0", borderBottom: "1px solid var(--border-dim)",
+      }}>
+        <div>
+          <div style={{ fontSize: 13, color: "var(--text)", fontWeight: 500 }}>Max Tokens</div>
+          <div style={{ fontSize: 11, color: "var(--text-dimmer)", marginTop: 2 }}>Token budget cap per generated file</div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <input
+            type="range" min={10000} max={500000} step={5000}
+            value={config.maxTokens}
+            onChange={e => update({ maxTokens: Number(e.target.value) })}
+            style={{ width: 120, accentColor: "var(--accent)" }}
+          />
+          <span style={{ fontSize: 11, color: "var(--text-dim)", fontFamily: "var(--font)", minWidth: 52, textAlign: "right" }}>
+            {(config.maxTokens / 1000).toFixed(0)}k
+          </span>
+        </div>
+      </div>
+
+      {/* Watch debounce */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        gap: 16, padding: "14px 0", borderBottom: "1px solid var(--border-dim)",
+      }}>
+        <div>
+          <div style={{ fontSize: 13, color: "var(--text)", fontWeight: 500 }}>Watch Mode Debounce</div>
+          <div style={{ fontSize: 11, color: "var(--text-dimmer)", marginTop: 2 }}>Delay before re-scanning after a file change (ms)</div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <input
+            type="range" min={500} max={10000} step={500}
+            value={config.watchDebounceMs}
+            onChange={e => update({ watchDebounceMs: Number(e.target.value) })}
+            style={{ width: 120, accentColor: "var(--accent)" }}
+          />
+          <span style={{ fontSize: 11, color: "var(--text-dim)", fontFamily: "var(--font)", minWidth: 52, textAlign: "right" }}>
+            {config.watchDebounceMs}ms
+          </span>
+        </div>
+      </div>
+
+      {/* Auto rescan */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        gap: 16, padding: "14px 0", borderBottom: "1px solid var(--border-dim)",
+      }}>
+        <div>
+          <div style={{ fontSize: 13, color: "var(--text)", fontWeight: 500 }}>Auto-Rescan on File Change</div>
+          <div style={{ fontSize: 11, color: "var(--text-dimmer)", marginTop: 2 }}>Automatically trigger a scan when project files change</div>
+        </div>
+        <Toggle checked={config.autoRescan} onChange={v => update({ autoRescan: v })} />
+      </div>
+
+      {/* Save button */}
+      <div style={{ paddingTop: 16, display: "flex", alignItems: "center", gap: 10 }}>
+        <button
+          onClick={() => void save()}
+          disabled={!dirty || saving}
+          className="btn"
+          style={{
+            background: dirty ? "var(--accent)" : "var(--bg-4)",
+            borderColor: dirty ? "var(--accent)" : "var(--border)",
+            color: dirty ? "#000" : "var(--text-dimmer)",
+            fontWeight: 600, opacity: dirty ? 1 : 0.5,
+          }}
+        >
+          {saving ? "Saving..." : "Save Changes"}
+        </button>
+        {saved && (
+          <span style={{ fontSize: 11, color: "var(--accent)" }}>Saved</span>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -383,6 +939,21 @@ export default function Settings() {
             <SettingRow label="Setup Script" hint="Runs once on workspace init (e.g. npm install)" vertical>
               <ReadonlyField label="" value={`${info?.projectDir ?? "~"}/.hashmark/workspace.json`} mono />
             </SettingRow>
+          </SectionView>
+        )}
+
+        {active === "providers" && (
+          <SectionView title="Providers" description="Configure AI providers, API keys, and model selection.">
+            <InfoNote>
+              Claude uses CLI auth by default — no key needed. For other providers, enter your API key below or set the corresponding env var in <code style={{ color: "var(--accent)" }}>.env.local</code>.
+            </InfoNote>
+            <ProviderPanel envVars={envVars} />
+          </SectionView>
+        )}
+
+        {active === "scan" && (
+          <SectionView title="Scan" description="Default behavior for hashmark scans and output generation.">
+            <ScanConfigPanel />
           </SectionView>
         )}
 
