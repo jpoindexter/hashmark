@@ -10,10 +10,36 @@ interface Message {
   created_at: number;
 }
 
+// Mixed content blocks for in-progress streaming messages
+export interface TextBlock {
+  type: "text";
+  text: string;
+}
+
+export interface ToolUseBlockData {
+  type: "tool_use";
+  tool: string;
+  input: Record<string, unknown>;
+}
+
+export interface ProgressBlock {
+  type: "progress";
+  text: string;
+}
+
+export type ContentBlock = TextBlock | ToolUseBlockData | ProgressBlock;
+
+export interface StreamingState {
+  blocks: ContentBlock[];
+  cost?: number;
+  usage?: { input_tokens: number; output_tokens: number };
+}
+
 interface ChatMessagesProps {
   sessionId: string | null;
   streamText: string;
   streaming: boolean;
+  streamingState?: StreamingState;
 }
 
 function fmtTime(ts: number) {
@@ -150,6 +176,87 @@ function AssistantContent({ text }: { text: string }) {
   return <>{nodes}</>;
 }
 
+// Returns the border-left color and label color for a given tool name
+function toolAccentColor(tool: string): string {
+  const name = tool.toLowerCase();
+  if (["write", "edit", "create", "multiedit"].includes(name)) return "var(--accent)";
+  if (["bash", "shell"].includes(name)) return "var(--yellow)";
+  if (["read", "glob", "grep"].includes(name)) return "var(--blue)";
+  return "var(--text-dimmer)";
+}
+
+// Extract the primary argument string from a tool input
+function primaryArg(tool: string, input: Record<string, unknown>): string {
+  const name = tool.toLowerCase();
+  if (name === "bash" || name === "shell") {
+    const cmd = input.command ?? input.cmd ?? "";
+    return String(cmd);
+  }
+  if (name === "read") return String(input.file_path ?? input.path ?? "");
+  if (name === "glob") return String(input.pattern ?? "");
+  if (name === "grep") return String(input.pattern ?? "");
+  // Write / Edit / Create / MultiEdit
+  const path = input.file_path ?? input.path ?? input.new_file_path ?? "";
+  if (path) return String(path);
+  // Fallback: first string value
+  for (const v of Object.values(input)) {
+    if (typeof v === "string") return v;
+  }
+  return "";
+}
+
+function ToolUseBlock({ block }: { block: ToolUseBlockData }) {
+  const accent = toolAccentColor(block.tool);
+  const arg = primaryArg(block.tool, block.input);
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      background: "var(--bg-3)",
+      border: "1px solid var(--border-dim)",
+      borderLeft: `2px solid ${accent}`,
+      borderRadius: "var(--radius-sm, 4px)",
+      padding: "4px 8px",
+      fontSize: 11,
+      fontFamily: "var(--font)",
+      margin: "4px 0",
+      lineHeight: 1.4,
+    }}>
+      <span style={{ color: accent, fontWeight: 700, flexShrink: 0 }}>[{block.tool}]</span>
+      {arg && (
+        <span style={{
+          color: "var(--text-dim)",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}>
+          {arg}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function CostLine({ cost, usage }: { cost?: number; usage?: { input_tokens: number; output_tokens: number } }) {
+  if (!cost && !usage) return null;
+  const parts: string[] = [];
+  if (cost != null) parts.push(`$${cost.toFixed(4)}`);
+  if (usage) parts.push(`${fmtTokens(usage.input_tokens)}in / ${fmtTokens(usage.output_tokens)}out`);
+  return (
+    <div style={{
+      fontSize: 10,
+      color: "var(--text-dimmer)",
+      fontFamily: "var(--font)",
+      marginTop: 6,
+      paddingLeft: 14,
+      userSelect: "none",
+    }}>
+      {parts.join(" · ")}
+    </div>
+  );
+}
+
 function UserBubble({ msg }: { msg: Message }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -173,7 +280,7 @@ function UserBubble({ msg }: { msg: Message }) {
             {msg.content}
           </div>
         </div>
-        {/* Avatar — top-right of bubble */}
+        {/* Avatar */}
         <div style={{
           width: 22,
           height: 22,
@@ -194,7 +301,6 @@ function UserBubble({ msg }: { msg: Message }) {
           U
         </div>
       </div>
-      {/* Timestamp — show on hover */}
       <div style={{
         fontSize: 10,
         color: "var(--text-dimmer)",
@@ -229,7 +335,6 @@ function AssistantBubble({ msg }: { msg: Message }) {
       }}>
         <AssistantContent text={msg.content} />
       </div>
-      {/* Timestamp + tokens — show on hover */}
       <div style={{
         display: "flex",
         gap: 8,
@@ -255,7 +360,10 @@ function MessageBubble({ msg }: { msg: Message }) {
   return <AssistantBubble msg={msg} />;
 }
 
-function StreamingBubble({ text }: { text: string }) {
+function StreamingBubble({ state, legacyText }: { state?: StreamingState; legacyText: string }) {
+  // If we have rich streaming state, render mixed blocks
+  const hasBlocks = state && state.blocks.length > 0;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
       <div style={{
@@ -265,10 +373,48 @@ function StreamingBubble({ text }: { text: string }) {
         color: "var(--text)",
         lineHeight: 1.6,
         fontFamily: "var(--font-ui)",
+        width: "100%",
       }}>
-        {text ? (
+        {hasBlocks ? (
           <>
-            <AssistantContent text={text} />
+            {state.blocks.map((block, i) => {
+              if (block.type === "text") {
+                return block.text ? (
+                  <AssistantContent key={i} text={block.text} />
+                ) : null;
+              }
+              if (block.type === "tool_use") {
+                return <ToolUseBlock key={i} block={block} />;
+              }
+              if (block.type === "progress") {
+                return (
+                  <div key={i} style={{
+                    fontSize: 11,
+                    color: "var(--text-dimmer)",
+                    fontFamily: "var(--font)",
+                    margin: "2px 0",
+                    fontStyle: "italic",
+                  }}>
+                    {block.text}
+                  </div>
+                );
+              }
+              return null;
+            })}
+            {/* Blinking cursor after last block */}
+            <span style={{
+              display: "inline-block",
+              width: 7,
+              height: 13,
+              background: "var(--accent)",
+              verticalAlign: "text-bottom",
+              marginLeft: 2,
+              animation: "cursor-blink 1s step-end infinite",
+            }} />
+          </>
+        ) : legacyText ? (
+          <>
+            <AssistantContent text={legacyText} />
             <span style={{
               display: "inline-block",
               width: 7,
@@ -293,9 +439,15 @@ function StreamingBubble({ text }: { text: string }) {
           </div>
         )}
       </div>
-      <div style={{ fontSize: 10, color: "var(--text-dimmer)", marginTop: 3, paddingLeft: 14, userSelect: "none" }}>
-        typing...
-      </div>
+
+      {/* Cost/usage from done event */}
+      {state && (state.cost != null || state.usage != null) ? (
+        <CostLine cost={state.cost} usage={state.usage} />
+      ) : (
+        <div style={{ fontSize: 10, color: "var(--text-dimmer)", marginTop: 3, paddingLeft: 14, userSelect: "none" }}>
+          typing...
+        </div>
+      )}
     </div>
   );
 }
@@ -355,7 +507,6 @@ function EmptyState() {
         alignItems: "center",
         gap: 0,
       }}>
-        {/* Model indicator */}
         <div style={{
           fontSize: 11,
           color: "var(--text-dimmer)",
@@ -369,7 +520,6 @@ function EmptyState() {
           <span>Sonnet 4.6</span>
         </div>
 
-        {/* Main prompt text */}
         <div style={{
           fontSize: 13,
           color: "var(--text-dim)",
@@ -385,7 +535,6 @@ function EmptyState() {
           and work through complex tasks.
         </div>
 
-        {/* Separator */}
         <div style={{
           width: 240,
           height: 1,
@@ -393,7 +542,6 @@ function EmptyState() {
           margin: "16px auto",
         }} />
 
-        {/* Suggestions */}
         <div style={{ width: 240 }}>
           <div style={{
             fontSize: 10,
@@ -420,7 +568,7 @@ const STREAMING_ID = "__streaming__";
 
 type VirtualItem = Message | { id: typeof STREAMING_ID; role: "assistant" };
 
-export default function ChatMessages({ sessionId, streamText, streaming }: ChatMessagesProps) {
+export default function ChatMessages({ sessionId, streamText, streaming, streamingState }: ChatMessagesProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -470,7 +618,7 @@ export default function ChatMessages({ sessionId, streamText, streaming }: ChatM
     if (!userScrolledUp.current) {
       virtualizer.scrollToIndex(items.length - 1, { behavior: "smooth" });
     }
-  }, [items.length, streamText]);
+  }, [items.length, streamText, streamingState]);
 
   // Detect manual scroll-up to suppress auto-scroll
   useEffect(() => {
@@ -529,7 +677,7 @@ export default function ChatMessages({ sessionId, streamText, streaming }: ChatM
                 padding: vrow.index === 0 ? "20px 24px 14px" : "0 24px 20px",
               }}>
                 {item.id === STREAMING_ID ? (
-                  <StreamingBubble text={streamText} />
+                  <StreamingBubble state={streamingState} legacyText={streamText} />
                 ) : (
                   <MessageBubble msg={item as Message} />
                 )}
