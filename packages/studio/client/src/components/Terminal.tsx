@@ -5,13 +5,25 @@ import "xterm/css/xterm.css";
 
 interface TerminalProps {
   tabId?: string;
+  onCwdChange?: (cwd: string) => void;
 }
 
-export default function TerminalPane({ tabId }: TerminalProps) {
+// OSC 633 sequence subtypes (VSCode shell integration)
+// A=prompt start, B=prompt end, C=command start, D=command done (with exit code), E=command line, P=property
+const enum Osc633 {
+  PromptStart  = "A",
+  PromptEnd    = "B",
+  CommandStart = "C",
+  CommandDone  = "D",
+  CommandLine  = "E",
+  Property     = "P",
+}
+
+export default function TerminalPane({ tabId, onCwdChange }: TerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const termRef = useRef<Terminal | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
-  const fitRef = useRef<FitAddon | null>(null);
+  const termRef      = useRef<Terminal | null>(null);
+  const wsRef        = useRef<WebSocket | null>(null);
+  const fitRef       = useRef<FitAddon | null>(null);
 
   useEffect(() => {
     if (!containerRef.current || termRef.current) return;
@@ -46,6 +58,7 @@ export default function TerminalPane({ tabId }: TerminalProps) {
       cursorBlink: true,
       allowTransparency: true,
       scrollback: 5000,
+      overviewRulerWidth: 12,
     });
 
     const fit = new FitAddon();
@@ -54,9 +67,72 @@ export default function TerminalPane({ tabId }: TerminalProps) {
     fit.fit();
 
     termRef.current = term;
-    fitRef.current = fit;
+    fitRef.current  = fit;
 
-    // Connect WebSocket
+    // --- VSCode shell integration (OSC 633) ---
+    // Track marker for the current command start so we can decorate on exit
+    let commandStartMarker: ReturnType<Terminal["registerMarker"]> | null = null;
+
+    term.parser.registerOscHandler(633, (data: string) => {
+      const semi = data.indexOf(";");
+      const subtype = semi === -1 ? data : data.slice(0, semi);
+      const payload = semi === -1 ? "" : data.slice(semi + 1);
+
+      switch (subtype) {
+        case Osc633.CommandStart: {
+          // Mark the line where the command starts — used for overview ruler decoration
+          const marker = term.registerMarker(0);
+          if (marker) {
+            commandStartMarker = marker;
+            term.registerDecoration({
+              marker,
+              overviewRulerOptions: { color: "#388bfd88", position: "left" },
+            });
+          }
+          return true;
+        }
+
+        case Osc633.CommandDone: {
+          // payload = exit code (may be empty string if interrupted)
+          const exitCode = payload === "" ? 0 : parseInt(payload, 10);
+          const marker = term.registerMarker(0);
+          if (marker) {
+            const color = exitCode === 0 ? "#3fb95066" : "#f8514966";
+            term.registerDecoration({
+              marker,
+              overviewRulerOptions: { color, position: "right" },
+            });
+          }
+          commandStartMarker = null;
+          return true;
+        }
+
+        case Osc633.Property: {
+          // payload = "key=value"
+          const eq = payload.indexOf("=");
+          if (eq === -1) return true;
+          const key = payload.slice(0, eq);
+          const value = payload.slice(eq + 1);
+          if (key === "Cwd" && onCwdChange) {
+            onCwdChange(value);
+          }
+          return true;
+        }
+
+        // PromptStart (A), PromptEnd (B), CommandLine (E) — acknowledged but no action needed
+        case Osc633.PromptStart:
+        case Osc633.PromptEnd:
+        case Osc633.CommandLine:
+          return true;
+      }
+
+      return false;
+    });
+
+    // Suppress unused warning — commandStartMarker is read in CommandDone case
+    void commandStartMarker;
+
+    // --- WebSocket connection ---
     const wsUrl = tabId
       ? `ws://localhost:3200/api/terminal/ws?tab=${tabId}`
       : `ws://localhost:3200/api/terminal/ws`;
@@ -64,7 +140,6 @@ export default function TerminalPane({ tabId }: TerminalProps) {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      // Send initial size
       ws.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
     };
 
@@ -80,14 +155,12 @@ export default function TerminalPane({ tabId }: TerminalProps) {
       term.write("\r\n\x1b[31m[terminal connection error]\x1b[0m\r\n");
     };
 
-    // Terminal → WebSocket
     term.onData((data) => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "input", data }));
       }
     });
 
-    // Resize observer
     const observer = new ResizeObserver(() => {
       fit.fit();
       if (ws.readyState === WebSocket.OPEN) {
@@ -101,7 +174,7 @@ export default function TerminalPane({ tabId }: TerminalProps) {
       ws.close();
       term.dispose();
       termRef.current = null;
-      wsRef.current = null;
+      wsRef.current   = null;
     };
   }, []);
 
