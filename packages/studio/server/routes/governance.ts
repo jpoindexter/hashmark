@@ -1,0 +1,95 @@
+import { Hono } from "hono";
+import { getDb } from "../db.js";
+import { randomUUID } from "crypto";
+
+export function governanceRoutes(dataDir: string) {
+  const app = new Hono();
+
+  // GET /api/governance/policies
+  app.get("/policies", (c) => {
+    const db = getDb(dataDir);
+    const policies = db.prepare("SELECT * FROM governance_policies ORDER BY created_at DESC").all();
+    return c.json({ policies: policies.map(p => ({ ...p, rules: JSON.parse((p as { rules: string }).rules) })) });
+  });
+
+  // POST /api/governance/policies
+  app.post("/policies", async (c) => {
+    const body = await c.req.json<{ name: string; description?: string; scope?: string; rules?: unknown[] }>();
+    const db = getDb(dataDir);
+    const id = randomUUID().slice(0, 8);
+    db.prepare(
+      "INSERT INTO governance_policies (id, name, description, scope, rules, enabled, created_at) VALUES (?, ?, ?, ?, ?, 1, ?)"
+    ).run(id, body.name, body.description ?? "", body.scope ?? "all", JSON.stringify(body.rules ?? []), Date.now());
+    return c.json({ id }, 201);
+  });
+
+  // PUT /api/governance/policies/:id
+  app.put("/policies/:id", async (c) => {
+    const body = await c.req.json<{ name?: string; description?: string; scope?: string; rules?: unknown[]; enabled?: boolean }>();
+    const db = getDb(dataDir);
+    const fields: string[] = [];
+    const vals: unknown[] = [];
+    if (body.name !== undefined) { fields.push("name=?"); vals.push(body.name); }
+    if (body.description !== undefined) { fields.push("description=?"); vals.push(body.description); }
+    if (body.scope !== undefined) { fields.push("scope=?"); vals.push(body.scope); }
+    if (body.rules !== undefined) { fields.push("rules=?"); vals.push(JSON.stringify(body.rules)); }
+    if (body.enabled !== undefined) { fields.push("enabled=?"); vals.push(body.enabled ? 1 : 0); }
+    if (fields.length) {
+      vals.push(c.req.param("id"));
+      db.prepare(`UPDATE governance_policies SET ${fields.join(", ")} WHERE id=?`).run(...vals);
+    }
+    return c.json({ ok: true });
+  });
+
+  // DELETE /api/governance/policies/:id
+  app.delete("/policies/:id", (c) => {
+    const db = getDb(dataDir);
+    db.prepare("DELETE FROM governance_policies WHERE id=?").run(c.req.param("id"));
+    return c.json({ ok: true });
+  });
+
+  // GET /api/governance/actions
+  app.get("/actions", (c) => {
+    const db = getDb(dataDir);
+    const limit = parseInt(c.req.query("limit") ?? "100");
+    const offset = parseInt(c.req.query("offset") ?? "0");
+    const agentId = c.req.query("agentId");
+    const outcome = c.req.query("outcome");
+
+    let query = "SELECT * FROM agent_actions";
+    const conditions: string[] = [];
+    const filterParams: unknown[] = [];
+    if (agentId) { conditions.push("agent_id=?"); filterParams.push(agentId); }
+    if (outcome) { conditions.push("outcome=?"); filterParams.push(outcome); }
+    if (conditions.length) query += " WHERE " + conditions.join(" AND ");
+    query += " ORDER BY created_at DESC LIMIT ? OFFSET ?";
+
+    const actions = db.prepare(query).all(...filterParams, limit, offset);
+    const countQuery = `SELECT COUNT(*) as c FROM agent_actions${conditions.length ? " WHERE " + conditions.join(" AND ") : ""}`;
+    const total = (db.prepare(countQuery).get(...filterParams) as { c: number } | undefined)?.c ?? 0;
+    return c.json({ actions, total });
+  });
+
+  // POST /api/governance/actions
+  app.post("/actions", async (c) => {
+    const body = await c.req.json<{ sessionId?: string; agentId?: string; actionType: string; target?: string; outcome?: string; policyId?: string }>();
+    const db = getDb(dataDir);
+    db.prepare(
+      "INSERT INTO agent_actions (session_id, agent_id, action_type, target, outcome, policy_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    ).run(body.sessionId ?? null, body.agentId ?? null, body.actionType, body.target ?? null, body.outcome ?? "allowed", body.policyId ?? null, Date.now());
+    return c.json({ ok: true }, 201);
+  });
+
+  // GET /api/governance/summary
+  app.get("/summary", (c) => {
+    const db = getDb(dataDir);
+    const total = (db.prepare("SELECT COUNT(*) as c FROM agent_actions").get() as { c: number })?.c ?? 0;
+    const blocked = (db.prepare("SELECT COUNT(*) as c FROM agent_actions WHERE outcome='blocked'").get() as { c: number })?.c ?? 0;
+    const flagged = (db.prepare("SELECT COUNT(*) as c FROM agent_actions WHERE outcome='flagged'").get() as { c: number })?.c ?? 0;
+    const byType = db.prepare("SELECT action_type, COUNT(*) as count FROM agent_actions GROUP BY action_type").all();
+    const recentBlocked = db.prepare("SELECT * FROM agent_actions WHERE outcome IN ('blocked','flagged') ORDER BY created_at DESC LIMIT 5").all();
+    return c.json({ total, blocked, flagged, byType, recentBlocked });
+  });
+
+  return app;
+}

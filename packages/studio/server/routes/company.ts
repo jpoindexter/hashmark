@@ -179,7 +179,7 @@ Respond with ONLY a JSON array, no markdown, no explanation:
 
         const worktreeDirs = new Map<number, string>();
 
-        async function runWorker(subtask: Subtask): Promise<{ id: number; output: string; hasChanges: boolean }> {
+        async function runWorker(subtask: Subtask): Promise<{ id: number; output: string; hasChanges: boolean; testPassed: boolean; testSkipped: boolean }> {
           const branchName = `studio-swarm-${runId}-${subtask.id}`;
           const worktreeDir = join(tmpdir(), branchName);
           worktreeDirs.set(subtask.id, worktreeDir);
@@ -270,6 +270,36 @@ Work in the current directory. Make the necessary code changes, create or modify
                 }
               } catch {}
 
+              // Test verification step
+              let testResult: { passed: boolean; output: string; skipped: boolean } = { passed: true, output: "", skipped: false };
+
+              try {
+                const pkgPath = join(worktreeDir, "package.json");
+                let hasTestScript = false;
+                try {
+                  const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+                  hasTestScript = !!(pkg?.scripts?.test && !pkg.scripts.test.includes("no test specified"));
+                } catch {}
+
+                if (hasTestScript) {
+                  send({ type: "worker_verifying", id: subtask.id });
+                  const { stdout: testOut, stderr: testErr } = await execFile(
+                    "npm", ["test", "--", "--passWithNoTests"],
+                    { cwd: worktreeDir, timeout: 60000, maxBuffer: 512 * 1024 }
+                  ).catch((e: { stdout?: string; stderr?: string }) => ({ stdout: e.stdout ?? "", stderr: e.stderr ?? "" }));
+                  const combined = testOut + testErr;
+                  const passed = !combined.match(/\b(FAILED|FAIL|failed|Error:|error:)\b/) || combined.includes("passing");
+                  testResult = { passed, output: combined.slice(0, 2000), skipped: false };
+                  send({ type: "worker_verify_result", id: subtask.id, passed: testResult.passed, output: testResult.output });
+                } else {
+                  testResult.skipped = true;
+                  send({ type: "worker_verify_result", id: subtask.id, passed: true, output: "", skipped: true });
+                }
+              } catch (err) {
+                testResult = { passed: false, output: String(err), skipped: false };
+                send({ type: "worker_verify_result", id: subtask.id, passed: false, output: String(err) });
+              }
+
               try {
                 const db = getDb(dataDir);
                 db.prepare(
@@ -278,7 +308,7 @@ Work in the current directory. Make the necessary code changes, create or modify
               } catch {}
 
               send({ type: "worker_done", id: subtask.id, output: fullOutput, hasChanges });
-              resolve({ id: subtask.id, output: fullOutput, hasChanges });
+              resolve({ id: subtask.id, output: fullOutput, hasChanges, testPassed: testResult.passed, testSkipped: testResult.skipped });
             });
 
             proc.on("error", (err: Error) => {
@@ -355,7 +385,14 @@ Work in the current directory. Make the necessary code changes, create or modify
             ).run(merged.length, conflicts.length, skipped.length, Date.now(), runId);
           } catch {}
 
-          send({ type: "merge_result", merged, conflicts, skipped });
+          send({ type: "merge_result", merged, conflicts, skipped, testResults: plan.map((s, i) => {
+            const r = results[i];
+            return {
+              id: s.id,
+              testPassed: r.status === "fulfilled" ? r.value.testPassed : null,
+              testSkipped: r.status === "fulfilled" ? r.value.testSkipped : false,
+            };
+          }) });
           send({ type: "complete" });
 
           activeRun = false;

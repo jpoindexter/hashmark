@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { Home, FolderTree, GitBranch, Bot, Zap, Settings, TerminalSquare, Play, Building2, ChevronRight, AlertTriangle } from "lucide-react";
+import { Home, FolderTree, GitBranch, Bot, Zap, Settings, TerminalSquare, Play, Building2, ChevronRight, AlertTriangle, Shield } from "lucide-react";
 import CommandPalette from "./CommandPalette.tsx";
 import ActivitySidebar from "./ActivitySidebar.tsx";
 import ChatMessages from "./ChatMessages.tsx";
@@ -47,9 +47,10 @@ const NAV = [
   { to: "/files",    icon: <FolderTree size={18} />,  title: "Files"              },
   { to: "/agents",   icon: <Bot size={18} />,         title: "Agents"             },
   { to: "/generate", icon: <Zap size={18} />,         title: "Generate"           },
-  { to: "/company",  icon: <Building2 size={18} />,   title: "Company"            },
-  { to: "/setup",    icon: <Play size={18} />,        title: "Setup"              },
-  { to: "/settings", icon: <Settings size={18} />,    title: "Settings"           },
+  { to: "/company",    icon: <Building2 size={18} />,  title: "Company"            },
+  { to: "/governance", icon: <Shield size={18} />,    title: "Governance"         },
+  { to: "/setup",      icon: <Play size={18} />,      title: "Setup"              },
+  { to: "/settings",   icon: <Settings size={18} />,  title: "Settings"           },
 ];
 
 function persist(key: string, val: unknown) {

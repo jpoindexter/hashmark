@@ -102,5 +102,26 @@ function migrate(db: Database.Database) {
       completed_at INTEGER,
       PRIMARY KEY (run_id, worker_id)
     );
+
+    CREATE TABLE IF NOT EXISTS governance_policies (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT,
+      scope TEXT NOT NULL DEFAULT 'all',
+      rules TEXT NOT NULL DEFAULT '[]',
+      enabled INTEGER NOT NULL DEFAULT 1,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS agent_actions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT,
+      agent_id TEXT,
+      action_type TEXT NOT NULL,
+      target TEXT,
+      outcome TEXT NOT NULL DEFAULT 'allowed',
+      policy_id TEXT,
+      created_at INTEGER NOT NULL
+    );
   `);
 }

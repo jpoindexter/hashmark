@@ -24,6 +24,10 @@ interface WorkerState {
   status: WorkerStatus;
   output: string;
   error?: string;
+  verifying?: boolean;
+  testPassed?: boolean;
+  testOutput?: string;
+  testSkipped?: boolean;
 }
 
 interface MergeResult {
@@ -176,6 +180,7 @@ function WorkerCard({ worker, isExpanded, onToggle }: {
   const [showRaw, setShowRaw] = useState(false);
   const [showFiles, setShowFiles] = useState(true);
   const [showCommands, setShowCommands] = useState(true);
+  const [showTestOutput, setShowTestOutput] = useState(false);
 
   // Auto-scroll to bottom while running
   useEffect(() => {
@@ -241,7 +246,7 @@ function WorkerCard({ worker, isExpanded, onToggle }: {
           {worker.title}
         </span>
 
-        {/* Status label + failure badge */}
+        {/* Status label + failure badge + verify indicator */}
         <span style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
           <span style={{ fontSize: 9, color, letterSpacing: "0.05em" }}>
             {STATUS_LABELS[worker.status]}
@@ -257,6 +262,39 @@ function WorkerCard({ worker, isExpanded, onToggle }: {
               lineHeight: "14px",
             }}>
               {failure.type}
+            </span>
+          )}
+          {worker.verifying && (
+            <span style={{ fontSize: 8, color: "var(--text-dimmer)", display: "flex", alignItems: "center", gap: 3 }}>
+              <span style={{ display: "inline-block", width: 6, height: 6, border: "1px solid var(--text-dimmer)", borderTopColor: "transparent", borderRadius: "50%", animation: "verify-spin 0.7s linear infinite" }} />
+              verifying tests...
+            </span>
+          )}
+          {!worker.verifying && worker.testPassed === true && !worker.testSkipped && (
+            <span style={{
+              fontSize: 8,
+              letterSpacing: "0.06em",
+              color: "var(--accent)",
+              border: "1px solid var(--accent)",
+              padding: "0px 4px",
+              lineHeight: "14px",
+            }}>
+              TESTS PASS
+            </span>
+          )}
+          {!worker.verifying && worker.testSkipped && (
+            <span style={{ fontSize: 8, color: "var(--text-dimmer)" }}>· no tests</span>
+          )}
+          {!worker.verifying && worker.testPassed === false && (
+            <span style={{
+              fontSize: 8,
+              letterSpacing: "0.06em",
+              color: "var(--red)",
+              border: "1px solid var(--red)",
+              padding: "0px 4px",
+              lineHeight: "14px",
+            }}>
+              TESTS FAILED
             </span>
           )}
         </span>
@@ -418,6 +456,39 @@ function WorkerCard({ worker, isExpanded, onToggle }: {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Test output (failed tests only) */}
+          {!isRunning && worker.testPassed === false && worker.testOutput && (
+            <div style={{ padding: "0 12px 8px" }}>
+              <button
+                onClick={e => { e.stopPropagation(); setShowTestOutput(v => !v); }}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  fontSize: 9, color: "var(--red)", letterSpacing: "0.06em",
+                  padding: 0, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 4,
+                }}
+              >
+                <span>{showTestOutput ? "▾" : "▸"}</span> TEST OUTPUT
+              </button>
+              {showTestOutput && (
+                <div style={{
+                  marginTop: 4,
+                  padding: "8px 10px",
+                  background: "var(--bg-3)",
+                  border: "1px solid var(--red)",
+                  maxHeight: 160,
+                  overflowY: "auto",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  lineHeight: 1.6,
+                  color: "var(--red)",
+                  fontSize: 9,
+                }}>
+                  {worker.testOutput}
+                </div>
+              )}
             </div>
           )}
 
@@ -601,6 +672,30 @@ export default function Company() {
           const next = new Map(prev);
           const w = next.get(event.id as number);
           if (w) next.set(w.id, { ...w, output: w.output + (event.text as string) });
+          return next;
+        });
+        break;
+
+      case "worker_verifying":
+        setWorkers(prev => {
+          const next = new Map(prev);
+          const w = next.get(event.id as number);
+          if (w) next.set(w.id, { ...w, verifying: true });
+          return next;
+        });
+        break;
+
+      case "worker_verify_result":
+        setWorkers(prev => {
+          const next = new Map(prev);
+          const w = next.get(event.id as number);
+          if (w) next.set(w.id, {
+            ...w,
+            verifying: false,
+            testPassed: event.passed as boolean,
+            testOutput: event.output as string,
+            testSkipped: (event.skipped as boolean) ?? false,
+          });
           return next;
         });
         break;
@@ -1011,6 +1106,7 @@ export default function Company() {
       <style>{`
         @keyframes swarm-pulse { 0%,100%{opacity:.5;transform:scale(.8)} 50%{opacity:1;transform:scale(1.3)} }
         @keyframes cursor-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes verify-spin { to{transform:rotate(360deg)} }
       `}</style>
     </div>
   );

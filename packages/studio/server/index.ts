@@ -22,6 +22,7 @@ import { mcpRoutes } from "./routes/mcp.js";
 import { companyRoutes } from "./routes/company.js";
 import { driftRoutes } from "./routes/drift.js";
 import { providersRoutes } from "./routes/providers.js";
+import { governanceRoutes } from "./routes/governance.js";
 
 export interface ServerOptions {
   projectDir: string;
@@ -97,6 +98,7 @@ export function createServer(opts: ServerOptions) {
   app.route("/api/company", companyRoutes(opts.projectDir));
   app.route("/api/drift", driftRoutes(opts.projectDir));
   app.route("/api/providers", providersRoutes(opts.projectDir));
+  app.route("/api/governance", governanceRoutes(opts.projectDir));
 
   // Serve static client files
   app.use(
