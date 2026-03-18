@@ -992,6 +992,19 @@ cli
     }
   });
 
+// --- doctor command ---
+cli
+  .command("doctor", "Run a 9-point health check on the project")
+  .action(async () => {
+    try {
+      const { runDoctor } = await import("./commands/doctor.js");
+      await runDoctor(process.cwd());
+    } catch (error) {
+      console.error(pc.red(`\n  doctor failed: ${error instanceof Error ? error.message : error}\n`));
+      process.exit(1);
+    }
+  });
+
 // --- studio command ---
 cli
   .command("studio", "Open the visual agent studio in your browser")
