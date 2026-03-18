@@ -565,17 +565,137 @@ cli
 
 // --- watch command ---
 cli
-  .command("watch [dir]", "Watch for changes and keep relationship index fresh")
-  .action(async (dir: string | undefined) => {
+  .command("watch [dir]", "Watch for file changes and auto-regenerate CLAUDE.md")
+  .option("--debounce <ms>", "Debounce delay in milliseconds", { default: 1500 })
+  .option("--verbose", "Log which files triggered the rescan")
+  .option("--formats <list>", "Comma-separated output formats to regenerate")
+  .action(async (dir: string | undefined, opts: { debounce: number; verbose?: boolean; formats?: string }) => {
     const targetDir = dir || process.cwd();
+    const { watchProject } = await import("./commands/watch.js");
+    const { estimateTokens } = await import("./utils/tokens.js");
+
+    console.log(pc.cyan("\n  # hashmark watch\n"));
+    console.log(pc.dim(`  Watching ${targetDir}`));
+    console.log(pc.dim(`  Debounce: ${opts.debounce}ms — Press Ctrl+C to stop\n`));
+
+    // Run an initial scan so the output files exist before watch loop starts
     try {
-      // Run initial sync, then watch
-      await sync(targetDir);
-      await startWatch(targetDir);
-    } catch (error) {
-      console.error(pc.red(`\n  ✗ Watch failed: ${error instanceof Error ? error.message : error}\n`));
+      process.stdout.write(pc.dim("  Running initial scan..."));
+      const engine = new ScannerEngine();
+      const excludePatterns = loadConfig(targetDir).exclude || [];
+      const scanResult = await engine.run(targetDir, excludePatterns, { yes: true });
+      const [barrels, dependencies, fileTree, importGraph, typeExports, graphqlSchemas, latentHooks] =
+        await Promise.all([
+          scanBarrels(targetDir),
+          scanDependencies(targetDir),
+          scanFileTree(targetDir),
+          scanImports(targetDir),
+          scanTypes(targetDir),
+          scanGraphQL(targetDir),
+          scanLatentHooks(targetDir, scanResult.framework, scanResult.utilities),
+        ]);
+      Object.assign(scanResult, {
+        barrels, dependencies, fileTree, importGraph, typeExports, graphqlSchemas, latentHooks,
+        antiPatterns: generateAntiPatterns(scanResult.framework, scanResult.utilities, scanResult.tokens, scanResult.components, scanResult.utilities.hasMode),
+      });
+
+      const formatToUse = opts.formats || "all";
+      const files = formatToUse === "all"
+        ? generateAllFormats(scanResult, {})
+        : formatToUse.split(",").map((f: string) =>
+            generateFormat(f.trim() as FormatId, scanResult, {})
+          );
+
+      for (const file of files) {
+        const filePath = join(targetDir, file.path);
+        if (!existsSync(dirname(filePath))) mkdirSync(dirname(filePath), { recursive: true });
+        writeFileSync(filePath, file.content, "utf-8");
+      }
+      const claudeFile = files.find(f => /CLAUDE\.md/i.test(f.path));
+      const tokens = claudeFile ? estimateTokens(claudeFile.content) : 0;
+      console.log(pc.green(` done`) + pc.dim(` (${(tokens / 1000).toFixed(1)}k tokens, ${scanResult.stats?.totalFiles ?? 0} files)\n`));
+    } catch (err) {
+      console.error(pc.red(`\n  Initial scan failed: ${err instanceof Error ? err.message : err}\n`));
       process.exit(1);
     }
+
+    const stopWatch = watchProject(
+      targetDir,
+      {
+        debounceMs: Number(opts.debounce) || 1500,
+        ignore: [],
+        verbose: opts.verbose ?? false,
+        formats: opts.formats ? opts.formats.split(",").map(f => f.trim()) : [],
+      },
+      async (scanOpts) => {
+        const engine = new ScannerEngine();
+        const excludePatterns = loadConfig(targetDir).exclude || [];
+        const engineOptions: Record<string, unknown> = { yes: true };
+        if (scanOpts.rescanOnlyChanged) {
+          const cache = loadMtimeCache(targetDir);
+          const fg = (await import("fast-glob")).default;
+          const allFiles = await fg(
+            ["**/*.{ts,tsx,js,jsx,json,md,py,go,rs,prisma,graphql,yml,yaml}", "!**/node_modules/**", "!**/.next/**", "!**/dist/**", "!**/build/**", "!**/.git/**"],
+            { cwd: targetDir, absolute: false, followSymbolicLinks: false }
+          );
+          const { changedFiles } = filterChangedFiles(allFiles, targetDir, cache);
+          engineOptions.changedFilesOnly = changedFiles;
+        }
+        const scanResult = await engine.run(targetDir, excludePatterns, engineOptions);
+        const [barrels, dependencies, fileTree, importGraph, typeExports, graphqlSchemas, latentHooks] =
+          await Promise.all([
+            scanBarrels(targetDir),
+            scanDependencies(targetDir),
+            scanFileTree(targetDir),
+            scanImports(targetDir),
+            scanTypes(targetDir),
+            scanGraphQL(targetDir),
+            scanLatentHooks(targetDir, scanResult.framework, scanResult.utilities),
+          ]);
+        Object.assign(scanResult, {
+          barrels, dependencies, fileTree, importGraph, typeExports, graphqlSchemas, latentHooks,
+          antiPatterns: generateAntiPatterns(scanResult.framework, scanResult.utilities, scanResult.tokens, scanResult.components, scanResult.utilities.hasMode),
+        });
+
+        const formatToUse = scanOpts.format || "all";
+        const files = formatToUse === "all"
+          ? generateAllFormats(scanResult, {})
+          : formatToUse.split(",").map((f: string) =>
+              generateFormat(f.trim() as FormatId, scanResult, {})
+            );
+
+        for (const file of files) {
+          const filePath = join(targetDir, file.path);
+          if (!existsSync(dirname(filePath))) mkdirSync(dirname(filePath), { recursive: true });
+          writeFileSync(filePath, file.content, "utf-8");
+        }
+
+        if (!scanOpts.rescanOnlyChanged) {
+          try {
+            const fg2 = (await import("fast-glob")).default;
+            const allFilesForCache = await fg2(
+              ["**/*.{ts,tsx,js,jsx,json,md,py,go,rs,prisma,graphql,yml,yaml}", "!**/node_modules/**", "!**/.next/**", "!**/dist/**", "!**/build/**", "!**/.git/**"],
+              { cwd: targetDir, absolute: false, followSymbolicLinks: false }
+            );
+            saveMtimeCache(targetDir, allFilesForCache);
+          } catch {}
+        }
+
+        const claudeFile = files.find(f => /CLAUDE\.md/i.test(f.path));
+        const tokenCount = claudeFile ? estimateTokens(claudeFile.content) : undefined;
+        return { tokenCount, fileCount: scanResult.stats?.totalFiles };
+      }
+    );
+
+    await new Promise<void>((resolve) => {
+      const shutdown = (signal: string) => {
+        console.log(pc.dim(`\n[watch] stopped (${signal})\n`));
+        stopWatch();
+        resolve();
+      };
+      process.on("SIGINT", () => shutdown("SIGINT"));
+      process.on("SIGTERM", () => shutdown("SIGTERM"));
+    });
   });
 
 // --- hook command ---
