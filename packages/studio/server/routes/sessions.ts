@@ -14,6 +14,11 @@ import { loadScanContext } from "../context.js";
 import { analyzeSessionLoop } from "../lib/loop-detector.js";
 import { loadProviders } from "../lib/providers.js";
 import { streamAIResponse } from "../lib/ai-stream.js";
+import {
+  parseClaudeMdSections,
+  updateAnalytics,
+  loadSessionAnalytics,
+} from "../lib/context-analytics.js";
 
 /**
  * Expand @file mentions in a message.
@@ -288,6 +293,16 @@ export function sessionsRoutes(projectDir: string) {
       db.prepare("UPDATE sessions SET title = ? WHERE id = ?").run(title, sessionId);
     }
 
+    // Load CLAUDE.md sections for analytics heatmap
+    const claudeMdPath = join(projectDir, "CLAUDE.md");
+    let claudeSections: string[] = [];
+    try {
+      if (existsSync(claudeMdPath)) {
+        const raw = readFileSync(claudeMdPath, "utf-8");
+        claudeSections = parseClaudeMdSections(raw);
+      }
+    } catch { /* no CLAUDE.md — analytics just won't fire */ }
+
     // Build system prompt — scan context + agent identity + user's custom prompt
     const scanContext = loadScanContext(projectDir);
     const agentIdentity = session.agent_name ? `You are ${session.agent_name}, an AI assistant.` : null;
@@ -343,6 +358,9 @@ export function sessionsRoutes(projectDir: string) {
               if (aborted) return;
               fullText += text;
               send({ type: "text", text });
+              if (claudeSections.length > 0) {
+                updateAnalytics(dataDir, sessionId, text, claudeSections).catch(() => {});
+              }
             },
             onDone: () => {
               activeProcesses.delete(sessionId);
@@ -412,6 +430,9 @@ export function sessionsRoutes(projectDir: string) {
             buffer += text;
             fullText += text;
             send({ type: "text", text });
+            if (claudeSections.length > 0) {
+              updateAnalytics(dataDir, sessionId, text, claudeSections).catch(() => {});
+            }
           });
 
           proc.stderr.on("data", (chunk: Buffer) => {
@@ -473,6 +494,16 @@ export function sessionsRoutes(projectDir: string) {
         "Connection": "keep-alive",
       },
     });
+  });
+
+  // GET /api/sessions/:id/analytics — context section heatmap
+  app.get("/:id/analytics", async (c) => {
+    const id = c.req.param("id");
+    const db = getDb(dataDir);
+    const session = db.prepare("SELECT id FROM sessions WHERE id = ?").get(id);
+    if (!session) return c.json({ error: "Not found" }, 404);
+    const analytics = await loadSessionAnalytics(dataDir, id);
+    return c.json(analytics);
   });
 
   // GET /api/sessions/:id/loop-analysis — detect behavioral loops in conversation

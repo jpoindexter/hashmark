@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Search, X } from "lucide-react";
 import XTerminal from "../components/XTerminal";
+import { ContextHeatmap } from "../components/ContextHeatmap.tsx";
 
 interface Session {
   id: string;
@@ -724,6 +725,8 @@ export default function Sessions() {
               </button>
             </div>
           </div>
+
+          <ContextHeatmap sessionId={activeId} streaming={streaming} />
         </div>
       )}
 
