@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { DiffPanel } from "../components/DiffPanel.tsx";
+import { toast } from "../hooks/useToast.ts";
 
 interface AgentDef {
   id: string;
@@ -255,12 +256,19 @@ export default function Run() {
         };
         if (!resultRef.current) setResult(r);
         setPhase("done");
+        toast("Run complete", {
+          variant: "success",
+          title: r.worktreeBranch ? `Changes committed to ${r.worktreeBranch}` : "No changes made",
+        });
         break;
       }
-      case "error":
-        setError(event.error as string);
+      case "error": {
+        const errMsg = event.error as string;
+        setError(errMsg);
         setPhase("done");
+        toast("Run failed", { variant: "error", title: errMsg });
         break;
+      }
     }
   }, []);
 
@@ -315,6 +323,7 @@ export default function Run() {
     navigator.clipboard.writeText(task).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
+      toast("Task copied to clipboard", { variant: "info" });
     }).catch(() => {});
   }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import ScanProgress, { type ScanResult, type ScanDelta } from "../components/ScanProgress.tsx";
+import { toast } from "../hooks/useToast.ts";
 
 const ALL_FORMATS = [
   { id: "CLAUDE.md",            label: "CLAUDE.md",            hint: "Anthropic Claude" },
@@ -155,11 +156,22 @@ export default function Generate() {
     // Re-fetch freshness + history
     void fetch("/api/scan/staleness").then(r => r.json() as Promise<StalenessInfo>).then(setStaleness).catch(() => {});
     void fetch("/api/scan/history").then(r => r.json() as Promise<ScanHistory>).then(setHistory).catch(() => {});
+
+    const generated = result.generatedFiles as Array<{ fileName?: string; tokenCount?: number }> | undefined;
+    const totalTokens = Array.isArray(generated)
+      ? generated.reduce((sum, f) => sum + (f.tokenCount ?? 0), 0)
+      : 0;
+    const fileCount = Array.isArray(generated) ? generated.length : 0;
+    const desc = totalTokens > 0
+      ? `${(totalTokens / 1000).toFixed(1)}k tokens • ${fileCount} file${fileCount !== 1 ? "s" : ""}`
+      : `${fileCount} file${fileCount !== 1 ? "s" : ""} generated`;
+    toast("Context generated", { variant: "success", title: desc });
   }, []);
 
   const handleScanError = useCallback((err: string) => {
     setErrorMsg(err);
     setPageState("error");
+    toast("Scan failed", { variant: "error", title: err });
   }, []);
 
   const handleScanCancel = useCallback(() => {
@@ -171,6 +183,7 @@ export default function Generate() {
       await navigator.clipboard.writeText(content);
       setCopiedFile(name);
       setTimeout(() => setCopiedFile(null), 2000);
+      toast("Copied to clipboard", { variant: "info" });
     } catch {}
   }
 

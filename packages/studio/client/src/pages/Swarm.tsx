@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { toast } from "../hooks/useToast.ts";
 
 interface AgentDef {
   id: string;
@@ -85,6 +86,14 @@ export default function Swarm() {
         if (event.type === "swarm_complete") {
           setPhase("done");
           es.close();
+          setAgents((prev) => {
+            const doneCount = prev.filter((a) => a.status === "done").length;
+            const failedCount = prev.filter((a) => a.status === "failed").length;
+            if (failedCount === 0) {
+              toast("Swarm complete", { variant: "success", title: `${doneCount}/${prev.length} tasks succeeded` });
+            }
+            return prev;
+          });
           return;
         }
 
@@ -97,7 +106,11 @@ export default function Swarm() {
           if (!card) return prev;
 
           if (event.type === "status") {
-            next[idx] = { ...card, status: event.data as AgentStatus };
+            const newStatus = event.data as AgentStatus;
+            next[idx] = { ...card, status: newStatus };
+            if (newStatus === "failed") {
+              toast("Agent failed", { variant: "warning", title: card.task.slice(0, 60) });
+            }
           } else if (event.type === "chunk") {
             next[idx] = { ...card, output: card.output + (event.data ?? "") };
           } else if (event.type === "complete") {
@@ -179,6 +192,7 @@ export default function Swarm() {
           : a
       )
     );
+    toast("Swarm cancelled", { variant: "info" });
   }
 
   function handleReset() {
