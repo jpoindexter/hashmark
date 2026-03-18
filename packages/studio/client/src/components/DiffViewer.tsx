@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 
 interface DiffViewerProps {
   path: string;
+  staged?: boolean;
   onClose?: () => void;
 }
 
@@ -112,7 +113,7 @@ function DiffRow({ line, index }: { line: DiffLine; index: number }) {
   );
 }
 
-export function DiffViewer({ path, onClose }: DiffViewerProps) {
+export function DiffViewer({ path, staged = false, onClose }: DiffViewerProps) {
   const [diff, setDiff] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -120,7 +121,8 @@ export function DiffViewer({ path, onClose }: DiffViewerProps) {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch(`/api/files/diff?path=${encodeURIComponent(path)}`)
+    const url = `/api/files/diff?path=${encodeURIComponent(path)}&staged=${staged}`;
+    fetch(url)
       .then(r => r.json())
       .then((d: { diff?: string; error?: string }) => {
         setDiff(d.diff ?? "");
@@ -130,7 +132,7 @@ export function DiffViewer({ path, onClose }: DiffViewerProps) {
         setError("Failed to load diff");
         setLoading(false);
       });
-  }, [path]);
+  }, [path, staged]);
 
   const monoMuted: React.CSSProperties = {
     color: "var(--text-dimmer)",

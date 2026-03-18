@@ -1,409 +1,603 @@
-import { useState, useRef } from "react";
-import AgentCard from "../components/AgentCard.tsx";
+import { useState, useEffect, useCallback, useRef } from "react";
+import ScanProgress, { type ScanResult, type ScanDelta } from "../components/ScanProgress.tsx";
 
-const COMPANY_TYPES = [
-  { id: "saas", label: "SaaS / Tech Startup", hint: "software product, subscription revenue" },
-  { id: "agency", label: "Agency", hint: "client services, project-based work" },
-  { id: "social-media-agency", label: "Social Media Agency", hint: "content, influencer, paid social" },
-  { id: "design-studio", label: "Design Studio", hint: "brand identity, product design" },
-  { id: "sales-org", label: "Sales Organization", hint: "outbound, account management" },
-  { id: "ecommerce", label: "E-commerce", hint: "online store, DTC, marketplace" },
-  { id: "ai-product", label: "AI Product", hint: "LLM-powered product, AI-first features" },
-  { id: "custom", label: "Custom", hint: "pick your own departments" },
+const ALL_FORMATS = [
+  { id: "CLAUDE.md",            label: "CLAUDE.md",            hint: "Anthropic Claude" },
+  { id: "AGENTS.md",            label: "AGENTS.md",            hint: "OpenAI Agents" },
+  { id: ".cursorrules",         label: ".cursorrules",         hint: "Cursor" },
+  { id: ".windsurfrules",       label: ".windsurfrules",       hint: "Windsurf" },
+  { id: "openai-system-prompt", label: "openai-system-prompt", hint: "ChatGPT / API" },
+  { id: "json",                 label: "JSON",                 hint: "Raw output" },
 ];
 
-const PROVIDERS = [
-  { id: "anthropic", label: "Anthropic Claude", hint: "claude-sonnet-4.6" },
-  { id: "openai", label: "OpenAI", hint: "gpt-5.4, o3" },
-  { id: "gemini", label: "Google Gemini", hint: "gemini-2.0-flash" },
-  { id: "xai", label: "xAI Grok", hint: "grok-3" },
-  { id: "mistral", label: "Mistral", hint: "mistral-large-latest" },
-  { id: "groq", label: "Groq", hint: "llama-3.3-70b" },
-  { id: "openai-compatible", label: "OpenAI-compatible", hint: "Ollama, LM Studio, Cursor" },
-];
-
-interface GeneratedAgent {
-  path: string;
-  content: string;
-  role: { id: string; title: string; department: string; description: string };
+interface ProjectInfo {
+  projectName: string;
+  projectDir: string;
+  configured: boolean;
 }
 
-type Step = "type" | "provider" | "generating" | "review";
+interface StalenessInfo {
+  exists: boolean;
+  generatedAt: string | null;
+  commitsSince: number | null;
+  daysStale: number | null;
+}
+
+interface ScanHistory {
+  snapshots: Array<{
+    scannedAt: number;
+    totalFiles: number;
+    totalLines: number;
+    componentCount: number;
+    apiRouteCount: number;
+    aiReadiness: number | null;
+    hubFileCount: number;
+  }>;
+}
+
+interface ScanConfig {
+  formats: string[];
+  maxTokens: number;
+  watchDebounceMs: number;
+  autoRescan: boolean;
+}
+
+interface GeneratedFileInfo {
+  name: string;
+  tokens?: number;
+  bytes?: number;
+  path?: string;
+}
+
+type PageState = "idle" | "scanning" | "done" | "error";
+
+function freshnessLabel(info: StalenessInfo): { text: string; cls: string } {
+  if (!info.exists) return { text: "No CLAUDE.md", cls: "badge-zinc" };
+  if (info.commitsSince === null) return { text: "Unknown freshness", cls: "badge-zinc" };
+  if (info.commitsSince === 0) return { text: "Fresh", cls: "badge-green" };
+  if (info.commitsSince < 5) return { text: `${info.commitsSince} commits stale`, cls: "badge-yellow" };
+  return { text: `${info.commitsSince} commits stale`, cls: "badge-red" };
+}
+
+function fmtBytes(b: number): string {
+  if (b < 1024) return `${b} B`;
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+  return `${(b / 1024 / 1024).toFixed(2)} MB`;
+}
+
+function fmtTokens(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k tokens`;
+  return `${n} tokens`;
+}
+
+function fmtTime(ts: number): string {
+  const d = new Date(ts);
+  return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
 
 export default function Generate() {
-  const [step, setStep] = useState<Step>("type");
-  const [companyType, setCompanyType] = useState("saas");
-  const [provider, setProvider] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [baseURL, setBaseURL] = useState("");
-  const [logs, setLogs] = useState<string[]>([]);
-  const [agents, setAgents] = useState<GeneratedAgent[]>([]);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const logsEndRef = useRef<HTMLDivElement>(null);
+  const [pageState, setPageState] = useState<PageState>("idle");
+  const [info, setInfo] = useState<ProjectInfo | null>(null);
+  const [staleness, setStaleness] = useState<StalenessInfo | null>(null);
+  const [history, setHistory] = useState<ScanHistory | null>(null);
+  const [config, setConfig] = useState<ScanConfig | null>(null);
 
-  function addLog(msg: string) {
-    setLogs((prev) => [...prev, msg]);
-    setTimeout(() => logsEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-  }
+  // Format selection — seeded from config once loaded
+  const [selectedFormats, setSelectedFormats] = useState<Set<string>>(
+    new Set(["CLAUDE.md", "AGENTS.md", ".cursorrules"])
+  );
 
-  async function startGeneration() {
-    setStep("generating");
-    setLogs([]);
-    setAgents([]);
+  // Scan options
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [rescanChanged, setRescanChanged] = useState(false);
+  const [maxTokens, setMaxTokens] = useState("");
+  const [includeTests, setIncludeTests] = useState(false);
+  const [customRules, setCustomRules] = useState("");
 
-    const body = {
-      companyType,
-      provider,
-      apiKey: apiKey || undefined,
-      baseURL: baseURL || undefined,
+  // Post-scan output
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [scanDelta, setScanDelta] = useState<ScanDelta | null>(null);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [copiedFile, setCopiedFile] = useState<string | null>(null);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Load all initial data in parallel
+  useEffect(() => {
+    void Promise.all([
+      fetch("/api/info").then(r => r.json() as Promise<ProjectInfo>).then(setInfo).catch(() => {}),
+      fetch("/api/scan/staleness").then(r => r.json() as Promise<StalenessInfo>).then(setStaleness).catch(() => {}),
+      fetch("/api/scan/history").then(r => r.json() as Promise<ScanHistory>).then(setHistory).catch(() => {}),
+      fetch("/api/config").then(r => r.json() as Promise<ScanConfig>).then(cfg => {
+        setConfig(cfg);
+        if (cfg.formats?.length) setSelectedFormats(new Set(cfg.formats));
+        if (cfg.maxTokens && cfg.maxTokens !== 100000) setMaxTokens(String(cfg.maxTokens));
+      }).catch(() => {}),
+    ]);
+  }, []);
+
+  // Cmd+Enter to trigger scan
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && pageState === "idle") {
+        e.preventDefault();
+        triggerScan();
+      }
     };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [pageState, selectedFormats, rescanChanged, maxTokens, includeTests, customRules]);
 
-    addLog(`Starting generation for company type: ${companyType}`);
-    addLog(`Provider: ${provider || "auto-detected from environment"}`);
+  function toggleFormat(id: string) {
+    setSelectedFormats(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
+  function selectAll() { setSelectedFormats(new Set(ALL_FORMATS.map(f => f.id))); }
+  function clearAll()  { setSelectedFormats(new Set()); }
+
+  function triggerScan() {
+    if (selectedFormats.size === 0) return;
+    setPageState("scanning");
+    setScanResult(null);
+    setScanDelta(null);
+    setErrorMsg("");
+  }
+
+  const handleScanComplete = useCallback((result: ScanResult, delta: ScanDelta | null) => {
+    setScanResult(result);
+    setScanDelta(delta);
+    setPageState("done");
+    // Re-fetch freshness + history
+    void fetch("/api/scan/staleness").then(r => r.json() as Promise<StalenessInfo>).then(setStaleness).catch(() => {});
+    void fetch("/api/scan/history").then(r => r.json() as Promise<ScanHistory>).then(setHistory).catch(() => {});
+  }, []);
+
+  const handleScanError = useCallback((err: string) => {
+    setErrorMsg(err);
+    setPageState("error");
+  }, []);
+
+  const handleScanCancel = useCallback(() => {
+    setPageState("idle");
+  }, []);
+
+  async function copyFile(name: string, content: string) {
     try {
-      const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      await navigator.clipboard.writeText(content);
+      setCopiedFile(name);
+      setTimeout(() => setCopiedFile(null), 2000);
+    } catch {}
+  }
 
-      if (!res.body) {
-        addLog("Error: No response stream");
-        return;
+  // Extract generated files from scan result
+  function getGeneratedFiles(): GeneratedFileInfo[] {
+    if (!scanResult) return [];
+    const files: GeneratedFileInfo[] = [];
+    const generated = scanResult.generatedFiles as Array<{ fileName?: string; tokenCount?: number; content?: string }> | undefined;
+    if (Array.isArray(generated)) {
+      for (const gf of generated) {
+        files.push({
+          name: gf.fileName ?? "unknown",
+          tokens: gf.tokenCount,
+          bytes: gf.content ? new TextEncoder().encode(gf.content).length : undefined,
+        });
       }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const event = JSON.parse(line.slice(6));
-            handleEvent(event);
-          } catch {}
-        }
-      }
-    } catch (err) {
-      addLog(`Error: ${err instanceof Error ? err.message : String(err)}`);
     }
-
-    setStep("review");
-  }
-
-  function handleEvent(event: Record<string, unknown>) {
-    switch (event.type) {
-      case "start":
-        addLog(`> ${event.message}`);
-        break;
-      case "progress":
-        addLog(`  ${event.message}`);
-        break;
-      case "agent": {
-        const agent = event as unknown as GeneratedAgent & { type: string };
-        setAgents((prev) => [...prev, { path: agent.path, content: agent.content, role: agent.role }]);
-        addLog(`  ✓ Generated: ${agent.role?.title ?? agent.path}`);
-        break;
+    // Fallback: infer from selected formats if no generatedFiles field
+    if (files.length === 0 && pageState === "done") {
+      for (const fmt of selectedFormats) {
+        files.push({ name: fmt });
       }
-      case "done":
-        addLog(event.success ? "\n  ✓ Generation complete" : "\n  ✗ Generation failed");
-        break;
-      case "error":
-        addLog(`  ✗ Error: ${event.message}`);
-        break;
     }
+    return files;
   }
 
-  async function saveAgents() {
-    setSaving(true);
-    try {
-      const res = await fetch("/api/generate/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agents }),
-      });
-      const data = await res.json() as { ok: boolean; count: number };
-      if (data.ok) {
-        setSaved(true);
-        addLog(`\n  ✓ Saved ${data.count} agents to .claude/agents/`);
-      }
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function reset() {
-    setStep("type");
-    setAgents([]);
-    setLogs([]);
-    setSaved(false);
-    setProvider("");
-    setApiKey("");
-  }
+  const freshness = staleness ? freshnessLabel(staleness) : null;
+  const lastSnap = history?.snapshots?.[0];
+  const void_ = config; // suppress unused warning
 
   return (
-    <div style={{ padding: "28px", maxWidth: "900px" }}>
-      {/* Header */}
-      <div style={{ marginBottom: "28px" }}>
-        <h1 style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: "4px" }}>
-          Generate Agents
-        </h1>
-        <div style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
-          Scan your codebase and use AI to generate a full agent company
-        </div>
-      </div>
+    <div ref={containerRef} style={{ padding: "28px", maxWidth: "860px" }}>
 
-      {/* Step indicator */}
-      <div style={{ display: "flex", gap: "4px", marginBottom: "28px", alignItems: "center" }}>
-        {(["type", "provider", "generating", "review"] as Step[]).map((s, i) => (
-          <div key={s} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <div style={{
-              width: "22px",
-              height: "22px",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "10px",
-              fontWeight: 700,
-              background: step === s ? "var(--accent)" : "var(--bg-4)",
-              color: step === s ? "var(--bg)" : "var(--text-dimmer)",
-              transition: "all 0.2s",
-            }}>
-              {i + 1}
-            </div>
-            <span style={{
-              fontSize: "10px",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              color: step === s ? "var(--text)" : "var(--text-dimmer)",
-            }}>
-              {s}
-            </span>
-            {i < 3 && <span style={{ color: "var(--border)", margin: "0 4px" }}>›</span>}
+      {/* ── Header ─────────────────────────────────────────── */}
+      <div style={{ marginBottom: "24px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+          <div>
+            <h1 style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: "4px" }}>
+              {info?.projectName ?? "Generate Context"}
+            </h1>
+            {info?.projectDir && (
+              <div style={{ fontSize: "11px", color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>
+                {info.projectDir}
+              </div>
+            )}
           </div>
-        ))}
-      </div>
 
-      {/* Step: Company Type */}
-      {step === "type" && (
-        <div className="fade-in">
-          <div style={{ fontSize: "12px", color: "var(--text-dim)", marginBottom: "16px" }}>
-            Select your company type:
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "10px", marginBottom: "24px" }}>
-            {COMPANY_TYPES.map((ct) => (
-              <div
-                key={ct.id}
-                onClick={() => setCompanyType(ct.id)}
-                style={{
-                  padding: "14px",
-                  border: "1px solid",
-                  borderColor: companyType === ct.id ? "var(--accent)" : "var(--border-dim)",
-                  borderRadius: "var(--radius)",
-                  background: companyType === ct.id ? "var(--accent-bg)" : "var(--bg-2)",
-                  cursor: "pointer",
-                  transition: "all 0.1s",
-                }}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            {freshness && (
+              <span className={`badge ${freshness.cls === "badge-red"
+                ? ""
+                : freshness.cls}`}
+                style={freshness.cls === "badge-red" ? {
+                  display: "inline-flex", alignItems: "center",
+                  padding: "1px 7px", borderRadius: "100px",
+                  fontSize: "11px", fontWeight: 500,
+                  background: "rgba(248,81,73,.1)", color: "var(--red)",
+                  border: "1px solid rgba(248,81,73,.25)",
+                } : undefined}
               >
-                <div style={{ fontSize: "12px", fontWeight: 600, marginBottom: "4px", color: "var(--text)" }}>
-                  {ct.label}
-                </div>
-                <div style={{ fontSize: "10px", color: "var(--text-dimmer)" }}>
-                  {ct.hint}
-                </div>
-              </div>
-            ))}
-          </div>
-          <button className="btn btn-primary" onClick={() => setStep("provider")}>
-            Continue →
-          </button>
-        </div>
-      )}
-
-      {/* Step: Provider */}
-      {step === "provider" && (
-        <div className="fade-in">
-          <div style={{ fontSize: "12px", color: "var(--text-dim)", marginBottom: "16px" }}>
-            Select AI provider (or leave empty to auto-detect from environment):
-          </div>
-
-          {/* Auto-detect option */}
-          <div
-            onClick={() => setProvider("")}
-            style={{
-              padding: "12px 14px",
-              border: "1px solid",
-              borderColor: !provider ? "var(--accent)" : "var(--border-dim)",
-              borderRadius: "var(--radius)",
-              background: !provider ? "var(--accent-bg)" : "var(--bg-2)",
-              cursor: "pointer",
-              marginBottom: "8px",
-              transition: "all 0.1s",
-            }}
-          >
-            <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)" }}>Auto-detect</div>
-            <div style={{ fontSize: "10px", color: "var(--text-dimmer)" }}>Use env vars (ANTHROPIC_API_KEY, OPENAI_API_KEY, etc.)</div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "8px", marginBottom: "16px" }}>
-            {PROVIDERS.map((p) => (
-              <div
-                key={p.id}
-                onClick={() => setProvider(p.id)}
-                style={{
-                  padding: "12px 14px",
-                  border: "1px solid",
-                  borderColor: provider === p.id ? "var(--accent)" : "var(--border-dim)",
-                  borderRadius: "var(--radius)",
-                  background: provider === p.id ? "var(--accent-bg)" : "var(--bg-2)",
-                  cursor: "pointer",
-                  transition: "all 0.1s",
-                }}
-              >
-                <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)" }}>{p.label}</div>
-                <div style={{ fontSize: "10px", color: "var(--text-dimmer)" }}>{p.hint}</div>
-              </div>
-            ))}
-          </div>
-
-          {provider && (
-            <div style={{ marginBottom: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
-              <input
-                type="password"
-                placeholder={`API Key for ${PROVIDERS.find(p => p.id === provider)?.label ?? provider}`}
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                style={{ width: "100%", maxWidth: "400px" }}
-              />
-              {provider === "openai-compatible" && (
-                <input
-                  type="text"
-                  placeholder="Base URL (e.g. http://localhost:11434/v1)"
-                  value={baseURL}
-                  onChange={(e) => setBaseURL(e.target.value)}
-                  style={{ width: "100%", maxWidth: "400px" }}
-                />
-              )}
-            </div>
-          )}
-
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button className="btn" onClick={() => setStep("type")}>← Back</button>
-            <button className="btn btn-primary" onClick={startGeneration}>
-              ⟳ Generate Agents
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Step: Generating */}
-      {(step === "generating" || step === "review") && (
-        <div className="fade-in">
-          {/* Terminal log */}
-          <div style={{
-            background: "var(--bg)",
-            border: "1px solid var(--border-dim)",
-            borderRadius: "var(--radius)",
-            padding: "16px",
-            fontFamily: "var(--font)",
-            fontSize: "11px",
-            lineHeight: "1.6",
-            color: "var(--text-dim)",
-            height: "200px",
-            overflowY: "auto",
-            marginBottom: "20px",
-          }}>
-            {logs.map((log, i) => (
-              <div key={i} style={{
-                color: log.includes("✓") ? "var(--accent)" : log.includes("✗") ? "var(--red)" : "var(--text-dim)",
-                whiteSpace: "pre-wrap",
-              }}>
-                {log}
-              </div>
-            ))}
-            {step === "generating" && (
-              <span style={{ color: "var(--accent)" }}>
-                <span className="cursor" />
+                {freshness.text}
               </span>
             )}
-            <div ref={logsEndRef} />
+            {lastSnap && (
+              <>
+                <span style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
+                  {lastSnap.totalLines.toLocaleString()} lines
+                </span>
+                <span style={{ color: "var(--border)", fontSize: "11px" }}>·</span>
+                <span style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
+                  last scanned {fmtTime(lastSnap.scannedAt)}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Scanning state ─────────────────────────────────── */}
+      {pageState === "scanning" && (
+        <div style={{ marginBottom: "24px" }}>
+          <ScanProgress
+            onComplete={handleScanComplete}
+            onError={handleScanError}
+            onCancel={handleScanCancel}
+          />
+        </div>
+      )}
+
+      {/* ── Idle / Done / Error form area ──────────────────── */}
+      {pageState !== "scanning" && (
+        <div className="fade-in">
+
+          {/* Format selector */}
+          <div style={{ marginBottom: "20px" }}>
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              marginBottom: "10px",
+            }}>
+              <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dimmer)", fontWeight: 600 }}>
+                Formats
+              </div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  className="btn"
+                  onClick={selectAll}
+                  style={{ fontSize: "10px", padding: "2px 8px" }}
+                >
+                  Select all
+                </button>
+                <button
+                  className="btn"
+                  onClick={clearAll}
+                  style={{ fontSize: "10px", padding: "2px 8px" }}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+              gap: "8px",
+            }}>
+              {ALL_FORMATS.map(fmt => {
+                const checked = selectedFormats.has(fmt.id);
+                return (
+                  <div
+                    key={fmt.id}
+                    onClick={() => toggleFormat(fmt.id)}
+                    style={{
+                      padding: "10px 12px",
+                      border: "1px solid",
+                      borderColor: checked ? "var(--accent)" : "var(--border-dim)",
+                      borderRadius: "var(--radius)",
+                      background: checked ? "var(--accent-bg)" : "var(--bg-2)",
+                      cursor: "pointer",
+                      transition: "all 0.1s",
+                      userSelect: "none",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+                      <div style={{
+                        width: "13px", height: "13px",
+                        border: "1px solid",
+                        borderColor: checked ? "var(--accent)" : "var(--border)",
+                        borderRadius: "3px",
+                        background: checked ? "var(--accent)" : "transparent",
+                        flexShrink: 0,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        {checked && (
+                          <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                            <path d="M1 3L3 5L7 1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "11px", fontWeight: 600, color: checked ? "var(--accent)" : "var(--text)", fontFamily: "var(--font)" }}>
+                          {fmt.label}
+                        </div>
+                        <div style={{ fontSize: "10px", color: "var(--text-dimmer)" }}>
+                          {fmt.hint}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Generated agents grid */}
-          {agents.length > 0 && (
-            <>
-              <div style={{
-                fontSize: "10px",
-                color: "var(--text-dimmer)",
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
-                marginBottom: "12px",
-                paddingBottom: "8px",
-                borderBottom: "1px solid var(--border-dim)",
+          {/* Scan options — collapsible */}
+          <div style={{ marginBottom: "20px" }}>
+            <button
+              className="btn"
+              onClick={() => setOptionsOpen(o => !o)}
+              style={{ fontSize: "11px", gap: "6px" }}
+            >
+              <span style={{ color: "var(--text-dimmer)", fontSize: "10px" }}>{optionsOpen ? "▾" : "▸"}</span>
+              Scan options
+            </button>
+
+            {optionsOpen && (
+              <div className="fade-in" style={{
+                marginTop: "10px",
+                padding: "16px",
+                background: "var(--bg-2)",
+                border: "1px solid var(--border-dim)",
+                borderRadius: "var(--radius)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "14px",
               }}>
-                Generated — {agents.length} agents
-              </div>
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-                gap: "8px",
-                marginBottom: "20px",
-                maxHeight: "400px",
-                overflowY: "auto",
-              }}>
-                {agents.map((agent, i) => (
-                  <AgentCard
-                    key={agent.path}
-                    agent={{
-                      id: agent.path,
-                      name: agent.role?.title ?? agent.path,
-                      description: agent.role?.description ?? "",
-                      department: agent.role?.department ?? "general",
-                      path: agent.path,
-                      content: agent.content,
-                    }}
-                    streaming={step === "generating" && i === agents.length - 1}
+
+                {/* --rescan-only-changed */}
+                <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={rescanChanged}
+                    onChange={e => setRescanChanged(e.target.checked)}
+                    style={{ width: "14px", height: "14px", accentColor: "var(--accent)" }}
                   />
-                ))}
+                  <div>
+                    <div style={{ fontSize: "12px", color: "var(--text)", fontFamily: "var(--font)" }}>--rescan-only-changed</div>
+                    <div style={{ fontSize: "10px", color: "var(--text-dimmer)" }}>Only re-process files changed since last scan</div>
+                  </div>
+                </label>
+
+                {/* --include-tests */}
+                <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={includeTests}
+                    onChange={e => setIncludeTests(e.target.checked)}
+                    style={{ width: "14px", height: "14px", accentColor: "var(--accent)" }}
+                  />
+                  <div>
+                    <div style={{ fontSize: "12px", color: "var(--text)", fontFamily: "var(--font)" }}>--include-tests</div>
+                    <div style={{ fontSize: "10px", color: "var(--text-dimmer)" }}>Include test files in analysis</div>
+                  </div>
+                </label>
+
+                {/* --max-tokens */}
+                <div>
+                  <div style={{ fontSize: "12px", color: "var(--text)", fontFamily: "var(--font)", marginBottom: "6px" }}>
+                    --max-tokens
+                  </div>
+                  <input
+                    type="number"
+                    placeholder="e.g. 80000  (empty = no limit)"
+                    value={maxTokens}
+                    onChange={e => setMaxTokens(e.target.value)}
+                    style={{ width: "240px" }}
+                    min={1000}
+                  />
+                  <div style={{ fontSize: "10px", color: "var(--text-dimmer)", marginTop: "4px" }}>
+                    Limit output token count per format
+                  </div>
+                </div>
+
+                {/* Custom rules */}
+                <div>
+                  <div style={{ fontSize: "12px", color: "var(--text)", fontFamily: "var(--font)", marginBottom: "6px" }}>
+                    Custom rules
+                  </div>
+                  <textarea
+                    value={customRules}
+                    onChange={e => setCustomRules(e.target.value)}
+                    placeholder={"One rule per line:\nAlways use TypeScript strict mode\nPrefer functional components"}
+                    rows={4}
+                    style={{ width: "100%", resize: "vertical" }}
+                  />
+                  <div style={{ fontSize: "10px", color: "var(--text-dimmer)", marginTop: "4px" }}>
+                    Appended to the generated context as project-specific rules
+                  </div>
+                </div>
+
               </div>
-            </>
+            )}
+          </div>
+
+          {/* Generate button */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "28px" }}>
+            <button
+              className="btn btn-primary"
+              onClick={triggerScan}
+              disabled={selectedFormats.size === 0}
+              style={{ fontSize: "13px", padding: "8px 20px", letterSpacing: "0.02em" }}
+            >
+              &gt; GENERATE CONTEXT
+            </button>
+            <span style={{ fontSize: "10px", color: "var(--text-dimmer)" }}>
+              {selectedFormats.size === 0
+                ? "Select at least one format"
+                : `${selectedFormats.size} format${selectedFormats.size !== 1 ? "s" : ""}  ·  ⌘↵`}
+            </span>
+          </div>
+
+          {/* Error */}
+          {pageState === "error" && errorMsg && (
+            <div style={{
+              padding: "12px 14px",
+              background: "var(--red-bg)",
+              border: "1px solid rgba(248,81,73,.25)",
+              borderRadius: "var(--radius)",
+              fontSize: "12px",
+              color: "var(--red)",
+              marginBottom: "20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}>
+              <span>{errorMsg}</span>
+              <button className="btn" onClick={() => setPageState("idle")} style={{ fontSize: "10px", padding: "2px 8px" }}>
+                Dismiss
+              </button>
+            </div>
           )}
 
-          {/* Actions */}
-          {step === "review" && (
-            <div style={{ display: "flex", gap: "8px" }}>
-              {!saved ? (
-                <button
-                  className="btn btn-primary"
-                  onClick={saveAgents}
-                  disabled={saving || agents.length === 0}
-                >
-                  {saving ? "Saving..." : `Save ${agents.length} Agents`}
-                </button>
-              ) : (
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span style={{ color: "var(--accent)", fontSize: "12px" }}>
-                    ✓ Saved to .claude/agents/
-                  </span>
-                  <button className="btn" onClick={reset}>Generate again</button>
+          {/* Post-scan output */}
+          {pageState === "done" && scanResult && (
+            <div className="fade-in">
+
+              {/* Delta summary */}
+              {scanDelta && Object.keys(scanDelta).length > 0 && (
+                <div style={{ marginBottom: "16px" }}>
+                  <div style={{
+                    fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.1em",
+                    color: "var(--text-dimmer)", marginBottom: "8px", fontWeight: 600,
+                  }}>
+                    What changed
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                    {Object.entries(scanDelta).map(([key, val]) => {
+                      const isPositive = val.delta > 0;
+                      const isZero = val.delta === 0;
+                      return (
+                        <div key={key} style={{
+                          padding: "6px 10px",
+                          background: "var(--bg-2)",
+                          border: "1px solid var(--border-dim)",
+                          borderRadius: "var(--radius)",
+                          fontSize: "11px",
+                        }}>
+                          <span style={{ color: "var(--text-dim)" }}>{key}: </span>
+                          <span style={{ color: "var(--text)", fontFamily: "var(--font)" }}>{val.curr.toLocaleString()}</span>
+                          {!isZero && (
+                            <span style={{
+                              marginLeft: "5px",
+                              color: isPositive ? "var(--accent)" : "var(--red)",
+                              fontSize: "10px",
+                            }}>
+                              {isPositive ? "+" : ""}{val.delta} ({val.pct > 0 ? "+" : ""}{val.pct}%)
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
-              <button className="btn" onClick={reset}>Start over</button>
+
+              {/* Generated files */}
+              {(() => {
+                const files = getGeneratedFiles();
+                return files.length > 0 ? (
+                  <div>
+                    <div style={{
+                      fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.1em",
+                      color: "var(--text-dimmer)", marginBottom: "8px", fontWeight: 600,
+                    }}>
+                      Output files
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      {files.map(f => {
+                        const rawContent = (() => {
+                          const gfs = scanResult.generatedFiles as Array<{ fileName?: string; content?: string }> | undefined;
+                          return gfs?.find(g => g.fileName === f.name)?.content ?? "";
+                        })();
+                        return (
+                          <div key={f.name} style={{
+                            display: "flex", alignItems: "center", justifyContent: "space-between",
+                            padding: "8px 12px",
+                            background: "var(--bg-2)",
+                            border: "1px solid var(--border-dim)",
+                            borderRadius: "var(--radius)",
+                          }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                              <span style={{ fontSize: "12px", fontFamily: "var(--font)", color: "var(--text)" }}>
+                                {f.name}
+                              </span>
+                              {f.tokens !== undefined && (
+                                <span className="badge badge-zinc" style={{ fontSize: "10px" }}>
+                                  {fmtTokens(f.tokens)}
+                                </span>
+                              )}
+                              {f.bytes !== undefined && (
+                                <span style={{ fontSize: "10px", color: "var(--text-dimmer)" }}>
+                                  {fmtBytes(f.bytes)}
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ display: "flex", gap: "6px" }}>
+                              {rawContent && (
+                                <button
+                                  className="btn"
+                                  onClick={() => void copyFile(f.name, rawContent)}
+                                  style={{ fontSize: "10px", padding: "2px 8px" }}
+                                >
+                                  {copiedFile === f.name ? "Copied!" : "Copy"}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{
+                    padding: "20px",
+                    background: "var(--bg-2)",
+                    border: "1px solid var(--border-dim)",
+                    borderRadius: "var(--radius)",
+                    textAlign: "center",
+                    fontSize: "12px",
+                    color: "var(--text-dimmer)",
+                  }}>
+                    Scan complete. Check your project root for generated files.
+                  </div>
+                );
+              })()}
+
+              <div style={{ marginTop: "16px" }}>
+                <button className="btn" onClick={() => setPageState("idle")}>
+                  ← Run again
+                </button>
+              </div>
             </div>
           )}
         </div>
       )}
+
+      {/* suppress unused var warning for config */}
+      {void_ && null}
     </div>
   );
 }

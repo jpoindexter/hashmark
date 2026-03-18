@@ -1,15 +1,23 @@
 import { useState, useEffect, useRef } from "react";
 import { DiffViewer } from "./DiffViewer.tsx";
+import { SkeletonLine } from "./Skeleton.tsx";
 
 interface GitFile {
   status: string;
   file: string;
+  x: string;
+  y: string;
+  isStaged: boolean;
+  isUnstaged: boolean;
+  isUntracked: boolean;
   added?: number;
   removed?: number;
 }
 
 interface GitData {
   branch: string;
+  ahead: number;
+  behind: number;
   files: GitFile[];
   commits: { hash: string; message: string }[];
   error?: string;
@@ -57,21 +65,12 @@ function FileActionBtn({
       onMouseLeave={() => setHover(false)}
       style={{
         background: hover ? "var(--bg-4)" : "transparent",
-        border: "none",
-        cursor: "pointer",
+        border: "none", cursor: "pointer",
         color: color ?? "var(--text-dimmer)",
-        fontFamily: "var(--font)",
-        fontSize: 12,
-        fontWeight: 700,
-        lineHeight: 1,
-        width: 18,
-        height: 18,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: "var(--radius-sm)",
-        flexShrink: 0,
-        padding: 0,
+        fontFamily: "var(--font)", fontSize: 12, fontWeight: 700, lineHeight: 1,
+        width: 18, height: 18,
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        borderRadius: "var(--radius-sm)", flexShrink: 0, padding: 0,
         transition: "background 0.1s",
       }}
     >
@@ -80,16 +79,150 @@ function FileActionBtn({
   );
 }
 
-// Truncate path from the left: "...ents/foo/bar.ts"
-function truncatePath(path: string, maxLen = 24): string {
-  if (path.length <= maxLen) return path;
-  return "..." + path.slice(path.length - (maxLen - 3));
+function SectionHeader({
+  label, count, expanded, onToggle, onAction, actionLabel, actionTitle,
+}: {
+  label: string;
+  count: number;
+  expanded: boolean;
+  onToggle: () => void;
+  onAction?: () => void;
+  actionLabel?: string;
+  actionTitle?: string;
+}) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      onClick={onToggle}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: "flex", alignItems: "center", gap: 6,
+        padding: "5px 8px 5px 12px",
+        cursor: "pointer",
+        background: hover ? "rgba(255,255,255,0.03)" : "transparent",
+        userSelect: "none",
+        flexShrink: 0,
+      }}
+    >
+      <span style={{
+        fontSize: 10, color: "var(--text-dimmer)", fontFamily: "var(--font)",
+        transition: "transform 0.1s", display: "inline-block",
+        transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
+      }}>
+        ▶
+      </span>
+      <span style={{ fontSize: 10, color: "var(--text-dim)", fontFamily: "var(--font)", letterSpacing: "0.06em", flex: 1 }}>
+        {label}
+      </span>
+      <span style={{
+        fontSize: 10, color: "var(--text-dimmer)", fontFamily: "var(--font)",
+        background: "var(--bg-3)", borderRadius: 10, padding: "1px 6px", flexShrink: 0,
+      }}>
+        {count}
+      </span>
+      {onAction && actionLabel && (
+        <button
+          title={actionTitle}
+          onClick={e => { e.stopPropagation(); onAction(); }}
+          style={{
+            background: "none", border: "none", cursor: "pointer",
+            color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 11,
+            padding: "0 2px", lineHeight: 1, flexShrink: 0,
+          }}
+          onMouseEnter={e => (e.currentTarget.style.color = "var(--accent)")}
+          onMouseLeave={e => (e.currentTarget.style.color = "var(--text-dimmer)")}
+        >
+          {actionLabel}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function FileRow({
+  f, selected, hovered, busy, isStaged,
+  onClick, onMouseEnter, onMouseLeave,
+  onStage, onUnstage, onDiscard,
+}: {
+  f: GitFile;
+  selected: boolean;
+  hovered: boolean;
+  busy: boolean;
+  isStaged: boolean;
+  onClick: () => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+  onStage: (e: React.MouseEvent) => void;
+  onUnstage: (e: React.MouseEvent) => void;
+  onDiscard: (e: React.MouseEvent) => void;
+}) {
+  const displayStatus = isStaged ? f.x : (f.isUntracked ? "?" : f.y);
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      style={{
+        display: "flex", alignItems: "center", gap: 6,
+        padding: "3px 8px 3px 24px", cursor: "pointer",
+        background: selected ? "var(--accent-bg)" : "transparent",
+        borderLeft: selected ? "2px solid var(--accent)" : "2px solid transparent",
+        transition: "background 0.1s",
+        opacity: busy ? 0.5 : 1,
+      }}
+    >
+      <FileBadge status={displayStatus} />
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 1 }}>
+        <span
+          title={f.file}
+          style={{
+            fontFamily: "var(--font)", fontSize: 11,
+            color: selected ? "var(--text)" : "var(--text-dim)",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}
+        >
+          {f.file.split("/").pop() ?? f.file}
+        </span>
+        <span style={{
+          fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
+          {f.file.includes("/") ? f.file.slice(0, f.file.lastIndexOf("/")) : ""}
+        </span>
+      </div>
+      {(f.added || f.removed) ? (
+        <span style={{ fontFamily: "var(--font)", fontSize: 10, display: "flex", gap: 3, flexShrink: 0 }}>
+          {f.added ? <span style={{ color: "var(--accent)" }}>+{f.added}</span> : null}
+          {f.removed ? <span style={{ color: "var(--red)" }}>-{f.removed}</span> : null}
+        </span>
+      ) : null}
+      <div style={{
+        display: "flex", gap: 2, flexShrink: 0,
+        opacity: hovered || busy ? 1 : 0, transition: "opacity 0.1s",
+      }}>
+        {!isStaged && !f.isUntracked && (
+          <FileActionBtn label="+" title="Stage file" color="var(--accent)" onClick={onStage} />
+        )}
+        {isStaged && (
+          <FileActionBtn label="−" title="Unstage file" color="var(--text-dim)" onClick={onUnstage} />
+        )}
+        <FileActionBtn
+          label="×"
+          title={f.isUntracked ? "Delete file" : "Discard changes"}
+          color="var(--red)"
+          onClick={onDiscard}
+        />
+      </div>
+    </div>
+  );
 }
 
 export default function SourceControlPage() {
   const [data, setData] = useState<GitData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [selectedStaged, setSelectedStaged] = useState<boolean>(false);
   const [commitMsg, setCommitMsg] = useState("");
   const [committing, setCommitting] = useState(false);
   const [staging, setStaging] = useState(false);
@@ -97,6 +230,9 @@ export default function SourceControlPage() {
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [fileLoading, setFileLoading] = useState<string | null>(null);
   const [hoveredFile, setHoveredFile] = useState<string | null>(null);
+  const [stagedExpanded, setStagedExpanded] = useState(true);
+  const [unstagedExpanded, setUnstagedExpanded] = useState(true);
+  const [untrackedExpanded, setUntrackedExpanded] = useState(true);
 
   const dragging = useRef(false);
   const dragStartX = useRef(0);
@@ -110,12 +246,9 @@ export default function SourceControlPage() {
       .then((d: GitData) => {
         setData(d);
         setLoading(false);
-        if (d.files.length > 0 && !selectedFile) {
-          setSelectedFile(d.files[0].file);
-        }
       })
       .catch(() => {
-        setData({ branch: "unknown", files: [], commits: [], error: "Failed to fetch git status" });
+        setData({ branch: "unknown", ahead: 0, behind: 0, files: [], commits: [], error: "Failed to fetch git status" });
         setLoading(false);
       });
   };
@@ -126,7 +259,7 @@ export default function SourceControlPage() {
     const onMove = (e: MouseEvent) => {
       if (!dragging.current) return;
       const delta = e.clientX - dragStartX.current;
-      setPanelWidth(Math.max(180, Math.min(420, dragStartW.current + delta)));
+      setPanelWidth(Math.max(180, Math.min(480, dragStartW.current + delta)));
     };
     const onUp = () => { dragging.current = false; };
     window.addEventListener("mousemove", onMove);
@@ -230,8 +363,7 @@ export default function SourceControlPage() {
     setStatusMsg(null);
     try {
       const r = await fetch("/api/files/commit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: commitMsg.trim() }),
       });
       const d = await r.json() as { ok?: boolean; error?: string };
@@ -265,15 +397,16 @@ export default function SourceControlPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div style={{ padding: 24, color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 12 }}>
-        Loading git status...
-      </div>
-    );
-  }
+  const selectFile = (file: string, staged: boolean) => {
+    setSelectedFile(file);
+    setSelectedStaged(staged);
+  };
 
   const files = data?.files ?? [];
+  const stagedFiles = files.filter(f => f.isStaged);
+  const unstagedFiles = files.filter(f => !f.isStaged && !f.isUntracked);
+  const untrackedFiles = files.filter(f => f.isUntracked);
+
   const isErr = statusMsg
     ? statusMsg.toLowerCase().includes("fail") || statusMsg.toLowerCase().includes("error")
     : false;
@@ -288,129 +421,170 @@ export default function SourceControlPage() {
         background: "var(--bg-2)", borderRight: "1px solid var(--border-dim)",
         overflow: "hidden",
       }}>
-        {/* Section header */}
+        {/* Header: branch + ahead/behind + refresh */}
         <div style={{
-          padding: "10px 12px 6px",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "8px 12px 6px",
           borderBottom: "1px solid var(--border-dim)", flexShrink: 0,
         }}>
-          <span style={{ fontSize: 10, color: "var(--text-dimmer)", fontFamily: "var(--font)", letterSpacing: "0.08em" }}>
-            CHANGES {files.length > 0 ? `(${files.length})` : ""}
-          </span>
-          <button
-            onClick={load}
-            style={{
-              background: "none", border: "none", cursor: "pointer",
-              color: "var(--text-dimmer)", fontSize: 13, lineHeight: 1, padding: "0 2px",
-            }}
-            title="Refresh"
-          >
-            ↻
-          </button>
-        </div>
-
-        {/* Branch pill */}
-        {data?.branch && (
-          <div style={{ padding: "6px 12px", borderBottom: "1px solid var(--border-dim)", flexShrink: 0 }}>
-            <span style={{
-              fontSize: 11, fontFamily: "var(--font)",
-              color: "var(--accent)", background: "var(--accent-bg)",
-              padding: "2px 6px", borderRadius: "var(--radius-sm)",
-            }}>
-              {data.branch}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+            <span style={{ fontSize: 10, color: "var(--text-dimmer)", fontFamily: "var(--font)", letterSpacing: "0.08em" }}>
+              SOURCE CONTROL
             </span>
+            <button
+              onClick={load}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: "var(--text-dimmer)", fontSize: 13, lineHeight: 1, padding: "0 2px",
+              }}
+              title="Refresh"
+            >
+              ↻
+            </button>
           </div>
-        )}
+
+          {/* Branch pill + ahead/behind */}
+          {loading ? (
+            <SkeletonLine width="60%" height={18} />
+          ) : data?.branch && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              <span style={{
+                fontSize: 11, fontFamily: "var(--font)",
+                color: "var(--accent)", background: "var(--accent-bg)",
+                padding: "2px 6px", borderRadius: "var(--radius-sm)",
+              }}>
+                {data.branch}
+              </span>
+              {(data.ahead > 0 || data.behind > 0) && (
+                <span style={{ fontSize: 10, fontFamily: "var(--font)", color: "var(--text-dimmer)", display: "flex", gap: 4 }}>
+                  {data.ahead > 0 && <span title="Commits ahead of remote">↑{data.ahead}</span>}
+                  {data.behind > 0 && <span title="Commits behind remote">↓{data.behind}</span>}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* File list */}
         <div style={{ flex: 1, overflowY: "auto" }}>
-          {files.length === 0 ? (
+          {loading ? (
+            <div style={{ padding: "12px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+              <SkeletonLine width="80%" height={12} />
+              <SkeletonLine width="65%" height={12} />
+              <SkeletonLine width="72%" height={12} />
+            </div>
+          ) : files.length === 0 ? (
             <div style={{ padding: "16px 12px", color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 11 }}>
               Working tree clean.
             </div>
           ) : (
-            files.map(f => {
-              const isSelected = selectedFile === f.file;
-              const isUntracked = f.status === "??" || f.status === "?";
-              const isStaged = f.status.length >= 1 && f.status[0] !== " " && f.status[0] !== "?" && f.status[1] === " ";
-              const isBusy = fileLoading === f.file;
-              const isHovered = hoveredFile === f.file;
-
-              return (
-                <div
-                  key={f.file}
-                  onClick={() => setSelectedFile(f.file)}
-                  onMouseEnter={() => setHoveredFile(f.file)}
-                  onMouseLeave={() => setHoveredFile(null)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 6,
-                    padding: "4px 8px 4px 12px", cursor: "pointer",
-                    background: isSelected ? "var(--accent-bg)" : "transparent",
-                    borderLeft: isSelected ? "2px solid var(--accent)" : "2px solid transparent",
-                    transition: "background 0.1s",
-                    opacity: isBusy ? 0.5 : 1,
-                  }}
-                >
-                  <FileBadge status={f.status} />
-
-                  {/* Path + diff stats */}
-                  <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 1 }}>
-                    <span
-                      title={f.file}
-                      style={{
-                        fontFamily: "var(--font)", fontSize: 11,
-                        color: isSelected ? "var(--text)" : "var(--text-dim)",
-                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                        direction: "rtl", textAlign: "left",
-                      }}
-                    >
-                      {truncatePath(f.file)}
-                    </span>
-                    {(f.added || f.removed) ? (
-                      <span style={{ fontFamily: "var(--font)", fontSize: 10, display: "flex", gap: 4 }}>
-                        {f.added ? <span style={{ color: "var(--accent)" }}>+{f.added}</span> : null}
-                        {f.removed ? <span style={{ color: "var(--red)" }}>-{f.removed}</span> : null}
-                      </span>
-                    ) : null}
-                  </div>
-
-                  {/* Per-file action buttons — visible on hover */}
-                  <div style={{
-                    display: "flex", gap: 2, flexShrink: 0,
-                    opacity: isHovered || isBusy ? 1 : 0,
-                    transition: "opacity 0.1s",
-                  }}>
-                    {/* Stage: + */}
-                    <FileActionBtn
-                      label="+"
-                      title="Stage file"
-                      color="var(--accent)"
-                      onClick={(e) => stageFile(e, f.file)}
+            <>
+              {/* Staged */}
+              {stagedFiles.length > 0 && (
+                <div>
+                  <SectionHeader
+                    label="STAGED"
+                    count={stagedFiles.length}
+                    expanded={stagedExpanded}
+                    onToggle={() => setStagedExpanded(v => !v)}
+                    onAction={async () => {
+                      try {
+                        await fetch("/api/files/unstage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+                        load();
+                      } catch { /* noop */ }
+                    }}
+                    actionLabel="−"
+                    actionTitle="Unstage all"
+                  />
+                  {stagedExpanded && stagedFiles.map(f => (
+                    <FileRow
+                      key={`staged-${f.file}`}
+                      f={f}
+                      isStaged
+                      selected={selectedFile === f.file && selectedStaged}
+                      hovered={hoveredFile === `staged-${f.file}`}
+                      busy={fileLoading === f.file}
+                      onClick={() => selectFile(f.file, true)}
+                      onMouseEnter={() => setHoveredFile(`staged-${f.file}`)}
+                      onMouseLeave={() => setHoveredFile(null)}
+                      onStage={e => stageFile(e, f.file)}
+                      onUnstage={e => unstageFile(e, f.file)}
+                      onDiscard={e => discardFile(e, f.file, f.isUntracked)}
                     />
-                    {/* Unstage: − (only for staged files) */}
-                    {isStaged && (
-                      <FileActionBtn
-                        label="−"
-                        title="Unstage file"
-                        color="var(--text-dim)"
-                        onClick={(e) => unstageFile(e, f.file)}
-                      />
-                    )}
-                    {/* Discard/Delete: × */}
-                    <FileActionBtn
-                      label="×"
-                      title={isUntracked ? "Delete file" : "Discard changes"}
-                      color="var(--red)"
-                      onClick={(e) => discardFile(e, f.file, isUntracked)}
-                    />
-                  </div>
+                  ))}
                 </div>
-              );
-            })
+              )}
+
+              {/* Unstaged */}
+              {unstagedFiles.length > 0 && (
+                <div>
+                  <SectionHeader
+                    label="UNSTAGED"
+                    count={unstagedFiles.length}
+                    expanded={unstagedExpanded}
+                    onToggle={() => setUnstagedExpanded(v => !v)}
+                    onAction={() => stageAll()}
+                    actionLabel="+"
+                    actionTitle="Stage all"
+                  />
+                  {unstagedExpanded && unstagedFiles.map(f => (
+                    <FileRow
+                      key={`unstaged-${f.file}`}
+                      f={f}
+                      isStaged={false}
+                      selected={selectedFile === f.file && !selectedStaged}
+                      hovered={hoveredFile === `unstaged-${f.file}`}
+                      busy={fileLoading === f.file}
+                      onClick={() => selectFile(f.file, false)}
+                      onMouseEnter={() => setHoveredFile(`unstaged-${f.file}`)}
+                      onMouseLeave={() => setHoveredFile(null)}
+                      onStage={e => stageFile(e, f.file)}
+                      onUnstage={e => unstageFile(e, f.file)}
+                      onDiscard={e => discardFile(e, f.file, f.isUntracked)}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Untracked */}
+              {untrackedFiles.length > 0 && (
+                <div>
+                  <SectionHeader
+                    label="UNTRACKED"
+                    count={untrackedFiles.length}
+                    expanded={untrackedExpanded}
+                    onToggle={() => setUntrackedExpanded(v => !v)}
+                    onAction={() => {
+                      fetch("/api/files/stage", {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ paths: untrackedFiles.map(f => f.file) }),
+                      }).then(() => load()).catch(() => {});
+                    }}
+                    actionLabel="+"
+                    actionTitle="Stage all untracked"
+                  />
+                  {untrackedExpanded && untrackedFiles.map(f => (
+                    <FileRow
+                      key={`untracked-${f.file}`}
+                      f={f}
+                      isStaged={false}
+                      selected={selectedFile === f.file && !selectedStaged}
+                      hovered={hoveredFile === `untracked-${f.file}`}
+                      busy={fileLoading === f.file}
+                      onClick={() => selectFile(f.file, false)}
+                      onMouseEnter={() => setHoveredFile(`untracked-${f.file}`)}
+                      onMouseLeave={() => setHoveredFile(null)}
+                      onStage={e => stageFile(e, f.file)}
+                      onUnstage={e => unstageFile(e, f.file)}
+                      onDiscard={e => discardFile(e, f.file, f.isUntracked)}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        {/* Actions */}
+        {/* Commit form */}
         <div style={{
           padding: "10px 12px", borderTop: "1px solid var(--border-dim)",
           display: "flex", flexDirection: "column", gap: 8, flexShrink: 0,
@@ -418,40 +592,44 @@ export default function SourceControlPage() {
           {statusMsg && (
             <div style={{
               fontSize: 10, fontFamily: "var(--font)",
-              color: isErr ? "var(--red)" : "var(--accent)",
-              padding: "3px 0",
+              color: isErr ? "var(--red)" : "var(--accent)", padding: "3px 0",
             }}>
               {statusMsg}
             </div>
           )}
-          <button
-            className="btn"
-            onClick={stageAll}
-            disabled={staging || files.length === 0}
-          >
-            {staging ? "Staging..." : "Stage All"}
-          </button>
-          <input
-            type="text"
+          <textarea
             placeholder="Commit message..."
             value={commitMsg}
             onChange={e => setCommitMsg(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") commit(); }}
-            style={{ width: "100%", boxSizing: "border-box" }}
+            onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) commit(); }}
+            rows={2}
+            style={{ width: "100%", boxSizing: "border-box", resize: "vertical", minHeight: 40 }}
           />
-          <button
-            className="btn btn-primary"
-            onClick={commit}
-            disabled={committing || !commitMsg.trim()}
-          >
-            {committing ? "Committing..." : "> Commit"}
-          </button>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button
+              className="btn"
+              onClick={stageAll}
+              disabled={staging || files.length === 0}
+              style={{ flex: 1 }}
+            >
+              {staging ? "Staging..." : "+ Stage All"}
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={commit}
+              disabled={committing || !commitMsg.trim() || stagedFiles.length === 0}
+              style={{ flex: 1 }}
+            >
+              {committing ? "Committing..." : "> Commit"}
+            </button>
+          </div>
           <button
             className="btn"
             onClick={push}
             disabled={pushing}
+            style={{ width: "100%" }}
           >
-            {pushing ? "Pushing..." : "> Push"}
+            {pushing ? "Pushing..." : `> Push${data?.ahead ? ` (${data.ahead})` : ""}`}
           </button>
         </div>
       </div>
@@ -472,6 +650,7 @@ export default function SourceControlPage() {
         {selectedFile ? (
           <DiffViewer
             path={selectedFile}
+            staged={selectedStaged}
             onClose={() => setSelectedFile(null)}
           />
         ) : (

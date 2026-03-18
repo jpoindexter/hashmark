@@ -66,6 +66,17 @@ export function scanRoutes(projectDir: string) {
   const dataDir = join(projectDir, ".hashmark");
   const snapshotPath = join(dataDir, "last-scan-snapshot.json");
 
+  // GET /api/scan/history — last scan snapshot (file count, line count, timestamp)
+  app.get("/history", (c) => {
+    if (!existsSync(snapshotPath)) return c.json({ snapshots: [] });
+    try {
+      const snap = JSON.parse(readFileSync(snapshotPath, "utf-8")) as ScanSnapshot;
+      return c.json({ snapshots: [snap] });
+    } catch {
+      return c.json({ snapshots: [] });
+    }
+  });
+
   // GET /api/scan/context — check if scan context is available for chat injection
   app.get("/context", (c) => {
     const meta = getScanContextMeta(projectDir);
