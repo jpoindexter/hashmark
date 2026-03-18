@@ -162,6 +162,45 @@ cli
         }
       }
 
+      // Save a lightweight snapshot for `hashmark export`
+      if (!options.dryRun) {
+        try {
+          const snapshotDir = join(targetDir, ".hashmark");
+          mkdirSync(snapshotDir, { recursive: true });
+          const snapshot = {
+            framework: scanResult.framework,
+            commands: scanResult.commands,
+            components: scanResult.components.map(c => ({ name: c.name, path: c.path })),
+            hooks: scanResult.hooks,
+            apiRoutes: scanResult.apiRoutes,
+            envVars: scanResult.envVars,
+            database: scanResult.database,
+            stats: scanResult.stats,
+            tokens: scanResult.tokens,
+            utilities: scanResult.utilities,
+            patterns: scanResult.patterns,
+            existingContext: scanResult.existingContext,
+            variants: scanResult.variants,
+            latentHooks: scanResult.latentHooks,
+            hubFiles: scanResult.importGraph?.hubFiles?.slice(0, 20) ?? [],
+            aiRecommendations: scanResult.aiRecommendations
+              ? {
+                  complexFiles: scanResult.aiRecommendations.complexFiles?.slice(0, 10) ?? [],
+                  areas: scanResult.aiRecommendations.areas,
+                  simpleModel: scanResult.aiRecommendations.simpleModel,
+                  complexModel: scanResult.aiRecommendations.complexModel,
+                  extendedThinkingRecommended: scanResult.aiRecommendations.extendedThinkingRecommended,
+                }
+              : undefined,
+            complexityDelta: scanResult.complexityDelta ?? undefined,
+            generatedAt: new Date().toISOString(),
+          };
+          writeFileSync(join(snapshotDir, "last-scan.json"), JSON.stringify(snapshot, null, 2), "utf-8");
+        } catch {
+          // non-fatal — snapshot failure should never abort the scan
+        }
+      }
+
       // Cloud sync (--sync flag)
       if (options.sync && !options.dryRun) {
         const syncPayload: CloudSyncPayload = {
@@ -256,6 +295,67 @@ cli
       }
     } catch (error) {
       console.error(pc.red(`\n  ✗ Sync failed: ${error instanceof Error ? error.message : error}\n`));
+      process.exit(1);
+    }
+  });
+
+// --- export command ---
+cli
+  .command("export [dir]", "Export generated context in a specific format")
+  .option("--format <format>", "Output format: openai-system-prompt | json | token-budget", { default: "openai-system-prompt" })
+  .option("--budget-tokens <n>", "Token budget for token-budget format", { default: "50000" })
+  .option("--output <file>", "Write to file instead of stdout")
+  .action(async (dir: string | undefined, opts: { format: string; budgetTokens: string; output?: string }) => {
+    const targetDir = dir || process.cwd();
+    const snapshotPath = join(targetDir, ".hashmark", "last-scan.json");
+
+    if (!existsSync(snapshotPath)) {
+      console.error(pc.red("\n  No scan found. Run `hashmark scan` first.\n"));
+      process.exit(1);
+    }
+
+    let snapshot: any;
+    try {
+      snapshot = JSON.parse(readFileSync(snapshotPath, "utf-8"));
+    } catch (e) {
+      console.error(pc.red(`\n  Failed to read snapshot: ${e instanceof Error ? e.message : e}\n`));
+      process.exit(1);
+    }
+
+    // Reconstruct minimal ScanResult from snapshot
+    // Maps are not JSON-serializable so we provide empty stubs where needed
+    const scan = {
+      ...snapshot,
+      barrels: snapshot.barrels ?? [],
+      dependencies: snapshot.dependencies ?? [],
+      importGraph: snapshot.hubFiles?.length
+        ? {
+            files: new Map(),
+            hubFiles: snapshot.hubFiles,
+            circularDeps: [],
+            externalDeps: new Map(),
+            unusedFiles: [],
+          }
+        : undefined,
+    };
+
+    try {
+      const { exportContext } = await import("./formats/export.js");
+      const result = exportContext(scan, {
+        format: opts.format as any,
+        budgetTokens: parseInt(opts.budgetTokens, 10),
+      });
+
+      if (opts.output) {
+        const outPath = resolve(opts.output);
+        if (!existsSync(dirname(outPath))) mkdirSync(dirname(outPath), { recursive: true });
+        writeFileSync(outPath, result, "utf-8");
+        console.error(pc.green(`  Wrote ${outPath}`));
+      } else {
+        process.stdout.write(result + "\n");
+      }
+    } catch (e) {
+      console.error(pc.red(`\n  Export failed: ${e instanceof Error ? e.message : e}\n`));
       process.exit(1);
     }
   });
