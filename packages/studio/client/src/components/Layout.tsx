@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Home, FolderTree, GitBranch, MessageSquare, Bot, Zap, Settings, TerminalSquare, Play, Clock } from "lucide-react";
+import { Home, FolderTree, GitBranch, MessageSquare, Bot, Zap, Settings, TerminalSquare, Play, Clock, Building2 } from "lucide-react";
 import { basename } from "../lib/path.js";
 import WorkspaceSidebar from "./WorkspaceSidebar.tsx";
 import ChatMessages from "./ChatMessages.tsx";
@@ -19,6 +19,7 @@ const NAV = [
   { to: "/sessions", icon: <MessageSquare size={20} />, title: "Chat"                },
   { to: "/agents",   icon: <Bot size={20} />,           title: "Agents"              },
   { to: "/generate", icon: <Zap size={20} />,           title: "Generate"            },
+  { to: "/company",  icon: <Building2 size={20} />,     title: "Company"             },
   { to: "/setup",    icon: <Play size={20} />,          title: "Workspace"           },
   { to: "/settings", icon: <Settings size={20} />,      title: "Settings"            },
 ];

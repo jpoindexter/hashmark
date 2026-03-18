@@ -6,6 +6,7 @@ import Agents from "./pages/Agents.tsx";
 import Generate from "./pages/Generate.tsx";
 import Sessions from "./pages/Sessions.tsx";
 import Settings from "./pages/Settings.tsx";
+import Company from "./pages/Company.tsx";
 import WorkspaceSetup from "./pages/WorkspaceSetup.tsx";
 import Files from "./pages/Files.tsx";
 import Git from "./pages/Git.tsx";
@@ -51,6 +52,7 @@ function AppShell() {
         <Route path="source-control" element={<SourceControlPage />} />
         <Route path="agents" element={<Agents />} />
         <Route path="generate" element={<Generate />} />
+        <Route path="company" element={<Company />} />
         <Route path="sessions" element={<Sessions />} />
         <Route path="settings" element={<Settings />} />
         <Route path="setup" element={<WorkspaceSetup />} />
