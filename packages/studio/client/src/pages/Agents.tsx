@@ -86,6 +86,9 @@ export default function Agents() {
   const outputRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
   const loopCountRef = useRef(0);
+  const [approvalRequired, setApprovalRequired] = useState(false);
+  const [pendingApproval, setPendingApproval] = useState<{ tools: string[] } | null>(null);
+  const pendingApprovalResolveRef = useRef<((approved: boolean) => void) | null>(null);
 
   useEffect(() => {
     fetch("/api/agents")
@@ -158,6 +161,20 @@ export default function Agents() {
 
   async function runAgent() {
     if (!selected || !runPrompt.trim() || running) return;
+
+    // Approval gate — show dialog before starting if enabled and agent has tools
+    if (approvalRequired) {
+      const tools = govInfo?.tools ?? [];
+      if (tools.length > 0) {
+        const approved = await new Promise<boolean>((resolve) => {
+          pendingApprovalResolveRef.current = resolve;
+          setPendingApproval({ tools });
+        });
+        setPendingApproval(null);
+        pendingApprovalResolveRef.current = null;
+        if (!approved) return;
+      }
+    }
 
     dispatchRunStatus({ type: "START" });
     setOutput("");
@@ -272,7 +289,18 @@ export default function Agents() {
     | { type: "h1" | "h2" | "h3"; text: string }
     | { type: "code"; lang: string; content: string }
     | { type: "list"; items: string[] }
-    | { type: "para"; text: string };
+    | { type: "para"; text: string }
+    | { type: "tool_event"; tool: string; detail: string };
+
+  // Patterns to detect tool invocations from Claude's narrated output
+  const TOOL_PATTERNS: Array<{ re: RegExp; tool: string }> = [
+    { re: /^(?:Bash|Running bash|Executing)\s*[:：]\s*(.+)/i, tool: "Bash" },
+    { re: /^(?:Read(?:ing)?(?: file)?)\s*[:：]\s*(.+)/i, tool: "Read" },
+    { re: /^(?:Writ(?:e|ing)(?: to)?)\s*[:：]\s*(.+)/i, tool: "Write" },
+    { re: /^(?:Edit(?:ing)?)\s*[:：]\s*(.+)/i, tool: "Edit" },
+    { re: /^(?:Glob(?:bing)?|Find(?:ing)? files?)\s*[:：]\s*(.+)/i, tool: "Glob" },
+    { re: /^(?:Grep(?:ping)?|Search(?:ing)? (?:for )?files?)\s*[:：]\s*(.+)/i, tool: "Grep" },
+  ];
 
   const segments = useMemo((): Segment[] => {
     if (!output) return [];
@@ -318,6 +346,18 @@ export default function Agents() {
 
       // Blank line — skip
       if (!line.trim()) { i++; continue; }
+
+      // Tool event — detect narrated tool invocations
+      const toolMatch = TOOL_PATTERNS.reduce<{ tool: string; detail: string } | null>((found, p) => {
+        if (found) return found;
+        const m = line.match(p.re);
+        return m ? { tool: p.tool, detail: m[1].trim().slice(0, 120) } : null;
+      }, null);
+      if (toolMatch) {
+        result.push({ type: "tool_event", tool: toolMatch.tool, detail: toolMatch.detail });
+        i++;
+        continue;
+      }
 
       // Paragraph — collect consecutive non-special lines
       const paraLines: string[] = [];
@@ -767,6 +807,28 @@ export default function Agents() {
                     )}
                   </div>
 
+                  {/* Approval required toggle */}
+                  <button
+                    onClick={() => setApprovalRequired((v) => !v)}
+                    disabled={running}
+                    title={approvalRequired ? "Tool approval required — click to disable" : "Click to require tool approval before run"}
+                    style={{
+                      background: approvalRequired ? "rgba(210,153,34,0.12)" : "none",
+                      border: `1px solid ${approvalRequired ? "rgba(210,153,34,0.4)" : "var(--border-dim)"}`,
+                      color: approvalRequired ? "var(--yellow)" : "var(--text-dimmer)",
+                      fontFamily: "var(--font)",
+                      fontSize: "9px",
+                      padding: "4px 8px",
+                      cursor: running ? "not-allowed" : "pointer",
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      transition: "all 0.1s",
+                      opacity: running ? 0.5 : 1,
+                    }}
+                  >
+                    {approvalRequired ? "⚠ GATE ON" : "GATE"}
+                  </button>
+
                   <div style={{ flex: 1 }} />
 
                   {running ? (
@@ -869,6 +931,53 @@ export default function Agents() {
                   </div>
                 )}
 
+                {/* Approval gate dialog */}
+                {pendingApproval && (
+                  <div style={{
+                    padding: "20px",
+                    borderBottom: "1px solid var(--border-dim)",
+                    background: "rgba(210,153,34,0.05)",
+                    flexShrink: 0,
+                  }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "var(--yellow)", fontFamily: "var(--font)", marginBottom: 8, letterSpacing: "0.06em" }}>
+                      ⚠ TOOL APPROVAL REQUIRED
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 10 }}>
+                      This agent may invoke the following tools:
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 14 }}>
+                      {pendingApproval.tools.map((t) => (
+                        <span key={t} style={{
+                          padding: "2px 8px",
+                          background: "rgba(56,139,253,0.1)",
+                          border: "1px solid rgba(56,139,253,0.25)",
+                          borderRadius: 2,
+                          fontSize: 10,
+                          fontFamily: "var(--font)",
+                          color: "var(--blue)",
+                          letterSpacing: "0.04em",
+                        }}>{t}</span>
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => { pendingApprovalResolveRef.current?.(true); }}
+                        style={{ fontSize: 10, padding: "4px 14px" }}
+                      >
+                        Allow
+                      </button>
+                      <button
+                        className="btn"
+                        onClick={() => { pendingApprovalResolveRef.current?.(false); }}
+                        style={{ fontSize: 10, padding: "4px 14px", color: "var(--red)", borderColor: "var(--red)" }}
+                      >
+                        Deny
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Structured output */}
                 <div style={{ flex: 1, padding: "16px 20px", overflow: "auto" }}>
                   {running && !output && (
@@ -951,6 +1060,23 @@ export default function Agents() {
                         fontSize: 12, lineHeight: "1.65",
                         color: "var(--text-dim)", fontFamily: "var(--font-ui, var(--font))",
                       }}>{renderInline(seg.text)}</p>
+                    );
+                    if (seg.type === "tool_event") return (
+                      <div key={idx} style={{
+                        display: "flex", alignItems: "center", gap: 8,
+                        padding: "3px 8px",
+                        background: "rgba(56,139,253,0.06)",
+                        border: "1px solid rgba(56,139,253,0.18)",
+                        borderRadius: 2,
+                        margin: "3px 0",
+                      }}>
+                        <span style={{ color: "var(--blue)", fontWeight: 700, fontSize: 9, letterSpacing: "0.08em", fontFamily: "var(--font)", flexShrink: 0 }}>
+                          {seg.tool}
+                        </span>
+                        <span style={{ color: "var(--text-dimmer)", fontSize: 10, fontFamily: "var(--font)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {seg.detail}
+                        </span>
+                      </div>
                     );
                     return null;
                   })}
