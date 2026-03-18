@@ -12,10 +12,11 @@
     "build:client": "vite build client --outDir ../dist/public",
     "build": "npm run build:server && npm run build:client",
     "dev:server": "tsup bin.ts server/index.ts --format esm --out-dir dist --watch",
+    "dev:electron": "tsup electron/main.ts --format esm --out-dir dist/electron --no-splitting --external electron --external better-sqlite3 --external node-pty --watch & tsup electron/preload.ts --format cjs --out-dir dist/electron --no-splitting --external electron --watch",
     "dev:client": "vite client",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "electron": "lsof -ti :3200 | xargs kill -9 2>/dev/null; sleep 0.5; NODE_ENV=development electron dist/electron/main.js",
-    "electron:dev": "concurrently \"npm run dev:server\" \"npm run dev:client\" \"wait-on http://localhost:3200 && electron dist/electron/main.js\"",
+    "electron:dev": "concurrently \"npm run dev:server\" \"npm run dev:electron\" \"npm run dev:client\" \"wait-on http://localhost:3200 && wait-on dist/electron/preload.js && electron dist/electron/main.js\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
