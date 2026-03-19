@@ -17,7 +17,8 @@ export default function AgentDetailViewer() {
 
   useEffect(() => {
     const handler = (e: Event) => {
-      const id = (e as CustomEvent<string>).detail;
+      const payload = (e as CustomEvent<{ id: string } | string>).detail;
+      const id = typeof payload === "object" && payload !== null ? payload.id : payload;
       if (id) {
         setAgentId(id);
         setLoading(true);

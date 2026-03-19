@@ -278,7 +278,7 @@ export default function Agents() {
       }
       return 0;
     });
-  }, [agents, filter, search, sortKey, allStats]);
+  }, [agents, selectedDepts, search, sortKey, allStats]);
 
   const grouped: Record<string, Agent[]> = {};
   for (const agent of filtered) {
@@ -822,7 +822,7 @@ export default function Agents() {
               Agent Company
             </h1>
             <div style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
-              {agents.length} agents across {departments.length - 1} departments
+              {agents.length} agents across {departments.length} departments
             </div>
           </div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center", flexShrink: 0 }}>
@@ -910,33 +910,172 @@ export default function Agents() {
             onChange={(e) => setSearch(e.target.value)}
             style={{ flex: "1", minWidth: "160px", maxWidth: "240px" }}
           />
-          <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", flex: 1 }}>
-            {departments.map((d) => (
-              <button
-                key={d}
-                onClick={() => setFilter(d)}
+          {/* Department multi-select dropdown */}
+          <div ref={deptDropdownRef} style={{ position: "relative" }}>
+            <button
+              onClick={() => setDeptDropdownOpen((v) => !v)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "5px 10px",
+                fontSize: "10px",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                border: "1px solid",
+                borderColor: selectedDepts.size > 0 ? "var(--accent)" : "var(--border-dim)",
+                borderRadius: "var(--radius)",
+                background: selectedDepts.size > 0 ? "var(--accent-bg)" : "var(--bg-3)",
+                color: selectedDepts.size > 0 ? "var(--accent)" : "var(--text-dimmer)",
+                cursor: "pointer",
+                transition: "all 0.1s",
+                maxWidth: 200,
+                whiteSpace: "nowrap",
+                fontFamily: "var(--font)",
+              }}
+            >
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                {selectedDepts.size === 0
+                  ? "All departments"
+                  : `${selectedDepts.size} selected`}
+              </span>
+              <span style={{
+                fontSize: 8,
+                transition: "transform 0.1s",
+                transform: deptDropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
+              }}>
+                ▼
+              </span>
+            </button>
+            {deptDropdownOpen && (
+              <div
+                className="dropdown-animate"
                 style={{
-                  padding: "5px 10px",
-                  fontSize: "10px",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  border: "1px solid",
-                  borderColor: filter === d ? "var(--accent)" : "var(--border-dim)",
-                  borderRadius: "var(--radius)",
-                  background: filter === d ? "var(--accent-bg)" : "var(--bg-3)",
-                  color: filter === d ? "var(--accent)" : "var(--text-dimmer)",
-                  cursor: "pointer",
-                  transition: "all 0.1s",
+                  position: "absolute",
+                  top: "calc(100% + 4px)",
+                  left: 0,
+                  zIndex: 100,
+                  background: "var(--bg-3)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-lg)",
+                  minWidth: 200,
+                  maxHeight: 320,
+                  overflowY: "auto",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
                 }}
               >
-                {d === ALL_DEPTS ? "All" : d}
-                {d !== ALL_DEPTS && (
-                  <span style={{ marginLeft: "5px", opacity: 0.6 }}>
-                    {agents.filter((a) => a.department === d).length}
-                  </span>
-                )}
-              </button>
-            ))}
+                {/* Select All / Clear controls */}
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  padding: "6px 10px",
+                  borderBottom: "1px solid var(--border-dim)",
+                  fontSize: 9,
+                  fontFamily: "var(--font)",
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                }}>
+                  <button
+                    onClick={() => setSelectedDepts(new Set(departments))}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "var(--text-dimmer)",
+                      fontFamily: "var(--font)",
+                      fontSize: 9,
+                      letterSpacing: "0.06em",
+                      padding: 0,
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-dimmer)"; }}
+                  >
+                    Select All
+                  </button>
+                  <button
+                    onClick={() => setSelectedDepts(new Set())}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "var(--text-dimmer)",
+                      fontFamily: "var(--font)",
+                      fontSize: 9,
+                      letterSpacing: "0.06em",
+                      padding: 0,
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-dimmer)"; }}
+                  >
+                    Clear
+                  </button>
+                </div>
+                {/* Department rows */}
+                {departments.map((dept) => {
+                  const checked = selectedDepts.has(dept);
+                  return (
+                    <button
+                      key={dept}
+                      onClick={() => toggleDept(dept)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        width: "100%",
+                        padding: "6px 10px",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        fontSize: 11,
+                        fontFamily: "var(--font)",
+                        color: checked ? "var(--text)" : "var(--text-dim)",
+                        textAlign: "left",
+                        transition: "background 0.1s",
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+                    >
+                      {/* Checkbox */}
+                      <span style={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: 2,
+                        border: `1px solid ${checked ? "var(--accent)" : "var(--border)"}`,
+                        background: checked ? "var(--accent-bg)" : "none",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        fontSize: 10,
+                        color: "var(--accent)",
+                        transition: "all 0.1s",
+                      }}>
+                        {checked ? "✓" : ""}
+                      </span>
+                      <span style={{
+                        flex: 1,
+                        textTransform: "capitalize",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}>
+                        {dept}
+                      </span>
+                      <span style={{
+                        fontSize: 10,
+                        color: "var(--text-dimmer)",
+                        background: "var(--bg-4)",
+                        borderRadius: 10,
+                        padding: "1px 6px",
+                        flexShrink: 0,
+                      }}>
+                        {deptCounts[dept] ?? 0}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
           {/* Sort controls */}
           <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
@@ -989,7 +1128,11 @@ export default function Agents() {
                     key={agent.id}
                     agent={agent}
                     stats={allStats[agent.id]}
-                    onClick={() => openAgent(agent)}
+                    onClick={() => {
+                      window.dispatchEvent(
+                        new CustomEvent("studio:open-agent", { detail: { id: agent.id } })
+                      );
+                    }}
                     onRun={() => navigate(`/run?agent=${agent.id}`)}
                     onDelete={() => deleteAgent(agent)}
                     onDuplicate={() => duplicateAgent(agent)}
