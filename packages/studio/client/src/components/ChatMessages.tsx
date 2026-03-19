@@ -1,6 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import ThinkingBlock from "./chat/ThinkingBlock";
+import ContextMenu, { type ContextMenuItem } from "./shared/ContextMenu";
+import ScrollToBottom from "./shared/ScrollToBottom";
+
+interface ContextMenuState {
+  items: ContextMenuItem[];
+  position: { x: number; y: number };
+}
 
 interface Message {
   id: string;
@@ -265,13 +272,14 @@ function CostLine({ cost, usage }: { cost?: number; usage?: { input_tokens: numb
   );
 }
 
-function UserBubble({ msg }: { msg: Message }) {
+function UserBubble({ msg, onContextMenu }: { msg: Message; onContextMenu: (e: React.MouseEvent) => void }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div
       style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onContextMenu={onContextMenu}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 8, maxWidth: "80%" }}>
         <div style={{ flex: 1 }}>
@@ -324,13 +332,14 @@ function UserBubble({ msg }: { msg: Message }) {
   );
 }
 
-function AssistantBubble({ msg }: { msg: Message }) {
+function AssistantBubble({ msg, onContextMenu }: { msg: Message; onContextMenu: (e: React.MouseEvent) => void }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div
       style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onContextMenu={onContextMenu}
     >
       <div style={{
         borderLeft: "2px solid var(--accent)",
@@ -363,9 +372,9 @@ function AssistantBubble({ msg }: { msg: Message }) {
   );
 }
 
-function MessageBubble({ msg }: { msg: Message }) {
-  if (msg.role === "user") return <UserBubble msg={msg} />;
-  return <AssistantBubble msg={msg} />;
+function MessageBubble({ msg, onContextMenu }: { msg: Message; onContextMenu: (e: React.MouseEvent) => void }) {
+  if (msg.role === "user") return <UserBubble msg={msg} onContextMenu={onContextMenu} />;
+  return <AssistantBubble msg={msg} onContextMenu={onContextMenu} />;
 }
 
 function StreamingBubble({ state, legacyText }: { state?: StreamingState; legacyText: string }) {
@@ -582,6 +591,8 @@ type VirtualItem = Message | { id: typeof STREAMING_ID; role: "assistant" };
 export default function ChatMessages({ sessionId, streamText, streaming, streamingState, modelLabel = "Sonnet 4.6" }: ChatMessagesProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
   const parentRef = useRef<HTMLDivElement>(null);
   const userScrolledUp = useRef(false);
   const prevScrollTop = useRef(0);
@@ -631,7 +642,7 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
     }
   }, [items.length, streamText, streamingState]);
 
-  // Detect manual scroll-up to suppress auto-scroll
+  // Detect manual scroll-up to suppress auto-scroll + drive ScrollToBottom visibility
   useEffect(() => {
     const el = parentRef.current;
     if (!el) return;
@@ -640,10 +651,26 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
       const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
       if (scrollingUp) userScrolledUp.current = true;
       if (nearBottom) userScrolledUp.current = false;
+      setShowScrollBtn(userScrolledUp.current);
       prevScrollTop.current = el.scrollTop;
     };
     el.addEventListener("scroll", handleScroll, { passive: true });
     return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToEnd = useCallback(() => {
+    userScrolledUp.current = false;
+    setShowScrollBtn(false);
+    virtualizer.scrollToIndex(items.length - 1, { behavior: "smooth" });
+  }, [virtualizer, items.length]);
+
+  const handleMessageContextMenu = useCallback((e: React.MouseEvent, msg: Message) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCtxMenu({
+      position: { x: e.clientX, y: e.clientY },
+      items: msg.role === "user" ? buildUserMenuItems(msg) : buildAssistantMenuItems(msg),
+    });
   }, []);
 
   if (loading && messages.length === 0) {
@@ -664,7 +691,7 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
   return (
     <div
       ref={parentRef}
-      style={{ flex: 1, overflow: "auto", fontFamily: "var(--font)" }}
+      style={{ flex: 1, overflow: "auto", fontFamily: "var(--font)", position: "relative" }}
     >
       <div style={{ height: virtualizer.getTotalSize(), width: "100%", position: "relative" }}>
         {virtualizer.getVirtualItems().map((vrow) => {
@@ -690,13 +717,24 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
                 {item.id === STREAMING_ID ? (
                   <StreamingBubble state={streamingState} legacyText={streamText} />
                 ) : (
-                  <MessageBubble msg={item as Message} />
+                  <MessageBubble
+                    msg={item as Message}
+                    onContextMenu={(e) => handleMessageContextMenu(e, item as Message)}
+                  />
                 )}
               </div>
             </div>
           );
         })}
       </div>
+
+      <ScrollToBottom visible={showScrollBtn} onClick={scrollToEnd} />
+
+      <ContextMenu
+        items={ctxMenu?.items ?? []}
+        position={ctxMenu?.position ?? null}
+        onClose={() => setCtxMenu(null)}
+      />
 
       <style>{`
         @keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
@@ -705,4 +743,48 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
       `}</style>
     </div>
   );
+}
+
+// Context menu item builders for chat messages
+function buildUserMenuItems(msg: Message): ContextMenuItem[] {
+  return [
+    {
+      label: "Copy Text",
+      onClick: () => {
+        void navigator.clipboard.writeText(msg.content);
+      },
+    },
+    { label: "", onClick: () => {}, separator: true },
+    {
+      label: "Delete Message",
+      danger: true,
+      onClick: () => {
+        alert("Delete message is not implemented yet.");
+      },
+    },
+  ];
+}
+
+function buildAssistantMenuItems(msg: Message): ContextMenuItem[] {
+  return [
+    {
+      label: "Copy Text",
+      onClick: () => {
+        void navigator.clipboard.writeText(msg.content);
+      },
+    },
+    {
+      label: "Copy as Markdown",
+      onClick: () => {
+        void navigator.clipboard.writeText(msg.content);
+      },
+    },
+    { label: "", onClick: () => {}, separator: true },
+    {
+      label: "Retry",
+      onClick: () => {
+        alert("Retry is not implemented yet.");
+      },
+    },
+  ];
 }

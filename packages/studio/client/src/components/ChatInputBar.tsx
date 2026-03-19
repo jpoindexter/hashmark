@@ -115,6 +115,7 @@ function SlashPicker({
   return (
     <div
       ref={listRef}
+      className="dropdown-animate"
       style={{
         position: "absolute",
         bottom: "calc(100% + 6px)",
@@ -847,50 +848,51 @@ export default function ChatInputBar({
               <Plus size={14} />
             </button>
 
-            {/* Stop / Send */}
-            {streaming ? (
-              <button
-                onClick={() => abortRef.current?.()}
-                title="Stop generation"
-                style={{
-                  width: 28,
-                  height: 28,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "rgba(239, 68, 68, 0.15)",
-                  border: "1px solid rgba(239, 68, 68, 0.3)",
-                  borderRadius: 6,
-                  color: "rgba(252, 165, 165, 0.9)",
-                  cursor: "pointer",
-                  flexShrink: 0,
-                }}
-              >
-                <Square size={11} />
-              </button>
-            ) : (
-              <button
-                onClick={() => void sendMessage()}
-                disabled={!hasText}
-                title="Send (⌘↵)"
-                style={{
-                  width: 28,
-                  height: 28,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: hasText ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.07)",
-                  border: "none",
-                  borderRadius: 6,
-                  color: hasText ? "var(--bg)" : "var(--text-dimmer)",
-                  cursor: hasText ? "pointer" : "default",
-                  transition: "background 0.15s, color 0.15s",
-                  flexShrink: 0,
-                }}
-              >
-                <ArrowUp size={14} />
-              </button>
-            )}
+            {/* Stop / Send -- fixed-size container prevents layout shift */}
+            <div style={{ width: 28, height: 28, flexShrink: 0 }}>
+              {streaming ? (
+                <button
+                  onClick={() => abortRef.current?.()}
+                  title="Stop generation"
+                  style={{
+                    width: 28,
+                    height: 28,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "var(--red-bg)",
+                    border: "1px solid var(--red)",
+                    borderRadius: 6,
+                    color: "var(--red)",
+                    cursor: "pointer",
+                    transition: "background-color 0.15s ease",
+                  }}
+                >
+                  <Square size={11} />
+                </button>
+              ) : (
+                <button
+                  onClick={() => void sendMessage()}
+                  disabled={!hasText}
+                  title="Send (⌘↵)"
+                  style={{
+                    width: 28,
+                    height: 28,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: hasText ? "var(--text)" : "rgba(255,255,255,0.07)",
+                    border: "none",
+                    borderRadius: 6,
+                    color: hasText ? "var(--bg)" : "var(--text-dimmer)",
+                    cursor: hasText ? "pointer" : "default",
+                    transition: "background-color 0.15s ease, color 0.15s ease",
+                  }}
+                >
+                  <ArrowUp size={14} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

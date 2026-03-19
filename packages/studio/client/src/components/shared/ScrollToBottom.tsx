@@ -13,23 +13,25 @@ const containerStyle: CSSProperties = {
   justifyContent: "center",
   padding: "8px 0",
   pointerEvents: "none",
+  // Fade-in entrance
+  animation: "scrollBtnFadeIn 0.15s ease forwards",
 };
 
 const buttonBase: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   gap: 6,
-  padding: "4px 12px",
+  padding: "6px 16px",
   border: "1px solid var(--border)",
   borderRadius: 20,
   background: "var(--bg-3)",
   color: "var(--text-dim)",
-  fontSize: 11,
+  fontSize: 12,
   fontFamily: "var(--font-ui)",
   fontWeight: 500,
   cursor: "pointer",
   pointerEvents: "auto",
-  transition: "background 0.1s ease, border-color 0.1s ease",
+  transition: "background 0.1s ease, border-color 0.1s ease, color 0.1s ease",
 };
 
 const hoverStyle: Partial<CSSProperties> = {
@@ -45,6 +47,7 @@ export default function ScrollToBottom({ visible, onClick }: ScrollToBottomProps
 
   return (
     <div style={containerStyle}>
+      <style>{`@keyframes scrollBtnFadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }`}</style>
       <button
         onClick={onClick}
         onMouseEnter={() => setHovered(true)}

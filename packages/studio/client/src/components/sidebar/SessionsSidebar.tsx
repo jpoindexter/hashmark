@@ -3,6 +3,12 @@ import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { SkeletonLine } from "../Skeleton.tsx";
 import IconButton from "../shared/IconButton.tsx";
+import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
+
+interface ContextMenuState {
+  items: ContextMenuItem[];
+  position: { x: number; y: number };
+}
 
 interface ChatSession {
   id: string;
@@ -69,18 +75,28 @@ function avatarColor(name: string): string {
 export default function SessionsSidebar({ activeSessionId, onSessionSelect, info, git, streaming, streamingSessionId }: SessionsSidebarProps) {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [visible, setVisible] = useState(true);
+  const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
 
   useEffect(() => {
-    const load = () => {
-      fetch("/api/sessions")
-        .then(r => r.json())
-        .then((d: { sessions: ChatSession[] }) => setSessions((d.sessions ?? []).slice(0, 9)))
-        .catch(() => {});
-    };
-    load();
-    const id = setInterval(load, 8000);
-    return () => clearInterval(id);
+    const handler = () => setVisible(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
   }, []);
+
+  const refreshSessions = useCallback(() => {
+    fetch("/api/sessions")
+      .then(r => r.json())
+      .then((d: { sessions: ChatSession[] }) => setSessions((d.sessions ?? []).slice(0, 9)))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    refreshSessions();
+    if (!visible) return;
+    const id = setInterval(refreshSessions, 8000);
+    return () => clearInterval(id);
+  }, [visible, refreshSessions]);
 
   // Derive workspace display from props passed by Shell (avoids duplicate fetches)
   const workspace: WorkspaceInfo | null = info
@@ -100,6 +116,25 @@ export default function SessionsSidebar({ activeSessionId, onSessionSelect, info
     navigate("/setup");
   }, [navigate]);
 
+  const handleSessionContextMenu = useCallback((e: React.MouseEvent, session: ChatSession) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCtxMenu({
+      position: { x: e.clientX, y: e.clientY },
+      items: buildSessionMenuItems(session, refreshSessions),
+    });
+  }, [refreshSessions]);
+
+  const handleWorkspaceContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!workspace) return;
+    setCtxMenu({
+      position: { x: e.clientX, y: e.clientY },
+      items: buildWorkspaceMenuItems(workspace.dir),
+    });
+  }, [workspace]);
+
   const totalAdded = workspace?.git?.files?.reduce((s, f) => s + (f.added ?? 0), 0) ?? 0;
   const totalRemoved = workspace?.git?.files?.reduce((s, f) => s + (f.removed ?? 0), 0) ?? 0;
   const shortName = workspace ? (workspace.name.split("/").pop() ?? workspace.name) : null;
@@ -114,10 +149,8 @@ export default function SessionsSidebar({ activeSessionId, onSessionSelect, info
       fontSize: 13,
     }}>
       <style>{`@keyframes session-dot-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }`}</style>
-      {/* Section header: "Sessions" with + button */}
       <SectionHeader onAdd={handleNewSession} />
 
-      {/* Scrollable content */}
       <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
         {workspace && shortName ? (
           <WorkspaceGroup
@@ -129,6 +162,8 @@ export default function SessionsSidebar({ activeSessionId, onSessionSelect, info
             activeSessionId={activeSessionId}
             onSessionClick={handleSessionClick}
             streamingSessionId={streamingSessionId ?? null}
+            onSessionContextMenu={handleSessionContextMenu}
+            onWorkspaceContextMenu={handleWorkspaceContextMenu}
           />
         ) : (
           <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
@@ -138,6 +173,12 @@ export default function SessionsSidebar({ activeSessionId, onSessionSelect, info
           </div>
         )}
       </div>
+
+      <ContextMenu
+        items={ctxMenu?.items ?? []}
+        position={ctxMenu?.position ?? null}
+        onClose={() => setCtxMenu(null)}
+      />
     </div>
   );
 }
@@ -178,6 +219,8 @@ function WorkspaceGroup({
   activeSessionId,
   onSessionClick,
   streamingSessionId,
+  onSessionContextMenu,
+  onWorkspaceContextMenu,
 }: {
   name: string;
   branch: string | null;
@@ -187,15 +230,17 @@ function WorkspaceGroup({
   activeSessionId: string | null;
   onSessionClick: (id: string) => void;
   streamingSessionId: string | null;
+  onSessionContextMenu: (e: React.MouseEvent, session: ChatSession) => void;
+  onWorkspaceContextMenu: (e: React.MouseEvent) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [hovered, setHovered] = useState(false);
 
   return (
     <div>
-      {/* Workspace row: 22px, chevron + avatar + name + branch + diff stats */}
       <div
         onClick={() => setExpanded(v => !v)}
+        onContextMenu={onWorkspaceContextMenu}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
@@ -236,7 +281,6 @@ function WorkspaceGroup({
         )}
       </div>
 
-      {/* Session rows */}
       {expanded && sessions.length > 0 && sessions.map((s, i) => (
         <SessionRow
           key={s.id}
@@ -245,6 +289,7 @@ function WorkspaceGroup({
           active={s.id === activeSessionId}
           onClick={() => onSessionClick(s.id)}
           isStreaming={s.id === streamingSessionId}
+          onContextMenu={(e) => onSessionContextMenu(e, s)}
         />
       ))}
 
@@ -288,7 +333,7 @@ function LetterAvatar({ name }: { name: string }) {
     <div style={{
       width: 16,
       height: 16,
-      borderRadius: 2,
+      borderRadius: "var(--radius-sm)",
       background: avatarBg(name),
       display: "flex",
       alignItems: "center",
@@ -309,17 +354,18 @@ function SessionRow({
   active,
   onClick,
   isStreaming,
+  onContextMenu,
 }: {
   session: ChatSession;
   shortcut?: string;
   active: boolean;
   onClick: () => void;
   isStreaming: boolean;
+  onContextMenu: (e: React.MouseEvent) => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const title = session.title || "Untitled";
 
-  // Status dot color: yellow pulsing = actively streaming, blue = active, dim = idle
   const dotColor = isStreaming
     ? "var(--yellow)"
     : active
@@ -331,6 +377,7 @@ function SessionRow({
   return (
     <div
       onClick={onClick}
+      onContextMenu={onContextMenu}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -348,7 +395,6 @@ function SessionRow({
         transition: "background 0.1s",
       }}
     >
-      {/* Status dot -- pulses when streaming */}
       <span style={{
         display: "inline-block",
         width: 6,
@@ -359,7 +405,6 @@ function SessionRow({
         boxShadow: dotShadow,
         animation: isStreaming ? "session-dot-pulse 1.5s ease-in-out infinite" : undefined,
       }} />
-      {/* Session title */}
       <span style={{
         flex: 1,
         fontSize: 13,
@@ -372,7 +417,6 @@ function SessionRow({
       }}>
         {title}
       </span>
-      {/* Keyboard shortcut on hover */}
       {(hovered || active) && shortcut && (
         <span style={{
           fontSize: 10,
@@ -384,4 +428,73 @@ function SessionRow({
       )}
     </div>
   );
+}
+
+// Builds context menu items for a session row
+function buildSessionMenuItems(session: ChatSession, onRefresh: () => void): ContextMenuItem[] {
+  return [
+    {
+      label: "Rename",
+      onClick: () => {
+        const newTitle = prompt("Rename session:", session.title || "Untitled");
+        if (newTitle === null || newTitle.trim() === "") return;
+        fetch(`/api/sessions/${session.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: newTitle.trim() }),
+        }).then(() => onRefresh()).catch(() => {});
+      },
+    },
+    {
+      label: "Duplicate",
+      onClick: () => {
+        fetch("/api/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: `${session.title || "Untitled"} (copy)` }),
+        }).then(() => onRefresh()).catch(() => {});
+      },
+    },
+    { label: "", onClick: () => {}, separator: true },
+    {
+      label: "Delete",
+      danger: true,
+      onClick: () => {
+        if (!confirm(`Delete "${session.title || "Untitled"}"?`)) return;
+        fetch(`/api/sessions/${session.id}`, { method: "DELETE" })
+          .then(() => onRefresh())
+          .catch(() => {});
+      },
+    },
+  ];
+}
+
+// Builds context menu items for the workspace row
+function buildWorkspaceMenuItems(dir: string): ContextMenuItem[] {
+  return [
+    {
+      label: "Open in Finder",
+      onClick: () => {
+        if (window.studio?.showInFinder) {
+          void window.studio.showInFinder(dir);
+        } else {
+          alert("Open in Finder is only available in the desktop app.");
+        }
+      },
+    },
+    {
+      label: "Copy Path",
+      onClick: () => {
+        void navigator.clipboard.writeText(dir);
+      },
+    },
+    { label: "", onClick: () => {}, separator: true },
+    {
+      label: "Remove",
+      danger: true,
+      onClick: () => {
+        alert("Remove workspace is not implemented yet.");
+      },
+    },
+  ];
 }

@@ -26,3 +26,12 @@ button:focus-visible, [role="button"]:focus-visible, [tabindex="0"]:focus-visibl
 
 /* Button press feedback */
 button:active:not(:disabled) { transform: scale(0.97); }
+
+/* Dropdown fade-in animation */
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.dropdown-animate {
+  animation: dropdownIn 0.12s ease-out;
+}

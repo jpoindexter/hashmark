@@ -57,8 +57,7 @@ export function useProjectInfo(
   const [git, setGit] = useState<GitStatus | null>(null);
   const [drift, setDrift] = useState<DriftResult | null>(null);
 
-  // Fetch info, git, and drift on mount
-  useEffect(() => {
+  const fetchAll = useCallback(() => {
     fetch("/api/info")
       .then(r => r.json())
       .then(setInfo)
@@ -71,9 +70,20 @@ export function useProjectInfo(
       .then(r => r.json())
       .then((d: DriftResponse) => {
         if (d.hasContextFile && d.driftLevel !== "none") setDrift(d);
+        else setDrift(null);
       })
       .catch(() => {});
   }, []);
+
+  // Fetch info, git, and drift on mount
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  // Re-fetch everything when branch changes (soft refresh)
+  useEffect(() => {
+    const handler = () => fetchAll();
+    window.addEventListener("studio:branch-changed", handler);
+    return () => window.removeEventListener("studio:branch-changed", handler);
+  }, [fetchAll]);
 
   // Poll git status during streaming; auto-open diff drawer when streaming stops
   const prevStreamingRef = useRef(false);

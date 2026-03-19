@@ -116,18 +116,18 @@ export default function Shell() {
     setSidebarOpen,
   });
 
-  // Persist all state changes to localStorage
+  // Persist each value independently to avoid writes on unrelated changes
+  useEffect(() => { persist("sidebarOpen", sidebarOpen); }, [sidebarOpen]);
+  useEffect(() => { persist("sidebarWidth", sidebarWidth); }, [sidebarWidth]);
+  useEffect(() => { persist("termOpen", termOpen); }, [termOpen]);
+  useEffect(() => { persist("termBig", termBig); }, [termBig]);
+  useEffect(() => { persist("selectedModel", selectedModel); }, [selectedModel]);
+  useEffect(() => { persist("thinking", thinking); }, [thinking]);
+  useEffect(() => { persist("planMode", planMode); }, [planMode]);
   useEffect(() => {
-    persist("sidebarOpen", sidebarOpen);
-    persist("sidebarWidth", sidebarWidth);
-    persist("termOpen", termOpen);
-    persist("termBig", termBig);
-    persist("selectedModel", selectedModel);
-    persist("thinking", thinking);
-    persist("planMode", planMode);
     if (activeSessionId) localStorage.setItem("studio_active_session_id", activeSessionId);
     else localStorage.removeItem("studio_active_session_id");
-  }, [sidebarOpen, sidebarWidth, termOpen, termBig, selectedModel, thinking, planMode, activeSessionId]);
+  }, [activeSessionId]);
 
   // Auto-create session on mount
   useEffect(() => {

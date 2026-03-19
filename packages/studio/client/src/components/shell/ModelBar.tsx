@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type CSSProperties } from "react";
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from "react";
 import {
   Sparkles,
   Brain,
@@ -83,8 +83,50 @@ function ModelDropdown({
   selected: string;
   onSelect: (id: string) => void;
 }) {
+  const [highlightedIndex, setHighlightedIndex] = useState(() =>
+    Math.max(0, MODELS.findIndex(m => m.id === selected)),
+  );
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setHighlightedIndex(i => Math.min(i + 1, MODELS.length - 1));
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setHighlightedIndex(i => Math.max(i - 1, 0));
+        return;
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        onSelect(MODELS[highlightedIndex].id);
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        // Close without selecting -- parent handles via outside click
+        onSelect(selected);
+        return;
+      }
+      // Number keys 1-3 for quick select
+      const num = parseInt(e.key, 10);
+      if (num >= 1 && num <= MODELS.length) {
+        e.preventDefault();
+        onSelect(MODELS[num - 1].id);
+      }
+    };
+    window.addEventListener("keydown", handler, { capture: true });
+    return () => window.removeEventListener("keydown", handler, { capture: true });
+  }, [highlightedIndex, onSelect, selected]);
+
   return (
     <div
+      className="dropdown-animate"
+      role="listbox"
+      aria-label="Select model"
       style={{
         position: "absolute",
         bottom: "calc(100% + 4px)",
@@ -112,15 +154,30 @@ function ModelDropdown({
       >
         Claude
       </div>
-      {MODELS.map((m) => (
+      {MODELS.map((m, idx) => (
         <ModelRow
           key={m.id}
           label={m.label}
           note={m.note}
           isSelected={m.id === selected}
+          isHighlighted={idx === highlightedIndex}
           onSelect={() => onSelect(m.id)}
+          onMouseEnter={() => setHighlightedIndex(idx)}
         />
       ))}
+      <div style={{
+        padding: "4px 12px 6px",
+        fontSize: 10,
+        color: "var(--text-dimmer)",
+        borderTop: "1px solid var(--border-dim)",
+        display: "flex",
+        gap: 10,
+        fontFamily: "var(--font-ui)",
+      }}>
+        <span>↑↓ navigate</span>
+        <span>↵ select</span>
+        <span>1-3 quick</span>
+      </div>
     </div>
   );
 }
@@ -129,27 +186,30 @@ function ModelRow({
   label,
   note,
   isSelected,
+  isHighlighted,
   onSelect,
+  onMouseEnter,
 }: {
   label: string;
   note: string;
   isSelected: boolean;
+  isHighlighted: boolean;
   onSelect: () => void;
+  onMouseEnter: () => void;
 }) {
-  const [hovered, setHovered] = useState(false);
-
   return (
     <button
+      role="option"
+      aria-selected={isSelected}
       onClick={onSelect}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={onMouseEnter}
       style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         width: "100%",
         padding: "7px 12px",
-        background: hovered ? "rgba(255,255,255,0.05)" : "none",
+        background: isHighlighted ? "rgba(255,255,255,0.05)" : "none",
         border: "none",
         borderLeft: isSelected
           ? "2px solid var(--accent)"
@@ -201,6 +261,11 @@ function ModelSelector({
   const current = MODELS.find((m) => m.id === selectedModel) ?? MODELS[1];
   const color = hovered ? "var(--text-dim)" : "var(--text-dimmer)";
 
+  const handleSelect = useCallback((id: string) => {
+    onModelChange(id);
+    setOpen(false);
+  }, [onModelChange]);
+
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <button
@@ -231,10 +296,7 @@ function ModelSelector({
       {open && (
         <ModelDropdown
           selected={selectedModel}
-          onSelect={(id) => {
-            onModelChange(id);
-            setOpen(false);
-          }}
+          onSelect={handleSelect}
         />
       )}
     </div>

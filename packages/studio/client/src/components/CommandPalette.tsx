@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Home, FolderTree, GitBranch, Bot, Settings,
   Plus, TerminalSquare, FolderOpen, Sun,
+  Play, FileText, Shield, Brain, Layout, RefreshCw, Columns,
 } from "lucide-react";
 
 interface Command {
@@ -111,6 +112,79 @@ export default function CommandPalette({ open, onClose }: Props) {
         const dir = await window.studio?.pickFolder();
         if (dir) await window.studio?.setProjectDir(dir);
       },
+    },
+    {
+      id: "nav-run",
+      section: "Navigation",
+      label: "Run",
+      description: "Open run panel",
+      icon: <Play size={16} />,
+      run: () => navigate("/run"),
+    },
+    {
+      id: "nav-generate",
+      section: "Navigation",
+      label: "Generate",
+      description: "Generate context files",
+      icon: <FileText size={16} />,
+      run: () => navigate("/generate"),
+    },
+    {
+      id: "nav-governance",
+      section: "Navigation",
+      label: "Governance",
+      description: "View governance rules",
+      icon: <Shield size={16} />,
+      run: () => navigate("/governance"),
+    },
+    {
+      id: "nav-git",
+      section: "Navigation",
+      label: "Git",
+      description: "View git history",
+      icon: <GitBranch size={16} />,
+      run: () => navigate("/git"),
+    },
+    {
+      id: "action-new-terminal",
+      section: "Actions",
+      label: "New Terminal",
+      description: "Open a new terminal tab",
+      icon: <Plus size={16} />,
+      run: () => window.dispatchEvent(new CustomEvent("studio:new-terminal")),
+    },
+    {
+      id: "action-toggle-thinking",
+      section: "Actions",
+      label: "Toggle Thinking",
+      description: "Enable or disable extended thinking",
+      icon: <Brain size={16} />,
+      run: () => window.dispatchEvent(new CustomEvent("studio:toggle-thinking")),
+    },
+    {
+      id: "action-toggle-plan",
+      section: "Actions",
+      label: "Toggle Plan Mode",
+      description: "Respond with a plan instead of code",
+      icon: <Layout size={16} />,
+      run: () => window.dispatchEvent(new CustomEvent("studio:toggle-plan")),
+    },
+    {
+      id: "action-refresh-git",
+      section: "Actions",
+      label: "Refresh Git Status",
+      description: "Refresh source control state",
+      icon: <RefreshCw size={16} />,
+      keybind: "⇧⌘G",
+      run: () => window.dispatchEvent(new CustomEvent("studio:refresh-git")),
+    },
+    {
+      id: "action-open-diff",
+      section: "Actions",
+      label: "Open Diff Drawer",
+      description: "Show file diff panel",
+      icon: <Columns size={16} />,
+      run: () => window.dispatchEvent(new CustomEvent("studio:open-diff")),
     },
     {
       id: "action-toggle-theme",

@@ -35,7 +35,7 @@ function StatusItem({
         margin: "0 3px",
         cursor: onClick ? "pointer" : "default",
         background: hovered ? "rgba(0,0,0,0.12)" : "transparent",
-        borderRadius: 3,
+        borderRadius: "var(--radius-sm)",
         height: "100%",
         transition: "background 0.1s ease",
       }}
