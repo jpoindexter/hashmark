@@ -210,10 +210,28 @@ export function filesRoutes(projectDir: string) {
 
   app.post("/push", async (c) => {
     try {
-      await execAsync("git", ["push"], { cwd: projectDir });
-      return c.json({ ok: true });
+      const { stdout } = await execAsync("git", ["push"], { cwd: projectDir });
+      return c.json({ ok: true, output: stdout });
     } catch (err) {
-      return c.json({ error: String(err) }, 500);
+      return c.json({ error: err instanceof Error ? err.message : "Push failed" }, 500);
+    }
+  });
+
+  app.post("/pull", async (c) => {
+    try {
+      const { stdout } = await execAsync("git", ["pull"], { cwd: projectDir });
+      return c.json({ ok: true, output: stdout });
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : "Pull failed" }, 500);
+    }
+  });
+
+  app.post("/fetch", async (c) => {
+    try {
+      const { stdout } = await execAsync("git", ["fetch", "--all"], { cwd: projectDir });
+      return c.json({ ok: true, output: stdout });
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : "Fetch failed" }, 500);
     }
   });
 

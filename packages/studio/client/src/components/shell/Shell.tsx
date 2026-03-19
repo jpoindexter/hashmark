@@ -173,18 +173,37 @@ export default function Shell() {
     return () => window.removeEventListener("studio:navigate", handler);
   }, [navigate]);
 
-  // Fetch context usage after each chat response completes
+  // Request notification permission on mount
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Fetch context usage after each chat response completes + OS notification
   const prevStreaming = useRef(streaming);
   useEffect(() => {
     const wasStreaming = prevStreaming.current;
     prevStreaming.current = streaming;
-    if (wasStreaming && !streaming && activeSessionId) {
-      fetch(`/api/sessions/${activeSessionId}/tokens`)
-        .then(r => r.json())
-        .then((data: { pct?: number }) => {
-          if (typeof data.pct === "number") setContextPercent(data.pct);
-        })
-        .catch(() => {});
+    if (wasStreaming && !streaming) {
+      // OS notification when agent finishes while app is in background
+      if (document.visibilityState !== "visible") {
+        if ("Notification" in window && Notification.permission === "granted") {
+          new Notification("hashmark studio", {
+            body: "Agent finished working",
+            icon: "/assets/icon.png",
+          });
+        }
+      }
+      // Fetch context usage
+      if (activeSessionId) {
+        fetch(`/api/sessions/${activeSessionId}/tokens`)
+          .then(r => r.json())
+          .then((data: { pct?: number }) => {
+            if (typeof data.pct === "number") setContextPercent(data.pct);
+          })
+          .catch(() => {});
+      }
     }
   }, [streaming, activeSessionId]);
 

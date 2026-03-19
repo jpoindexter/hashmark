@@ -57,10 +57,22 @@ function migrate(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_messages_session ON session_messages(session_id, created_at);
   `);
 
-  // Additive migrations — safe to run on existing DBs
-  const cols = (db.pragma("table_info(sessions)") as Array<{ name: string }>).map(r => r.name);
-  if (!cols.includes("archived")) {
+  // Additive migrations -- safe to run on existing DBs
+  const sessionCols = (db.pragma("table_info(sessions)") as Array<{ name: string }>).map(r => r.name);
+  if (!sessionCols.includes("archived")) {
     db.exec("ALTER TABLE sessions ADD COLUMN archived INTEGER NOT NULL DEFAULT 0");
+  }
+  // Claude CLI's internal session ID for --resume support
+  if (!sessionCols.includes("claude_session_id")) {
+    db.exec("ALTER TABLE sessions ADD COLUMN claude_session_id TEXT");
+  }
+
+  // Pending message safety: NULL sent_at = queued, non-NULL = delivered
+  const msgCols = (db.pragma("table_info(session_messages)") as Array<{ name: string }>).map(r => r.name);
+  if (!msgCols.includes("sent_at")) {
+    db.exec("ALTER TABLE session_messages ADD COLUMN sent_at INTEGER");
+    // Backfill existing messages as already sent
+    db.exec("UPDATE session_messages SET sent_at = created_at WHERE sent_at IS NULL AND role = 'user'");
   }
 
   db.exec(`

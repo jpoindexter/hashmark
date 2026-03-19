@@ -228,6 +228,8 @@ export default function SourceControlPage() {
   const [committing, setCommitting] = useState(false);
   const [staging, setStaging] = useState(false);
   const [pushing, setPushing] = useState(false);
+  const [pulling, setPulling] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [fileLoading, setFileLoading] = useState<string | null>(null);
   const [hoveredFile, setHoveredFile] = useState<string | null>(null);
@@ -392,12 +394,42 @@ export default function SourceControlPage() {
     try {
       const r = await fetch("/api/files/push", { method: "POST" });
       const d = await r.json() as { ok?: boolean; error?: string };
-      if (d.ok) showStatus("Pushed!");
+      if (d.ok) { showStatus("Pushed!"); load(); }
       else showStatus(d.error ?? "Push failed.");
     } catch {
       showStatus("Push failed.");
     } finally {
       setPushing(false);
+    }
+  };
+
+  const pull = async () => {
+    setPulling(true);
+    setStatusMsg(null);
+    try {
+      const r = await fetch("/api/files/pull", { method: "POST" });
+      const d = await r.json() as { ok?: boolean; error?: string };
+      if (d.ok) { showStatus("Pulled!"); load(); }
+      else showStatus(d.error ?? "Pull failed.");
+    } catch {
+      showStatus("Pull failed.");
+    } finally {
+      setPulling(false);
+    }
+  };
+
+  const fetchRemote = async () => {
+    setFetching(true);
+    setStatusMsg(null);
+    try {
+      const r = await fetch("/api/files/fetch", { method: "POST" });
+      const d = await r.json() as { ok?: boolean; error?: string };
+      if (d.ok) { showStatus("Fetched."); load(); }
+      else showStatus(d.error ?? "Fetch failed.");
+    } catch {
+      showStatus("Fetch failed.");
+    } finally {
+      setFetching(false);
     }
   };
 
@@ -642,14 +674,35 @@ export default function SourceControlPage() {
               {committing ? "Committing..." : "> Commit"}
             </button>
           </div>
-          <button
-            className="btn"
-            onClick={push}
-            disabled={pushing}
-            style={{ width: "100%" }}
-          >
-            {pushing ? "Pushing..." : `> Push${data?.ahead ? ` (${data.ahead})` : ""}`}
-          </button>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button
+              className="btn"
+              onClick={push}
+              disabled={pushing}
+              style={{ flex: 1 }}
+              title="Push to remote"
+            >
+              {pushing ? "Pushing..." : `\u2191 Push${data?.ahead ? ` (${data.ahead})` : ""}`}
+            </button>
+            <button
+              className="btn"
+              onClick={pull}
+              disabled={pulling}
+              style={{ flex: 1 }}
+              title="Pull from remote"
+            >
+              {pulling ? "Pulling..." : `\u2193 Pull${data?.behind ? ` (${data.behind})` : ""}`}
+            </button>
+            <button
+              className="btn"
+              onClick={fetchRemote}
+              disabled={fetching}
+              style={{ flex: 1 }}
+              title="Fetch all remotes"
+            >
+              {fetching ? "Fetching..." : "\u21BB Fetch"}
+            </button>
+          </div>
         </div>
       </div>
 

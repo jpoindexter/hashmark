@@ -129,6 +129,8 @@ export default function GitSidebar() {
   const [loading, setLoading] = useState(true);
   const [commitMsg, setCommitMsg] = useState("");
   const [committing, setCommitting] = useState(false);
+  const [pushing, setPushing] = useState(false);
+  const [pulling, setPulling] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -158,6 +160,10 @@ export default function GitSidebar() {
     );
   }, []);
 
+  const toast = (message: string, type: "info" | "error") => {
+    window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message, type } }));
+  };
+
   const commit = async () => {
     if (!commitMsg.trim()) return;
     setCommitting(true);
@@ -180,6 +186,34 @@ export default function GitSidebar() {
       setStatusMsg("Commit failed.");
     } finally {
       setCommitting(false);
+    }
+  };
+
+  const push = async () => {
+    setPushing(true);
+    try {
+      const r = await fetch("/api/files/push", { method: "POST" });
+      const d = (await r.json()) as { ok?: boolean; error?: string };
+      if (d.ok) { toast("Pushed to remote.", "info"); load(); }
+      else toast(d.error ?? "Push failed.", "error");
+    } catch {
+      toast("Push failed.", "error");
+    } finally {
+      setPushing(false);
+    }
+  };
+
+  const pull = async () => {
+    setPulling(true);
+    try {
+      const r = await fetch("/api/files/pull", { method: "POST" });
+      const d = (await r.json()) as { ok?: boolean; error?: string };
+      if (d.ok) { toast("Pulled from remote.", "info"); load(); }
+      else toast(d.error ?? "Pull failed.", "error");
+    } catch {
+      toast("Pull failed.", "error");
+    } finally {
+      setPulling(false);
     }
   };
 
@@ -358,6 +392,26 @@ export default function GitSidebar() {
         >
           {committing ? "Committing..." : "> Commit"}
         </button>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button
+            className="btn"
+            onClick={() => void push()}
+            disabled={pushing}
+            style={{ flex: 1, fontSize: 11, justifyContent: "center" }}
+            title="Push to remote"
+          >
+            {pushing ? "Pushing..." : "\u2191 Push"}
+          </button>
+          <button
+            className="btn"
+            onClick={() => void pull()}
+            disabled={pulling}
+            style={{ flex: 1, fontSize: 11, justifyContent: "center" }}
+            title="Pull from remote"
+          >
+            {pulling ? "Pulling..." : "\u2193 Pull"}
+          </button>
+        </div>
       </div>
     </div>
   );

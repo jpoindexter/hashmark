@@ -19,6 +19,7 @@ import {
   updateAnalytics,
   loadSessionAnalytics,
 } from "../lib/context-analytics.js";
+import { createCheckpoint } from "../lib/checkpoint.js";
 
 /**
  * Expand @file mentions in a message.
@@ -300,22 +301,39 @@ export function sessionsRoutes(projectDir: string) {
 
     const db = getDb(dataDir);
     const session = db.prepare("SELECT * FROM sessions WHERE id = ?").get(sessionId) as {
-      id: string; title: string; agent_name: string | null;
+      id: string; title: string; agent_name: string | null; claude_session_id: string | null;
     } | undefined;
 
     if (!session) return c.json({ error: "Not found" }, 404);
 
-    // Load conversation history
+    // Pre-turn checkpoint -- snapshot working tree before Claude touches anything
+    await createCheckpoint(projectDir, `pre-turn-${sessionId.slice(0, 8)}`).catch(() => null);
+
+    // Load conversation history (only sent messages)
     const history = db.prepare(
-      "SELECT role, content FROM session_messages WHERE session_id = ? ORDER BY created_at ASC"
+      "SELECT role, content FROM session_messages WHERE session_id = ? AND (role = 'assistant' OR sent_at IS NOT NULL) ORDER BY created_at ASC"
     ).all(sessionId) as Array<{ role: string; content: string }>;
 
-    // Save user message with token estimate
+    // Check for pending (unsent) messages from previous failed attempts
+    const pendingMessages = db.prepare(
+      "SELECT id, content FROM session_messages WHERE session_id = ? AND role = 'user' AND sent_at IS NULL ORDER BY created_at ASC"
+    ).all(sessionId) as Array<{ id: string; content: string }>;
+
+    // Build the effective message: prepend any previously-unsent messages
+    let effectiveMessage = body.message;
+    if (pendingMessages.length > 0) {
+      const pendingTexts = pendingMessages.map(m => m.content);
+      pendingTexts.push(body.message);
+      effectiveMessage = pendingTexts.join("\n\n---\n\n");
+    }
+
+    // Save user message in pending state (sent_at = NULL until first response)
+    const userMsgId = randomUUID();
     const inputEstimate = Math.ceil(body.message.length / 4);
     db.prepare(`
-      INSERT INTO session_messages (id, session_id, role, content, input_tokens, created_at)
-      VALUES (?, ?, 'user', ?, ?, ?)
-    `).run(randomUUID(), sessionId, body.message, inputEstimate, Date.now());
+      INSERT INTO session_messages (id, session_id, role, content, input_tokens, created_at, sent_at)
+      VALUES (?, ?, 'user', ?, ?, ?, NULL)
+    `).run(userMsgId, sessionId, body.message, inputEstimate, Date.now());
 
     // Auto-title from first message
     if (history.length === 0 && (session.title === "New Session" || session.title === "")) {
@@ -342,8 +360,8 @@ export function sessionsRoutes(projectDir: string) {
       .filter(Boolean)
       .join("\n\n---\n\n") || undefined;
 
-    // Expand @file mentions — inlines file content as fenced code blocks
-    const expandedMessage = expandMentions(body.message, projectDir);
+    // Expand @file mentions -- inlines file content as fenced code blocks
+    const expandedMessage = expandMentions(effectiveMessage, projectDir);
 
     // Build the full prompt with conversation history
     const fullPrompt = buildConversationPrompt(history, expandedMessage, effectiveSystemPrompt);
@@ -359,11 +377,26 @@ export function sessionsRoutes(projectDir: string) {
           try { controller.enqueue(enc.encode(`data: ${JSON.stringify(data)}\n\n`)); } catch {}
         };
 
+        // Mark the current + any previously-pending messages as sent.
+        // Called once on first response chunk to confirm delivery.
+        let messageMarkedSent = false;
+        const markMessagesSent = () => {
+          if (messageMarkedSent) return;
+          messageMarkedSent = true;
+          const now = Date.now();
+          // Mark the message we just inserted
+          db.prepare("UPDATE session_messages SET sent_at = ? WHERE id = ?").run(now, userMsgId);
+          // Mark any previously-pending messages that were prepended
+          for (const pm of pendingMessages) {
+            db.prepare("UPDATE session_messages SET sent_at = ? WHERE id = ?").run(now, pm.id);
+          }
+        };
+
         db.prepare("UPDATE sessions SET status = 'streaming', updated_at = ? WHERE id = ?")
           .run(Date.now(), sessionId);
 
         if (useApiStream && activeProvider) {
-          // ── Direct API stream path ──────────────────────────────────────────
+          // -- Direct API stream path --
           const apiMessages = history.map(m => ({
             role: m.role as "user" | "assistant",
             content: m.content,
@@ -386,6 +419,7 @@ export function sessionsRoutes(projectDir: string) {
             systemPrompt: effectiveSystemPrompt,
             onChunk: (text) => {
               if (aborted) return;
+              markMessagesSent();
               fullText += text;
               send({ type: "text", text });
               if (claudeSections.length > 0) {
@@ -394,14 +428,15 @@ export function sessionsRoutes(projectDir: string) {
             },
             onDone: () => {
               activeProcesses.delete(sessionId);
+              markMessagesSent();
               const savedText = fullText.trim() || "[no response]";
               const msgInputEstimate = Math.ceil(body.message.length / 4);
               const msgOutputEstimate = Math.ceil(savedText.length / 4);
 
               db.prepare(`
-                INSERT INTO session_messages (id, session_id, role, content, input_tokens, output_tokens, created_at)
-                VALUES (?, ?, 'assistant', ?, ?, ?, ?)
-              `).run(randomUUID(), sessionId, savedText, msgInputEstimate, msgOutputEstimate, Date.now());
+                INSERT INTO session_messages (id, session_id, role, content, input_tokens, output_tokens, created_at, sent_at)
+                VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?)
+              `).run(randomUUID(), sessionId, savedText, msgInputEstimate, msgOutputEstimate, Date.now(), Date.now());
 
               db.prepare(`
                 UPDATE sessions
@@ -420,9 +455,9 @@ export function sessionsRoutes(projectDir: string) {
               send({ type: "error", message: err.message });
 
               db.prepare(`
-                INSERT INTO session_messages (id, session_id, role, content, created_at)
-                VALUES (?, ?, 'assistant', ?, ?)
-              `).run(randomUUID(), sessionId, `Error: ${err.message}`, Date.now());
+                INSERT INTO session_messages (id, session_id, role, content, created_at, sent_at)
+                VALUES (?, ?, 'assistant', ?, ?, ?)
+              `).run(randomUUID(), sessionId, `Error: ${err.message}`, Date.now(), Date.now());
 
               db.prepare("UPDATE sessions SET status = 'idle', updated_at = ? WHERE id = ?")
                 .run(Date.now(), sessionId);
