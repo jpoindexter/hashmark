@@ -448,7 +448,10 @@ export default function Sessions() {
       res = await fetch(`/api/sessions/${activeId}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({
+          message: text,
+          systemPrompt: (localStorage.getItem("studio:system_prompt") ?? "").trim() || undefined,
+        }),
       });
     } catch (e) {
       setMessages((prev) => [...prev, {

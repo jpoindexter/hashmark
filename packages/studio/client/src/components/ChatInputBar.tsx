@@ -611,7 +611,8 @@ export default function ChatInputBar({
     onStreamingChange(true);
     onStreamText("");
 
-    let systemPrompt = "";
+    const globalSystemPrompt = (localStorage.getItem("studio:system_prompt") ?? "").trim();
+    let systemPrompt = globalSystemPrompt;
     if (thinking) systemPrompt += "\n\nUse extended thinking before responding.";
     if (planMode)  systemPrompt += "\n\nEnter plan mode: respond with a structured plan only, do not write code.";
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { CodeViewer } from "../components/CodeViewer";
+import ContextMenu, { type ContextMenuItem } from "../components/shared/ContextMenu.tsx";
 
 interface FileNode {
   name: string;
@@ -112,7 +113,7 @@ function buildFilteredTree(
 }
 
 function TreeNode({
-  node, depth, selected, onSelect, complexity, sortKey,
+  node, depth, selected, onSelect, complexity, sortKey, onContextMenu,
 }: {
   node: FileNode;
   depth: number;
@@ -120,6 +121,7 @@ function TreeNode({
   onSelect: (path: string, type: "file" | "dir") => void;
   complexity: Map<string, FileComplexity>;
   sortKey: SortKey;
+  onContextMenu: (e: React.MouseEvent, node: FileNode) => void;
 }) {
   const [open, setOpen] = useState(depth < 1);
   const isSelected = node.path === selected;
@@ -137,6 +139,7 @@ function TreeNode({
           if (node.type === "dir") setOpen(o => !o);
           onSelect(node.path, node.type);
         }}
+        onContextMenu={(e) => onContextMenu(e, node)}
         title={node.type === "file" ? `${node.path}${node.size ? " · " + formatSize(node.size) : ""}` : node.path}
         style={{
           display: "flex", alignItems: "center", gap: 4,
@@ -176,6 +179,7 @@ function TreeNode({
           onSelect={onSelect}
           complexity={complexity}
           sortKey={sortKey}
+          onContextMenu={onContextMenu}
         />
       ))}
     </div>
@@ -183,18 +187,20 @@ function TreeNode({
 }
 
 function FlatFileRow({
-  node, selected, onSelect, complexity,
+  node, selected, onSelect, complexity, onContextMenu,
 }: {
   node: FileNode;
   selected: string | null;
   onSelect: (path: string, type: "file" | "dir") => void;
   complexity: Map<string, FileComplexity>;
+  onContextMenu: (e: React.MouseEvent, node: FileNode) => void;
 }) {
   const isSelected = node.path === selected;
   const cx = complexity.get(node.path);
   return (
     <div
       onClick={() => onSelect(node.path, "file")}
+      onContextMenu={(e) => onContextMenu(e, node)}
       title={node.path}
       style={{
         display: "flex", alignItems: "center", gap: 4,
@@ -224,6 +230,11 @@ function FlatFileRow({
   );
 }
 
+interface CtxMenuState {
+  items: ContextMenuItem[];
+  position: { x: number; y: number };
+}
+
 export default function FilesPage() {
   const [tree, setTree] = useState<FileNode[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -234,8 +245,11 @@ export default function FilesPage() {
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [complexity, setComplexity] = useState<Map<string, FileComplexity>>(new Map());
   const [copied, setCopied] = useState(false);
+  const [ctxMenu, setCtxMenu] = useState<CtxMenuState | null>(null);
+  const [projectDir, setProjectDir] = useState<string>("");
 
   useEffect(() => {
+    fetch("/api/info").then(r => r.json()).then((d: { projectDir?: string }) => setProjectDir(d.projectDir ?? "")).catch(() => {});
     fetch("/api/files/tree").then(r => r.json()).then(d => setTree(d.tree ?? [])).catch(() => {});
     fetch("/api/files/complexity").then(r => r.json()).then(d => {
       if (!d.data) return;
@@ -267,6 +281,31 @@ export default function FilesPage() {
       setTimeout(() => setCopied(false), 1500);
     }).catch(() => {});
   }, [content]);
+
+  const handleNodeContextMenu = useCallback((e: React.MouseEvent, node: FileNode) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const items: ContextMenuItem[] = [];
+    if (node.type === "file") {
+      items.push({ label: "Open", onClick: () => onSelect(node.path, "file") });
+      items.push({ separator: true, label: "", onClick: () => {} });
+    }
+    items.push({
+      label: "Copy Relative Path",
+      onClick: () => navigator.clipboard.writeText(node.path).catch(() => {}),
+    });
+    if (projectDir) {
+      items.push({
+        label: "Copy Absolute Path",
+        onClick: () => navigator.clipboard.writeText(`${projectDir}/${node.path}`).catch(() => {}),
+      });
+      items.push({
+        label: "Reveal in Finder",
+        onClick: () => (window as unknown as { studio?: { showInFinder: (p: string) => void } }).studio?.showInFinder(`${projectDir}/${node.path}`),
+      });
+    }
+    setCtxMenu({ items, position: { x: e.clientX, y: e.clientY } });
+  }, [onSelect, projectDir]);
 
   const isFiltering = !!(query || extFilter);
 
@@ -358,6 +397,7 @@ export default function FilesPage() {
                   selected={selected}
                   onSelect={onSelect}
                   complexity={complexity}
+                  onContextMenu={handleNodeContextMenu}
                 />
               ))
             : displayedNodes.map(node => (
@@ -369,6 +409,7 @@ export default function FilesPage() {
                   onSelect={onSelect}
                   complexity={complexity}
                   sortKey={sortKey}
+                  onContextMenu={handleNodeContextMenu}
                 />
               ))
           }
@@ -379,6 +420,12 @@ export default function FilesPage() {
           )}
         </div>
       </div>
+
+      <ContextMenu
+        items={ctxMenu?.items ?? []}
+        position={ctxMenu?.position ?? null}
+        onClose={() => setCtxMenu(null)}
+      />
 
       {/* Content panel */}
       <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>

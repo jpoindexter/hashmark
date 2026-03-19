@@ -640,7 +640,7 @@ export default function Settings() {
   const [showLineNums, setShowLineNums] = useState<boolean>(() => restore("line_nums", true));
 
   // Chat
-  const [defaultModel, setDefaultModel] = useState<string>(() => restore("model", "claude-sonnet-4-6"));
+  const [defaultModel, setDefaultModel] = useState<string>(() => restore("selectedModel", "claude-sonnet-4-6"));
   const [thinkingMode, setThinkingMode] = useState<boolean>(() => restore("thinking", false));
   const [streamingUI,  setStreamingUI]  = useState<boolean>(() => restore("streaming_ui", true));
   const [systemPrompt, setSystemPrompt] = useState<string>(() => restore("system_prompt", ""));
@@ -662,10 +662,16 @@ export default function Settings() {
     persist("theme", theme);
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
-  useEffect(() => persist("font_size", fontSize), [fontSize]);
-  useEffect(() => persist("ui_density", uiDensity), [uiDensity]);
+  useEffect(() => {
+    persist("font_size", fontSize);
+    document.documentElement.style.setProperty("--font-size-base", `${fontSize}px`);
+  }, [fontSize]);
+  useEffect(() => {
+    persist("ui_density", uiDensity);
+    document.documentElement.setAttribute("data-density", uiDensity);
+  }, [uiDensity]);
   useEffect(() => persist("line_nums", showLineNums), [showLineNums]);
-  useEffect(() => persist("model", defaultModel), [defaultModel]);
+  useEffect(() => persist("selectedModel", defaultModel), [defaultModel]);
   useEffect(() => persist("thinking", thinkingMode), [thinkingMode]);
   useEffect(() => persist("streaming_ui", streamingUI), [streamingUI]);
   useEffect(() => persist("system_prompt", systemPrompt), [systemPrompt]);

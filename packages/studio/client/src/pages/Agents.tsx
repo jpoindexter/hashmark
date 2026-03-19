@@ -242,6 +242,29 @@ export default function Agents() {
     grouped[agent.department].push(agent);
   }
 
+  async function deleteAgent(agent: Agent) {
+    if (!window.confirm(`Delete "${agent.name}"?`)) return;
+    await fetch(`/api/agents/${agent.id}`, { method: "DELETE" }).catch(() => {});
+    setAgents(prev => prev.filter(a => a.id !== agent.id));
+    if (selected?.id === agent.id) setSelected(null);
+  }
+
+  async function duplicateAgent(agent: Agent) {
+    const res = await fetch("/api/agents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: `${agent.name} (copy)`,
+        description: agent.description,
+        department: agent.department,
+        content: agent.content,
+      }),
+    }).catch(() => null);
+    if (!res?.ok) return;
+    const d = await res.json() as { agent?: Agent };
+    if (d.agent) setAgents(prev => [...prev, d.agent!]);
+  }
+
   function openAgent(agent: Agent) {
     setSelected(agent);
     setEditContent(agent.content);
@@ -918,6 +941,8 @@ export default function Agents() {
                     stats={allStats[agent.id]}
                     onClick={() => openAgent(agent)}
                     onRun={() => navigate(`/run?agent=${agent.id}`)}
+                    onDelete={() => deleteAgent(agent)}
+                    onDuplicate={() => duplicateAgent(agent)}
                   />
                 ))}
               </div>
