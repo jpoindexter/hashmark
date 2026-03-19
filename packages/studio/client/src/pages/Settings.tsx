@@ -658,7 +658,10 @@ export default function Settings() {
   // Persist on change
   useEffect(() => persist("settings_tab", active), [active]);
   useEffect(() => persist("settings_nav_w", navWidth), [navWidth]);
-  useEffect(() => persist("theme", theme), [theme]);
+  useEffect(() => {
+    persist("theme", theme);
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
   useEffect(() => persist("font_size", fontSize), [fontSize]);
   useEffect(() => persist("ui_density", uiDensity), [uiDensity]);
   useEffect(() => persist("line_nums", showLineNums), [showLineNums]);

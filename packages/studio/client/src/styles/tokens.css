@@ -1,4 +1,31 @@
 /* Grove design tokens -- hashmark studio */
+
+html[data-theme="light"] {
+  --bg:          #ffffff;
+  --bg-2:        #f4f4f5;
+  --bg-3:        #e4e4e7;
+  --bg-4:        #d4d4d8;
+
+  --border:      rgba(0,0,0,0.12);
+  --border-dim:  rgba(0,0,0,0.06);
+
+  --text:        rgba(0,0,0,0.87);
+  --text-dim:    rgba(0,0,0,0.6);
+  --text-dimmer: rgba(0,0,0,0.38);
+
+  --accent:        #059669;
+  --accent-dim:    #047857;
+  --accent-bg:     rgba(5,150,105,0.1);
+  --accent-border: rgba(5,150,105,0.25);
+
+  --blue:      #2563eb;
+  --blue-bg:   rgba(37,99,235,0.08);
+  --red:       #dc2626;
+  --red-bg:    rgba(220,38,38,0.08);
+  --yellow:    #d97706;
+  --yellow-bg: rgba(217,119,6,0.08);
+}
+
 :root {
   /* Backgrounds -- darkest to lightest */
   --bg:          #0d1117;
