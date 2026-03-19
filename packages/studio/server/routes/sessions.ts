@@ -278,6 +278,15 @@ export function sessionsRoutes(projectDir: string) {
     return c.json({ session });
   });
 
+  // GET /api/sessions/:id/pending -- check for unsent messages
+  app.get("/:id/pending", (c) => {
+    const db = getDb(dataDir);
+    const row = db.prepare(
+      "SELECT id, content FROM session_messages WHERE session_id = ? AND role = 'user' AND sent_at IS NULL ORDER BY created_at ASC LIMIT 1"
+    ).get(c.req.param("id")) as { id: string; content: string } | undefined;
+    return c.json({ hasPending: !!row, message: row?.content ?? null });
+  });
+
   // POST /api/sessions/:id/interrupt
   app.post("/:id/interrupt", (c) => {
     const active = activeProcesses.get(c.req.param("id"));
@@ -471,7 +480,7 @@ export function sessionsRoutes(projectDir: string) {
           });
 
         } else {
-          // ── CLI streaming agent path (Claude, Codex, or Gemini) ──────────────
+          // -- CLI streaming agent path (Claude, Codex, or Gemini) --
           const provider = resolveProvider(body.model || "claude-sonnet-4-6");
           const cliBin = findBin(provider === "codex" ? "codex" : provider === "gemini" ? "gemini" : "claude", projectDir);
           const mcpConfigPath = resolveMcpConfig(projectDir);
@@ -480,11 +489,9 @@ export function sessionsRoutes(projectDir: string) {
           const cliEnv: Record<string, string> = { ...process.env as Record<string, string> };
 
           if (provider === "codex") {
-            // Codex CLI: different flags than Claude
             cliArgs = ["--quiet"];
             if (body.model) cliArgs.push("--model", body.model);
           } else if (provider === "gemini") {
-            // Gemini CLI: different flags
             cliArgs = [];
             if (body.model) cliArgs.push("--model", body.model);
           } else {
@@ -494,6 +501,10 @@ export function sessionsRoutes(projectDir: string) {
               "--verbose",
               "--no-interactive",
             ];
+            // Resume previous Claude session if we captured its ID
+            if (session.claude_session_id) {
+              cliArgs.push("--resume", session.claude_session_id);
+            }
             if (body.thinking) cliArgs.push("--thinking");
             if (body.planMode) cliArgs.push("--permission-mode", "plan");
             if (mcpConfigPath) {
@@ -527,6 +538,7 @@ export function sessionsRoutes(projectDir: string) {
               try {
                 const event = JSON.parse(line) as {
                   type: string;
+                  session_id?: string;
                   message?: {
                     content?: Array<{
                       type: string;
@@ -542,6 +554,7 @@ export function sessionsRoutes(projectDir: string) {
                 };
 
                 if (event.type === "assistant" && event.message?.content) {
+                  markMessagesSent();
                   for (const block of event.message.content) {
                     if (block.type === "text" && block.text) {
                       fullText += block.text;
@@ -562,13 +575,19 @@ export function sessionsRoutes(projectDir: string) {
                   }
                 }
 
+                // Capture Claude's internal session ID for --resume on next turn
                 if (event.type === "result") {
+                  markMessagesSent();
+                  if (event.session_id) {
+                    db.prepare("UPDATE sessions SET claude_session_id = ? WHERE id = ?")
+                      .run(event.session_id, sessionId);
+                  }
                   const cost = event.total_cost_usd ?? 0;
                   const usage = event.usage ?? {};
                   send({ type: "done", cost, usage });
                 }
               } catch {
-                // Not JSON — could be a plain-text progress line; emit as progress
+                // Not JSON -- plain-text progress line
                 if (line.trim()) {
                   send({ type: "progress", message: line });
                 }
@@ -578,7 +597,7 @@ export function sessionsRoutes(projectDir: string) {
 
           proc.stderr.on("data", (chunk: Buffer) => {
             const line = chunk.toString().trim();
-            if (line && !line.startsWith("╭") && !line.startsWith("│") && !line.startsWith("╰")) {
+            if (line && !line.startsWith("\u256D") && !line.startsWith("\u2502") && !line.startsWith("\u2570")) {
               send({ type: "progress", message: line });
             }
           });
@@ -592,9 +611,9 @@ export function sessionsRoutes(projectDir: string) {
             const msgOutputEstimate = Math.ceil(savedText.length / 4);
 
             db.prepare(`
-              INSERT INTO session_messages (id, session_id, role, content, input_tokens, output_tokens, created_at)
-              VALUES (?, ?, 'assistant', ?, ?, ?, ?)
-            `).run(randomUUID(), sessionId, savedText, msgInputEstimate, msgOutputEstimate, Date.now());
+              INSERT INTO session_messages (id, session_id, role, content, input_tokens, output_tokens, created_at, sent_at)
+              VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?)
+            `).run(randomUUID(), sessionId, savedText, msgInputEstimate, msgOutputEstimate, Date.now(), Date.now());
 
             db.prepare(`
               UPDATE sessions
@@ -605,7 +624,6 @@ export function sessionsRoutes(projectDir: string) {
               WHERE id = ?
             `).run(msgInputEstimate, msgOutputEstimate, Date.now(), sessionId);
 
-            // Only send done here if we haven't already sent it from a 'result' event
             if (code !== 0 && !killed) {
               send({ type: "done", success: false });
             } else if (killed) {
@@ -619,9 +637,9 @@ export function sessionsRoutes(projectDir: string) {
             send({ type: "error", message: err.message });
 
             db.prepare(`
-              INSERT INTO session_messages (id, session_id, role, content, created_at)
-              VALUES (?, ?, 'assistant', ?, ?)
-            `).run(randomUUID(), sessionId, `Error: ${err.message}`, Date.now());
+              INSERT INTO session_messages (id, session_id, role, content, created_at, sent_at)
+              VALUES (?, ?, 'assistant', ?, ?, ?)
+            `).run(randomUUID(), sessionId, `Error: ${err.message}`, Date.now(), Date.now());
 
             db.prepare("UPDATE sessions SET status = 'idle', updated_at = ? WHERE id = ?")
               .run(Date.now(), sessionId);

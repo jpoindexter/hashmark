@@ -20,6 +20,9 @@ import SessionsSidebar from "../sidebar/SessionsSidebar";
 import { useProjectInfo } from "../../hooks/useProjectInfo";
 import { useKeyboardNav } from "../../hooks/useKeyboardNav";
 import { useTheme } from "../../hooks/useTheme";
+import FileContentViewer from "./FileContentViewer";
+import DiffContentViewer from "./DiffContentViewer";
+import AgentDetailViewer from "./AgentDetailViewer";
 
 function persist(key: string, val: unknown) {
   try { localStorage.setItem(`studio:${key}`, JSON.stringify(val)); } catch { /* noop */ }
@@ -340,6 +343,12 @@ export default function Shell() {
           }}>
             {isHome ? (
               <ChatMessages sessionId={activeSessionId} streamText={streamText} streaming={streaming} modelLabel={modelLabel ?? "Sonnet 4.6"} />
+            ) : activeView === "files" ? (
+              <FileContentViewer />
+            ) : activeView === "source-control" ? (
+              <DiffContentViewer />
+            ) : activeView === "agents" ? (
+              <AgentDetailViewer />
             ) : (
               <div style={{ flex: 1, overflow: "auto" }}>
                 <Outlet />

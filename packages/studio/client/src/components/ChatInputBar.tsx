@@ -493,12 +493,27 @@ export default function ChatInputBar({
   const [slashOpen, setSlashOpen] = useState(false);
   const [atQuery, setAtQuery] = useState<string | null>(null);
   const [chipDismissed, setChipDismissed] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
 
   const agentSuggestion = useAgentSuggestion(input, currentFile);
   const slashCommands = useSlashCommands(onNewSession, () => {}, () => {});
   const mentionFiles = useMentionFiles();
+
+  // Check for pending (unsent) messages from a previous failed turn
+  useEffect(() => {
+    if (!sessionId || streaming) {
+      setPendingMessage(null);
+      return;
+    }
+    fetch(`/api/sessions/${sessionId}/pending`)
+      .then(r => r.json())
+      .then((d: { hasPending: boolean; message: string | null }) => {
+        setPendingMessage(d.hasPending ? d.message : null);
+      })
+      .catch(() => setPendingMessage(null));
+  }, [sessionId, streaming]);
 
   const injectTerminalCwd = useCallback(() => {
     if (!terminalCwd) return;
@@ -727,7 +742,7 @@ export default function ChatInputBar({
           </div>
         )}
 
-        {/* Agent chip — sits just above the input */}
+        {/* Agent chip -- sits just above the input */}
         {agentSuggestion && !chipDismissed && !slashOpen && atQuery === null && (
           <div style={{ padding: "8px 14px 0" }}>
             <AgentChip
@@ -735,6 +750,26 @@ export default function ChatInputBar({
               onApply={applyAgentSuggestion}
               onDismiss={() => setChipDismissed(true)}
             />
+          </div>
+        )}
+
+        {/* Pending message warning -- unsent message from a crashed turn */}
+        {pendingMessage && !streaming && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "6px 14px",
+            fontSize: 11,
+            fontFamily: "var(--font-ui)",
+            color: "var(--yellow)",
+            background: "rgba(234, 179, 8, 0.06)",
+            borderBottom: "1px solid rgba(234, 179, 8, 0.15)",
+          }}>
+            <span style={{ flexShrink: 0, fontSize: 13, lineHeight: 1 }}>!</span>
+            <span style={{ color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              Unsent message will be included: {pendingMessage.slice(0, 60)}{pendingMessage.length > 60 ? "..." : ""}
+            </span>
           </div>
         )}
 

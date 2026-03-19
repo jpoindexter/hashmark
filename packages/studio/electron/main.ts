@@ -149,7 +149,10 @@ function createWindow() {
   win.on("unmaximize", saveWindowState);
   win.on("close", saveWindowState);
 
-  if (process.env.STUDIO_DEVTOOLS === "1") win.webContents.openDevTools({ mode: "detach" });
+  // Always open DevTools in development (detached window)
+  if (isDev || process.env.STUDIO_DEVTOOLS === "1") {
+    win.webContents.openDevTools({ mode: "detach" });
+  }
 }
 
 function sendToRenderer(channel: string, ...args: unknown[]) {
