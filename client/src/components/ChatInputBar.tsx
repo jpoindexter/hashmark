@@ -605,6 +605,9 @@ export default function ChatInputBar({
     e.preventDefault();
   }, []);
 
+  const speechAvailable = typeof window !== "undefined" &&
+    !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
   const toggleVoiceInput = useCallback(() => {
     if (listening) {
       recognitionRef.current?.stop();
@@ -620,12 +623,15 @@ export default function ChatInputBar({
     recognition.interimResults = true;
     recognition.lang = "en-US";
 
+    // Capture whatever text is already in the input so we can append to it
+    const prefix = input.trim() ? input.trimEnd() + " " : "";
+
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       let transcript = "";
       for (let i = 0; i < event.results.length; i++) {
         transcript += event.results[i][0].transcript;
       }
-      setInput(transcript);
+      setInput(prefix + transcript);
     };
 
     recognition.onend = () => setListening(false);
@@ -634,7 +640,7 @@ export default function ChatInputBar({
     recognitionRef.current = recognition;
     recognition.start();
     setListening(true);
-  }, [listening]);
+  }, [listening, input]);
 
   // Listen for manual retry requests from ChatMessages
   useEffect(() => {
@@ -1159,40 +1165,42 @@ export default function ChatInputBar({
               <Plus size={14} />
             </button>
 
-            {/* Voice input */}
-            <button
-              onClick={toggleVoiceInput}
-              title="Voice input"
-              style={{
-                width: 28,
-                height: 28,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: listening ? "rgba(239, 68, 68, 0.15)" : "none",
-                border: listening ? "1px solid var(--red)" : "1px solid var(--border-dim)",
-                borderRadius: 6,
-                color: listening ? "var(--red)" : "var(--text-dimmer)",
-                cursor: "pointer",
-                transition: "border-color 0.1s, color 0.1s, background 0.1s",
-                flexShrink: 0,
-                animation: listening ? "pulse 1.5s ease-in-out infinite" : "none",
-              }}
-              onMouseEnter={e => {
-                if (!listening) {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)";
-                  (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim)";
-                }
-              }}
-              onMouseLeave={e => {
-                if (!listening) {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-dim)";
-                  (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)";
-                }
-              }}
-            >
-              <Mic size={14} />
-            </button>
+            {/* Voice input -- hidden when Speech API not available */}
+            {speechAvailable && (
+              <button
+                onClick={toggleVoiceInput}
+                title={listening ? "Stop recording" : "Voice input"}
+                style={{
+                  width: 28,
+                  height: 28,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: listening ? "rgba(239, 68, 68, 0.15)" : "none",
+                  border: listening ? "1px solid var(--red)" : "1px solid var(--border-dim)",
+                  borderRadius: 6,
+                  color: listening ? "var(--red)" : "var(--text-dimmer)",
+                  cursor: "pointer",
+                  transition: "border-color 0.1s, color 0.1s, background 0.1s",
+                  flexShrink: 0,
+                  animation: listening ? "pulse 1.5s ease-in-out infinite" : "none",
+                }}
+                onMouseEnter={e => {
+                  if (!listening) {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)";
+                    (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim)";
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!listening) {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-dim)";
+                    (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)";
+                  }
+                }}
+              >
+                <Mic size={14} />
+              </button>
+            )}
 
             {/* Stop / Send -- fixed-size container prevents layout shift */}
             <div style={{ width: 28, height: 28, flexShrink: 0 }}>
