@@ -515,15 +515,15 @@ function ModelPill({ selected, onChange }: { selected: string; onChange: (id: st
         style={{
           display: "flex", alignItems: "center", gap: 5,
           padding: "2px 6px", background: "none", border: "none", borderRadius: 4,
-          color: "rgba(255,255,255,0.35)", fontSize: 12,
+          color: "var(--text-dimmer)", fontSize: 12,
           fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
           cursor: "pointer", transition: "color 0.1s", whiteSpace: "nowrap",
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.65)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.35)"; }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim)"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)"; }}
       >
         {/* Anthropic sparkle */}
-        <span style={{ fontSize: 13, lineHeight: 1, color: "rgba(255,255,255,0.5)" }}>✦</span>
+        <span style={{ fontSize: 13, lineHeight: 1, color: "var(--text-dim)" }}>✦</span>
         <span>{current.label}</span>
       </button>
 
@@ -793,8 +793,8 @@ export default function ChatInputBar({
 
   return (
     <div style={{
-      background: "#0d0d0d",
-      borderTop: "1px solid rgba(255,255,255,0.08)",
+      background: "var(--bg)",
+      borderTop: "1px solid var(--border-dim)",
       flexShrink: 0,
     }}>
       <div style={{ position: "relative", padding: "0 0 0 0" }}>
@@ -852,7 +852,7 @@ export default function ChatInputBar({
               background: "none",
               border: "none",
               outline: "none",
-              color: "rgba(255,255,255,0.88)",
+              color: "var(--text)",
               fontSize: 13,
               fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
               resize: "none",
@@ -867,7 +867,7 @@ export default function ChatInputBar({
           {!streaming && !hasText && (
             <span style={{
               fontSize: 11,
-              color: "rgba(255,255,255,0.25)",
+              color: "var(--text-dimmer)",
               fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
               whiteSpace: "nowrap",
               marginTop: 1,
@@ -887,14 +887,8 @@ export default function ChatInputBar({
           padding: "4px 14px 10px",
           gap: 8,
         }}>
-          {/* Left: model indicator + thinking badge */}
+          {/* Left: terminal cwd context */}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <ModelPill selected={selectedModel} onChange={setSelectedModel} />
-            <ThinkingBadge visible={streaming && thinking} />
-            {/* Provider selector inline, muted */}
-            <div style={{ opacity: 0.6 }}>
-              <ProviderSelector />
-            </div>
             {terminalCwd && (
               <button
                 onClick={injectTerminalCwd}
@@ -902,15 +896,15 @@ export default function ChatInputBar({
                 style={{
                   display: "flex", alignItems: "center", gap: 4,
                   padding: "2px 6px", background: "none", border: "none", borderRadius: 4,
-                  color: "rgba(255,255,255,0.25)", fontSize: 11,
-                  fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+                  color: "var(--text-dimmer)", fontSize: 11,
+                  fontFamily: "var(--font-ui)",
                   cursor: "pointer", transition: "color 0.1s", whiteSpace: "nowrap",
                   maxWidth: 160, overflow: "hidden",
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.55)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.25)"; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)"; }}
               >
-                <span style={{ fontSize: 12, lineHeight: 1 }}>⊡</span>
+                <span style={{ fontSize: 12, lineHeight: 1 }}>&#x2293;</span>
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
                   {terminalCwd.split("/").pop() || terminalCwd}
                 </span>
@@ -920,27 +914,6 @@ export default function ChatInputBar({
 
           {/* Right: + button + stop/send */}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {/* Plan mode indicator chip */}
-            {planMode && (
-              <button
-                onClick={() => setPlanMode(false)}
-                title="Plan mode active — click to disable"
-                style={{
-                  padding: "2px 7px",
-                  background: "rgba(251, 191, 36, 0.1)",
-                  border: "1px solid rgba(251, 191, 36, 0.25)",
-                  borderRadius: 99,
-                  fontSize: 11,
-                  fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
-                  color: "rgba(253, 224, 71, 0.75)",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Plan
-              </button>
-            )}
-
             {/* + (new session / attachments) */}
             <button
               onClick={onNewSession}
@@ -952,20 +925,20 @@ export default function ChatInputBar({
                 alignItems: "center",
                 justifyContent: "center",
                 background: "none",
-                border: "1px solid rgba(255,255,255,0.1)",
+                border: "1px solid var(--border-dim)",
                 borderRadius: 6,
-                color: "rgba(255,255,255,0.35)",
+                color: "var(--text-dimmer)",
                 cursor: "pointer",
                 transition: "border-color 0.1s, color 0.1s",
                 flexShrink: 0,
               }}
               onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.2)";
-                (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.65)";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)";
+                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim)";
               }}
               onMouseLeave={e => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.1)";
-                (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.35)";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-dim)";
+                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)";
               }}
             >
               <Plus size={14} />
@@ -1006,7 +979,7 @@ export default function ChatInputBar({
                   background: hasText ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.07)",
                   border: "none",
                   borderRadius: 6,
-                  color: hasText ? "#0d0d0d" : "rgba(255,255,255,0.2)",
+                  color: hasText ? "var(--bg)" : "var(--text-dimmer)",
                   cursor: hasText ? "pointer" : "default",
                   transition: "background 0.15s, color 0.15s",
                   flexShrink: 0,
@@ -1025,7 +998,7 @@ export default function ChatInputBar({
           50%       { opacity: 1;   transform: scale(1.15); }
         }
         textarea::placeholder {
-          color: rgba(255,255,255,0.22);
+          color: var(--text-dimmer);
         }
       `}</style>
     </div>
