@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ArrowUp, Square, Plus, X, ImageIcon } from "lucide-react";
+import { ArrowUp, Square, Plus, X, ImageIcon, Mic } from "lucide-react";
 
 // ─── Slash command registry ───────────────────────────────────────────────────
 
@@ -495,8 +495,10 @@ export default function ChatInputBar({
   const [chipDismissed, setChipDismissed] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [attachedImage, setAttachedImage] = useState<{ name: string; dataUrl: string } | null>(null);
+  const [listening, setListening] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const agentSuggestion = useAgentSuggestion(input, currentFile);
   const slashCommands = useSlashCommands(
@@ -581,6 +583,37 @@ export default function ChatInputBar({
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
   }, []);
+
+  const toggleVoiceInput = useCallback(() => {
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+
+    const recognition = new SR();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let transcript = "";
+      for (let i = 0; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      setInput(transcript);
+    };
+
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setListening(true);
+  }, [listening]);
 
   // ⌘L focus shortcut
   useEffect(() => {
@@ -1000,6 +1033,41 @@ export default function ChatInputBar({
               <Plus size={14} />
             </button>
 
+            {/* Voice input */}
+            <button
+              onClick={toggleVoiceInput}
+              title="Voice input"
+              style={{
+                width: 28,
+                height: 28,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: listening ? "rgba(239, 68, 68, 0.15)" : "none",
+                border: listening ? "1px solid var(--red)" : "1px solid var(--border-dim)",
+                borderRadius: 6,
+                color: listening ? "var(--red)" : "var(--text-dimmer)",
+                cursor: "pointer",
+                transition: "border-color 0.1s, color 0.1s, background 0.1s",
+                flexShrink: 0,
+                animation: listening ? "pulse 1.5s ease-in-out infinite" : "none",
+              }}
+              onMouseEnter={e => {
+                if (!listening) {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)";
+                  (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim)";
+                }
+              }}
+              onMouseLeave={e => {
+                if (!listening) {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-dim)";
+                  (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)";
+                }
+              }}
+            >
+              <Mic size={14} />
+            </button>
+
             {/* Stop / Send -- fixed-size container prevents layout shift */}
             <div style={{ width: 28, height: 28, flexShrink: 0 }}>
               {streaming ? (
@@ -1052,6 +1120,10 @@ export default function ChatInputBar({
       <style>{`
         textarea::placeholder {
           color: var(--text-dimmer);
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
         }
       `}</style>
     </div>

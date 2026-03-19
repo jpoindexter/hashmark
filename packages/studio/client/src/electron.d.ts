@@ -6,7 +6,9 @@ interface Window {
     pickFolder: () => Promise<string | null>;
     getProjectDir: () => Promise<string | null>;
     setProjectDir: (dir: string) => Promise<boolean>;
-    getRecentProjects?: () => Promise<string[]>;
+    getRecentProjects?: () => Promise<Array<{ name: string; dir: string; lastOpened: number }>>;
     onMenu?: (channel: string, handler: (...args: unknown[]) => void) => (() => void);
   };
+  SpeechRecognition: typeof SpeechRecognition;
+  webkitSpeechRecognition: typeof SpeechRecognition;
 }

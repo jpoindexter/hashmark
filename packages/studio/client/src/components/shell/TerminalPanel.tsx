@@ -53,7 +53,14 @@ export default function TerminalPanel({
     {
       label: "Paste",
       icon: <ClipboardPaste size={12} />,
-      onClick: () => { alert("Paste (not yet implemented — needs terminal input integration)"); },
+      onClick: async () => {
+        try {
+          const text = await navigator.clipboard.readText();
+          window.dispatchEvent(new CustomEvent("studio:terminal-paste", { detail: text }));
+        } catch {
+          // Clipboard API may fail without focus/permission
+        }
+      },
     },
     { label: "", separator: true, onClick: () => {} },
     {

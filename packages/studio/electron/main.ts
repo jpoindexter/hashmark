@@ -574,5 +574,9 @@ ipcMain.handle("set-project-dir", async (_event, dir: string) => {
 
 ipcMain.handle("get-recent-projects", () => {
   const config = readConfig();
-  return config.recent;
+  return config.recent.map(dir => ({
+    name: dir.split("/").pop() || dir,
+    dir,
+    lastOpened: Date.now(),
+  }));
 });

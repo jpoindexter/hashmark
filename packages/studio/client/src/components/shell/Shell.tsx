@@ -96,7 +96,7 @@ export default function Shell() {
     !location.pathname.startsWith("/setup");
 
   // Theme -- applies data-theme attribute on <html>, syncs with Settings
-  useTheme();
+  const { toggleTheme } = useTheme();
 
   // Persisted state
   const [sidebarOpen, setSidebarOpen] = useState(() => restore("sidebarOpen", true));
@@ -215,17 +215,19 @@ export default function Shell() {
     };
   }, [navigate]);
 
-  // Plan/think toggle events -- dispatched by ChatInputBar slash commands
+  // Command palette + slash command events
   useEffect(() => {
-    const planHandler = () => setPlanMode(v => !v);
-    const thinkHandler = () => setThinking(v => !v);
-    window.addEventListener("studio:toggle-plan", planHandler);
-    window.addEventListener("studio:toggle-thinking", thinkHandler);
-    return () => {
-      window.removeEventListener("studio:toggle-plan", planHandler);
-      window.removeEventListener("studio:toggle-thinking", thinkHandler);
-    };
-  }, []);
+    const handlers: Array<[string, () => void]> = [
+      ["studio:toggle-thinking", () => setThinking(v => !v)],
+      ["studio:toggle-plan", () => setPlanMode(v => !v)],
+      ["studio:refresh-git", refreshGit],
+      ["studio:open-diff", () => setDiffOpen(true)],
+      ["studio:new-session", handleNewSession],
+      ["studio:toggle-theme", toggleTheme],
+    ];
+    handlers.forEach(([event, handler]) => window.addEventListener(event, handler));
+    return () => handlers.forEach(([event, handler]) => window.removeEventListener(event, handler));
+  }, [refreshGit, handleNewSession, toggleTheme]);
 
   // Request notification permission on mount
   useEffect(() => {

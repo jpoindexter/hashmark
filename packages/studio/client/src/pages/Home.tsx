@@ -747,10 +747,10 @@ export default function Home() {
           <div style={{ marginBottom: "28px" }}>
             <SectionHeader>Quick Actions</SectionHeader>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              <QuickAction icon={<Zap size={13} />} label="Scan project" shortcut="⌘S" primary onClick={() => navigate("/generate")} />
-              <QuickAction icon={<Play size={13} />} label="Run agent" shortcut="⌘R" onClick={() => navigate("/run")} />
-              <QuickAction icon={<GitBranch size={13} />} label="Launch swarm" shortcut="⌘W" onClick={() => navigate("/swarm")} />
-              <QuickAction icon={<History size={13} />} label="View history" shortcut="⌘H" onClick={() => navigate("/history")} />
+              <QuickAction icon={<Zap size={13} />} label="Scan project" primary onClick={() => navigate("/generate")} />
+              <QuickAction icon={<Play size={13} />} label="Run agent" onClick={() => navigate("/run")} />
+              <QuickAction icon={<GitBranch size={13} />} label="Launch swarm" onClick={() => navigate("/swarm")} />
+              <QuickAction icon={<History size={13} />} label="View history" onClick={() => navigate("/history")} />
             </div>
           </div>
 

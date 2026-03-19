@@ -121,15 +121,21 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
     const onNew = () => addTab();
     const onKill = () => killActive();
     const onClear = () => clearActive();
+    const onPaste = (e: Event) => {
+      const text = (e as CustomEvent<string>).detail;
+      if (text) termRefs.current[activeTabId]?.paste(text);
+    };
     window.addEventListener("studio:new-terminal", onNew);
     window.addEventListener("studio:kill-terminal", onKill);
     window.addEventListener("studio:kill-all-terminals", onKill);
     window.addEventListener("studio:clear-terminal", onClear);
+    window.addEventListener("studio:terminal-paste", onPaste);
     return () => {
       window.removeEventListener("studio:new-terminal", onNew);
       window.removeEventListener("studio:kill-terminal", onKill);
       window.removeEventListener("studio:kill-all-terminals", onKill);
       window.removeEventListener("studio:clear-terminal", onClear);
+      window.removeEventListener("studio:terminal-paste", onPaste);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTabId, tabs.length]);

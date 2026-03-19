@@ -7,6 +7,7 @@ import { encodeTerminalMsg } from "../../../shared/ws-contracts";
 
 export interface TerminalHandle {
   clear: () => void;
+  paste: (text: string) => void;
 }
 
 interface TerminalProps {
@@ -37,6 +38,10 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
   useImperativeHandle(ref, () => ({
     clear: () => {
       if (termRef.current) termRef.current.reset();
+    },
+    paste: (text: string) => {
+      // Writing to the terminal triggers onData which sends through WebSocket
+      if (termRef.current) termRef.current.paste(text);
     },
   }));
 
