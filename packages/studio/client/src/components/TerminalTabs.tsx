@@ -116,6 +116,24 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
   const decreaseFontSize = () => setFontSize(s => Math.max(FONT_MIN, s - 1));
   const increaseFontSize = () => setFontSize(s => Math.min(FONT_MAX, s + 1));
 
+  // Electron menu / command palette events
+  useEffect(() => {
+    const onNew = () => addTab();
+    const onKill = () => killActive();
+    const onClear = () => clearActive();
+    window.addEventListener("studio:new-terminal", onNew);
+    window.addEventListener("studio:kill-terminal", onKill);
+    window.addEventListener("studio:kill-all-terminals", onKill);
+    window.addEventListener("studio:clear-terminal", onClear);
+    return () => {
+      window.removeEventListener("studio:new-terminal", onNew);
+      window.removeEventListener("studio:kill-terminal", onKill);
+      window.removeEventListener("studio:kill-all-terminals", onKill);
+      window.removeEventListener("studio:clear-terminal", onClear);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTabId, tabs.length]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden", minHeight: 0 }}>
       {/* VSCode-style terminal toolbar */}

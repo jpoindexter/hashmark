@@ -112,6 +112,7 @@ export default function Shell() {
   const [driftDismissed, setDriftDismissed] = useState<boolean>(isDismissed);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [activityBarVisible, setActivityBarVisible] = useState(() => restore("activityBarVisible", true));
 
   // Hooks
   const onDiffShouldOpen = useCallback(() => setDiffOpen(true), []);
@@ -165,7 +166,7 @@ export default function Shell() {
       window.studio.onMenu("menu:navigate", (p: unknown) => { if (typeof p === "string") navigate(p); }),
       window.studio.onMenu("menu:toggle-terminal", () => setTermOpen(v => !v)),
       window.studio.onMenu("menu:toggle-sidebar", () => dispatch("studio:toggle-sidebar")),
-      window.studio.onMenu("menu:toggle-activity-bar", () => dispatch("studio:toggle-activity-bar")),
+      window.studio.onMenu("menu:toggle-activity-bar", () => setActivityBarVisible(v => !v)),
       window.studio.onMenu("menu:new-terminal", () => { setTermOpen(true); dispatch("studio:new-terminal"); }),
       window.studio.onMenu("menu:split-terminal", () => { setTermOpen(true); dispatch("studio:split-terminal"); }),
       window.studio.onMenu("menu:kill-terminal", () => dispatch("studio:kill-terminal")),
