@@ -496,7 +496,14 @@ app.whenReady().then(() => {
 });
 
 app.on("before-quit", () => {
-  // Graceful shutdown: close server to prevent PTY SIGABRT on exit
+  // Graceful shutdown: kill all child processes (PTY sessions) before Electron
+  // tears down the Node environment. Without this, node-pty's ThreadSafeFunction
+  // callback throws SIGABRT during Environment::CleanupHandles().
+  try {
+    const { execFileSync } = require("child_process") as typeof import("child_process");
+    // Kill child processes of the current process (terminals, claude CLI)
+    execFileSync("pkill", ["-P", String(process.pid)], { stdio: "ignore" });
+  } catch {}
   try { server.close(); } catch {}
 });
 
