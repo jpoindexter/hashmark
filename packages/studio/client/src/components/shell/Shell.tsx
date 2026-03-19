@@ -186,6 +186,8 @@ export default function Shell() {
         drift={drift}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(v => !v)}
+        termOpen={termOpen}
+        onToggleTerm={() => setTermOpen(v => !v)}
         changedFiles={changedFiles}
         onDiffOpen={() => setDiffOpen(true)}
         streaming={streaming}

@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from "react";
-import { ChevronLeft, RefreshCw } from "lucide-react";
+import { ChevronLeft, RefreshCw, PanelBottom, GitCompare, Sidebar } from "lucide-react";
 import type { GitStatus, DriftResult } from "../../hooks/useProjectInfo";
 import BranchPicker from "../BranchPicker";
 import { DriftBadge } from "../DriftIndicator";
@@ -12,6 +12,8 @@ interface TitlebarProps {
   drift: DriftResult | null;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
+  termOpen?: boolean;
+  onToggleTerm?: () => void;
   changedFiles: number;
   onDiffOpen: () => void;
   streaming: boolean;
@@ -43,6 +45,8 @@ export default function Titlebar({
   drift,
   sidebarOpen,
   onToggleSidebar,
+  termOpen,
+  onToggleTerm,
   changedFiles,
   onDiffOpen,
   streaming,
@@ -160,9 +164,35 @@ export default function Titlebar({
           flex: "2 1 0%",
           justifyContent: "flex-end",
           paddingRight: 8,
+          gap: 2,
           ...noDrag,
         }}
       >
+        <IconButton
+          title={`Toggle sidebar (\u2318B)`}
+          onClick={onToggleSidebar}
+          style={{ color: sidebarOpen ? "var(--text-dim)" : "var(--text-dimmer)" }}
+        >
+          <Sidebar size={14} />
+        </IconButton>
+
+        <IconButton
+          title="Toggle terminal (⌃`)"
+          onClick={onToggleTerm}
+          style={{ color: termOpen ? "var(--text-dim)" : "var(--text-dimmer)" }}
+        >
+          <PanelBottom size={14} />
+        </IconButton>
+
+        <IconButton
+          title="Open diff panel"
+          onClick={onDiffOpen}
+          style={{ color: changedFiles > 0 ? "var(--text-dim)" : "var(--text-dimmer)" }}
+        >
+          <GitCompare size={14} />
+        </IconButton>
+
+        <div style={{ width: 8 }} />
         <Badge>{routeTitle}</Badge>
       </div>
     </div>
