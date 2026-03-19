@@ -201,13 +201,27 @@ Every page needs a full interaction audit:
 - [ ] **Git**: commit history, branch info, ahead/behind count
 - [ ] **WorkspaceSetup**: folder picker works, recent projects, framework detection
 
-### Missing from Competitor Apps (delta analysis in progress)
+### Missing from Competitor Apps (see DELTA-V2.md for full 147-item list)
 
-- [ ] t3code features -- AGENT RESEARCHING NOW
-- [ ] Conductor: checkpoint undo UI, PR creation button, workspace archiving, big terminal mode
+- [ ] Conductor: checkpoint undo UI, PR creation button, workspace archiving, big terminal mode, Lottie animations
 - [ ] Cursor: composer (Cmd+I), inline edit (Cmd+K), tab completion, codebase indexing, @context system
-- [ ] emdash: multi-agent parallel execution, kanban board, browser preview, SSH remote dev, 23 agent support
-- [ ] VS Code: full menu bar parity, extension system, editor tabs, minimap, breadcrumbs, problems panel
+- [ ] emdash: multi-agent parallel, kanban board, browser preview, SSH remote dev, 23 agent support
+- [ ] VS Code: full menu bar parity, editor tabs, minimap, breadcrumbs, problems panel, find/replace
+- [ ] t3code: examine github.com/pingdotgg/t3code.git for patterns
+
+### Libraries to Integrate
+
+- [ ] just-bash (npm install just-bash): Virtual bash for agent sandboxing. Agents run in isolated in-memory filesystem. Source: github.com/vercel-labs/just-bash.git
+
+### Additional Items from Session
+
+- [ ] App bundleID still says com.github.Electron -- need electron-builder config
+- [ ] PTY crash on exit -- pkill fix applied, may need electron-rebuild
+- [ ] Menu bar event handlers missing for: Terminal items, Selection items, Go items, Run items
+- [ ] CodeViewer needs syntax highlighting (Prism/Shiki)
+- [ ] Monaco editor for real file editing (biggest gap per DELTA-V2.md)
+- [ ] Check for Updates menu item needs electron-updater
+- [ ] Recent projects merge (Electron IPC + localStorage)
 
 ## Key Decisions Made
 1. **Approach C (design system first)**: Full Grove design system with CSS custom properties, then shell components built on top
