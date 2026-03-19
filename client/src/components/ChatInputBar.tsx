@@ -465,6 +465,7 @@ interface Session {
 
 interface ChatInputBarProps {
   sessionId: string | null;
+  hasMessages?: boolean;
   onNewSession: () => void;
   onSessionCreated?: (sessionId: string) => void;
   onStreamText: (text: string) => void;
@@ -498,7 +499,7 @@ function resolveAutoModel(message: string): string {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ChatInputBar({
-  sessionId, onNewSession, onSessionCreated, onStreamText, onStreamingChange,
+  sessionId, hasMessages = false, onNewSession, onSessionCreated, onStreamText, onStreamingChange,
   streaming, terminalCwd, currentFile,
   selectedModel = DEFAULT_MODEL, thinking = false, planMode = false,
 }: ChatInputBarProps) {
@@ -1052,7 +1053,7 @@ export default function ChatInputBar({
             onPaste={handlePaste}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
-            placeholder="Ask to make changes, @mention files, run /commands"
+            placeholder={hasMessages || streaming ? "Follow up..." : "What do you want to build?"}
             disabled={streaming}
             rows={1}
             style={{

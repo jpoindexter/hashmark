@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Play, Eye, Copy, Pencil, Trash2 } from "lucide-react";
 import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
 import ConfirmDialog from "../shared/ConfirmDialog.tsx";
+import { Skeleton, SkeletonAvatar } from "../shared/Skeleton.tsx";
 
 interface Agent {
   id: string;
@@ -323,19 +324,15 @@ export default function AgentsSidebar() {
               padding: "12px 16px",
               display: "flex",
               flexDirection: "column",
-              gap: 6,
+              gap: 8,
             }}
           >
+            {/* List skeleton: dot + label rows mimic agent list */}
             {[65, 50, 70].map((w, i) => (
-              <div
-                key={i}
-                style={{
-                  height: 12,
-                  width: `${w}%`,
-                  background: "var(--bg-4)",
-                  borderRadius: "var(--radius-sm)",
-                }}
-              />
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <SkeletonAvatar size={7} />
+                <Skeleton width={`${w}%`} />
+              </div>
             ))}
           </div>
         ) : agents.length === 0 ? (

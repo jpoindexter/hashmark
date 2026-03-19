@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Skeleton, SkeletonCard } from "../components/shared/Skeleton.tsx";
 
 /* ─── types ─────────────────────────────────────────────────────────────── */
 interface InfoData {
@@ -241,7 +242,13 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
   }
 
   if (!data) {
-    return <span style={{ fontSize: 12, color: "var(--text-dimmer)" }}>Loading...</span>;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {[1, 2, 3].map(i => (
+          <SkeletonCard key={i} height={48} />
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -521,7 +528,17 @@ function ScanConfigPanel() {
   }
 
   if (!config) {
-    return <span style={{ fontSize: 12, color: "var(--text-dimmer)" }}>Loading...</span>;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <Skeleton width="40%" height={14} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {[1, 2, 3].map(i => (
+            <Skeleton key={i} width="70%" height={12} />
+          ))}
+        </div>
+        <Skeleton width="100%" height={18} borderRadius="var(--radius)" />
+      </div>
+    );
   }
 
   return (
@@ -1092,7 +1109,9 @@ export default function Settings() {
         {active === "mcp" && (
           <SectionView title="MCP Servers" description="Model Context Protocol servers injected into Claude sessions.">
             {!mcpConfig ? (
-              <span style={{ fontSize: 12, color: "var(--text-dimmer)" }}>Loading...</span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {[1, 2].map(i => <SkeletonCard key={i} height={40} />)}
+              </div>
             ) : Object.keys(mcpConfig.servers).length === 0 ? (
               <EmptyState
                 icon="⊕"

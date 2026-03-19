@@ -413,9 +413,19 @@ export function ToolUseBlock({ block }: { block: ToolUseBlockData }) {
   );
 }
 
-function CostLine({ cost, usage }: { cost?: number; usage?: { input_tokens: number; output_tokens: number } }) {
-  if (!cost && !usage) return null;
+function fmtDuration(ms: number): string {
+  const s = ms / 1000;
+  if (s < 10) return `${s.toFixed(1)}s`;
+  if (s < 60) return `${Math.round(s)}s`;
+  const m = Math.floor(s / 60);
+  const rem = Math.round(s % 60);
+  return `${m}m ${rem}s`;
+}
+
+function CostLine({ cost, usage, responseTime }: { cost?: number; usage?: { input_tokens: number; output_tokens: number }; responseTime?: number }) {
+  if (!cost && !usage && !responseTime) return null;
   const parts: string[] = [];
+  if (responseTime != null) parts.push(fmtDuration(responseTime));
   if (cost != null) parts.push(`$${cost.toFixed(4)}`);
   if (usage) parts.push(`${fmtTokens(usage.input_tokens)}in / ${fmtTokens(usage.output_tokens)}out`);
   return (
@@ -544,11 +554,12 @@ function RetryButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-function AssistantBubble({ msg, onContextMenu, showRetry, onRetry }: {
+function AssistantBubble({ msg, onContextMenu, showRetry, onRetry, responseTime }: {
   msg: Message;
   onContextMenu: (e: React.MouseEvent) => void;
   showRetry?: boolean;
   onRetry?: () => void;
+  responseTime?: number;
 }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -577,11 +588,14 @@ function AssistantBubble({ msg, onContextMenu, showRetry, onRetry }: {
         color: "var(--text-dimmer)",
         marginTop: 3,
         paddingLeft: 14,
-        opacity: hovered ? 1 : 0,
+        opacity: hovered || responseTime != null ? 1 : 0,
         transition: "opacity 0.15s",
         userSelect: "none",
       }}>
         <span>{fmtTime(msg.created_at)}</span>
+        {responseTime != null && (
+          <span>{fmtDuration(responseTime)}</span>
+        )}
         {msg.output_tokens != null && msg.output_tokens > 0 && (
           <span>{fmtTokens(msg.output_tokens)} tok</span>
         )}
@@ -651,24 +665,25 @@ function PlanReviewGate() {
   );
 }
 
-function MessageBubble({ msg, showPlanGate, onContextMenu, showRetry, onRetry, showUserRetry }: {
+function MessageBubble({ msg, showPlanGate, onContextMenu, showRetry, onRetry, showUserRetry, responseTime }: {
   msg: Message;
   showPlanGate: boolean;
   onContextMenu: (e: React.MouseEvent) => void;
   showRetry?: boolean;
   onRetry?: () => void;
   showUserRetry?: boolean;
+  responseTime?: number;
 }) {
   if (msg.role === "user") return <UserBubble msg={msg} onContextMenu={onContextMenu} showRetry={showUserRetry} onRetry={onRetry} />;
   return (
     <div>
-      <AssistantBubble msg={msg} onContextMenu={onContextMenu} showRetry={showRetry} onRetry={onRetry} />
+      <AssistantBubble msg={msg} onContextMenu={onContextMenu} showRetry={showRetry} onRetry={onRetry} responseTime={responseTime} />
       {showPlanGate && <PlanReviewGate />}
     </div>
   );
 }
 
-function StreamingBubble({ state, legacyText }: { state?: StreamingState; legacyText: string }) {
+function StreamingBubble({ state, legacyText, streamStartTime }: { state?: StreamingState; legacyText: string; streamStartTime?: number }) {
   // If we have rich streaming state, render mixed blocks
   const hasBlocks = state && state.blocks.length > 0;
 
@@ -755,12 +770,22 @@ function StreamingBubble({ state, legacyText }: { state?: StreamingState; legacy
       {state && (state.cost != null || state.usage != null) ? (
         <CostLine cost={state.cost} usage={state.usage} />
       ) : (
-        <div style={{ fontSize: 10, color: "var(--text-dimmer)", marginTop: 3, paddingLeft: 14, userSelect: "none" }}>
-          typing...
+        <div style={{ display: "flex", gap: 8, fontSize: 10, color: "var(--text-dimmer)", marginTop: 3, paddingLeft: 14, userSelect: "none" }}>
+          <span>typing...</span>
+          {streamStartTime != null && <StreamingTimer startTime={streamStartTime} />}
         </div>
       )}
     </div>
   );
+}
+
+function StreamingTimer({ startTime }: { startTime: number }) {
+  const [elapsed, setElapsed] = useState(() => Date.now() - startTime);
+  useEffect(() => {
+    const id = setInterval(() => setElapsed(Date.now() - startTime), 100);
+    return () => clearInterval(id);
+  }, [startTime]);
+  return <span>{fmtDuration(elapsed)}</span>;
 }
 
 const START_LINKS = [
@@ -1080,6 +1105,11 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
   const userScrolledUp = useRef(false);
   const prevScrollTop = useRef(0);
 
+  // Response time tracking
+  const streamStartTime = useRef<number | null>(null);
+  const [lastResponseTime, setLastResponseTime] = useState<number | null>(null);
+  const lastResponseMsgId = useRef<string | null>(null);
+
   // Track the count of messages loaded on initial fetch to detect resumed sessions
   const resumedAtCount = useRef<number>(0);
   const resumeTimestamp = useRef<number>(0);
@@ -1149,6 +1179,31 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
   useEffect(() => {
     if (streaming) setFailedMsgId(null);
   }, [streaming]);
+
+  // Track response time: record start when streaming begins, compute elapsed when it ends
+  useEffect(() => {
+    if (streaming) {
+      streamStartTime.current = Date.now();
+      setLastResponseTime(null);
+      lastResponseMsgId.current = null;
+    } else if (streamStartTime.current != null) {
+      const elapsed = Date.now() - streamStartTime.current;
+      setLastResponseTime(elapsed);
+      streamStartTime.current = null;
+    }
+  }, [streaming]);
+
+  // After messages reload post-stream, tag the last assistant message with the response time
+  useEffect(() => {
+    if (lastResponseTime != null && lastResponseMsgId.current == null && messages.length > 0) {
+      for (let i = messages.length - 1; i >= 0; i--) {
+        if (messages[i].role === "assistant") {
+          lastResponseMsgId.current = messages[i].id;
+          break;
+        }
+      }
+    }
+  }, [messages, lastResponseTime]);
 
   // Find the last user message content for retry
   const findLastUserMessage = useCallback((): string | null => {
@@ -1281,7 +1336,7 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
                 {item.id === RESUME_DIVIDER_ID ? (
                   <ResumedDivider timestamp={(item as { timestamp: number }).timestamp} />
                 ) : item.id === STREAMING_ID ? (
-                  <StreamingBubble state={streamingState} legacyText={streamText} />
+                  <StreamingBubble state={streamingState} legacyText={streamText} streamStartTime={streamStartTime.current ?? undefined} />
                 ) : (
                   <MessageBubble
                     msg={item as Message}
@@ -1306,6 +1361,12 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
                       isLastUserMessage(messages, (item as Message).id)
                     }
                     onRetry={handleRetry}
+                    responseTime={
+                      lastResponseTime != null &&
+                      lastResponseMsgId.current === (item as Message).id
+                        ? lastResponseTime
+                        : undefined
+                    }
                   />
                 )}
               </div>

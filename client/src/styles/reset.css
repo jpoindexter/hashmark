@@ -222,3 +222,11 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 [data-theme="light"] .btn:hover { background: var(--bg-3); color: var(--text); }
 [data-theme="light"] .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 [data-theme="light"] .btn-primary:hover { background: var(--accent-dim); border-color: var(--accent-dim); }
+
+/* ---- Reduced motion: accessibility ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

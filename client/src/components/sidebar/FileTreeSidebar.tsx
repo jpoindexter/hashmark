@@ -2,9 +2,11 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   FileCode, FileText, Folder, ChevronRight, ChevronDown,
   Copy, FolderOpen, ExternalLink, FilePlus, FolderPlus, Pencil, Trash2,
+  GitBranch,
 } from "lucide-react";
 import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
 import ConfirmDialog from "../shared/ConfirmDialog.tsx";
+import { Skeleton } from "../shared/Skeleton.tsx";
 
 interface FileNode {
   name: string;
@@ -33,6 +35,22 @@ function countFiles(nodes: FileNode[]): number {
   return count;
 }
 
+/** Flatten a sorted tree into a path-ordered list for shift-click range selection */
+function flattenTree(nodes: FileNode[]): string[] {
+  const result: string[] = [];
+  for (const n of nodes) {
+    result.push(n.path);
+    if (n.children) {
+      const sorted = [...n.children].sort((a, b) => {
+        if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      });
+      result.push(...flattenTree(sorted));
+    }
+  }
+  return result;
+}
+
 type GitStatus = "M" | "A" | "D" | "?" | string;
 
 function gitStatusColor(status: GitStatus): string {
@@ -45,26 +63,27 @@ function gitStatusColor(status: GitStatus): string {
 interface TreeRowProps {
   node: FileNode;
   depth: number;
-  selectedPath: string | null;
+  selectedPaths: Set<string>;
   gitFiles: Record<string, string>;
-  onFileSelect: (path: string) => void;
+  onSelect: (path: string, e: React.MouseEvent) => void;
   onContextMenu: (e: React.MouseEvent, node: FileNode) => void;
 }
 
-function TreeRow({ node, depth, selectedPath, gitFiles, onFileSelect, onContextMenu }: TreeRowProps) {
+function TreeRow({ node, depth, selectedPaths, gitFiles, onSelect, onContextMenu }: TreeRowProps) {
   const [open, setOpen] = useState(depth < 1);
   const [hovered, setHovered] = useState(false);
   const isDir = node.type === "dir";
-  const isSelected = selectedPath === node.path;
+  const isSelected = selectedPaths.has(node.path);
   const Icon = isDir ? Folder : fileIcon(node.ext);
   const Chevron = open ? ChevronDown : ChevronRight;
   const status = gitFiles[node.path];
 
-  const handleClick = () => {
-    if (isDir) {
+  const handleClick = (e: React.MouseEvent) => {
+    // Dirs toggle open/close on regular click, but support multi-select modifiers
+    if (isDir && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
       setOpen((v) => !v);
     } else {
-      onFileSelect(node.path);
+      onSelect(node.path, e);
     }
   };
 
@@ -76,7 +95,6 @@ function TreeRow({ node, depth, selectedPath, gitFiles, onFileSelect, onContextM
     });
   }, [node.children]);
 
-  // Color the filename based on git status
   const nameColor = status
     ? gitStatusColor(status)
     : "var(--text-dim)";
@@ -165,9 +183,9 @@ function TreeRow({ node, depth, selectedPath, gitFiles, onFileSelect, onContextM
             key={child.path}
             node={child}
             depth={depth + 1}
-            selectedPath={selectedPath}
+            selectedPaths={selectedPaths}
             gitFiles={gitFiles}
-            onFileSelect={onFileSelect}
+            onSelect={onSelect}
             onContextMenu={onContextMenu}
           />
         ))}
@@ -180,15 +198,26 @@ type DialogState =
   | { kind: "new-file"; dir: string }
   | { kind: "new-folder"; dir: string }
   | { kind: "rename"; oldPath: string; oldName: string }
-  | { kind: "delete"; path: string; name: string; isDir: boolean };
+  | { kind: "delete"; path: string; name: string; isDir: boolean }
+  | { kind: "delete-bulk"; paths: string[] };
 
 export default function FileTreeSidebar() {
   const [tree, setTree] = useState<FileNode[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
+  const [lastSelectedPath, setLastSelectedPath] = useState<string | null>(null);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; node: FileNode } | null>(null);
   const [gitFiles, setGitFiles] = useState<Record<string, string>>({});
   const [dialog, setDialog] = useState<DialogState>(null);
+
+  // Flattened path list for shift-click range selection
+  const flatPaths = useMemo(() => {
+    const sorted = [...tree].sort((a, b) => {
+      if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+    return flattenTree(sorted);
+  }, [tree]);
 
   const refreshTree = useCallback(() => {
     fetch("/api/files/tree")
@@ -218,16 +247,55 @@ export default function FileTreeSidebar() {
 
   const fileCount = useMemo(() => countFiles(tree), [tree]);
 
-  const handleFileSelect = useCallback((path: string) => {
-    setSelectedPath(path);
-    window.dispatchEvent(
-      new CustomEvent("studio:open-file", { detail: { path } })
-    );
-  }, []);
+  const handleSelect = useCallback((path: string, e: React.MouseEvent) => {
+    const isMetaOrCtrl = e.metaKey || e.ctrlKey;
+    const isShift = e.shiftKey;
+
+    if (isShift && lastSelectedPath) {
+      // Shift+click: range select from last selected to clicked
+      const startIdx = flatPaths.indexOf(lastSelectedPath);
+      const endIdx = flatPaths.indexOf(path);
+      if (startIdx !== -1 && endIdx !== -1) {
+        const lo = Math.min(startIdx, endIdx);
+        const hi = Math.max(startIdx, endIdx);
+        const range = flatPaths.slice(lo, hi + 1);
+        setSelectedPaths((prev) => {
+          const next = new Set(prev);
+          for (const p of range) next.add(p);
+          return next;
+        });
+      }
+      // Don't update lastSelectedPath on shift-click so range can be extended
+    } else if (isMetaOrCtrl) {
+      // Cmd/Ctrl+click: toggle individual item in/out of selection
+      setSelectedPaths((prev) => {
+        const next = new Set(prev);
+        if (next.has(path)) {
+          next.delete(path);
+        } else {
+          next.add(path);
+        }
+        return next;
+      });
+      setLastSelectedPath(path);
+    } else {
+      // Regular click: select only this item, open if file
+      setSelectedPaths(new Set([path]));
+      setLastSelectedPath(path);
+      window.dispatchEvent(
+        new CustomEvent("studio:open-file", { detail: { path } })
+      );
+    }
+  }, [lastSelectedPath, flatPaths]);
 
   const handleContextMenu = useCallback((e: React.MouseEvent, node: FileNode) => {
+    // If right-clicking on a non-selected item, select just that item
+    if (!selectedPaths.has(node.path)) {
+      setSelectedPaths(new Set([node.path]));
+      setLastSelectedPath(node.path);
+    }
     setCtxMenu({ x: e.clientX, y: e.clientY, node });
-  }, []);
+  }, [selectedPaths]);
 
   const closeCtxMenu = useCallback(() => setCtxMenu(null), []);
 
@@ -244,11 +312,15 @@ export default function FileTreeSidebar() {
       });
       if (res.ok) {
         refreshTree();
-        handleFileSelect(path);
+        setSelectedPaths(new Set([path]));
+        setLastSelectedPath(path);
+        window.dispatchEvent(
+          new CustomEvent("studio:open-file", { detail: { path } })
+        );
       }
     } catch { /* ignore */ }
     setDialog(null);
-  }, [dialog, refreshTree, handleFileSelect]);
+  }, [dialog, refreshTree]);
 
   const handleCreateFolder = useCallback(async (name: string) => {
     if (!dialog || dialog.kind !== "new-folder") return;
@@ -281,24 +353,84 @@ export default function FileTreeSidebar() {
   }, [dialog, refreshTree]);
 
   const handleDelete = useCallback(async () => {
-    if (!dialog || dialog.kind !== "delete") return;
-    try {
-      const res = await fetch(`/api/files/delete?path=${encodeURIComponent(dialog.path)}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        refreshTree();
-        if (selectedPath === dialog.path) setSelectedPath(null);
+    if (!dialog) return;
+    if (dialog.kind === "delete") {
+      try {
+        const res = await fetch(`/api/files/delete?path=${encodeURIComponent(dialog.path)}`, {
+          method: "DELETE",
+        });
+        if (res.ok) {
+          refreshTree();
+          setSelectedPaths((prev) => {
+            const next = new Set(prev);
+            next.delete(dialog.path);
+            return next;
+          });
+        }
+      } catch { /* ignore */ }
+    } else if (dialog.kind === "delete-bulk") {
+      for (const p of dialog.paths) {
+        try {
+          await fetch(`/api/files/delete?path=${encodeURIComponent(p)}`, {
+            method: "DELETE",
+          });
+        } catch { /* ignore */ }
       }
-    } catch { /* ignore */ }
+      refreshTree();
+      setSelectedPaths(new Set());
+      setLastSelectedPath(null);
+    }
     setDialog(null);
-  }, [dialog, refreshTree, selectedPath]);
+  }, [dialog, refreshTree]);
+
+  const handleBulkStage = useCallback(async (paths: string[]) => {
+    try {
+      await fetch("/api/git/stage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ files: paths }),
+      });
+    } catch { /* ignore */ }
+  }, []);
 
   // ---- Context menu items ----
 
   const ctxMenuItems = useMemo((): ContextMenuItem[] => {
     if (!ctxMenu) return [];
     const { node } = ctxMenu;
+    const multiSelected = selectedPaths.size > 1;
+
+    // Bulk actions when multiple items are selected
+    if (multiSelected) {
+      const count = selectedPaths.size;
+      const paths = Array.from(selectedPaths);
+      const items: ContextMenuItem[] = [];
+
+      items.push({
+        label: `Delete ${count} items`,
+        icon: <Trash2 size={12} />,
+        danger: true,
+        onClick: () => setDialog({ kind: "delete-bulk", paths }),
+      });
+
+      items.push({
+        label: `Stage ${count} items`,
+        icon: <GitBranch size={12} />,
+        onClick: () => { void handleBulkStage(paths); },
+      });
+
+      items.push({ label: "", separator: true, onClick: () => {} });
+
+      items.push({
+        label: "Copy paths",
+        icon: <Copy size={12} />,
+        onClick: () => { navigator.clipboard.writeText(paths.join("\n")).catch(() => {}); },
+      });
+
+      return items;
+    }
+
+    // Single-item context menu
     const isFile = node.type === "file";
     const isDir = node.type === "dir";
     const items: ContextMenuItem[] = [];
@@ -307,12 +439,17 @@ export default function FileTreeSidebar() {
       items.push({
         label: "Open File",
         icon: <FolderOpen size={12} />,
-        onClick: () => handleFileSelect(node.path),
+        onClick: () => {
+          setSelectedPaths(new Set([node.path]));
+          setLastSelectedPath(node.path);
+          window.dispatchEvent(
+            new CustomEvent("studio:open-file", { detail: { path: node.path } })
+          );
+        },
       });
       items.push({ label: "", separator: true, onClick: () => {} });
     }
 
-    // CRUD: New File / New Folder
     const targetDir = isDir ? node.path : node.path.split("/").slice(0, -1).join("/");
 
     items.push({
@@ -328,14 +465,12 @@ export default function FileTreeSidebar() {
 
     items.push({ label: "", separator: true, onClick: () => {} });
 
-    // Rename
     items.push({
       label: "Rename",
       icon: <Pencil size={12} />,
       onClick: () => setDialog({ kind: "rename", oldPath: node.path, oldName: node.name }),
     });
 
-    // Delete
     items.push({
       label: "Delete",
       icon: <Trash2 size={12} />,
@@ -368,7 +503,7 @@ export default function FileTreeSidebar() {
     }
 
     return items;
-  }, [ctxMenu, handleFileSelect]);
+  }, [ctxMenu, selectedPaths, handleBulkStage]);
 
   const sorted = useMemo(
     () =>
@@ -383,7 +518,7 @@ export default function FileTreeSidebar() {
 
   const dialogOpen = dialog !== null;
   const isInputDialog = dialog?.kind === "new-file" || dialog?.kind === "new-folder" || dialog?.kind === "rename";
-  const isDeleteDialog = dialog?.kind === "delete";
+  const isDeleteDialog = dialog?.kind === "delete" || dialog?.kind === "delete-bulk";
 
   const dialogTitle = (() => {
     if (!dialog) return "";
@@ -391,6 +526,7 @@ export default function FileTreeSidebar() {
     if (dialog.kind === "new-folder") return "New Folder";
     if (dialog.kind === "rename") return "Rename";
     if (dialog.kind === "delete") return `Delete ${dialog.isDir ? "folder" : "file"}`;
+    if (dialog.kind === "delete-bulk") return `Delete ${dialog.paths.length} items`;
     return "";
   })();
 
@@ -398,6 +534,9 @@ export default function FileTreeSidebar() {
     if (!dialog) return undefined;
     if (dialog.kind === "delete") {
       return `Are you sure you want to delete "${dialog.name}"?${dialog.isDir ? " This will remove all contents." : ""}`;
+    }
+    if (dialog.kind === "delete-bulk") {
+      return `Are you sure you want to delete ${dialog.paths.length} items? This cannot be undone.`;
     }
     if (dialog.kind === "new-file") {
       return dialog.dir ? `Create file in ${dialog.dir}/` : "Create file in project root";
@@ -417,6 +556,14 @@ export default function FileTreeSidebar() {
   })();
 
   const dialogDefault = dialog?.kind === "rename" ? dialog.oldName : "";
+
+  // Clear selection when clicking empty space in the tree container
+  const handleTreeBackgroundClick = useCallback((e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      setSelectedPaths(new Set());
+      setLastSelectedPath(null);
+    }
+  }, []);
 
   return (
     <div
@@ -442,7 +589,14 @@ export default function FileTreeSidebar() {
           flexShrink: 0,
         }}
       >
-        <span>FILES</span>
+        <span>
+          FILES
+          {selectedPaths.size > 1 && (
+            <span style={{ color: "var(--accent)", marginLeft: 6 }}>
+              {selectedPaths.size} selected
+            </span>
+          )}
+        </span>
         <span
           style={{
             fontSize: 10,
@@ -457,7 +611,10 @@ export default function FileTreeSidebar() {
       </div>
 
       {/* Tree */}
-      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
+      <div
+        style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}
+        onClick={handleTreeBackgroundClick}
+      >
         {loading ? (
           <div
             style={{
@@ -467,17 +624,11 @@ export default function FileTreeSidebar() {
               gap: 6,
             }}
           >
-            {[80, 60, 70, 50, 65].map((w, i) => (
-              <div
-                key={i}
-                style={{
-                  height: 12,
-                  width: `${w}%`,
-                  background: "var(--bg-4)",
-                  borderRadius: "var(--radius-sm)",
-                }}
-              />
-            ))}
+            <Skeleton width="60%" />
+            <Skeleton width="50%" style={{ marginLeft: 16 }} />
+            <Skeleton width="45%" style={{ marginLeft: 16 }} />
+            <Skeleton width="55%" style={{ marginLeft: 32 }} />
+            <Skeleton width="40%" style={{ marginLeft: 16 }} />
           </div>
         ) : tree.length === 0 ? (
           <div
@@ -496,9 +647,9 @@ export default function FileTreeSidebar() {
               key={node.path}
               node={node}
               depth={0}
-              selectedPath={selectedPath}
+              selectedPaths={selectedPaths}
               gitFiles={gitFiles}
-              onFileSelect={handleFileSelect}
+              onSelect={handleSelect}
               onContextMenu={handleContextMenu}
             />
           ))
