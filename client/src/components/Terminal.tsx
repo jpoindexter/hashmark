@@ -16,6 +16,7 @@ interface TerminalProps {
   tabId?: string;
   fontSize?: number;
   onCwdChange?: (cwd: string) => void;
+  onShellIntegration?: () => void;
 }
 
 // OSC 633 sequence subtypes (VSCode shell integration)
@@ -29,7 +30,7 @@ const enum Osc633 {
 }
 
 const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function TerminalPane(
-  { tabId, fontSize = 12, onCwdChange },
+  { tabId, fontSize = 12, onCwdChange, onShellIntegration },
   ref
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -112,8 +113,13 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
 
     // --- VSCode shell integration (OSC 633) ---
     let commandStartMarker: ReturnType<Terminal["registerMarker"]> | null = null;
+    let shellIntegrationFired = false;
 
     term.parser.registerOscHandler(633, (data: string) => {
+      if (!shellIntegrationFired) {
+        shellIntegrationFired = true;
+        onShellIntegration?.();
+      }
       const semi = data.indexOf(";");
       const subtype = semi === -1 ? data : data.slice(0, semi);
       const payload = semi === -1 ? "" : data.slice(semi + 1);

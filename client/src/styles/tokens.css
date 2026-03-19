@@ -120,6 +120,14 @@
   --cyan-bg: rgba(8, 145, 178, 0.12);
 }
 
+/* Electron vibrancy -- semi-transparent sidebar/titlebar let macOS blur through */
+[data-electron="true"] {
+  --bg-2: rgba(22, 27, 34, 0.85);
+}
+[data-electron="true"][data-theme="light"] {
+  --bg-2: rgba(246, 248, 250, 0.85);
+}
+
 /* Compact density overrides */
 :root[data-density="compact"] {
   --titlebar-height:    28px;

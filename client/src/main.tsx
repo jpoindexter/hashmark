@@ -25,6 +25,11 @@ if (savedDensity) {
   } catch { /* noop */ }
 }
 
+// Detect Electron -- enable vibrancy transparency on sidebar/titlebar
+if (window.studio) {
+  document.documentElement.setAttribute("data-electron", "true");
+}
+
 const savedFontSize = localStorage.getItem("studio:font_size");
 if (savedFontSize) {
   try {

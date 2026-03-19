@@ -23,6 +23,7 @@ import { useProjectInfo } from "../../hooks/useProjectInfo";
 import { useKeyboardNav } from "../../hooks/useKeyboardNav";
 import { useTheme } from "../../hooks/useTheme";
 import FileContentViewer from "./FileContentViewer";
+import RightSidebar, { RightSidebarResize, RIGHT_SIDEBAR_DEFAULT_WIDTH } from "./RightSidebar";
 
 
 function persist(key: string, val: unknown) {
@@ -100,6 +101,8 @@ export default function Shell() {
   const [termOpen, setTermOpen] = useState(() => restore("termOpen", false));
   const [termBig, setTermBig] = useState(() => restore("termBig", false));
   const [splitOpen, setSplitOpen] = useState(() => restore("splitOpen", false));
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(() => restore("rightSidebarOpen", false));
+  const [rightSidebarWidth, setRightSidebarWidth] = useState(() => restore("rightSidebarWidth", RIGHT_SIDEBAR_DEFAULT_WIDTH));
   const [selectedModel, setSelectedModel] = useState(() => restore("selectedModel", "claude-sonnet-4-6"));
   const [thinking, setThinking] = useState(() => restore("thinking", false));
   const [planMode, setPlanMode] = useState(() => restore("planMode", false));
@@ -149,6 +152,8 @@ export default function Shell() {
   useEffect(() => { persist("termOpen", termOpen); }, [termOpen]);
   useEffect(() => { persist("termBig", termBig); }, [termBig]);
   useEffect(() => { persist("splitOpen", splitOpen); }, [splitOpen]);
+  useEffect(() => { persist("rightSidebarOpen", rightSidebarOpen); }, [rightSidebarOpen]);
+  useEffect(() => { persist("rightSidebarWidth", rightSidebarWidth); }, [rightSidebarWidth]);
   useEffect(() => { persist("selectedModel", selectedModel); }, [selectedModel]);
   useEffect(() => { persist("thinking", thinking); }, [thinking]);
   useEffect(() => { persist("planMode", planMode); }, [planMode]);
@@ -271,7 +276,7 @@ export default function Shell() {
       ["studio:toggle-plan", () => setPlanMode(v => !v)],
       ["studio:toggle-sidebar", () => setSidebarOpen(v => !v)],
       ["studio:toggle-terminal", () => setTermOpen(v => !v)],
-      ["studio:toggle-split", () => setSplitOpen(v => !v)],
+      ["studio:toggle-split", () => { setSplitOpen(v => !v); setRightSidebarOpen(v => !v); }],
       ["studio:refresh-git", refreshGit],
       ["studio:open-diff", () => { if (activeView !== "source-control") setDiffOpen(true); }],
       ["studio:new-session", handleNewSessionRef],
@@ -575,6 +580,22 @@ export default function Shell() {
             </>
           )}
         </div>
+
+        {/* Right sidebar */}
+        {rightSidebarOpen && (
+          <>
+            <RightSidebarResize
+              onResize={setRightSidebarWidth}
+              onReset={() => setRightSidebarWidth(RIGHT_SIDEBAR_DEFAULT_WIDTH)}
+              currentWidth={rightSidebarWidth}
+            />
+            <RightSidebar
+              width={rightSidebarWidth}
+              git={git}
+              changedFiles={changedFiles}
+            />
+          </>
+        )}
       </div>
 
       <StatusBar

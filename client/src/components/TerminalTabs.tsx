@@ -77,6 +77,9 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const shellMenuRef = useRef<HTMLDivElement>(null);
   const [tabCwds, setTabCwds] = useState<Record<string, string>>({});
+  const [shellIntegrationActive, setShellIntegrationActive] = useState<Record<string, boolean>>({});
+  const [infoPopupTabId, setInfoPopupTabId] = useState<string | null>(null);
+  const infoPopupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [fontSize, setFontSize] = useState(12);
 
   // One ref per pane id (both main and split panes)
@@ -271,6 +274,17 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
               onContextMenu={(e) => handleTabContextMenu(e, tab.id)}
               showClose={tabs.length > 1}
               isSplit={!!tab.splitId}
+              showInfoPopup={infoPopupTabId === tab.id}
+              onInfoEnter={() => {
+                if (infoPopupTimer.current) clearTimeout(infoPopupTimer.current);
+                infoPopupTimer.current = setTimeout(() => setInfoPopupTabId(tab.id), 400);
+              }}
+              onInfoLeave={() => {
+                if (infoPopupTimer.current) clearTimeout(infoPopupTimer.current);
+                infoPopupTimer.current = setTimeout(() => setInfoPopupTabId(null), 200);
+              }}
+              cwd={tabCwds[tab.id]}
+              shellIntegration={!!shellIntegrationActive[tab.id]}
             />
           ))}
         </div>
@@ -494,6 +508,7 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
                   tabId={tab.id}
                   fontSize={fontSize}
                   onCwdChange={(cwd) => setTabCwds(prev => ({ ...prev, [tab.id]: cwd }))}
+                  onShellIntegration={() => setShellIntegrationActive(prev => ({ ...prev, [tab.id]: true }))}
                 />
               </Suspense>
             </div>
@@ -519,6 +534,7 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
                     tabId={tab.splitId}
                     fontSize={fontSize}
                     onCwdChange={(cwd) => setTabCwds(prev => ({ ...prev, [tab.splitId!]: cwd }))}
+                    onShellIntegration={() => setShellIntegrationActive(prev => ({ ...prev, [tab.splitId!]: true }))}
                   />
                 </Suspense>
               </div>
@@ -609,6 +625,11 @@ function TabItem({
   onContextMenu,
   showClose,
   isSplit,
+  showInfoPopup,
+  onInfoEnter,
+  onInfoLeave,
+  cwd,
+  shellIntegration,
 }: {
   tab: TerminalTab;
   active: boolean;
@@ -617,16 +638,29 @@ function TabItem({
   onContextMenu: (e: React.MouseEvent) => void;
   showClose: boolean;
   isSplit: boolean;
+  showInfoPopup: boolean;
+  onInfoEnter: () => void;
+  onInfoLeave: () => void;
+  cwd?: string;
+  shellIntegration: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
+  const tabRef = useRef<HTMLDivElement>(null);
+
+  // Shortened CWD for display: show last 2 segments
+  const shortCwd = cwd
+    ? cwd.split("/").filter(Boolean).slice(-2).join("/")
+    : null;
 
   return (
     <div
+      ref={tabRef}
       onClick={onSelect}
       onContextMenu={onContextMenu}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={() => { setHovered(true); onInfoEnter(); }}
+      onMouseLeave={() => { setHovered(false); onInfoLeave(); }}
       style={{
+        position: "relative",
         display: "flex",
         alignItems: "center",
         gap: 5,
@@ -689,9 +723,79 @@ function TabItem({
             (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)";
           }}
         >
-          ×
+          {"\u00d7"}
         </button>
       )}
+
+      {/* Info popup */}
+      {showInfoPopup && (
+        <div
+          onMouseEnter={onInfoEnter}
+          onMouseLeave={onInfoLeave}
+          style={{
+            position: "absolute",
+            top: "calc(100% + 2px)",
+            left: 0,
+            minWidth: 200,
+            background: "var(--bg-3)",
+            border: "1px solid var(--border)",
+            borderRadius: 6,
+            padding: "8px 10px",
+            zIndex: 1100,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+            fontSize: 11,
+            fontFamily: "var(--font-ui)",
+            color: "var(--text)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 5,
+            animation: "dropdownIn 0.12s ease-out",
+          }}
+        >
+          <InfoRow label="Shell" value={tab.shell} />
+          <InfoRow label="Tab" value={tab.label} />
+          {shortCwd && <InfoRow label="CWD" value={shortCwd} title={cwd} />}
+          <InfoRow
+            label="Shell integration"
+            value={shellIntegration ? "active" : "inactive"}
+            accent={shellIntegration}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InfoRow({
+  label,
+  value,
+  title,
+  accent,
+}: {
+  label: string;
+  value: string;
+  title?: string;
+  accent?: boolean;
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+      <span style={{ color: "var(--text-dimmer)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 600, flexShrink: 0 }}>
+        {label}
+      </span>
+      <span
+        title={title}
+        style={{
+          color: accent ? "var(--accent)" : "var(--text-dim)",
+          fontFamily: "var(--font)",
+          fontSize: 11,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          maxWidth: 160,
+        }}
+      >
+        {value}
+      </span>
     </div>
   );
 }

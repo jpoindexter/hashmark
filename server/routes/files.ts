@@ -704,6 +704,39 @@ export function filesRoutes(projectDir: string) {
     }
   });
 
+  // Outgoing (unpushed) commits
+  app.get("/git/outgoing", async (c) => {
+    try {
+      const { stdout: branchRaw } = await execAsync(
+        "git", ["rev-parse", "--abbrev-ref", "HEAD"],
+        { cwd: projectDir }
+      );
+      const branch = branchRaw.trim();
+
+      // Check if upstream exists
+      try {
+        await execAsync("git", ["rev-parse", "--abbrev-ref", `${branch}@{u}`], { cwd: projectDir });
+      } catch {
+        return c.json({ commits: [], count: 0 });
+      }
+
+      const { stdout } = await execAsync(
+        "git",
+        ["log", `origin/${branch}..HEAD`, "--format=%h|%s|%ai", "--", "."],
+        { cwd: projectDir, maxBuffer: 2 * 1024 * 1024 }
+      );
+
+      const commits = stdout.trim().split("\n").filter(Boolean).map((line) => {
+        const [hash, message, date] = line.split("|");
+        return { hash, message, date };
+      });
+
+      return c.json({ commits, count: commits.length });
+    } catch {
+      return c.json({ commits: [], count: 0 });
+    }
+  });
+
   app.get("/git", async (c) => {
     try {
       const [statusOut, logOut, branchOut] = await Promise.all([
