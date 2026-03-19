@@ -454,6 +454,7 @@ export function sessionsRoutes(projectDir: string) {
                   message?: {
                     content?: Array<{
                       type: string;
+                      id?: string;
                       text?: string;
                       name?: string;
                       input?: unknown;
@@ -472,6 +473,9 @@ export function sessionsRoutes(projectDir: string) {
                       if (claudeSections.length > 0) {
                         updateAnalytics(dataDir, sessionId, block.text, claudeSections).catch(() => {});
                       }
+                    }
+                    if (block.type === "thinking") {
+                      send({ type: "thinking", content: block.text ?? "", id: block.id ?? randomUUID() });
                     }
                     if (block.type === "tool_use") {
                       send({ type: "tool_use", tool: block.name, input: block.input });

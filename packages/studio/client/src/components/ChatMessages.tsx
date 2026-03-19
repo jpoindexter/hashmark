@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import ThinkingBlock from "./chat/ThinkingBlock";
 
 interface Message {
   id: string;
@@ -27,7 +28,13 @@ export interface ProgressBlock {
   text: string;
 }
 
-export type ContentBlock = TextBlock | ToolUseBlockData | ProgressBlock;
+export interface ThinkingBlockData {
+  type: "thinking";
+  content: string;
+  id?: string;
+}
+
+export type ContentBlock = TextBlock | ToolUseBlockData | ProgressBlock | ThinkingBlockData;
 
 export interface StreamingState {
   blocks: ContentBlock[];
@@ -115,7 +122,7 @@ function CodeBlock({ lang, code }: { lang: string; code: string }) {
   );
 }
 
-function AssistantContent({ text }: { text: string }) {
+export function AssistantContent({ text }: { text: string }) {
   const lines = text.split("\n");
   const nodes: React.ReactNode[] = [];
   let i = 0;
@@ -205,7 +212,7 @@ function primaryArg(tool: string, input: Record<string, unknown>): string {
   return "";
 }
 
-function ToolUseBlock({ block }: { block: ToolUseBlockData }) {
+export function ToolUseBlock({ block }: { block: ToolUseBlockData }) {
   const accent = toolAccentColor(block.tool);
   const arg = primaryArg(block.tool, block.input);
   return (
@@ -398,6 +405,9 @@ function StreamingBubble({ state, legacyText }: { state?: StreamingState; legacy
                     {block.text}
                   </div>
                 );
+              }
+              if (block.type === "thinking") {
+                return <ThinkingBlock key={i} content={block.content} id={block.id ?? String(i)} />;
               }
               return null;
             })}
