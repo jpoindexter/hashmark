@@ -262,3 +262,11 @@ I'm continuing work on hashmark studio's shell overhaul. The project is at `/Use
 
 **Rules**: Inline styles only (no Tailwind/CSS modules). Import with `.tsx` extension. Use Grove design tokens from `styles/tokens.css`. Build: `npm run build`, test: `npm run electron`. Read DESIGN.md for the design system, PRODUCT_BRIEF.md for vision, and the studio-frontend.md agent spec at `.claude/agents/studio/studio-frontend.md` for coding patterns.
 ---
+
+### Research: TDAD (Test-Driven Agentic Development) -- arxiv.org/pdf/2603.17973
+- [ ] Dependency graph for multi-agent conflict detection (Company/Swarm mode)
+- [ ] Selective test execution based on change impact analysis
+- [ ] Regression alerts when parallel agents modify overlapping code
+- [ ] Visual impact graph in the UI showing which tests are affected
+- [ ] Smart merge ordering based on dependency analysis
+
