@@ -209,11 +209,13 @@ export default function Shell() {
       />
 
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
-        <ActivityBar
-          activeView={activeView}
-          sidebarOpen={sidebarOpen}
-          onToggleSidebar={() => setSidebarOpen(v => !v)}
-        />
+        {activityBarVisible && (
+          <ActivityBar
+            activeView={activeView}
+            sidebarOpen={sidebarOpen}
+            onToggleSidebar={() => setSidebarOpen(v => !v)}
+          />
+        )}
 
         {/* Sidebar shows for chat, files, source-control, agents */}
         {["chat", "files", "source-control", "agents"].includes(activeView) && sidebarOpen && (
