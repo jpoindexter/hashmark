@@ -4,10 +4,24 @@ import { useNavigate } from "react-router-dom";
 import { SkeletonLine } from "../Skeleton.tsx";
 import IconButton from "../shared/IconButton.tsx";
 import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
+import ConfirmDialog from "../shared/ConfirmDialog.tsx";
 
 interface ContextMenuState {
   items: ContextMenuItem[];
   position: { x: number; y: number };
+}
+
+interface DialogState {
+  open: boolean;
+  title: string;
+  message?: string;
+  confirmLabel?: string;
+  danger?: boolean;
+  inputMode?: boolean;
+  inputPlaceholder?: string;
+  inputDefaultValue?: string;
+  onConfirm: () => void;
+  onConfirmWithValue?: (value: string) => void;
 }
 
 interface ChatSession {
@@ -77,6 +91,8 @@ export default function SessionsSidebar({ activeSessionId, onSessionSelect, info
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [visible, setVisible] = useState(true);
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
+  const [dialog, setDialog] = useState<DialogState | null>(null);
+  const closeDialog = useCallback(() => setDialog(null), []);
 
   useEffect(() => {
     const handler = () => setVisible(document.visibilityState === "visible");
@@ -121,7 +137,7 @@ export default function SessionsSidebar({ activeSessionId, onSessionSelect, info
     e.stopPropagation();
     setCtxMenu({
       position: { x: e.clientX, y: e.clientY },
-      items: buildSessionMenuItems(session, refreshSessions),
+      items: buildSessionMenuItems(session, refreshSessions, setDialog),
     });
   }, [refreshSessions]);
 
@@ -179,6 +195,21 @@ export default function SessionsSidebar({ activeSessionId, onSessionSelect, info
         position={ctxMenu?.position ?? null}
         onClose={() => setCtxMenu(null)}
       />
+      {dialog && (
+        <ConfirmDialog
+          open={dialog.open}
+          title={dialog.title}
+          message={dialog.message}
+          confirmLabel={dialog.confirmLabel}
+          danger={dialog.danger}
+          inputMode={dialog.inputMode}
+          inputPlaceholder={dialog.inputPlaceholder}
+          inputDefaultValue={dialog.inputDefaultValue}
+          onConfirm={() => { dialog.onConfirm(); closeDialog(); }}
+          onCancel={closeDialog}
+          onConfirmWithValue={dialog.onConfirmWithValue}
+        />
+      )}
     </div>
   );
 }
@@ -430,19 +461,33 @@ function SessionRow({
   );
 }
 
-// Builds context menu items for a session row
-function buildSessionMenuItems(session: ChatSession, onRefresh: () => void): ContextMenuItem[] {
+// Builds context menu items for a session row (uses setDialog for confirm/prompt)
+function buildSessionMenuItems(
+  session: ChatSession,
+  onRefresh: () => void,
+  setDialog: (d: DialogState | null) => void,
+): ContextMenuItem[] {
   return [
     {
       label: "Rename",
       onClick: () => {
-        const newTitle = prompt("Rename session:", session.title || "Untitled");
-        if (newTitle === null || newTitle.trim() === "") return;
-        fetch(`/api/sessions/${session.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: newTitle.trim() }),
-        }).then(() => onRefresh()).catch(() => {});
+        setDialog({
+          open: true,
+          title: "Rename session",
+          inputMode: true,
+          inputPlaceholder: "Session name",
+          inputDefaultValue: session.title || "Untitled",
+          confirmLabel: "Rename",
+          onConfirm: () => {},
+          onConfirmWithValue: (newTitle: string) => {
+            if (!newTitle.trim()) return;
+            fetch(`/api/sessions/${session.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ title: newTitle.trim() }),
+            }).then(() => { onRefresh(); setDialog(null); }).catch(() => setDialog(null));
+          },
+        });
       },
     },
     {
@@ -460,10 +505,18 @@ function buildSessionMenuItems(session: ChatSession, onRefresh: () => void): Con
       label: "Delete",
       danger: true,
       onClick: () => {
-        if (!confirm(`Delete "${session.title || "Untitled"}"?`)) return;
-        fetch(`/api/sessions/${session.id}`, { method: "DELETE" })
-          .then(() => onRefresh())
-          .catch(() => {});
+        setDialog({
+          open: true,
+          title: `Delete "${session.title || "Untitled"}"?`,
+          message: "This will permanently delete this session and all its messages.",
+          confirmLabel: "Delete",
+          danger: true,
+          onConfirm: () => {
+            fetch(`/api/sessions/${session.id}`, { method: "DELETE" })
+              .then(() => { onRefresh(); setDialog(null); })
+              .catch(() => setDialog(null));
+          },
+        });
       },
     },
   ];
