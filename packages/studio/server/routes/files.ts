@@ -342,6 +342,17 @@ export function filesRoutes(projectDir: string) {
     }
   });
 
+  app.post("/git/branch", async (c) => {
+    const body = await c.req.json<{ name: string }>().catch(() => ({ name: "" }));
+    if (!body.name?.trim()) return c.json({ error: "Branch name required" }, 400);
+    try {
+      await execAsync("git", ["checkout", "-b", body.name.trim()], { cwd: projectDir });
+      return c.json({ ok: true, branch: body.name.trim() });
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    }
+  });
+
   app.post("/git/checkout", async (c) => {
     const body = await c.req.json<{ branch: string }>().catch(() => ({ branch: "" }));
     if (!body.branch?.trim()) return c.json({ error: "branch required" }, 400);

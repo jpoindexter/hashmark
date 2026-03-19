@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { GitBranch, ChevronDown } from "lucide-react";
+import { GitBranch, ChevronDown, Plus } from "lucide-react";
 
 export default function BranchPicker({ currentBranch }: { currentBranch: string }) {
   const [open, setOpen] = useState(false);
@@ -8,7 +8,11 @@ export default function BranchPicker({ currentBranch }: { currentBranch: string 
   const [switching, setSwitching] = useState(false);
   const [search, setSearch] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [creatingBranch, setCreatingBranch] = useState(false);
+  const [newBranchName, setNewBranchName] = useState("");
+  const [createError, setCreateError] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
+  const newBranchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const loadBranches = async () => {
@@ -19,6 +23,31 @@ export default function BranchPicker({ currentBranch }: { currentBranch: string 
       setBranches(d.branches ?? []);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createBranch = async () => {
+    const name = newBranchName.trim();
+    if (!name) return;
+    setSwitching(true);
+    setCreateError("");
+    try {
+      const res = await fetch("/api/files/git/branch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok || data.error) {
+        setCreateError(data.error ?? "Failed to create branch");
+        return;
+      }
+      setCreatingBranch(false);
+      setNewBranchName("");
+      setOpen(false);
+      window.dispatchEvent(new CustomEvent("studio:branch-changed"));
+    } finally {
+      setSwitching(false);
     }
   };
 
@@ -36,6 +65,9 @@ export default function BranchPicker({ currentBranch }: { currentBranch: string 
     } else {
       setSearch("");
       setHighlightedIndex(0);
+      setCreatingBranch(false);
+      setNewBranchName("");
+      setCreateError("");
     }
   }, [open]);
 
@@ -135,6 +167,99 @@ export default function BranchPicker({ currentBranch }: { currentBranch: string 
                   boxSizing: "border-box",
                 }}
               />
+            </div>
+
+            {/* New branch */}
+            <div style={{ padding: "0 8px 4px", flexShrink: 0 }}>
+              {creatingBranch ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <input
+                      ref={newBranchRef}
+                      value={newBranchName}
+                      onChange={e => { setNewBranchName(e.target.value); setCreateError(""); }}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") { e.preventDefault(); void createBranch(); }
+                        if (e.key === "Escape") { e.preventDefault(); setCreatingBranch(false); setNewBranchName(""); }
+                        e.stopPropagation();
+                      }}
+                      placeholder="branch-name"
+                      disabled={switching}
+                      autoFocus
+                      style={{
+                        flex: 1,
+                        height: 26,
+                        padding: "4px 8px",
+                        background: "var(--bg-3)",
+                        border: "1px solid var(--accent)",
+                        borderRadius: "var(--radius)",
+                        fontSize: 12,
+                        fontFamily: "var(--font)",
+                        color: "var(--text)",
+                        outline: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                    <button
+                      onClick={() => void createBranch()}
+                      disabled={!newBranchName.trim() || switching}
+                      style={{
+                        height: 26,
+                        padding: "0 8px",
+                        background: newBranchName.trim() ? "var(--accent)" : "var(--bg-3)",
+                        border: "none",
+                        borderRadius: "var(--radius)",
+                        color: newBranchName.trim() ? "var(--bg)" : "var(--text-dimmer)",
+                        fontSize: 11,
+                        fontFamily: "var(--font-ui)",
+                        cursor: newBranchName.trim() ? "pointer" : "default",
+                        fontWeight: 600,
+                        flexShrink: 0,
+                      }}
+                    >
+                      Create
+                    </button>
+                  </div>
+                  {createError && (
+                    <div style={{ fontSize: 10, color: "var(--red, #f14c4c)", fontFamily: "var(--font-ui)", padding: "0 2px" }}>
+                      {createError}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setCreatingBranch(true);
+                    requestAnimationFrame(() => newBranchRef.current?.focus());
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    width: "100%",
+                    padding: "5px 8px",
+                    background: "none",
+                    border: "1px dashed var(--border-dim)",
+                    borderRadius: "var(--radius)",
+                    color: "var(--text-dim)",
+                    fontSize: 12,
+                    fontFamily: "var(--font-ui)",
+                    cursor: "pointer",
+                    transition: "border-color 0.1s, color 0.1s",
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--accent)";
+                    (e.currentTarget as HTMLButtonElement).style.color = "var(--accent)";
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-dim)";
+                    (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim)";
+                  }}
+                >
+                  <Plus size={11} />
+                  <span>New branch...</span>
+                </button>
+              )}
             </div>
 
             {/* Branch list */}

@@ -90,16 +90,28 @@ function resolveMcpConfig(projectDir: string): string | null {
 }
 
 // Candidates for the claude binary — same as runner.ts
-function findClaudeBin(projectDir: string): string {
+function findBin(name: string, projectDir: string): string {
   const candidates = [
-    join(projectDir, "node_modules", ".bin", "claude"),
-    "/Applications/Conductor.app/Contents/Resources/bin/claude",
-    "/usr/local/bin/claude",
-    "claude",
+    join(projectDir, "node_modules", ".bin", name),
+    `/Applications/Conductor.app/Contents/Resources/bin/${name}`,
+    `/usr/local/bin/${name}`,
+    `/opt/homebrew/bin/${name}`,
+    name, // fallback to PATH
   ];
   return candidates.find((p) => {
     try { return existsSync(p); } catch { return false; }
-  }) ?? "claude";
+  }) ?? name;
+}
+
+function findClaudeBin(projectDir: string): string {
+  return findBin("claude", projectDir);
+}
+
+/** Determine which CLI to use based on the model ID */
+function resolveProvider(model: string): "claude" | "codex" | "gemini" {
+  if (model.startsWith("o3") || model.startsWith("gpt-") || model === "codex") return "codex";
+  if (model.startsWith("gemini")) return "gemini";
+  return "claude";
 }
 
 // Build a text-based conversation prompt for --print mode
@@ -282,6 +294,7 @@ export function sessionsRoutes(projectDir: string) {
       message: string;
       systemPrompt?: string;
       thinking?: boolean;
+      planMode?: boolean;
       model?: string;
     }>();
 
@@ -423,24 +436,41 @@ export function sessionsRoutes(projectDir: string) {
           });
 
         } else {
-          // ── Claude CLI streaming JSON agent path ────────────────────────────
-          const claudeBin = findClaudeBin(projectDir);
+          // ── CLI streaming agent path (Claude, Codex, or Gemini) ──────────────
+          const provider = resolveProvider(body.model || "claude-sonnet-4-6");
+          const cliBin = findBin(provider === "codex" ? "codex" : provider === "gemini" ? "gemini" : "claude", projectDir);
           const mcpConfigPath = resolveMcpConfig(projectDir);
 
-          const claudeArgs: string[] = [
-            "--output-format", "stream-json",
-            "--verbose",
-            "--no-interactive",
-          ];
-          if (body.thinking) claudeArgs.push("--thinking");
-          if (mcpConfigPath) {
-            claudeArgs.unshift("--mcp-config", mcpConfigPath);
+          let cliArgs: string[];
+          const cliEnv: Record<string, string> = { ...process.env as Record<string, string> };
+
+          if (provider === "codex") {
+            // Codex CLI: different flags than Claude
+            cliArgs = ["--quiet"];
+            if (body.model) cliArgs.push("--model", body.model);
+          } else if (provider === "gemini") {
+            // Gemini CLI: different flags
+            cliArgs = [];
+            if (body.model) cliArgs.push("--model", body.model);
+          } else {
+            // Claude CLI
+            cliArgs = [
+              "--output-format", "stream-json",
+              "--verbose",
+              "--no-interactive",
+            ];
+            if (body.thinking) cliArgs.push("--thinking");
+            if (body.planMode) cliArgs.push("--permission-mode", "plan");
+            if (mcpConfigPath) {
+              cliArgs.unshift("--mcp-config", mcpConfigPath);
+            }
+            cliEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
           }
 
-          const proc = spawn(claudeBin, claudeArgs, {
+          const proc = spawn(cliBin, cliArgs, {
             cwd: projectDir,
             stdio: ["pipe", "pipe", "pipe"],
-            env: { ...process.env, CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS: "1" },
+            env: cliEnv,
           });
 
           activeProcesses.set(sessionId, { kill: () => proc.kill("SIGTERM") });

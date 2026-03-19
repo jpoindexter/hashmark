@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type CSSProperties } from "react";
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import Titlebar from "./Titlebar";
@@ -162,6 +162,31 @@ export default function Shell() {
     window.addEventListener("studio:switch-session", handler);
     return () => window.removeEventListener("studio:switch-session", handler);
   }, []);
+
+  // Navigation via custom event (used by Titlebar PR button)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const path = (e as CustomEvent<string>).detail;
+      if (typeof path === "string") navigate(path);
+    };
+    window.addEventListener("studio:navigate", handler);
+    return () => window.removeEventListener("studio:navigate", handler);
+  }, [navigate]);
+
+  // Fetch context usage after each chat response completes
+  const prevStreaming = useRef(streaming);
+  useEffect(() => {
+    const wasStreaming = prevStreaming.current;
+    prevStreaming.current = streaming;
+    if (wasStreaming && !streaming && activeSessionId) {
+      fetch(`/api/sessions/${activeSessionId}/tokens`)
+        .then(r => r.json())
+        .then((data: { pct?: number }) => {
+          if (typeof data.pct === "number") setContextPercent(data.pct);
+        })
+        .catch(() => {});
+    }
+  }, [streaming, activeSessionId]);
 
   // Sync settings changed from Settings page while Shell is mounted
   useEffect(() => {
@@ -351,6 +376,7 @@ export default function Shell() {
         projectName={info?.projectName}
         modelName={modelLabel}
         providerName={providerName}
+        contextPercent={contextPercent}
       />
 
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} mode={paletteMode} />

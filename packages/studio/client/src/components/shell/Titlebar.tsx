@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from "react";
-import { ChevronLeft, RefreshCw, PanelBottom, GitCompare, Sidebar, Columns2 } from "lucide-react";
+import { ChevronLeft, RefreshCw, PanelBottom, GitCompare, Sidebar, Columns2, GitPullRequest } from "lucide-react";
 import type { GitStatus, DriftResult } from "../../hooks/useProjectInfo";
 import BranchPicker from "../BranchPicker";
 import { DriftBadge } from "../DriftIndicator";
@@ -38,6 +38,40 @@ const containerStyle: CSSProperties = {
   WebkitAppRegion: "drag",
   paddingLeft: 70,
 } as CSSProperties;
+
+function PrButton({ onClick }: { onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <button
+      title="Create Pull Request"
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "1px 7px",
+        border: "1px solid var(--accent)",
+        background: hovered ? "var(--accent-bg)" : "transparent",
+        color: "var(--accent)",
+        fontSize: 11,
+        fontFamily: "var(--font)",
+        fontWeight: 600,
+        letterSpacing: "0.03em",
+        cursor: "pointer",
+        borderRadius: 10,
+        lineHeight: "18px",
+        marginRight: 4,
+        transition: "background 0.1s ease",
+      }}
+    >
+      <GitPullRequest size={11} />
+      PR
+    </button>
+  );
+}
 
 export default function Titlebar({
   projectName,
@@ -168,6 +202,12 @@ export default function Titlebar({
           ...noDrag,
         }}
       >
+        {changedFiles > 0 && (
+          <PrButton onClick={() => window.dispatchEvent(
+            new CustomEvent("studio:navigate", { detail: "/source-control" })
+          )} />
+        )}
+
         <IconButton
           title={`Toggle sidebar (\u2318B)`}
           onClick={onToggleSidebar}

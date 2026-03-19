@@ -623,6 +623,7 @@ export default function ChatInputBar({
         message: text,
         model: selectedModel,
         thinking,
+        planMode,
         ...(systemPrompt.trim() && { systemPrompt: systemPrompt.trim() }),
       }),
     });

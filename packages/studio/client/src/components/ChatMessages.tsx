@@ -583,10 +583,38 @@ function EmptyState({ modelLabel }: { modelLabel: string }) {
   );
 }
 
-// Sentinel ID for the streaming row
-const STREAMING_ID = "__streaming__";
+function ResumedDivider({ timestamp }: { timestamp: number }) {
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+      padding: "8px 0",
+      userSelect: "none",
+    }}>
+      <div style={{ flex: 1, height: 1, background: "var(--border-dim)" }} />
+      <span style={{
+        fontSize: 10,
+        color: "var(--text-dimmer)",
+        fontFamily: "var(--font)",
+        letterSpacing: "0.05em",
+        whiteSpace: "nowrap",
+      }}>
+        Resumed session {"\u00b7"} {new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+      </span>
+      <div style={{ flex: 1, height: 1, background: "var(--border-dim)" }} />
+    </div>
+  );
+}
 
-type VirtualItem = Message | { id: typeof STREAMING_ID; role: "assistant" };
+// Sentinel IDs for virtual list rows
+const STREAMING_ID = "__streaming__";
+const RESUME_DIVIDER_ID = "__resume_divider__";
+
+type VirtualItem =
+  | Message
+  | { id: typeof STREAMING_ID; role: "assistant" }
+  | { id: typeof RESUME_DIVIDER_ID; role: "divider"; timestamp: number };
 
 export default function ChatMessages({ sessionId, streamText, streaming, streamingState, modelLabel = "Sonnet 4.6" }: ChatMessagesProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -597,12 +625,25 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
   const userScrolledUp = useRef(false);
   const prevScrollTop = useRef(0);
 
+  // Track the count of messages loaded on initial fetch to detect resumed sessions
+  const resumedAtCount = useRef<number>(0);
+  const resumeTimestamp = useRef<number>(0);
+
   const loadMessages = useCallback(async (id: string) => {
     setLoading(true);
     try {
       const res = await fetch(`/api/sessions/${id}`);
       const data = await res.json() as { messages: Message[] };
-      setMessages(data.messages ?? []);
+      const msgs = data.messages ?? [];
+      // If session has existing messages, mark as resumed
+      if (msgs.length > 0) {
+        resumedAtCount.current = msgs.length;
+        resumeTimestamp.current = Date.now();
+      } else {
+        resumedAtCount.current = 0;
+        resumeTimestamp.current = 0;
+      }
+      setMessages(msgs);
     } finally {
       setLoading(false);
     }
@@ -622,9 +663,24 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
     }
   }, [streaming, sessionId, loadMessages]);
 
-  const items: VirtualItem[] = streaming
-    ? [...messages, { id: STREAMING_ID, role: "assistant" as const }]
-    : messages;
+  // Build virtual list items, injecting a resume divider when a session with
+  // prior history receives new messages (streaming or completed new turns).
+  const showResumeDivider = resumedAtCount.current > 0 && messages.length > resumedAtCount.current;
+  const items: VirtualItem[] = [];
+  for (let i = 0; i < messages.length; i++) {
+    items.push(messages[i]);
+    if (showResumeDivider && i === resumedAtCount.current - 1) {
+      items.push({ id: RESUME_DIVIDER_ID, role: "divider", timestamp: resumeTimestamp.current });
+    }
+  }
+  if (streaming) {
+    // Show divider before first streaming message if session was resumed and no new
+    // persisted messages exist yet
+    if (resumedAtCount.current > 0 && messages.length === resumedAtCount.current) {
+      items.push({ id: RESUME_DIVIDER_ID, role: "divider", timestamp: resumeTimestamp.current });
+    }
+    items.push({ id: STREAMING_ID, role: "assistant" as const });
+  }
 
   const virtualizer = useVirtualizer({
     count: items.length,
@@ -714,7 +770,9 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
                 margin: "0 auto",
                 padding: vrow.index === 0 ? "20px 24px 14px" : "0 24px 20px",
               }}>
-                {item.id === STREAMING_ID ? (
+                {item.id === RESUME_DIVIDER_ID ? (
+                  <ResumedDivider timestamp={(item as { timestamp: number }).timestamp} />
+                ) : item.id === STREAMING_ID ? (
                   <StreamingBubble state={streamingState} legacyText={streamText} />
                 ) : (
                   <MessageBubble
