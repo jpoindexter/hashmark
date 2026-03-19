@@ -130,7 +130,15 @@ function createWindow() {
 
   if (ws?.maximized) win.maximize();
 
-  win.loadURL(isDev ? `http://localhost:3201` : `http://localhost:${PORT}`);
+  const appUrl = isDev ? `http://localhost:3201` : `http://localhost:${PORT}`;
+  win.loadURL(appUrl);
+
+  // Retry loading if server isn't ready yet
+  win.webContents.on("did-fail-load", (_event, _code, _desc, url) => {
+    if (url.includes("localhost")) {
+      setTimeout(() => win?.loadURL(appUrl), 1000);
+    }
+  });
 
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("http")) shell.openExternal(url);
