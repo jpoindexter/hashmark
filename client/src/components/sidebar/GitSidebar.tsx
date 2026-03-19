@@ -394,7 +394,7 @@ export default function GitSidebar() {
           disabled={committing || !commitMsg.trim()}
           style={{ width: "100%", fontSize: 11, justifyContent: "center" }}
         >
-          {committing ? "Committing..." : "> Commit"}
+          {committing ? "Committing..." : "Commit"}
         </button>
         <div style={{ display: "flex", gap: 6 }}>
           <button

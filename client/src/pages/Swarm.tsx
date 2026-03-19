@@ -567,7 +567,7 @@ export default function Swarm() {
           </span>
           <span style={{ flex: 1 }} />
           <button className="btn btn-primary" onClick={handleReset} style={{ fontSize: 11 }}>
-            {"> NEW SWARM"}
+            {"New swarm"}
           </button>
         </div>
       )}

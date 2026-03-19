@@ -21,7 +21,6 @@ import { useProjectInfo } from "../../hooks/useProjectInfo";
 import { useKeyboardNav } from "../../hooks/useKeyboardNav";
 import { useTheme } from "../../hooks/useTheme";
 import FileContentViewer from "./FileContentViewer";
-import DiffContentViewer from "./DiffContentViewer";
 import AgentDetailViewer from "./AgentDetailViewer";
 
 function persist(key: string, val: unknown) {
@@ -367,8 +366,8 @@ export default function Shell() {
           />
         )}
 
-        {/* Sidebar shows for chat, files, source-control, agents */}
-        {["chat", "files", "source-control", "agents"].includes(activeView) && sidebarOpen && (
+        {/* Sidebar shows for chat, files, agents (source-control uses full-page layout) */}
+        {["chat", "files", "agents"].includes(activeView) && sidebarOpen && (
           <>
             <SidebarPanel
               activeView={activeView}
@@ -395,7 +394,7 @@ export default function Shell() {
         )}
 
         {/* Main content column */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0, paddingLeft: sidebarOpen ? 1 : 0 }}>
           {/* Drift banner */}
           {drift && !driftDismissed && (
             <DriftBanner
@@ -439,8 +438,6 @@ export default function Shell() {
               <ChatMessages sessionId={activeSessionId} streamText={streamText} streaming={streaming} modelLabel={modelLabel ?? "Sonnet 4.6"} planMode={planMode} />
             ) : activeView === "files" ? (
               <FileContentViewer />
-            ) : activeView === "source-control" ? (
-              <DiffContentViewer />
             ) : (
               <div style={{ flex: 1, overflow: "auto" }}>
                 <Outlet />

@@ -671,7 +671,7 @@ export default function SourceControlPage() {
               disabled={committing || !commitMsg.trim() || stagedFiles.length === 0}
               style={{ flex: 1 }}
             >
-              {committing ? "Committing..." : "> Commit"}
+              {committing ? "Committing..." : "Commit"}
             </button>
           </div>
           <div style={{ display: "flex", gap: 6 }}>

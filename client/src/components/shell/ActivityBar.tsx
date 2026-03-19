@@ -5,9 +5,6 @@ import {
   FolderTree,
   GitCompare,
   Bot,
-  PlayCircle,
-  Zap,
-  Shield,
   Settings,
 } from "lucide-react";
 
@@ -29,9 +26,6 @@ const topItems: NavItem[] = [
   { path: "/files", icon: FolderTree, label: "Explorer", shortcut: "\u2318\u21E7E" },
   { path: "/source-control", icon: GitCompare, label: "Source Control", shortcut: "\u2318\u21E7G" },
   { path: "/agents", icon: Bot, label: "Agents", shortcut: "\u2318\u21E7A" },
-  { path: "/run", icon: PlayCircle, label: "Run" },
-  { path: "/generate", icon: Zap, label: "Generate" },
-  { path: "/governance", icon: Shield, label: "Governance" },
 ];
 
 const bottomItems: NavItem[] = [

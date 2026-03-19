@@ -487,30 +487,20 @@ function PolicyDrawer({ policy, onSave, onClose }: PolicyDrawerProps) {
           gap: 8,
         }}>
           <button
+            className="btn btn-primary"
             onClick={e => void handleSubmit(e as unknown as React.FormEvent)}
             disabled={saving || !name.trim()}
-            style={{
-              background: "var(--accent)", color: "var(--bg)",
-              border: "none", padding: "6px 16px",
-              fontFamily: "var(--font)", fontSize: 11, fontWeight: 700,
-              cursor: saving || !name.trim() ? "not-allowed" : "pointer",
-              letterSpacing: "0.04em",
-              opacity: saving || !name.trim() ? 0.6 : 1,
-            }}
+            style={{ fontSize: 11 }}
           >
-            {saving ? "SAVING…" : isEdit ? "> UPDATE POLICY" : "> SAVE POLICY"}
+            {saving ? "Saving..." : isEdit ? "Update policy" : "Save policy"}
           </button>
           <button
+            className="btn"
             type="button"
             onClick={onClose}
-            style={{
-              background: "none", border: "1px solid var(--border-dim)",
-              color: "var(--text-dim)", padding: "6px 14px",
-              fontFamily: "var(--font)", fontSize: 11,
-              cursor: "pointer", letterSpacing: "0.04em",
-            }}
+            style={{ fontSize: 11 }}
           >
-            CANCEL
+            Cancel
           </button>
         </div>
       </div>

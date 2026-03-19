@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { DiffPanel } from "../components/DiffPanel.tsx";
+import AgentPicker from "../components/AgentPicker.tsx";
 import { toast } from "../hooks/useToast.ts";
 
 interface AgentDef {
@@ -346,7 +347,7 @@ export default function Run() {
         </div>
         {phase !== "idle" && (
           <button className="btn" onClick={handleReset} style={{ fontSize: 11 }}>
-            {phase === "done" ? "RUN ANOTHER" : "CLEAR"}
+            {phase === "done" ? "Run another" : "Clear"}
           </button>
         )}
       </div>
@@ -468,47 +469,20 @@ export default function Run() {
               {/* Controls row */}
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                 {/* Agent selector */}
-                <select
-                  value={agentId}
-                  onChange={(e) => setAgentId(e.target.value)}
-                  style={{
-                    padding: "6px 10px",
-                    background: "var(--bg-2)",
-                    border: "1px solid var(--border-dim)",
-                    borderRadius: "var(--radius)",
-                    color: agentId ? "var(--text)" : "var(--text-dimmer)",
-                    fontFamily: "var(--font)",
-                    fontSize: 11,
-                    outline: "none",
-                    cursor: "pointer",
-                    minWidth: 160,
-                  }}
-                >
-                  <option value="">No specific agent</option>
-                  {Array.from(grouped.entries()).map(([dept, deptAgents]) => (
-                    <optgroup key={dept} label={dept}>
-                      {deptAgents.map((a) => (
-                        <option key={a.id} value={a.id}>{a.name}</option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-
-                {/* Department color dot for selected agent */}
-                {agentId && (
-                  <span style={{
-                    width: 8, height: 8, borderRadius: "50%",
-                    background: deptColor(agentId),
-                    flexShrink: 0,
-                  }} />
-                )}
+                <AgentPicker
+                  agents={agents}
+                  selectedId={agentId}
+                  onSelect={setAgentId}
+                  grouped={grouped}
+                  deptColor={deptColor}
+                />
 
                 <button
                   className="btn btn-primary"
                   onClick={handleRun}
                   disabled={!task.trim()}
                 >
-                  {"> RUN AGENT"}
+                  {"Run agent"}
                 </button>
               </div>
 
@@ -648,7 +622,7 @@ export default function Run() {
                       onClick={handleCancel}
                       style={{ fontSize: 10, padding: "2px 8px", color: "var(--red)", borderColor: "var(--red)" }}
                     >
-                      CANCEL
+                      Cancel
                     </button>
                   </>
                 )}
@@ -785,7 +759,7 @@ export default function Run() {
                     disabled={diffLoading}
                     style={{ fontSize: 11 }}
                   >
-                    {diffLoading ? "Loading..." : "> VIEW DIFF"}
+                    {diffLoading ? "Loading..." : "View diff"}
                   </button>
                 )}
                 <button
@@ -793,14 +767,14 @@ export default function Run() {
                   onClick={handleRunAgain}
                   style={{ fontSize: 11 }}
                 >
-                  {"> RUN AGAIN"}
+                  {"Run again"}
                 </button>
                 <button
                   className="btn"
                   onClick={handleShare}
                   style={{ fontSize: 11, color: copied ? "var(--accent)" : undefined, borderColor: copied ? "var(--accent)" : undefined }}
                 >
-                  {copied ? "COPIED!" : "> SHARE"}
+                  {copied ? "Copied!" : "Share"}
                 </button>
                 <span style={{ flex: 1 }} />
                 <button
@@ -808,7 +782,7 @@ export default function Run() {
                   onClick={handleReset}
                   style={{ fontSize: 11 }}
                 >
-                  {"> NEW RUN"}
+                  {"New run"}
                 </button>
               </div>
             </div>

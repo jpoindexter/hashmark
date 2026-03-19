@@ -340,16 +340,10 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
                         </button>
                       </div>
                       <button
+                        className="btn btn-primary"
                         onClick={() => void saveKey(provider.id)}
                         disabled={saving === provider.id || !(keyInputs[provider.id] ?? "").trim()}
-                        style={{
-                          padding: "5px 12px", background: "var(--accent)", border: "none",
-                          borderRadius: "var(--radius)", color: "var(--bg)", fontSize: 11,
-                          fontFamily: "var(--font-ui)", fontWeight: 600,
-                          cursor: (keyInputs[provider.id] ?? "").trim() ? "pointer" : "default",
-                          opacity: (keyInputs[provider.id] ?? "").trim() ? 1 : 0.4,
-                          flexShrink: 0,
-                        }}
+                        style={{ fontSize: 11, flexShrink: 0 }}
                       >
                         {saving === provider.id ? "..." : "Save"}
                       </button>
@@ -437,25 +431,20 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {!isActive && (
                     <button
+                      className={effectivelyHasKey ? "btn btn-primary" : "btn"}
                       onClick={() => void setActive(provider.id)}
-                      style={{
-                        padding: "5px 12px", background: effectivelyHasKey ? "var(--accent)" : "var(--bg-4)",
-                        border: effectivelyHasKey ? "none" : "1px solid var(--border)",
-                        borderRadius: "var(--radius)", color: effectivelyHasKey ? "var(--bg)" : "var(--text-dim)",
-                        fontSize: 11, fontFamily: "var(--font-ui)", fontWeight: 600, cursor: "pointer",
-                      }}
+                      style={{ fontSize: 11 }}
                     >
                       Set Active
                     </button>
                   )}
                   <button
+                    className="btn"
                     onClick={() => void testConnection(provider.id)}
                     disabled={ts === "testing"}
                     style={{
-                      padding: "5px 12px", background: "none", border: "1px solid var(--border-dim)",
-                      borderRadius: "var(--radius)", fontSize: 11, fontFamily: "var(--font-ui)",
-                      cursor: "pointer",
-                      color: ts === "ok" ? "var(--accent)" : ts === "fail" ? "var(--red)" : "var(--text-dim)",
+                      fontSize: 11,
+                      color: ts === "ok" ? "var(--accent)" : ts === "fail" ? "var(--red)" : undefined,
                     }}
                   >
                     {ts === "testing" ? "Testing..." : ts === "ok" ? "Connected" : ts === "fail" ? "Failed" : "Test connection"}
@@ -612,15 +601,9 @@ function ScanConfigPanel() {
         <button
           onClick={() => void save()}
           disabled={!dirty || saving}
-          className="btn"
-          style={{
-            background: dirty ? "var(--accent)" : "var(--bg-4)",
-            borderColor: dirty ? "var(--accent)" : "var(--border)",
-            color: dirty ? "var(--bg)" : "var(--text-dimmer)",
-            fontWeight: 600, opacity: dirty ? 1 : 0.5,
-          }}
+          className={dirty ? "btn btn-primary" : "btn"}
         >
-          {saving ? "Saving..." : "Save Changes"}
+          {saving ? "Saving..." : "> Save Changes"}
         </button>
         {saved && (
           <span style={{ fontSize: 11, color: "var(--accent)" }}>Saved</span>

@@ -850,11 +850,11 @@ export default function Company() {
             onClick={handlePlan}
             disabled={!task.trim() || busy}
           >
-            {phase === "planning" ? "PLANNING..." : "> PLAN"}
+            {phase === "planning" ? "Planning..." : "Plan"}
           </button>
           {plan.length > 0 && !busy && (
             <button className="btn btn-primary" onClick={handleRun}>
-              {`> RUN ${plan.length} AGENTS`}
+              {`Run ${plan.length} agents`}
             </button>
           )}
           {(phase === "running" || phase === "merging") && (

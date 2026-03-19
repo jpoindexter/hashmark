@@ -16,9 +16,6 @@ const VIEW_TITLES: Record<string, string> = {
   files: "Explorer",
   "source-control": "Source Control",
   agents: "Agents",
-  run: "Runs",
-  generate: "Generate",
-  governance: "Policies",
 };
 
 const VIEWS = [
@@ -26,9 +23,6 @@ const VIEWS = [
   "files",
   "source-control",
   "agents",
-  "run",
-  "generate",
-  "governance",
 ] as const;
 
 const fallbackStyle: React.CSSProperties = {

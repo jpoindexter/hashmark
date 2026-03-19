@@ -1220,7 +1220,7 @@ export default function Agents() {
                 disabled={creating || !createName.trim()}
                 style={{ fontSize: "11px" }}
               >
-                {creating ? "Creating..." : "> Create Agent"}
+                {creating ? "Creating..." : "Create agent"}
               </button>
             </div>
           </div>

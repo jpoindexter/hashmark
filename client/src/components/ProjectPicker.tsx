@@ -477,7 +477,7 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
                   transition: "opacity 0.12s",
                 }}
               >
-                {loading ? "OPENING..." : "> OPEN"}
+                {loading ? "Opening..." : "Open"}
               </button>
               <button
                 onClick={() => { setShowPathInput(false); setPathInput(""); setError(null); }}
@@ -560,7 +560,7 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
                   transition: "opacity 0.12s",
                 }}
               >
-                {loading ? "CREATING..." : "> CREATE"}
+                {loading ? "Creating..." : "Create"}
               </button>
               <button
                 onClick={() => { setShowNewWorkspace(false); setNewWsInput(""); setNewWsError(null); }}
