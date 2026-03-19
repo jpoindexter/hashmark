@@ -20,9 +20,18 @@ app.setName("hashmark studio");
 const CONFIG_DIR = `${app.getPath("home")}/.hashmark`;
 const CONFIG_FILE = `${CONFIG_DIR}/studio-config.json`;
 
+interface WindowState {
+  x?: number;
+  y?: number;
+  width: number;
+  height: number;
+  maximized?: boolean;
+}
+
 interface StudioConfig {
   projectDir?: string;
   recent: string[];
+  windowState?: WindowState;
 }
 
 function readConfig(): StudioConfig {
@@ -84,10 +93,26 @@ const { server } = createServer({ projectDir: PROJECT_DIR, staticDir: STATIC_DIR
 
 let win: BrowserWindow | null = null;
 
+function saveWindowState() {
+  if (!win) return;
+  const config = readConfig();
+  const maximized = win.isMaximized();
+  const bounds = win.getBounds();
+  const windowState: WindowState = maximized
+    ? { width: bounds.width, height: bounds.height, maximized: true }
+    : { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
+  writeConfig({ ...config, windowState });
+}
+
 function createWindow() {
+  const config = readConfig();
+  const ws = config.windowState;
+
   win = new BrowserWindow({
-    width: 1400,
-    height: 900,
+    width: ws?.width ?? 1400,
+    height: ws?.height ?? 900,
+    x: ws?.x,
+    y: ws?.y,
     minWidth: 900,
     minHeight: 600,
     titleBarStyle: "hidden",
@@ -103,12 +128,26 @@ function createWindow() {
     icon: resolve(__dirname, "../../assets/icon.png"),
   });
 
+  if (ws?.maximized) win.maximize();
+
   win.loadURL(isDev ? `http://localhost:3201` : `http://localhost:${PORT}`);
 
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("http")) shell.openExternal(url);
     return { action: "deny" };
   });
+
+  // Persist window state on move/resize/maximize
+  let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  const scheduleSave = () => {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveWindowState, 500);
+  };
+  win.on("resize", scheduleSave);
+  win.on("move", scheduleSave);
+  win.on("maximize", saveWindowState);
+  win.on("unmaximize", saveWindowState);
+  win.on("close", saveWindowState);
 
   if (process.env.STUDIO_DEVTOOLS === "1") win.webContents.openDevTools({ mode: "detach" });
 }
