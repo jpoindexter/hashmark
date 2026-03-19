@@ -69,7 +69,7 @@ export default function History() {
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetch("/api/runs")
+    fetch("/api/run/runs")
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json() as Promise<RunsResponse>;
@@ -91,7 +91,7 @@ export default function History() {
     setDiffLoading(true);
     setDiffFilename(run.worktree_branch ?? run.task.slice(0, 40));
 
-    fetch(`/api/runs/${run.id}/diff`)
+    fetch(`/api/run/runs/${run.id}/diff`)
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json() as Promise<DiffResponse>;

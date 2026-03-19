@@ -298,7 +298,7 @@ function FolderPickerSection({ info, onFolderChanged }: {
       const createRes = await fetch("/api/workspaces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dir }),
+        body: JSON.stringify({ path: dir }),
       });
       if (!createRes.ok) {
         const d = await createRes.json() as { error?: string };
@@ -306,9 +306,9 @@ function FolderPickerSection({ info, onFolderChanged }: {
         setSubmitting(false);
         return;
       }
-      const created = await createRes.json() as { id?: string };
-      if (created.id) {
-        await fetch(`/api/workspaces/${created.id}/activate`, { method: "POST" });
+      const created = await createRes.json() as { workspace?: { id: string } };
+      if (created.workspace?.id) {
+        await fetch(`/api/workspaces/${created.workspace.id}/activate`, { method: "POST" });
       }
       window.location.reload();
     } catch {
@@ -475,12 +475,12 @@ function RecentProjectsSection() {
       const createRes = await fetch("/api/workspaces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dir: proj.path }),
+        body: JSON.stringify({ path: proj.path }),
       });
       if (createRes.ok) {
-        const created = await createRes.json() as { id?: string };
-        if (created.id) {
-          await fetch(`/api/workspaces/${created.id}/activate`, { method: "POST" });
+        const created = await createRes.json() as { workspace?: { id: string } };
+        if (created.workspace?.id) {
+          await fetch(`/api/workspaces/${created.workspace.id}/activate`, { method: "POST" });
         }
       }
       window.location.reload();
@@ -680,7 +680,7 @@ export default function Home() {
       setStaleness(stalenessData as Staleness | null);
     }).finally(() => setLoading(false));
 
-    fetch("/api/runs")
+    fetch("/api/run/runs")
       .then((r) => r.json())
       .then((d) => setRuns(((d as { runs?: Run[] }).runs ?? []).slice(0, 5)))
       .catch(() => {})

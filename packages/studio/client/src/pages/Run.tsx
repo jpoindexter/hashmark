@@ -278,7 +278,7 @@ export default function Run() {
     setDiffLoading(true);
     setShowDiff(true);
     try {
-      const res = await fetch(`/api/runs/${rid}/diff`);
+      const res = await fetch(`/api/run/runs/${rid}/diff`);
       const data = await res.json() as { diff: string };
       setDiff(data.diff ?? "");
     } catch {

@@ -130,6 +130,7 @@ export default function WorkspaceSetup() {
 
   const detectFramework = useCallback(async (dirPath: string) => {
     setDetecting(true);
+    const fallbackName = dirPath.split("/").filter(Boolean).pop() ?? "project";
     try {
       const res = await fetch("/api/workspace/detect", {
         method: "POST",
@@ -140,15 +141,18 @@ export default function WorkspaceSetup() {
         const d = await res.json() as { framework?: string; name?: string };
         setDetection({
           framework: (d.framework as Framework) ?? "Unknown",
-          name: d.name ?? dirPath.split("/").filter(Boolean).pop() ?? "project",
+          name: d.name ?? fallbackName,
         });
-        setProjectName(d.name ?? dirPath.split("/").filter(Boolean).pop() ?? "project");
+        setProjectName(d.name ?? fallbackName);
+      } else {
+        // Endpoint may not exist -- fall back to path-derived name
+        setDetection({ framework: "Unknown", name: fallbackName });
+        setProjectName(fallbackName);
       }
     } catch {
-      // Fallback: derive name from path
-      const name = dirPath.split("/").filter(Boolean).pop() ?? "project";
-      setDetection({ framework: "Unknown", name });
-      setProjectName(name);
+      // Network error or missing endpoint -- use fallback
+      setDetection({ framework: "Unknown", name: fallbackName });
+      setProjectName(fallbackName);
     } finally {
       setDetecting(false);
     }
