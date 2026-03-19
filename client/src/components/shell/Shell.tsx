@@ -116,6 +116,7 @@ export default function Shell() {
   const [activeTab, setActiveTab] = useState<"TERMINAL" | "OUTPUT">("TERMINAL");
   const [streamText, setStreamText] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [chatHasMessages, setChatHasMessages] = useState(false);
   const [contextPercent, setContextPercent] = useState<number | null>(null);
   const [terminalCwd, setTerminalCwd] = useState("");
   const [sessionError, setSessionError] = useState(false);
@@ -168,9 +169,15 @@ export default function Shell() {
       setSessionError(false);
       fetch(`/api/sessions/${activeSessionId}`)
         .then(r => {
-          if (r.ok) return;
-          // Session gone -- clear stale ID, will trigger re-run with null
-          setActiveSessionId(null);
+          if (!r.ok) {
+            // Session gone -- clear stale ID, will trigger re-run with null
+            setActiveSessionId(null);
+            return;
+          }
+          return r.json();
+        })
+        .then((data: { messages?: unknown[] } | undefined) => {
+          if (data?.messages && data.messages.length > 0) setChatHasMessages(true);
         })
         .catch(() => {
           setActiveSessionId(null);
@@ -194,7 +201,10 @@ export default function Shell() {
   useEffect(() => {
     const handler = (e: Event) => {
       const id = (e as CustomEvent<string>).detail;
-      if (id) setActiveSessionId(id);
+      if (id) {
+        setChatHasMessages(true); // Switching to existing session implies messages
+        setActiveSessionId(id);
+      }
     };
     window.addEventListener("studio:switch-session", handler);
     return () => window.removeEventListener("studio:switch-session", handler);
@@ -248,6 +258,7 @@ export default function Shell() {
 
   // Command palette + slash command events
   const handleNewSessionRef = useCallback(() => {
+    setChatHasMessages(false);
     createSession().then(setActiveSessionId).catch(() => {});
   }, []);
 
@@ -323,6 +334,7 @@ export default function Shell() {
     const wasStreaming = prevStreaming.current;
     prevStreaming.current = streaming;
     if (wasStreaming && !streaming) {
+      setChatHasMessages(true);
       // OS notification + dock badge when agent finishes while app is in background
       if (document.visibilityState !== "visible") {
         if ("Notification" in window && Notification.permission === "granted") {
@@ -366,6 +378,7 @@ export default function Shell() {
 
     const subs = [
       window.studio.onMenu("menu:navigate", (p: unknown) => { if (typeof p === "string") navigate(p); }),
+      window.studio.onMenu("menu:new-session", () => handleNewSessionRef()),
       window.studio.onMenu("menu:toggle-terminal", () => setTermOpen(v => !v)),
       window.studio.onMenu("menu:toggle-sidebar", () => dispatch("studio:toggle-sidebar")),
       window.studio.onMenu("menu:toggle-activity-bar", () => setActivityBarVisible(v => !v)),
@@ -376,16 +389,30 @@ export default function Shell() {
       window.studio.onMenu("menu:clear-terminal", () => dispatch("studio:clear-terminal")),
       window.studio.onMenu("menu:command-palette", () => { setPaletteMode("commands"); setCmdOpen(true); }),
       window.studio.onMenu("menu:go-to-file", () => { setPaletteMode("files"); setCmdOpen(true); }),
+      window.studio.onMenu("menu:go-to-symbol", () => { setPaletteMode("commands"); setCmdOpen(true); }),
+      window.studio.onMenu("menu:go-to-line", () => { setPaletteMode("commands"); setCmdOpen(true); }),
       window.studio.onMenu("menu:run-scan", () => navigate("/generate")),
       window.studio.onMenu("menu:start-agent", () => navigate("/run")),
       window.studio.onMenu("menu:stop-agent", () => dispatch("studio:stop-agent")),
       // Edit menu: find/selection/line operations
       window.studio.onMenu("menu:find", () => setCmdOpen(true)),
-      // Go menu: go-to-file opens command palette in file mode
-      window.studio.onMenu("menu:go-to-line", () => { setPaletteMode("commands"); setCmdOpen(true); }),
+      window.studio.onMenu("menu:find-next", () => dispatch("studio:find-next")),
+      window.studio.onMenu("menu:find-prev", () => dispatch("studio:find-prev")),
+      // Selection menu: editor selection/line operations
+      window.studio.onMenu("menu:expand-selection", () => dispatch("studio:expand-selection")),
+      window.studio.onMenu("menu:shrink-selection", () => dispatch("studio:shrink-selection")),
+      window.studio.onMenu("menu:copy-line-up", () => dispatch("studio:copy-line-up")),
+      window.studio.onMenu("menu:copy-line-down", () => dispatch("studio:copy-line-down")),
+      window.studio.onMenu("menu:move-line-up", () => dispatch("studio:move-line-up")),
+      window.studio.onMenu("menu:move-line-down", () => dispatch("studio:move-line-down")),
+      // Deep link navigation
+      window.studio.onMenu("deep-link:navigate", (p: unknown) => { if (typeof p === "string") navigate(p); }),
+      window.studio.onMenu("deep-link:open-project", (dir: unknown) => {
+        if (typeof dir === "string") window.studio?.setProjectDir?.(dir);
+      }),
     ];
     return () => subs.forEach(unsub => unsub?.());
-  }, [navigate]);
+  }, [navigate, handleNewSessionRef]);
 
   const handleNewSession = handleNewSessionRef;
   const handleSidebarReset = useCallback(() => setSidebarWidth(DEFAULT_SIDEBAR_WIDTH), []);
@@ -521,6 +548,7 @@ export default function Shell() {
             <>
               <ChatInputBar
                 sessionId={activeSessionId}
+                hasMessages={chatHasMessages}
                 onNewSession={handleNewSession}
                 onSessionCreated={setActiveSessionId}
                 onStreamText={setStreamText}

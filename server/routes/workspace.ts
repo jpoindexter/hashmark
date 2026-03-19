@@ -94,6 +94,49 @@ function streamCommand(
 export function workspaceRoutes(projectDir: string) {
   const app = new Hono();
 
+  // POST /api/workspace/detect — detect project framework from a given path
+  app.post("/detect", async (c) => {
+    const body = await c.req.json<{ path?: string }>().catch(() => ({}));
+    const dir = (body as { path?: string }).path?.trim() || projectDir;
+
+    if (!existsSync(dir)) return c.json({ error: "path not found" }, 400);
+
+    const name = (() => {
+      try {
+        const pkgPath = join(dir, "package.json");
+        if (existsSync(pkgPath)) {
+          const pkg = JSON.parse(readFileSync(pkgPath, "utf-8")) as { name?: string };
+          if (pkg.name) return pkg.name;
+        }
+      } catch {}
+      return dir.split("/").filter(Boolean).pop() ?? "project";
+    })();
+
+    // Detect framework by checking for known config files
+    const checks: Array<{ file: string; framework: string }> = [
+      { file: "tsconfig.json", framework: "TypeScript" },
+      { file: "package.json", framework: "JavaScript" },
+      { file: "Cargo.toml", framework: "Rust" },
+      { file: "go.mod", framework: "Go" },
+      { file: "pyproject.toml", framework: "Python" },
+      { file: "setup.py", framework: "Python" },
+      { file: "requirements.txt", framework: "Python" },
+      { file: "Gemfile", framework: "Ruby" },
+      { file: "pom.xml", framework: "Java" },
+      { file: "build.gradle", framework: "Java" },
+    ];
+
+    let framework = "Unknown";
+    for (const check of checks) {
+      if (existsSync(join(dir, check.file))) {
+        framework = check.framework;
+        break;
+      }
+    }
+
+    return c.json({ framework, name });
+  });
+
   app.get("/config", (c) => {
     return c.json({ config: readConfig(projectDir) });
   });
