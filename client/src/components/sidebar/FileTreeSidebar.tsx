@@ -63,8 +63,9 @@ function TreeRow({ node, depth, selectedPath, gitFiles, onFileSelect, onContextM
   const handleClick = () => {
     if (isDir) {
       setOpen((v) => !v);
+    } else {
+      onFileSelect(node.path);
     }
-    onFileSelect(node.path);
   };
 
   const sorted = useMemo(() => {
