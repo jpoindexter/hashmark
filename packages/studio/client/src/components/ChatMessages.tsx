@@ -725,9 +725,9 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
     e.stopPropagation();
     setCtxMenu({
       position: { x: e.clientX, y: e.clientY },
-      items: msg.role === "user" ? buildUserMenuItems(msg) : buildAssistantMenuItems(msg),
+      items: msg.role === "user" ? buildUserMenuItems(msg) : buildAssistantMenuItems(msg, messages),
     });
-  }, []);
+  }, [messages]);
 
   if (loading && messages.length === 0) {
     return (
@@ -803,6 +803,16 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
   );
 }
 
+// Strip markdown syntax for plain-text copy
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, (m) => m.replace(/```\w*\n?/g, "").replace(/```/g, ""))
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^[-*]\s+/gm, "- ");
+}
+
 // Context menu item builders for chat messages
 function buildUserMenuItems(msg: Message): ContextMenuItem[] {
   return [
@@ -812,23 +822,25 @@ function buildUserMenuItems(msg: Message): ContextMenuItem[] {
         void navigator.clipboard.writeText(msg.content);
       },
     },
-    { label: "", onClick: () => {}, separator: true },
-    {
-      label: "Delete Message",
-      danger: true,
-      onClick: () => {
-        alert("Delete message is not implemented yet.");
-      },
-    },
   ];
 }
 
-function buildAssistantMenuItems(msg: Message): ContextMenuItem[] {
-  return [
+function buildAssistantMenuItems(msg: Message, messages: Message[]): ContextMenuItem[] {
+  // Find the last user message before this assistant message for retry
+  const msgIndex = messages.findIndex((m) => m.id === msg.id);
+  let lastUserMsg: Message | undefined;
+  for (let i = msgIndex - 1; i >= 0; i--) {
+    if (messages[i].role === "user") {
+      lastUserMsg = messages[i];
+      break;
+    }
+  }
+
+  const items: ContextMenuItem[] = [
     {
       label: "Copy Text",
       onClick: () => {
-        void navigator.clipboard.writeText(msg.content);
+        void navigator.clipboard.writeText(stripMarkdown(msg.content));
       },
     },
     {
@@ -837,12 +849,19 @@ function buildAssistantMenuItems(msg: Message): ContextMenuItem[] {
         void navigator.clipboard.writeText(msg.content);
       },
     },
-    { label: "", onClick: () => {}, separator: true },
-    {
+  ];
+
+  if (lastUserMsg) {
+    items.push({ label: "", onClick: () => {}, separator: true });
+    items.push({
       label: "Retry",
       onClick: () => {
-        alert("Retry is not implemented yet.");
+        window.dispatchEvent(
+          new CustomEvent("studio:suggest", { detail: { text: lastUserMsg.content } })
+        );
       },
-    },
-  ];
+    });
+  }
+
+  return items;
 }
