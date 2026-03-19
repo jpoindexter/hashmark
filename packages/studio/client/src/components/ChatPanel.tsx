@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import type { StreamingState, ContentBlock } from "./ChatMessages";
 
 interface Session {
   id: string;
@@ -69,6 +70,7 @@ export default function ChatPanel() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");
+  const [streamingState, setStreamingState] = useState<StreamingState | null>(null);
   const [showSessions, setShowSessions] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -89,6 +91,7 @@ export default function ChatPanel() {
     setMessages(data.messages ?? []);
     setActiveId(id);
     setStreamText("");
+    setStreamingState(null);
     setShowSessions(false);
   }, []);
 
@@ -99,6 +102,7 @@ export default function ChatPanel() {
     setActiveId(data.session.id);
     setMessages([]);
     setStreamText("");
+    setStreamingState(null);
     setShowSessions(false);
   };
 
@@ -116,6 +120,7 @@ export default function ChatPanel() {
     setInput("");
     setStreaming(true);
     setStreamText("");
+    setStreamingState(null);
     setMessages((p) => [...p, { id: `tmp-${Date.now()}`, role: "user", content: text, created_at: Date.now() }]);
 
     const res = await fetch(`/api/sessions/${sid}/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text }) });
@@ -136,8 +141,51 @@ export default function ChatPanel() {
         for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
           try {
-            const evt = JSON.parse(line.slice(6)) as { type: string; text?: string };
-            if (evt.type === "text" && evt.text) { assembled += evt.text; setStreamText(assembled); }
+            const evt = JSON.parse(line.slice(6)) as {
+              type: string;
+              text?: string;
+              tool?: string;
+              input?: Record<string, unknown>;
+              cost?: number;
+              usage?: { input_tokens: number; output_tokens: number };
+            };
+
+            if (evt.type === "text" && evt.text) {
+              assembled += evt.text;
+              setStreamText(assembled);
+              setStreamingState((prev) => {
+                const blocks: ContentBlock[] = prev ? [...prev.blocks] : [];
+                const last = blocks[blocks.length - 1];
+                if (last?.type === "text") {
+                  blocks[blocks.length - 1] = { type: "text", text: last.text + (evt.text ?? "") };
+                } else {
+                  blocks.push({ type: "text", text: evt.text ?? "" });
+                }
+                return { blocks, cost: prev?.cost, usage: prev?.usage };
+              });
+            }
+
+            if (evt.type === "tool_use" && evt.tool) {
+              setStreamingState((prev) => {
+                const blocks: ContentBlock[] = prev ? [...prev.blocks] : [];
+                blocks.push({ type: "tool_use", tool: evt.tool!, input: evt.input ?? {} });
+                return { blocks, cost: prev?.cost, usage: prev?.usage };
+              });
+            }
+
+            if (evt.type === "progress" && evt.text) {
+              setStreamingState((prev) => {
+                const blocks: ContentBlock[] = prev ? [...prev.blocks] : [];
+                blocks.push({ type: "progress", text: evt.text ?? "" });
+                return { blocks, cost: prev?.cost, usage: prev?.usage };
+              });
+            }
+
+            if (evt.type === "done") {
+              setStreamingState((prev) =>
+                prev ? { ...prev, cost: evt.cost, usage: evt.usage } : null
+              );
+            }
           } catch {}
         }
       }
@@ -145,6 +193,7 @@ export default function ChatPanel() {
       abortRef.current = null;
       setStreaming(false);
       setStreamText("");
+      setStreamingState(null);
       if (sid) { await loadSession(sid); await loadSessions(); }
     }
   };
@@ -202,8 +251,39 @@ export default function ChatPanel() {
           <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
             <div style={{ width: "20px", height: "20px", flexShrink: 0, background: "var(--accent-bg)", border: "1px solid var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "8px", color: "var(--accent)", fontFamily: "var(--font)", fontWeight: 700 }}>AI</div>
             <div style={{ flex: 1, fontSize: "11px", color: "var(--text)", lineHeight: 1.6 }}>
-              {streamText ? <AssistantText text={streamText} /> : <span style={{ color: "var(--text-dimmer)" }}>thinking...</span>}
-              <span style={{ display: "inline-block", width: "6px", height: "12px", background: "var(--accent)", verticalAlign: "text-bottom", marginLeft: "2px", animation: "cursor-blink 1s step-end infinite" }} />
+              {streamingState && streamingState.blocks.length > 0 ? (
+                <>
+                  {streamingState.blocks.map((block, i) => {
+                    if (block.type === "text") {
+                      return block.text ? <AssistantText key={i} text={block.text} /> : null;
+                    }
+                    if (block.type === "tool_use") {
+                      return (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "6px", background: "var(--bg-3)", border: "1px solid var(--border-dim)", padding: "3px 7px", margin: "3px 0", fontSize: "10px", fontFamily: "var(--font)" }}>
+                          <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>[{block.tool}]</span>
+                          {block.input && Object.values(block.input).find((v) => typeof v === "string") && (
+                            <span style={{ color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {String(Object.values(block.input).find((v) => typeof v === "string") ?? "")}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    }
+                    if (block.type === "progress") {
+                      return <div key={i} style={{ fontSize: "10px", color: "var(--text-dimmer)", fontStyle: "italic", margin: "2px 0" }}>{block.text}</div>;
+                    }
+                    return null;
+                  })}
+                  <span style={{ display: "inline-block", width: "6px", height: "12px", background: "var(--accent)", verticalAlign: "text-bottom", marginLeft: "2px", animation: "cursor-blink 1s step-end infinite" }} />
+                </>
+              ) : streamText ? (
+                <>
+                  <AssistantText text={streamText} />
+                  <span style={{ display: "inline-block", width: "6px", height: "12px", background: "var(--accent)", verticalAlign: "text-bottom", marginLeft: "2px", animation: "cursor-blink 1s step-end infinite" }} />
+                </>
+              ) : (
+                <span style={{ color: "var(--text-dimmer)" }}>thinking...</span>
+              )}
             </div>
           </div>
         )}
