@@ -10,7 +10,8 @@ export default function FileContentViewer() {
   // Listen for file open events from FileTreeSidebar
   useEffect(() => {
     const handler = (e: Event) => {
-      const path = (e as CustomEvent<string>).detail;
+      const detail = (e as CustomEvent<string | { path: string }>).detail;
+      const path = typeof detail === "string" ? detail : detail?.path;
       if (path) {
         setFilePath(path);
         setLoading(true);
