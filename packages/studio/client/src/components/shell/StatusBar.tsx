@@ -47,7 +47,7 @@ function StatusItem({
 }
 
 const containerStyle: CSSProperties = {
-  height: 22,
+  height: "var(--status-bar-height)",
   background: "var(--accent)",
   color: "rgba(0,0,0,0.8)",
   display: "flex",

@@ -1,3 +1,8 @@
+import { useState } from "react";
+import { Play, Edit2, Copy, Trash2 } from "lucide-react";
+import ContextMenu from "./shared/ContextMenu.tsx";
+import type { ContextMenuItem } from "./shared/ContextMenu.tsx";
+
 interface Agent {
   id: string;
   name: string;
@@ -18,6 +23,8 @@ interface AgentCardProps {
   stats?: AgentStats;
   onClick?: () => void;
   onRun?: (e: React.MouseEvent) => void;
+  onDelete?: () => void;
+  onDuplicate?: () => void;
   streaming?: boolean;
 }
 
@@ -70,12 +77,23 @@ function StatusDot({ stats }: { stats?: AgentStats }) {
   );
 }
 
-export default function AgentCard({ agent, stats, onClick, onRun, streaming }: AgentCardProps) {
+export default function AgentCard({ agent, stats, onClick, onRun, onDelete, onDuplicate, streaming }: AgentCardProps) {
   const color = DEPT_COLORS[agent.department] ?? DEPT_COLORS.general;
+  const [ctxPos, setCtxPos] = useState<{ x: number; y: number } | null>(null);
+
+  const ctxItems: ContextMenuItem[] = [
+    ...(onClick ? [{ label: "Edit Agent", icon: <Edit2 size={12} />, onClick }] : []),
+    ...(onRun ? [{ label: "Run Agent", icon: <Play size={12} />, onClick: (e: React.MouseEvent) => onRun(e) }] : []),
+    ...(onClick || onRun ? [{ label: "", separator: true, onClick: () => {} }] : []),
+    ...(onDuplicate ? [{ label: "Duplicate", icon: <Copy size={12} />, onClick: onDuplicate }] : []),
+    ...(onDelete ? [{ label: "Delete", icon: <Trash2 size={12} />, danger: true, onClick: onDelete }] : []),
+  ];
 
   return (
+    <>
     <div
       onClick={onClick}
+      onContextMenu={(e) => { e.preventDefault(); setCtxPos({ x: e.clientX, y: e.clientY }); }}
       className={streaming ? "fade-in" : ""}
       style={{
         background: "var(--bg-2)",
@@ -228,5 +246,12 @@ export default function AgentCard({ agent, stats, onClick, onRun, streaming }: A
         </div>
       </div>
     </div>
+
+    <ContextMenu
+      items={ctxItems}
+      position={ctxPos}
+      onClose={() => setCtxPos(null)}
+    />
+  </>
   );
 }

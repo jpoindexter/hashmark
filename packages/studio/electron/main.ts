@@ -3,7 +3,7 @@
  * Starts Hono server, opens native window
  */
 
-import { app, BrowserWindow, Menu, shell, ipcMain, dialog } from "electron";
+import { app, BrowserWindow, Menu, shell, ipcMain, dialog, nativeImage } from "electron";
 import { createServer, killAllActiveSessions } from "../server/index.js";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -449,7 +449,6 @@ app.whenReady().then(() => {
   if (process.platform === "darwin") {
     const iconPath = resolve(__dirname, "../../assets/icon.png");
     if (existsSync(iconPath)) {
-      const { nativeImage } = require("electron") as typeof import("electron");
       app.dock.setIcon(nativeImage.createFromPath(iconPath));
     }
   }

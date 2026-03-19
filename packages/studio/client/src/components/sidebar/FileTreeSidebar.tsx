@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { FileCode, FileText, Folder, ChevronRight, ChevronDown } from "lucide-react";
+import { FileCode, FileText, Folder, ChevronRight, ChevronDown, Copy, FolderOpen, ExternalLink } from "lucide-react";
+import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
 
 interface FileNode {
   name: string;
@@ -28,15 +29,14 @@ function countFiles(nodes: FileNode[]): number {
   return count;
 }
 
-function TreeRow({
-  node,
-  depth,
-  onFileSelect,
-}: {
+interface TreeRowProps {
   node: FileNode;
   depth: number;
   onFileSelect: (path: string) => void;
-}) {
+  onContextMenu: (e: React.MouseEvent, node: FileNode) => void;
+}
+
+function TreeRow({ node, depth, onFileSelect, onContextMenu }: TreeRowProps) {
   const [open, setOpen] = useState(depth < 1);
   const isDir = node.type === "dir";
   const Icon = isDir ? Folder : fileIcon(node.ext);
@@ -62,6 +62,7 @@ function TreeRow({
     <>
       <div
         onClick={handleClick}
+        onContextMenu={(e) => { e.preventDefault(); onContextMenu(e, node); }}
         style={{
           display: "flex",
           alignItems: "center",
@@ -114,6 +115,7 @@ function TreeRow({
             node={child}
             depth={depth + 1}
             onFileSelect={onFileSelect}
+            onContextMenu={onContextMenu}
           />
         ))}
     </>
@@ -123,6 +125,7 @@ function TreeRow({
 export default function FileTreeSidebar() {
   const [tree, setTree] = useState<FileNode[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; node: FileNode } | null>(null);
 
   useEffect(() => {
     fetch("/api/files/tree")
@@ -139,6 +142,53 @@ export default function FileTreeSidebar() {
       new CustomEvent("studio:open-file", { detail: { path } })
     );
   }, []);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, node: FileNode) => {
+    setCtxMenu({ x: e.clientX, y: e.clientY, node });
+  }, []);
+
+  const closeCtxMenu = useCallback(() => setCtxMenu(null), []);
+
+  const ctxMenuItems = useMemo((): ContextMenuItem[] => {
+    if (!ctxMenu) return [];
+    const { node } = ctxMenu;
+    const isFile = node.type === "file";
+    const items: ContextMenuItem[] = [];
+
+    if (isFile) {
+      items.push({
+        label: "Open File",
+        icon: <FolderOpen size={12} />,
+        onClick: () => handleFileSelect(node.path),
+      });
+      items.push({ label: "", separator: true, onClick: () => {} });
+    }
+
+    items.push({
+      label: "Copy Path",
+      icon: <Copy size={12} />,
+      onClick: () => { navigator.clipboard.writeText(node.path).catch(() => {}); },
+    });
+    items.push({
+      label: "Copy Relative Path",
+      icon: <Copy size={12} />,
+      onClick: () => {
+        // path from server is relative to project root already
+        navigator.clipboard.writeText(node.path).catch(() => {});
+      },
+    });
+
+    if (typeof window.studio?.showInFinder === "function") {
+      items.push({ label: "", separator: true, onClick: () => {} });
+      items.push({
+        label: "Reveal in Finder",
+        icon: <ExternalLink size={12} />,
+        onClick: () => { void window.studio!.showInFinder(node.path); },
+      });
+    }
+
+    return items;
+  }, [ctxMenu, handleFileSelect]);
 
   const sorted = useMemo(
     () =>
@@ -228,10 +278,18 @@ export default function FileTreeSidebar() {
               node={node}
               depth={0}
               onFileSelect={handleFileSelect}
+              onContextMenu={handleContextMenu}
             />
           ))
         )}
       </div>
+
+      {/* Context menu */}
+      <ContextMenu
+        items={ctxMenuItems}
+        position={ctxMenu ? { x: ctxMenu.x, y: ctxMenu.y } : null}
+        onClose={closeCtxMenu}
+      />
     </div>
   );
 }

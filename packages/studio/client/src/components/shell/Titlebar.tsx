@@ -26,7 +26,7 @@ const noDrag: CSSProperties = {
 } as CSSProperties;
 
 const containerStyle: CSSProperties = {
-  height: 35,
+  height: "var(--titlebar-height)",
   background: "var(--bg-2)",
   borderBottom: "1px solid var(--border-dim)",
   display: "flex",

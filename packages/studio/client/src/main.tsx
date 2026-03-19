@@ -14,6 +14,26 @@ if (savedTheme) {
   } catch { /* noop */ }
 }
 
+const savedDensity = localStorage.getItem("settings_ui_density");
+if (savedDensity) {
+  try {
+    const density = JSON.parse(savedDensity) as string;
+    if (density === "compact" || density === "comfortable") {
+      document.documentElement.setAttribute("data-density", density);
+    }
+  } catch { /* noop */ }
+}
+
+const savedFontSize = localStorage.getItem("settings_font_size");
+if (savedFontSize) {
+  try {
+    const size = JSON.parse(savedFontSize) as number;
+    if (size >= 11 && size <= 18) {
+      document.documentElement.style.setProperty("--font-size-base", `${size}px`);
+    }
+  } catch { /* noop */ }
+}
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>

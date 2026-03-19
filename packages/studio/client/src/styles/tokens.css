@@ -65,6 +65,9 @@ html[data-theme="light"] {
   --radius-sm: 3px;
   --radius-lg: 6px;
 
+  /* Typography scale */
+  --font-size-base: 13px;
+
   /* Spacing constants */
   --titlebar-height:       35px;
   --activity-bar-width:    48px;
@@ -76,4 +79,11 @@ html[data-theme="light"] {
   --transition-fast:    0.1s ease;
   --transition-sidebar: 0.18s ease;
   --transition-status:  0.15s ease-out;
+}
+
+/* Compact density overrides */
+:root[data-density="compact"] {
+  --titlebar-height:    28px;
+  --status-bar-height:  18px;
+  --font-size-base:     11px;
 }

@@ -158,12 +158,24 @@ export default function Shell() {
   // Electron menu events
   useEffect(() => {
     if (typeof window.studio?.onMenu !== "function") return;
+    const dispatch = (name: string, detail?: unknown) =>
+      window.dispatchEvent(new CustomEvent(name, detail !== undefined ? { detail } : undefined));
+
     const subs = [
       window.studio.onMenu("menu:navigate", (p: unknown) => { if (typeof p === "string") navigate(p); }),
       window.studio.onMenu("menu:toggle-terminal", () => setTermOpen(v => !v)),
-      window.studio.onMenu("menu:toggle-sidebar", () => window.dispatchEvent(new CustomEvent("studio:toggle-sidebar"))),
-      window.studio.onMenu("menu:new-terminal", () => { setTermOpen(true); window.dispatchEvent(new CustomEvent("studio:new-terminal")); }),
+      window.studio.onMenu("menu:toggle-sidebar", () => dispatch("studio:toggle-sidebar")),
+      window.studio.onMenu("menu:toggle-activity-bar", () => dispatch("studio:toggle-activity-bar")),
+      window.studio.onMenu("menu:new-terminal", () => { setTermOpen(true); dispatch("studio:new-terminal"); }),
+      window.studio.onMenu("menu:split-terminal", () => { setTermOpen(true); dispatch("studio:split-terminal"); }),
+      window.studio.onMenu("menu:kill-terminal", () => dispatch("studio:kill-terminal")),
+      window.studio.onMenu("menu:kill-all-terminals", () => dispatch("studio:kill-all-terminals")),
+      window.studio.onMenu("menu:clear-terminal", () => dispatch("studio:clear-terminal")),
       window.studio.onMenu("menu:command-palette", () => setCmdOpen(true)),
+      window.studio.onMenu("menu:go-to-file", () => setCmdOpen(true)),
+      window.studio.onMenu("menu:run-scan", () => navigate("/generate")),
+      window.studio.onMenu("menu:start-agent", () => navigate("/run")),
+      window.studio.onMenu("menu:stop-agent", () => dispatch("studio:stop-agent")),
     ];
     return () => subs.forEach(unsub => unsub?.());
   }, [navigate]);

@@ -3,7 +3,7 @@
  */
 
 import { Hono } from "hono";
-import { readFileSync, readdirSync, existsSync, writeFileSync } from "fs";
+import { readFileSync, readdirSync, existsSync, writeFileSync, unlinkSync } from "fs";
 import { join, relative } from "path";
 import { getDb } from "../db.js";
 
@@ -369,6 +369,22 @@ export function agentsRoutes(projectDir: string) {
     const agent = agents.find((a) => a.id === id);
     if (!agent) return c.json({ error: "Not found" }, 404);
     return c.json({ agent });
+  });
+
+  // DELETE /api/agents/:id — remove agent file
+  app.delete("/:id", (c) => {
+    const id = c.req.param("id");
+    const agentsDir = join(projectDir, ".claude", "agents");
+    const agents = readAgentsDir(projectDir);
+    const agent = agents.find((a) => a.id === id);
+    if (!agent) return c.json({ error: "Not found" }, 404);
+    const fullPath = join(agentsDir, agent.path);
+    try {
+      unlinkSync(fullPath);
+    } catch {
+      return c.json({ error: "Failed to delete agent file" }, 500);
+    }
+    return c.json({ ok: true });
   });
 
   // PUT /api/agents/:id — update agent content
