@@ -8,6 +8,7 @@ import { join, relative, extname } from "path";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { existsSync } from "fs";
+import { analyzeImpact } from "../lib/dep-graph.js";
 
 const execAsync = promisify(execFile);
 
@@ -233,6 +234,16 @@ export function filesRoutes(projectDir: string) {
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : "Fetch failed" }, 500);
     }
+  });
+
+  // GET /api/files/impact?branch=<branch>&base=<base>
+  // Returns changed files + downstream files that import them
+  app.get("/impact", (c) => {
+    const branch = c.req.query("branch");
+    if (!branch) return c.json({ error: "branch query param required" }, 400);
+    const base = c.req.query("base") ?? "HEAD";
+    const report = analyzeImpact(projectDir, branch, base);
+    return c.json(report);
   });
 
   app.get("/complexity", async (c) => {

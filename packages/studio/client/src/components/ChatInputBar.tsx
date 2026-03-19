@@ -478,9 +478,22 @@ interface ChatInputBarProps {
   planMode?: boolean;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Auto model routing ───────────────────────────────────────────────────────
 
 const DEFAULT_MODEL = "claude-sonnet-4-6";
+
+const AUTO_MODEL_LABELS: Record<string, string> = {
+  "claude-haiku-4-5-20251001": "Haiku 4.5",
+  "claude-sonnet-4-6": "Sonnet 4.6",
+  "claude-opus-4-6": "Opus 4.6",
+};
+
+function resolveAutoModel(message: string): string {
+  const len = message.trim().length;
+  if (len < 100) return "claude-haiku-4-5-20251001";
+  if (len < 500) return "claude-sonnet-4-6";
+  return "claude-opus-4-6";
+}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -717,6 +730,16 @@ export default function ChatInputBar({
     onStreamingChange(true);
     onStreamText("");
 
+    // Resolve auto-routing: pick model based on message complexity
+    let resolvedModel = selectedModel;
+    if (selectedModel === "auto") {
+      resolvedModel = resolveAutoModel(text);
+      const label = AUTO_MODEL_LABELS[resolvedModel] ?? resolvedModel;
+      window.dispatchEvent(new CustomEvent("studio:toast", {
+        detail: { message: `Auto-routed to ${label}`, type: "info" },
+      }));
+    }
+
     const globalSystemPrompt = (localStorage.getItem("studio:system_prompt") ?? "").trim();
     let systemPrompt = globalSystemPrompt;
     if (thinking) systemPrompt += "\n\nUse extended thinking before responding.";
@@ -727,7 +750,7 @@ export default function ChatInputBar({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: text,
-        model: selectedModel,
+        model: resolvedModel,
         thinking,
         planMode,
         ...(systemPrompt.trim() && { systemPrompt: systemPrompt.trim() }),

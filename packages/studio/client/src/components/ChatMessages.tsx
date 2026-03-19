@@ -55,6 +55,7 @@ interface ChatMessagesProps {
   streaming: boolean;
   streamingState?: StreamingState;
   modelLabel?: string;
+  planMode?: boolean;
 }
 
 function fmtTime(ts: number) {
@@ -372,9 +373,75 @@ function AssistantBubble({ msg, onContextMenu }: { msg: Message; onContextMenu: 
   );
 }
 
-function MessageBubble({ msg, onContextMenu }: { msg: Message; onContextMenu: (e: React.MouseEvent) => void }) {
+function PlanReviewGate() {
+  const dispatch = (event: string) => window.dispatchEvent(new CustomEvent(event));
+
+  return (
+    <div style={{
+      display: "flex",
+      gap: 8,
+      padding: "8px 0",
+      marginTop: 8,
+      borderTop: "1px solid var(--border-dim)",
+    }}>
+      <button
+        onClick={() => dispatch("studio:plan-approve")}
+        style={{
+          padding: "4px 12px",
+          fontSize: 12,
+          fontWeight: 600,
+          background: "var(--accent)",
+          color: "var(--bg)",
+          border: "none",
+          borderRadius: "var(--radius)",
+          cursor: "pointer",
+          fontFamily: "var(--font-ui)",
+        }}
+      >
+        Approve & Execute
+      </button>
+      <button
+        onClick={() => dispatch("studio:plan-feedback")}
+        style={{
+          padding: "4px 12px",
+          fontSize: 12,
+          background: "var(--bg-3)",
+          color: "var(--text-dim)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius)",
+          cursor: "pointer",
+          fontFamily: "var(--font-ui)",
+        }}
+      >
+        Give Feedback
+      </button>
+      <button
+        onClick={() => dispatch("studio:plan-deny")}
+        style={{
+          padding: "4px 12px",
+          fontSize: 12,
+          background: "none",
+          color: "var(--red)",
+          border: "1px solid var(--red-bg)",
+          borderRadius: "var(--radius)",
+          cursor: "pointer",
+          fontFamily: "var(--font-ui)",
+        }}
+      >
+        Deny
+      </button>
+    </div>
+  );
+}
+
+function MessageBubble({ msg, showPlanGate, onContextMenu }: { msg: Message; showPlanGate: boolean; onContextMenu: (e: React.MouseEvent) => void }) {
   if (msg.role === "user") return <UserBubble msg={msg} onContextMenu={onContextMenu} />;
-  return <AssistantBubble msg={msg} onContextMenu={onContextMenu} />;
+  return (
+    <div>
+      <AssistantBubble msg={msg} onContextMenu={onContextMenu} />
+      {showPlanGate && <PlanReviewGate />}
+    </div>
+  );
 }
 
 function StreamingBubble({ state, legacyText }: { state?: StreamingState; legacyText: string }) {
@@ -616,7 +683,15 @@ type VirtualItem =
   | { id: typeof STREAMING_ID; role: "assistant" }
   | { id: typeof RESUME_DIVIDER_ID; role: "divider"; timestamp: number };
 
-export default function ChatMessages({ sessionId, streamText, streaming, streamingState, modelLabel = "Sonnet 4.6" }: ChatMessagesProps) {
+// Check if a message is the last assistant message in the list
+function isLastAssistantMessage(msgs: Message[], id: string): boolean {
+  for (let i = msgs.length - 1; i >= 0; i--) {
+    if (msgs[i].role === "assistant") return msgs[i].id === id;
+  }
+  return false;
+}
+
+export default function ChatMessages({ sessionId, streamText, streaming, streamingState, modelLabel = "Sonnet 4.6", planMode = false }: ChatMessagesProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
@@ -777,6 +852,12 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
                 ) : (
                   <MessageBubble
                     msg={item as Message}
+                    showPlanGate={
+                      planMode &&
+                      !streaming &&
+                      (item as Message).role === "assistant" &&
+                      isLastAssistantMessage(messages, (item as Message).id)
+                    }
                     onContextMenu={(e) => handleMessageContextMenu(e, item as Message)}
                   />
                 )}

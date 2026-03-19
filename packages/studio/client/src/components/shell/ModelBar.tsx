@@ -6,6 +6,7 @@ import {
   Check,
   Circle,
   ExternalLink,
+  Zap,
 } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -31,6 +32,10 @@ interface ProviderGroup {
   version?: string;
   models: ModelEntry[];
 }
+
+// ── Auto-routing model entry ──────────────────────────────────────────────────
+
+const AUTO_MODEL: ModelEntry = { id: "auto", label: "Auto", note: "smart routing" };
 
 // ── Static model registry per provider ───────────────────────────────────────
 
@@ -432,6 +437,7 @@ function ModelSelector({
     .flatMap((g) => g.models)
     .find((m) => m.id === selectedModel);
   const currentLabel = currentModel?.label ?? "Sonnet 4.6";
+  const isAuto = selectedModel === "auto";
 
   // Find which provider owns the selected model
   const currentProvider = groups.find((g) =>
@@ -471,8 +477,8 @@ function ModelSelector({
           whiteSpace: "nowrap",
         }}
       >
-        <Sparkles size={14} />
-        {currentProvider && currentProvider.id !== "claude" && (
+        {isAuto ? <Zap size={14} /> : <Sparkles size={14} />}
+        {!isAuto && currentProvider && currentProvider.id !== "claude" && (
           <span style={{ color: "var(--accent)", fontSize: 10 }}>
             {currentProvider.name}
           </span>
@@ -508,7 +514,15 @@ const containerStyle: CSSProperties = {
 // ── Build provider groups from detection results ─────────────────────────────
 
 function buildGroups(detected: DetectedProvider[]): ProviderGroup[] {
-  // Always include Claude first (it's the primary provider)
+  // Auto group always first -- routes based on message complexity
+  const autoGroup: ProviderGroup = {
+    id: "auto",
+    name: "Smart Routing",
+    installed: true,
+    models: [AUTO_MODEL],
+  };
+
+  // Always include Claude second (it's the primary provider)
   const claudeGroup: ProviderGroup = {
     id: "claude",
     name: "Claude",
@@ -521,7 +535,7 @@ function buildGroups(detected: DetectedProvider[]): ProviderGroup[] {
   if (claudeDetected?.version) claudeGroup.version = claudeDetected.version;
   if (claudeDetected) claudeGroup.installed = claudeDetected.installed;
 
-  const groups: ProviderGroup[] = [claudeGroup];
+  const groups: ProviderGroup[] = [autoGroup, claudeGroup];
 
   // Add detected CLI tools (skip claude, already handled)
   for (const d of detected) {
@@ -536,8 +550,10 @@ function buildGroups(detected: DetectedProvider[]): ProviderGroup[] {
     });
   }
 
-  // Sort: installed first, then alphabetical
+  // Sort: auto first, claude second, installed next, then alphabetical
   groups.sort((a, b) => {
+    if (a.id === "auto") return -1;
+    if (b.id === "auto") return 1;
     if (a.id === "claude") return -1;
     if (b.id === "claude") return 1;
     if (a.installed !== b.installed) return a.installed ? -1 : 1;

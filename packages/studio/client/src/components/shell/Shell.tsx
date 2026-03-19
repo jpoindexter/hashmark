@@ -36,6 +36,7 @@ function restore<T>(key: string, fallback: T): T {
 
 // Model-to-label + provider mapping for StatusBar display
 const ALL_MODELS: Array<{ id: string; label: string; provider: string }> = [
+  { id: "auto", label: "Auto", provider: "Smart Routing" },
   { id: "claude-opus-4-6", label: "Opus 4.6", provider: "Claude" },
   { id: "claude-sonnet-4-6", label: "Sonnet 4.6", provider: "Claude" },
   { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5", provider: "Claude" },
@@ -229,6 +230,37 @@ export default function Shell() {
     return () => handlers.forEach(([event, handler]) => window.removeEventListener(event, handler));
   }, [refreshGit, handleNewSession, toggleTheme]);
 
+  // Plan mode review checkpoint events
+  useEffect(() => {
+    const approve = () => {
+      setPlanMode(false);
+      window.dispatchEvent(new CustomEvent("studio:toast", {
+        detail: { message: "Plan approved -- executing...", type: "success" },
+      }));
+    };
+    const deny = () => {
+      window.dispatchEvent(new CustomEvent("studio:toast", {
+        detail: { message: "Plan denied", type: "info" },
+      }));
+    };
+    const feedback = () => {
+      // Focus the chat input so user can type feedback
+      const ta = document.querySelector("textarea") as HTMLTextAreaElement | null;
+      if (ta) {
+        ta.focus();
+        ta.placeholder = "Provide feedback on the plan...";
+      }
+    };
+    window.addEventListener("studio:plan-approve", approve);
+    window.addEventListener("studio:plan-deny", deny);
+    window.addEventListener("studio:plan-feedback", feedback);
+    return () => {
+      window.removeEventListener("studio:plan-approve", approve);
+      window.removeEventListener("studio:plan-deny", deny);
+      window.removeEventListener("studio:plan-feedback", feedback);
+    };
+  }, []);
+
   // Request notification permission on mount
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
@@ -409,7 +441,7 @@ export default function Shell() {
             minHeight: 0,
           }}>
             {isHome ? (
-              <ChatMessages sessionId={activeSessionId} streamText={streamText} streaming={streaming} modelLabel={modelLabel ?? "Sonnet 4.6"} />
+              <ChatMessages sessionId={activeSessionId} streamText={streamText} streaming={streaming} modelLabel={modelLabel ?? "Sonnet 4.6"} planMode={planMode} />
             ) : activeView === "files" ? (
               <FileContentViewer />
             ) : activeView === "source-control" ? (

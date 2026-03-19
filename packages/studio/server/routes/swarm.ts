@@ -12,6 +12,7 @@ import { randomUUID } from "crypto";
 import { promisify } from "util";
 import { tmpdir } from "os";
 import { logAgentAction } from "../lib/action-log.js";
+import { detectConflicts } from "../lib/dep-graph.js";
 import { getDb } from "../db.js";
 
 const execFile = promisify(execFileCb);
@@ -444,6 +445,29 @@ export function swarmRoutes(projectDir: string) {
         id, task, agentId, status, output, branch,
       })),
     });
+  });
+
+  // GET /api/swarm/:id/conflicts — detect file-level overlaps between workers
+  app.get("/:id/conflicts", (c) => {
+    const swarm = swarms.get(c.req.param("id"));
+    if (!swarm) return c.json({ error: "Swarm not found" }, 404);
+
+    // Only check workers that have branches (running or done, not pending)
+    const activeWorkers = swarm.agents
+      .filter((a) => a.branch && a.status !== "pending")
+      .map((a) => ({ id: a.id, branch: a.branch }));
+
+    if (activeWorkers.length < 2) {
+      return c.json({
+        hasConflicts: false,
+        conflicts: [],
+        summary: "Need at least 2 active workers to detect conflicts",
+      });
+    }
+
+    // Detect which base to diff against -- worktree branches fork from HEAD at spawn time
+    const report = detectConflicts(projectDir, activeWorkers, "HEAD");
+    return c.json(report);
   });
 
   // GET /api/swarm/:id/stream
