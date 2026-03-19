@@ -270,3 +270,17 @@ I'm continuing work on hashmark studio's shell overhaul. The project is at `/Use
 - [ ] Visual impact graph in the UI showing which tests are affected
 - [ ] Smart merge ordering based on dependency analysis
 
+
+### Session 4 TODOs (2026-03-19 evening)
+
+- [ ] **Welcome/landing page** -- NOT a Cursor copy but a clean opening screen with: hashmark logo, "Open Project" / "Scan Codebase" / "Recent Projects" cards, recent projects list. Shows when Chat view has no messages. User has asked for this MULTIPLE times.
+- [ ] **Shift+click multi-select** -- can't select multiple items (files, agents, etc.) with shift-click
+- [ ] **electron-builder codesigning** -- user fixed duplicate Apple Dev identity, `npm run dist:mac` should work now
+- [ ] **Chat --no-interactive removed** -- was breaking Claude CLI spawn
+- [ ] **handleNewSession before init** -- was causing black screen, fixed by moving declaration
+- [ ] Continue full per-page flow testing
+- [ ] Test light theme across all pages visually
+- [ ] Test voice input (mic button)
+- [ ] Test image paste in chat
+- [ ] Test model auto-routing (select Auto, send messages of different lengths)
+- [ ] Test plan mode approve/deny/feedback flow
