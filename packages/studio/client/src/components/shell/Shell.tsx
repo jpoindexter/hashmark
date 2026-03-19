@@ -111,6 +111,7 @@ export default function Shell() {
   const [activeTab, setActiveTab] = useState<"TERMINAL" | "OUTPUT">("TERMINAL");
   const [streamText, setStreamText] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [contextPercent, setContextPercent] = useState<number | null>(null);
   const [terminalCwd, setTerminalCwd] = useState("");
   const [diffOpen, setDiffOpen] = useState(false);
   const [driftDismissed, setDriftDismissed] = useState<boolean>(isDismissed);

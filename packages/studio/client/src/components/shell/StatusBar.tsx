@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from "react";
-import { GitBranch, Sparkles } from "lucide-react";
+import { GitBranch, Sparkles, Gauge } from "lucide-react";
 
 interface StatusBarProps {
   branch?: string;
@@ -7,6 +7,7 @@ interface StatusBarProps {
   projectName?: string;
   modelName?: string;
   providerName?: string;
+  contextPercent: number | null;
 }
 
 function StatusItem({
@@ -62,16 +63,23 @@ const containerStyle: CSSProperties = {
   WebkitAppRegion: "no-drag",
 } as CSSProperties;
 
+function contextColor(pct: number): string {
+  if (pct > 90) return "var(--red)";
+  if (pct > 70) return "var(--yellow)";
+  return "rgba(0,0,0,0.55)";
+}
+
 export default function StatusBar({
   branch,
   changedFiles,
   projectName,
   modelName,
   providerName,
+  contextPercent,
 }: StatusBarProps) {
   return (
     <div className="status-bar" style={containerStyle}>
-      {/* Left: branch + changes */}
+      {/* Left: branch + changes + context usage */}
       <div style={{ display: "flex", alignItems: "center", height: "100%" }}>
         <StatusItem title="Current branch">
           <GitBranch size={11} />
@@ -80,6 +88,12 @@ export default function StatusBar({
         {changedFiles > 0 && (
           <StatusItem title="Changed files">
             <span>+{changedFiles}</span>
+          </StatusItem>
+        )}
+        {contextPercent != null && (
+          <StatusItem title={`Context window: ${contextPercent}% used`}>
+            <Gauge size={10} style={{ color: contextColor(contextPercent) }} />
+            <span style={{ color: contextColor(contextPercent) }}>{contextPercent}% context</span>
           </StatusItem>
         )}
       </div>
