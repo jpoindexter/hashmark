@@ -46,6 +46,7 @@ interface ScanSnapshot {
 
 interface ActivitySidebarProps {
   onSessionSelect?: (sessionId: string) => void;
+  onToggle?: () => void;
 }
 
 // Avatar background colors keyed by first letter — muted, not saturated
@@ -130,7 +131,7 @@ function IconBtn({ children, title, onClick }: { children: React.ReactNode; titl
   );
 }
 
-export default function ActivitySidebar({ onSessionSelect }: ActivitySidebarProps) {
+export default function ActivitySidebar({ onSessionSelect, onToggle }: ActivitySidebarProps) {
   const navigate = useNavigate();
   const [workspace, setWorkspace] = useState<WorkspaceEntry | null>(null);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -211,67 +212,69 @@ export default function ActivitySidebar({ onSessionSelect }: ActivitySidebarProp
       display: "flex",
       flexDirection: "column",
       height: "100%",
-      width: 220,
-      minWidth: 220,
-      maxWidth: 220,
-      background: "#111",
+      width: 240,
+      minWidth: 240,
+      maxWidth: 240,
+      background: "#181818",
       fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
       userSelect: "none",
       flexShrink: 0,
+      fontSize: 13,
     }}>
-      {/* Header */}
+      {/* VS Code explorer panel title — exactly 35px, uppercase, dim text */}
       <div style={{
-        height: 52,
+        height: 35,
         display: "flex",
         alignItems: "center",
-        padding: "0 8px 0 12px",
-        flexShrink: 0,
-        WebkitAppRegion: "drag",
-      } as React.CSSProperties}>
-        <span style={{
-          flex: 1,
-          fontSize: 12,
-          fontWeight: 600,
-          color: "rgba(255,255,255,0.5)",
-          letterSpacing: "0.02em",
-          textTransform: "uppercase",
-        }}>
-          Activity
-        </span>
-        <div style={{ display: "flex", gap: 2, WebkitAppRegion: "no-drag" } as React.CSSProperties}>
-          <IconBtn title="Filter" onClick={() => {}}>
-            <AlignJustify size={12} />
-          </IconBtn>
-          <IconBtn title="Add" onClick={() => navigate("/setup")}>
-            <Plus size={12} />
-          </IconBtn>
-        </div>
-      </div>
-
-      {/* Workspaces section header */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        padding: "0 8px 0 12px",
-        height: 26,
+        padding: "0 3px 0 20px",
         flexShrink: 0,
       }}>
         <span style={{
           flex: 1,
-          fontSize: 10,
-          fontWeight: 600,
-          color: "rgba(255,255,255,0.3)",
+          fontSize: 11,
+          fontWeight: 400,
+          color: "rgba(255,255,255,0.4)",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}>
+          Explorer
+        </span>
+        <div style={{ display: "flex", gap: 0 }}>
+          <IconBtn title="New session" onClick={() => navigate("/setup")}>
+            <Plus size={14} />
+          </IconBtn>
+          <IconBtn title="Collapse sidebar" onClick={() => onToggle?.()}>
+            <AlignJustify size={14} />
+          </IconBtn>
+        </div>
+      </div>
+
+      {/* VS Code-style section header — 22px, bold uppercase */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        padding: "0 3px 0 20px",
+        height: 22,
+        flexShrink: 0,
+        cursor: "pointer",
+        background: "rgba(255,255,255,0.02)",
+      }}>
+        <span style={{
+          flex: 1,
+          fontSize: 11,
+          fontWeight: 700,
+          color: "rgba(255,255,255,0.45)",
           textTransform: "uppercase",
           letterSpacing: "0.06em",
         }}>
-          Workspaces
+          Sessions
         </span>
-        <div style={{ display: "flex", gap: 2 }}>
-          <IconBtn title="Sort" onClick={() => {}}>
-            <AlignJustify size={11} />
-          </IconBtn>
-          <IconBtn title="Add workspace" onClick={() => navigate("/setup")}>
-            <Plus size={11} />
+        <div style={{ display: "flex", gap: 0 }}>
+          <IconBtn title="New session" onClick={() => navigate("/setup")}>
+            <Plus size={14} />
           </IconBtn>
         </div>
       </div>
@@ -366,7 +369,7 @@ function WorkspaceGroup({
 
   return (
     <div>
-      {/* Workspace row */}
+      {/* Workspace row — VS Code tree item: 22px, chevron + icon + label */}
       <div
         onClick={() => setExpanded(v => !v)}
         onMouseEnter={() => setHovered(true)}
@@ -374,68 +377,58 @@ function WorkspaceGroup({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 8,
-          padding: "5px 10px",
+          height: 22,
+          paddingLeft: 8,
+          paddingRight: 8,
+          gap: 4,
           cursor: "pointer",
-          background: hovered ? "rgba(255,255,255,0.04)" : "transparent",
+          background: hovered ? "rgba(255,255,255,0.05)" : "transparent",
           transition: "background 0.1s",
         }}
       >
-        {/* Letter avatar */}
+        {/* Collapse chevron */}
+        <svg width="16" height="16" viewBox="0 0 16 16" style={{ flexShrink: 0, color: "rgba(255,255,255,0.4)", transform: expanded ? "rotate(90deg)" : "none", transition: "transform 0.1s" }} fill="currentColor">
+          <path d="M6 4l4 4-4 4V4z" />
+        </svg>
+        {/* Letter avatar — small, like VS Code's file icons */}
         <div style={{
-          width: 20,
-          height: 20,
-          borderRadius: 4,
+          width: 16,
+          height: 16,
+          borderRadius: 2,
           background: avatarBg(name),
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: 10,
+          fontSize: 9,
           fontWeight: 700,
           color: avatarColor(name),
           flexShrink: 0,
-          fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
         }}>
           {name.charAt(0).toUpperCase()}
         </div>
         <span style={{
           flex: 1,
-          fontSize: 12,
-          fontWeight: 500,
-          color: "rgba(255,255,255,0.75)",
+          fontSize: 13,
+          fontWeight: 400,
+          color: "rgba(255,255,255,0.85)",
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
         }}>
           {name}
         </span>
+        {branch && (
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", flexShrink: 0 }}>
+            {branch.length > 14 ? branch.slice(0, 13) + "…" : branch}
+          </span>
+        )}
         {(totalAdded > 0 || totalRemoved > 0) && (
-          <span style={{ display: "flex", gap: 4, fontFamily: "monospace", fontSize: 10 }}>
-            {totalAdded > 0 && (
-              <span style={{ color: "#4ade80" }}>+{totalAdded}</span>
-            )}
-            {totalRemoved > 0 && (
-              <span style={{ color: "#f87171" }}>-{totalRemoved}</span>
-            )}
+          <span style={{ display: "flex", gap: 3, fontFamily: "monospace", fontSize: 10, flexShrink: 0 }}>
+            {totalAdded > 0 && <span style={{ color: "#4ade80" }}>+{totalAdded}</span>}
+            {totalRemoved > 0 && <span style={{ color: "#f87171" }}>-{totalRemoved}</span>}
           </span>
         )}
       </div>
-
-      {/* Branch label */}
-      {branch && (
-        <div style={{
-          paddingLeft: 38,
-          paddingRight: 10,
-          paddingBottom: 2,
-          fontSize: 10,
-          color: "rgba(255,255,255,0.2)",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}>
-          {branch}
-        </div>
-      )}
 
       {/* Session rows */}
       {expanded && sessions.length > 0 && sessions.map((s, i) => (
@@ -450,11 +443,12 @@ function WorkspaceGroup({
 
       {expanded && sessions.length === 0 && (
         <div style={{
-          paddingLeft: 38,
-          paddingBottom: 8,
-          fontSize: 11,
+          paddingLeft: 44,
+          height: 22,
+          display: "flex",
+          alignItems: "center",
+          fontSize: 12,
           color: "rgba(255,255,255,0.2)",
-          fontStyle: "italic",
         }}>
           No sessions
         </div>
@@ -486,9 +480,9 @@ function SessionRow({
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 7,
-        height: 32,
-        padding: "4px 10px 4px 20px",
+        gap: 6,
+        height: 22,
+        padding: "0 8px 0 28px",
         cursor: "pointer",
         background: active
           ? "rgba(255,255,255,0.06)"
@@ -499,47 +493,27 @@ function SessionRow({
       }}
     >
       <StatusDot active={recent} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          fontSize: 12,
-          fontWeight: active ? 500 : 400,
-          color: active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.55)",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}>
-          {title}
-        </div>
-        <div style={{
-          fontSize: 10,
-          color: "rgba(255,255,255,0.2)",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-          marginTop: 1,
-        }}>
-          {session.message_count} msgs
-        </div>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+      <span style={{
+        flex: 1,
+        fontSize: 13,
+        fontWeight: active ? 600 : 400,
+        color: active ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.6)",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        lineHeight: "22px",
+      }}>
+        {title}
+      </span>
+      {(hovered || active) && shortcut && (
         <span style={{
-          fontFamily: "monospace",
-          fontSize: 11,
-          color: "#4ade80",
+          fontSize: 10,
+          color: "rgba(255,255,255,0.25)",
+          flexShrink: 0,
         }}>
-          +{session.message_count}
+          {shortcut}
         </span>
-        {shortcut && (
-          <span style={{
-            fontSize: 10,
-            color: "rgba(255,255,255,0.25)",
-            opacity: hovered || active ? 1 : 0.6,
-            transition: "opacity 0.1s",
-          }}>
-            {shortcut}
-          </span>
-        )}
-      </div>
+      )}
     </div>
   );
 }

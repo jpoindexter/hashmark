@@ -1,6 +1,7 @@
-import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback, type CSSProperties } from "react";
-import { Home, FolderTree, GitBranch, Bot, Zap, Settings, TerminalSquare, Play, Building2, ChevronRight, ChevronDown, AlertTriangle, Shield, PlayCircle, History, ChevronLeft, RotateCcw } from "lucide-react";
+import { GitBranch, TerminalSquare, ChevronRight, ChevronDown, AlertTriangle, ChevronLeft, RotateCcw, MessageSquare, FolderTree, Bot, PlayCircle, Settings, Zap, GitCompare, Shield } from "lucide-react";
+import { NavLink } from "react-router-dom";
 import CommandPalette from "./CommandPalette.tsx";
 import ActivitySidebar from "./ActivitySidebar.tsx";
 import ChatMessages from "./ChatMessages.tsx";
@@ -43,18 +44,6 @@ function dismissFor24h() {
   try { localStorage.setItem("studio:drift_dismissed_until", String(Date.now() + 86400000)); } catch {}
 }
 
-const NAV = [
-  { to: "/",         icon: <Home size={18} />,        title: "Home",     end: true },
-  { to: "/files",    icon: <FolderTree size={18} />,  title: "Files"              },
-  { to: "/agents",   icon: <Bot size={18} />,         title: "Agents"             },
-  { to: "/generate", icon: <Zap size={18} />,         title: "Generate"           },
-  { to: "/run",        icon: <PlayCircle size={18} />, title: "Run"                },
-  { to: "/history",   icon: <History size={18} />,    title: "History"            },
-  { to: "/company",    icon: <Building2 size={18} />,  title: "Company"            },
-  { to: "/governance", icon: <Shield size={18} />,    title: "Governance"         },
-  { to: "/setup",      icon: <Play size={18} />,      title: "Setup"              },
-  { to: "/settings",   icon: <Settings size={18} />,  title: "Settings"           },
-];
 
 function persist(key: string, val: unknown) {
   try { localStorage.setItem(`studio:${key}`, JSON.stringify(val)); } catch {}
@@ -179,9 +168,11 @@ export default function Layout() {
   const [streaming,     setStreaming]     = useState(false);
   const [terminalCwd,   setTerminalCwd]   = useState("");
   const [diffOpen,      setDiffOpen]      = useState(false);
+  const [sidebarOpen,   setSidebarOpen]   = useState(() => restore("sidebarOpen", true));
 
-  useEffect(() => persist("termOpen", termOpen), [termOpen]);
-  useEffect(() => persist("termBig",  termBig),  [termBig]);
+  useEffect(() => persist("termOpen",    termOpen),    [termOpen]);
+  useEffect(() => persist("termBig",     termBig),     [termBig]);
+  useEffect(() => persist("sidebarOpen", sidebarOpen), [sidebarOpen]);
 
   useEffect(() => {
     if (activeSessionId) localStorage.setItem("studio_active_session_id", activeSessionId);
@@ -338,7 +329,7 @@ export default function Layout() {
 
   const changedFiles = git?.files?.length ?? 0;
   const isHome = location.pathname === "/" || location.pathname === "/sessions";
-  const routeTitle = NAV.find(n => n.to === location.pathname)?.title ?? location.pathname.slice(1);
+  const routeTitle = location.pathname.slice(1) || "Chat";
 
   return (
     <div style={{
@@ -351,248 +342,147 @@ export default function Layout() {
       fontFamily: "var(--font-ui)",
     } as React.CSSProperties}>
 
-      {/* Main body row */}
+      {/* ── Full-width titlebar (spans entire window, clears traffic lights) ── */}
+      <div style={{
+        height: 35, minHeight: 35, flexShrink: 0,
+        background: "#111",
+        borderBottom: "1px solid rgba(255,255,255,0.07)",
+        display: "flex", alignItems: "center",
+        paddingLeft: 70,   // VS Code mac: window-controls-container is exactly 70px wide
+        paddingRight: 8,
+        gap: 6,
+        fontFamily: "-apple-system, system-ui, sans-serif",
+        fontSize: 12,
+        color: "rgba(255,255,255,0.5)",
+        WebkitAppRegion: "drag",
+      } as React.CSSProperties}>
+
+        {/* Sidebar toggle */}
+        <button
+          onClick={() => setSidebarOpen(v => !v)}
+          title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+          style={{
+            background: "none", border: "none", cursor: "pointer",
+            color: "rgba(255,255,255,0.35)", padding: "2px 4px",
+            display: "flex", alignItems: "center", borderRadius: 3,
+            transition: "color 0.1s", WebkitAppRegion: "no-drag",
+          } as React.CSSProperties}
+          onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.8)")}
+          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+        >
+          <ChevronLeft size={14} style={{ transform: sidebarOpen ? "none" : "rotate(180deg)", transition: "transform 0.18s" }} />
+        </button>
+
+        {/* Back / Forward */}
+        <div style={{ display: "flex", gap: 2, WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+          <button onClick={() => navigate(-1)} title="Back" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "2px 4px", display: "flex", alignItems: "center", borderRadius: 3, transition: "color 0.1s" }} onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.8)")} onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}><ChevronLeft size={14} /></button>
+          <button onClick={() => navigate(1)} title="Forward" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "2px 4px", display: "flex", alignItems: "center", borderRadius: 3, transition: "color 0.1s" }} onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.8)")} onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}><ChevronRight size={14} /></button>
+        </div>
+
+        {/* Breadcrumb */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+          <span style={{ color: "rgba(255,255,255,0.7)", whiteSpace: "nowrap" }}>{info?.projectName ?? "…"}</span>
+          {drift && <DriftBadge drift={drift} navigate={navigate} />}
+          {git?.branch !== undefined && (
+            <>
+              <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>›</span>
+              <BranchPicker currentBranch={git.branch ?? ""} />
+            </>
+          )}
+          {changedFiles > 0 && (
+            <button onClick={() => setDiffOpen(true)} title="View changed files" style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 4, padding: "2px 8px", fontSize: 11, color: "#10b981", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, animation: streaming ? "changes-pulse 1.5s ease-in-out infinite" : "none" } as React.CSSProperties}>
+              Changes {changedFiles}
+            </button>
+          )}
+          <button onClick={() => { fetch("/api/files/git").then(r => r.json()).then(setGit).catch(() => {}); }} title="Refresh" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", padding: "2px 4px", display: "flex", alignItems: "center", borderRadius: 3, transition: "color 0.1s" } as React.CSSProperties} onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")} onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}><RotateCcw size={11} /></button>
+        </div>
+
+        <div style={{ flex: 1 }} />
+
+        {/* Right: route badge */}
+        <span style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 4, padding: "2px 8px", fontSize: 11, color: "rgba(255,255,255,0.6)", whiteSpace: "nowrap", WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+          {routeTitle}
+        </span>
+      </div>
+
+      {/* ── Body row ─────────────────────────────────────────────────── */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
 
-      {/* ── Left: narrow icon rail ─────────────────────────────────── */}
+      {/* ── Activity Bar (VS Code icon rail, 48px) ─────────────────── */}
       <aside style={{
         width: 48,
         minWidth: 48,
-        background: "var(--bg-2)",
+        background: "#181818",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        paddingTop: 52,
+        paddingTop: 6,
         flexShrink: 0,
+        borderRight: "1px solid rgba(255,255,255,0.06)",
         zIndex: 10,
       }}>
-        <button
-          onClick={() => navigate("/")}
-          title="Home — Open project"
-          style={{ fontSize: 16, fontWeight: 900, color: "var(--accent)", marginBottom: 16, letterSpacing: "-0.02em", lineHeight: 1, fontFamily: "var(--font-ui)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
-        >
-          #
-        </button>
-
         <nav style={{ display: "flex", flexDirection: "column", gap: 0, width: "100%", flex: 1 }}>
-          {NAV.map(item => (
-            <div key={item.to} className="nav-tooltip-wrap">
-              <NavLink
-                to={item.to}
-                end={item.end}
-                style={({ isActive }) => ({
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  height: 36, width: 36, margin: "2px auto", borderRadius: 6, position: "relative",
-                  color: isActive ? "var(--text)" : "var(--text-dimmer)",
-                  background: isActive ? "rgba(255,255,255,0.08)" : "transparent",
-                  transition: "background 0.1s, color 0.1s", textDecoration: "none",
-                })}
-              >
-                {item.icon}
-                {item.to === "/source-control" && changedFiles > 0 && (
-                  <span style={{
-                    position: "absolute", top: 5, right: 4,
-                    background: "var(--accent)", color: "#000",
-                    fontSize: 8, fontWeight: 700, borderRadius: 8,
-                    padding: "0 3px", minWidth: 12, textAlign: "center", lineHeight: "12px",
-                  }}>
-                    {changedFiles}
-                  </span>
-                )}
-              </NavLink>
-              <span className="nav-tooltip">{item.title}</span>
-            </div>
-          ))}
-
-          {/* Git changes */}
-          <div className="nav-tooltip-wrap">
+          {[
+            { to: "/",                icon: <MessageSquare size={20} />,  title: "Chat",           end: true },
+            { to: "/files",           icon: <FolderTree size={20} />,     title: "Explorer" },
+            { to: "/source-control",  icon: <GitCompare size={20} />,     title: "Source Control" },
+            { to: "/agents",          icon: <Bot size={20} />,            title: "Agents" },
+            { to: "/run",             icon: <PlayCircle size={20} />,     title: "Run" },
+            { to: "/generate",        icon: <Zap size={20} />,            title: "Generate" },
+            { to: "/governance",      icon: <Shield size={20} />,         title: "Governance" },
+          ].map(item => (
             <NavLink
-              to="/git"
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              title={item.title}
               style={({ isActive }) => ({
                 display: "flex", alignItems: "center", justifyContent: "center",
-                height: 36, width: 36, margin: "2px auto", borderRadius: 6, position: "relative",
-                color: isActive ? "var(--text)" : changedFiles > 0 ? "var(--text-dim)" : "var(--text-dimmer)",
-                background: isActive ? "rgba(255,255,255,0.08)" : "transparent",
-                transition: "background 0.1s, color 0.1s", textDecoration: "none",
+                height: 48, width: 48, position: "relative",
+                color: isActive ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.4)",
+                background: "transparent",
+                transition: "color 0.1s", textDecoration: "none",
+                borderLeft: isActive ? "2px solid rgba(255,255,255,0.9)" : "2px solid transparent",
               })}
             >
-              <GitBranch size={18} />
-              {changedFiles > 0 && (
-                <span style={{
-                  position: "absolute", top: 5, right: 4,
-                  background: "var(--accent)", color: "#000",
-                  fontSize: 8, fontWeight: 700, borderRadius: 8,
-                  padding: "0 3px", minWidth: 12, textAlign: "center", lineHeight: "12px",
-                }}>
-                  {changedFiles}
-                </span>
-              )}
+              {item.icon}
             </NavLink>
-            <span className="nav-tooltip">Git</span>
-          </div>
+          ))}
         </nav>
-
-        {/* Terminal toggle */}
-        <div className="nav-tooltip-wrap" style={{ marginBottom: 8 }}>
-          <button
-            onClick={() => setTermOpen(v => !v)}
-            style={{
-              background: "none", border: "none", cursor: "pointer",
-              color: termOpen ? "var(--accent)" : "var(--text-dimmer)",
-              height: 36, width: 48,
+        {/* Bottom icons */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 0, width: "100%", paddingBottom: 8 }}>
+          <NavLink
+            to="/settings"
+            title="Settings"
+            style={({ isActive }) => ({
               display: "flex", alignItems: "center", justifyContent: "center",
-              transition: "color 0.1s",
-            }}
+              height: 48, width: 48,
+              color: isActive ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.4)",
+              transition: "color 0.1s", textDecoration: "none",
+              borderLeft: isActive ? "2px solid rgba(255,255,255,0.9)" : "2px solid transparent",
+            })}
           >
-            <TerminalSquare size={18} />
-          </button>
-          <span className="nav-tooltip">Terminal  ⌃`</span>
+            <Settings size={20} />
+          </NavLink>
         </div>
       </aside>
 
-      {/* ── Activity Sidebar ─────────────────────────────────────────── */}
+      {/* ── Sidebar Panel (tray) ───────────────────────────────────── */}
       <div style={{
-        width: 240,
-        minWidth: 240,
+        width: sidebarOpen ? 240 : 0,
+        minWidth: 0,
         flexShrink: 0,
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
+        transition: "width 0.18s ease",
+        borderRight: sidebarOpen ? "1px solid rgba(255,255,255,0.06)" : "none",
       }}>
-        <ActivitySidebar />
+        <ActivitySidebar onToggle={() => setSidebarOpen(false)} />
       </div>
 
       {/* ── Main column ──────────────────────────────────────────────── */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
-
-        {/* Conductor-style header */}
-        <div style={{
-          height: 40, minHeight: 40,
-          background: "#0a0a0a",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-          display: "flex", alignItems: "center",
-          padding: "0 12px",
-          gap: 8, flexShrink: 0,
-          fontFamily: "-apple-system, system-ui, sans-serif",
-          fontSize: 12,
-          color: "rgba(255,255,255,0.5)",
-          WebkitAppRegion: "drag",
-        } as React.CSSProperties}>
-
-          {/* Back / Forward */}
-          <div style={{ display: "flex", gap: 2, WebkitAppRegion: "no-drag" } as React.CSSProperties}>
-            <button
-              onClick={() => navigate(-1)}
-              title="Back"
-              style={{
-                background: "none", border: "none", cursor: "pointer",
-                color: "rgba(255,255,255,0.35)", padding: "2px 4px",
-                display: "flex", alignItems: "center", borderRadius: 3,
-                transition: "color 0.1s",
-              }}
-              onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.8)")}
-              onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <button
-              onClick={() => navigate(1)}
-              title="Forward"
-              style={{
-                background: "none", border: "none", cursor: "pointer",
-                color: "rgba(255,255,255,0.35)", padding: "2px 4px",
-                display: "flex", alignItems: "center", borderRadius: 3,
-                transition: "color 0.1s",
-              }}
-              onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.8)")}
-              onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
-            >
-              <ChevronRight size={14} />
-            </button>
-          </div>
-
-          {/* Breadcrumb: project > branch */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-            <span style={{ color: "rgba(255,255,255,0.7)", whiteSpace: "nowrap" }}>
-              {info?.projectName ?? "…"}
-            </span>
-            {drift && <DriftBadge drift={drift} navigate={navigate} />}
-            {git?.branch !== undefined && (
-              <>
-                <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>›</span>
-                <BranchPicker currentBranch={git.branch ?? ""} />
-              </>
-            )}
-            {changedFiles > 0 && (
-              <button
-                onClick={() => setDiffOpen(true)}
-                title="View changed files"
-                style={{
-                  background: "rgba(16,185,129,0.1)",
-                  border: "1px solid rgba(16,185,129,0.2)",
-                  borderRadius: 4,
-                  padding: "2px 8px",
-                  fontSize: 11,
-                  color: "#10b981",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                  animation: streaming ? "changes-pulse 1.5s ease-in-out infinite" : "none",
-                } as React.CSSProperties}
-              >
-                Changes {changedFiles}
-              </button>
-            )}
-          </div>
-
-          {/* Refresh icon */}
-          <button
-            onClick={() => { fetch("/api/files/git").then(r => r.json()).then(setGit).catch(() => {}); }}
-            title="Refresh git status"
-            style={{
-              background: "none", border: "none", cursor: "pointer",
-              color: "rgba(255,255,255,0.3)", padding: "2px 4px",
-              display: "flex", alignItems: "center", borderRadius: 3,
-              transition: "color 0.1s",
-              WebkitAppRegion: "no-drag",
-            } as React.CSSProperties}
-            onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
-            onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
-          >
-            <RotateCcw size={12} />
-          </button>
-
-          <div style={{ flex: 1 }} />
-
-          {/* Right side: route badge + settings */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, WebkitAppRegion: "no-drag" } as React.CSSProperties}>
-            <span style={{
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 4,
-              padding: "2px 8px",
-              fontSize: 11,
-              color: "rgba(255,255,255,0.6)",
-              whiteSpace: "nowrap",
-            }}>
-              {routeTitle}
-            </span>
-            <button
-              onClick={() => navigate("/settings")}
-              title="Settings"
-              style={{
-                background: "none", border: "none", cursor: "pointer",
-                color: "rgba(255,255,255,0.3)", padding: "2px 4px",
-                display: "flex", alignItems: "center", borderRadius: 3,
-                transition: "color 0.1s",
-              }}
-              onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
-              onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
-            >
-              <Settings size={13} />
-            </button>
-          </div>
-        </div>
 
         {/* Drift warning banner */}
         {drift && !driftDismissed && (
@@ -602,33 +492,6 @@ export default function Layout() {
           />
         )}
 
-        {/* Tab bar (home view only) */}
-        {isHome && (
-          <div style={{
-            height: 34, minHeight: 34, flexShrink: 0,
-            background: "var(--bg-2)",
-            borderBottom: "1px solid var(--border-dim)",
-            display: "flex", alignItems: "stretch",
-            WebkitAppRegion: "no-drag",
-            paddingLeft: 2,
-          } as React.CSSProperties}>
-            <MainTab active icon="◎" label="Chat" />
-            <button
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: 30, background: "none", border: "none",
-                color: "var(--text-dimmer)", cursor: "pointer",
-                borderRight: "1px solid var(--border-dim)",
-                fontSize: 16, transition: "color 0.1s",
-              }}
-              title="New tab"
-              onMouseEnter={e => (e.currentTarget.style.color = "var(--text)")}
-              onMouseLeave={e => (e.currentTarget.style.color = "var(--text-dimmer)")}
-            >
-              +
-            </button>
-          </div>
-        )}
 
         {/* Content area: chat or page */}
         <div style={{
@@ -725,25 +588,26 @@ export default function Layout() {
         </>
       )}
 
-      {/* ── Status bar ───────────────────────────────────────────────── */}
+      {/* ── Status bar (VS Code style — colored background) ─────────── */}
       <div style={{
         height: 22, minHeight: 22, flexShrink: 0,
-        background: "var(--bg-2)",
-        borderTop: "1px solid var(--border-dim)",
+        background: "#10b981",
         display: "flex", alignItems: "center",
         padding: "0 8px",
         fontSize: 11, fontFamily: "var(--font-ui)",
+        color: "rgba(0,0,0,0.8)",
         userSelect: "none",
         WebkitAppRegion: "no-drag",
         zIndex: 10,
+        gap: 2,
       } as React.CSSProperties}>
-        <StatusItem title="Branch">
-          <GitBranch size={11} style={{ opacity: 0.7 }} />
-          {git?.branch ?? "—"}
-          {changedFiles > 0 && <span style={{ marginLeft: 4, opacity: 0.8 }}>+{changedFiles}</span>}
-        </StatusItem>
+        <button onClick={() => setSidebarOpen(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", gap: 4, padding: "0 4px", borderRadius: 3, fontSize: 11, fontFamily: "var(--font-ui)" }}>
+          <GitBranch size={11} />
+          {git?.branch ?? "unknown"}
+          {changedFiles > 0 && <span style={{ marginLeft: 2 }}>+{changedFiles}</span>}
+        </button>
         <div style={{ flex: 1 }} />
-        <StatusItem>{info?.projectName ?? "hashmark studio"}</StatusItem>
+        <span style={{ opacity: 0.7, fontSize: 11 }}>{info?.projectName ?? "hashmark studio"}</span>
       </div>
 
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
@@ -930,24 +794,6 @@ function DriftBanner({ drift, onDismiss }: { drift: DriftResult; onDismiss: () =
   );
 }
 
-function MainTab({ active, icon, label }: { active?: boolean; icon: string; label: string }) {
-  return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 6,
-      padding: "0 14px",
-      fontSize: 12,
-      color: active ? "var(--text)" : "var(--text-dimmer)",
-      borderBottom: active ? "2px solid var(--accent)" : "2px solid transparent",
-      borderRight: "1px solid var(--border-dim)",
-      cursor: "default",
-      userSelect: "none",
-      whiteSpace: "nowrap",
-    }}>
-      <span style={{ color: active ? "var(--accent)" : "var(--text-dimmer)", fontSize: 11 }}>{icon}</span>
-      {label}
-    </div>
-  );
-}
 
 function StatusItem({ children, title, onClick }: { children: React.ReactNode; title?: string; onClick?: () => void }) {
   return (

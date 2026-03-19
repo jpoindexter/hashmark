@@ -2,7 +2,7 @@ import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "xterm/css/xterm.css";
-import { encodeTerminalMsg } from "../../../../shared/ws-contracts";
+import { encodeTerminalMsg } from "../../../shared/ws-contracts";
 
 export interface TerminalHandle {
   clear: () => void;
