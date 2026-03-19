@@ -1,82 +1,84 @@
 {
-  "name": "hashmark",
+  "name": "hashmark-studio",
   "version": "0.1.0",
-  "private": true,
+  "description": "Visual agent orchestration UI for hashmark",
+  "type": "module",
+  "bin": {
+    "hashmark-studio": "dist/bin.js"
+  },
+  "main": "dist/electron/main.js",
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "prisma generate && next build",
-    "start": "next start",
-    "lint": "eslint",
-    "type-check": "tsc --noEmit",
-    "hashmark": "node packages/cli/dist/cli.js",
-    "studio": "node packages/studio/dist/bin.js",
-    "studio:build": "cd packages/studio && npm run build",
-    "electron": "cd packages/studio && npm run electron",
-    "db:push": "dotenv -e .env.local -- prisma db push",
-    "db:generate": "dotenv -e .env.local -- prisma generate",
-    "db:studio": "dotenv -e .env.local -- prisma studio",
-    "db:seed": "dotenv -e .env.local -- tsx prisma/seed.ts",
-    "db:search-setup": "dotenv -e .env.local -- psql $DATABASE_URL -f prisma/search-setup.sql",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "prepare": "husky"
+    "build:server": "tsup bin.ts server/index.ts --format esm --out-dir dist --no-splitting && tsup electron/main.ts --format esm --out-dir dist/electron --no-splitting --external electron --external better-sqlite3 --external node-pty && tsup electron/preload.ts --format cjs --out-dir dist/electron --no-splitting --external electron",
+    "build:client": "vite build client --outDir dist/public",
+    "build": "npm run build:server && npm run build:client",
+    "dev:server": "tsup bin.ts server/index.ts --format esm --out-dir dist --watch",
+    "dev:electron": "tsup electron/main.ts --format esm --out-dir dist/electron --no-splitting --external electron --external better-sqlite3 --external node-pty --watch & tsup electron/preload.ts --format cjs --out-dir dist/electron --no-splitting --external electron --watch",
+    "dev:client": "vite client",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "electron": "lsof -ti :3200 | xargs kill -9 2>/dev/null; sleep 0.5; electron dist/electron/main.js",
+    "electron:dev": "concurrently \"npm run dev:server\" \"npm run dev:electron\" \"npm run dev:client\" \"wait-on http://localhost:3200 && wait-on http://localhost:5173 && wait-on dist/electron/preload.cjs && electron dist/electron/main.js\"",
+    "typecheck": "tsc --noEmit",
+    "dist": "npm run build && electron-builder",
+    "dist:mac": "npm run build && electron-builder --mac"
   },
-  "dependencies": {
-    "@auth/prisma-adapter": "^2.11.1",
-    "@fabrk/components": "file:./vendor/fabrk-components-0.4.1.tgz",
-    "@fabrk/core": "file:./vendor/fabrk-core-0.3.1.tgz",
-    "@fabrk/design-system": "file:./vendor/fabrk-design-system-0.4.1.tgz",
-    "@octokit/rest": "^22.0.1",
-    "@polar-sh/sdk": "^0.43.1",
-    "@prisma/client": "^6.19.2",
-    "@pierre/diffs": "^1.1.1",
-    "clsx": "^2.1.1",
-    "diff": "^8.0.3",
-    "framer-motion": "^12.38.0",
-    "lucide-react": "^0.563.0",
-    "next": "16.1.6",
-    "next-auth": "5.0.0-beta.30",
-    "next-themes": "^0.4.6",
-    "octokit": "^5.0.5",
-    "prisma": "^6.19.2",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "sonner": "^2.0.7",
-    "tailwind-merge": "^3.4.0",
-    "zod": "^4.3.6"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "prisma",
-      "@prisma/engines"
+  "build": {
+    "appId": "com.hashmark.studio",
+    "productName": "hashmark studio",
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "assets/icon.icns",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "assets/**/*",
+      "node_modules/**/*"
     ],
-    "overrides": {
-      "@fabrk/components": "file:./vendor/fabrk-components-0.4.1.tgz",
-      "@fabrk/core": "file:./vendor/fabrk-core-0.3.1.tgz",
-      "@fabrk/design-system": "file:./vendor/fabrk-design-system-0.4.1.tgz",
-      "@fabrk/config": "file:./vendor/fabrk-config-0.3.1.tgz"
+    "publish": {
+      "provider": "github",
+      "owner": "jpoindexter",
+      "repo": "hashmark"
     }
   },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix"
-    ]
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.79.0",
+    "@hono/node-server": "^1.13.7",
+    "@tanstack/react-virtual": "^3.13.23",
+    "@types/ws": "^8.18.1",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-search": "^0.16.0",
+    "@xterm/addon-web-links": "^0.12.0",
+    "@xterm/xterm": "^6.0.0",
+    "better-sqlite3": "^12.8.0",
+    "electron-updater": "^6.8.3",
+    "hono": "^4.6.17",
+    "just-bash": "^2.13.1",
+    "lucide-react": "^0.577.0",
+    "open": "^10.1.0",
+    "ws": "^8.19.0",
+    "xterm": "^5.3.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.4.1",
-    "@commitlint/config-conventional": "^20.4.1",
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "dotenv-cli": "^11.0.0",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.6",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.2.7",
-    "tailwindcss": "^4",
-    "typescript": "^5",
-    "vitest": "^4.0.18"
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "electron": "^41.0.3",
+    "electron-builder": "^26.8.1",
+    "node-pty": "^1.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.1.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.1.0"
   }
 }

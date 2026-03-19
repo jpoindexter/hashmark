@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Background -->
+  <rect width="32" height="32" fill="#09090b"/>
+  <!-- Border -->
+  <rect x="0.5" y="0.5" width="31" height="31" fill="none" stroke="#1a2e22" stroke-width="0.0625"/>
+  <!-- Hash mark: two vertical bars -->
+  <rect x="10.3125" y="6.625" width="2.1875" height="18.75" fill="#10b981"/>
+  <rect x="19.5" y="6.625" width="2.1875" height="18.75" fill="#10b981"/>
+  <!-- Hash mark: two horizontal bars -->
+  <rect x="7.5" y="11.125" width="17" height="2.1875" fill="#10b981"/>
+  <rect x="7.5" y="18.6875" width="17" height="2.1875" fill="#10b981"/>
+</svg>
