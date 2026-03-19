@@ -27,6 +27,8 @@ interface SessionsSidebarProps {
   onSessionSelect?: (sessionId: string) => void;
   info?: { projectName: string; projectDir: string } | null;
   git?: { branch: string; files: { status: string; added?: number; removed?: number }[] } | null;
+  streaming?: boolean;
+  streamingSessionId?: string | null;
 }
 
 // Avatar background colors keyed by first letter
@@ -64,11 +66,7 @@ function avatarColor(name: string): string {
   return AVATAR_TEXT_COLORS[key] ?? "rgba(255,255,255,0.5)";
 }
 
-function isRecent(ts: number): boolean {
-  return Date.now() - ts < 5 * 60 * 1000;
-}
-
-export default function SessionsSidebar({ activeSessionId, onSessionSelect, info, git }: SessionsSidebarProps) {
+export default function SessionsSidebar({ activeSessionId, onSessionSelect, info, git, streaming, streamingSessionId }: SessionsSidebarProps) {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
 
@@ -115,6 +113,7 @@ export default function SessionsSidebar({ activeSessionId, onSessionSelect, info
       userSelect: "none",
       fontSize: 13,
     }}>
+      <style>{`@keyframes session-dot-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }`}</style>
       {/* Section header: "Sessions" with + button */}
       <SectionHeader onAdd={handleNewSession} />
 
@@ -129,6 +128,7 @@ export default function SessionsSidebar({ activeSessionId, onSessionSelect, info
             sessions={sessions}
             activeSessionId={activeSessionId}
             onSessionClick={handleSessionClick}
+            streamingSessionId={streamingSessionId ?? null}
           />
         ) : (
           <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
@@ -177,6 +177,7 @@ function WorkspaceGroup({
   sessions,
   activeSessionId,
   onSessionClick,
+  streamingSessionId,
 }: {
   name: string;
   branch: string | null;
@@ -185,6 +186,7 @@ function WorkspaceGroup({
   sessions: ChatSession[];
   activeSessionId: string | null;
   onSessionClick: (id: string) => void;
+  streamingSessionId: string | null;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [hovered, setHovered] = useState(false);
@@ -242,6 +244,7 @@ function WorkspaceGroup({
           shortcut={i < 9 ? `\u2318${i + 1}` : undefined}
           active={s.id === activeSessionId}
           onClick={() => onSessionClick(s.id)}
+          isStreaming={s.id === streamingSessionId}
         />
       ))}
 
@@ -305,24 +308,25 @@ function SessionRow({
   shortcut,
   active,
   onClick,
+  isStreaming,
 }: {
   session: ChatSession;
   shortcut?: string;
   active: boolean;
   onClick: () => void;
+  isStreaming: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
-  const recent = isRecent(session.updated_at);
   const title = session.title || "Untitled";
 
-  // Status dot color: yellow = recent/running, blue = active, dim = idle
-  const dotColor = recent
+  // Status dot color: yellow pulsing = actively streaming, blue = active, dim = idle
+  const dotColor = isStreaming
     ? "var(--yellow)"
     : active
     ? "var(--blue)"
     : "var(--text-dimmer)";
 
-  const dotShadow = recent ? "0 0 4px var(--yellow)" : undefined;
+  const dotShadow = isStreaming ? "0 0 4px var(--yellow)" : undefined;
 
   return (
     <div
@@ -344,7 +348,7 @@ function SessionRow({
         transition: "background 0.1s",
       }}
     >
-      {/* Status dot */}
+      {/* Status dot -- pulses when streaming */}
       <span style={{
         display: "inline-block",
         width: 6,
@@ -353,6 +357,7 @@ function SessionRow({
         background: dotColor,
         flexShrink: 0,
         boxShadow: dotShadow,
+        animation: isStreaming ? "session-dot-pulse 1.5s ease-in-out infinite" : undefined,
       }} />
       {/* Session title */}
       <span style={{

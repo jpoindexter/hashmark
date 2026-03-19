@@ -201,6 +201,8 @@ export default function Shell() {
                   onSessionSelect={setActiveSessionId}
                   info={info}
                   git={git}
+                  streaming={streaming}
+                  streamingSessionId={streaming ? activeSessionId : null}
                 />
               }
             />
@@ -232,7 +234,7 @@ export default function Shell() {
             minHeight: 0,
           }}>
             {isHome ? (
-              <ChatMessages sessionId={activeSessionId} streamText={streamText} streaming={streaming} />
+              <ChatMessages sessionId={activeSessionId} streamText={streamText} streaming={streaming} modelLabel={modelLabel ?? "Sonnet 4.6"} />
             ) : (
               <div style={{ flex: 1, overflow: "auto" }}>
                 <Outlet />

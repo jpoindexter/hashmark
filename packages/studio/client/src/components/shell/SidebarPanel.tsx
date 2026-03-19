@@ -17,6 +17,15 @@ const VIEW_TITLES: Record<string, string> = {
   governance: "Policies",
 };
 
+const VIEW_DESCRIPTIONS: Record<string, string> = {
+  files: "File explorer",
+  "source-control": "Source control",
+  agents: "Agent management",
+  run: "Run tasks",
+  generate: "Scan & generate",
+  governance: "Policies",
+};
+
 const VIEWS = [
   "chat",
   "files",
@@ -56,7 +65,7 @@ function viewContent(
 
   return (
     <div key={view} style={base}>
-      <div style={placeholderStyle}>Opens in main content</div>
+      <div style={placeholderStyle}>{VIEW_DESCRIPTIONS[view] ?? "Opens in main content"}</div>
     </div>
   );
 }
@@ -82,33 +91,45 @@ export default function SidebarPanel({
         display: "flex",
         flexDirection: "column",
         flexShrink: 0,
+        whiteSpace: "nowrap",
       }}
     >
-      {/* 35px header */}
-      <div
-        style={{
-          height: 35,
-          minHeight: 35,
-          display: "flex",
-          alignItems: "center",
-          paddingLeft: 12,
-          paddingRight: 8,
-          fontSize: 11,
-          fontWeight: 400,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: "var(--text-dim)",
-          fontFamily: "var(--font-ui)",
-          whiteSpace: "nowrap",
-          userSelect: "none",
-        }}
-      >
-        {title}
-      </div>
+      {/* Inner wrapper -- fades out before width shrinks, prevents text reflow */}
+      <div style={{
+        minWidth: width,
+        opacity: open ? 1 : 0,
+        transition: open ? "opacity 0.12s ease 0.06s" : "opacity 0.08s ease",
+        display: "flex",
+        flexDirection: "column",
+        flex: 1,
+        minHeight: 0,
+      }}>
+        {/* 35px header */}
+        <div
+          style={{
+            height: 35,
+            minHeight: 35,
+            display: "flex",
+            alignItems: "center",
+            paddingLeft: 12,
+            paddingRight: 8,
+            fontSize: 11,
+            fontWeight: 400,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "var(--text-dim)",
+            fontFamily: "var(--font-ui)",
+            whiteSpace: "nowrap",
+            userSelect: "none",
+          }}
+        >
+          {title}
+        </div>
 
-      {/* Content -- all views mounted, toggled via display */}
-      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-        {VIEWS.map((view) => viewContent(view, activeView, sessionsSidebar))}
+        {/* Content -- all views mounted, toggled via display */}
+        <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+          {VIEWS.map((view) => viewContent(view, activeView, sessionsSidebar))}
+        </div>
       </div>
     </div>
   );

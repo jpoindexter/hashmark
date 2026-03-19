@@ -60,12 +60,14 @@ export default function TerminalPanel({
         ))}
         <div style={{ flex: 1 }} />
         <button
+          title={termBig ? "Restore terminal" : "Maximize terminal"}
           onClick={onToggleBig}
           style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontSize: 13, padding: "0 10px" }}
         >
           {termBig ? "\u2291" : "\u229E"}
         </button>
         <button
+          title="Close terminal (\u2318`)"
           onClick={onClose}
           style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontSize: 14, padding: "0 10px" }}
         >

@@ -67,7 +67,7 @@ export default function Titlebar({
       >
         {/* Sidebar toggle */}
         <IconButton
-          title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          title={`Toggle sidebar (\u2318B)`}
           onClick={onToggleSidebar}
         >
           <ChevronLeft
@@ -111,6 +111,7 @@ export default function Titlebar({
         {/* Changes badge */}
         {changedFiles > 0 && (
           <button
+            title="View changed files"
             onClick={onDiffOpen}
             style={{
               background: "none",
@@ -142,13 +143,12 @@ export default function Titlebar({
         </IconButton>
       </div>
 
-      {/* Center section -- empty for now */}
+      {/* Center section -- draggable region */}
       <div
         style={{
           display: "flex",
           width: "fit-content",
           justifyContent: "center",
-          ...noDrag,
         }}
       />
 

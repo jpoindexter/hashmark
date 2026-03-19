@@ -21,20 +21,21 @@ interface NavItem {
   path: string;
   icon: React.ElementType;
   label: string;
+  shortcut?: string;
 }
 
 const topItems: NavItem[] = [
   { path: "/", icon: MessageSquare, label: "Chat" },
-  { path: "/files", icon: FolderTree, label: "Explorer" },
-  { path: "/source-control", icon: GitCompare, label: "Source Control" },
-  { path: "/agents", icon: Bot, label: "Agents" },
+  { path: "/files", icon: FolderTree, label: "Explorer", shortcut: "\u2318\u21E7E" },
+  { path: "/source-control", icon: GitCompare, label: "Source Control", shortcut: "\u2318\u21E7G" },
+  { path: "/agents", icon: Bot, label: "Agents", shortcut: "\u2318\u21E7A" },
   { path: "/run", icon: PlayCircle, label: "Run" },
   { path: "/generate", icon: Zap, label: "Generate" },
   { path: "/governance", icon: Shield, label: "Governance" },
 ];
 
 const bottomItems: NavItem[] = [
-  { path: "/settings", icon: Settings, label: "Settings" },
+  { path: "/settings", icon: Settings, label: "Settings", shortcut: "\u2318," },
 ];
 
 const containerStyle: CSSProperties = {
@@ -62,6 +63,9 @@ function ActivityItem({
   onClick: () => void;
 }) {
   const Icon = item.icon;
+  const tooltipText = item.shortcut
+    ? `${item.label} (${item.shortcut})`
+    : item.label;
 
   const style: CSSProperties = {
     width: 48,
@@ -80,14 +84,16 @@ function ActivityItem({
   };
 
   return (
-    <button
-      className="activity-item"
-      title={item.label}
-      onClick={onClick}
-      style={style}
-    >
-      <Icon size={20} />
-    </button>
+    <div className="nav-tooltip-wrap">
+      <button
+        className="activity-item"
+        onClick={onClick}
+        style={style}
+      >
+        <Icon size={20} />
+      </button>
+      <span className="nav-tooltip">{tooltipText}</span>
+    </div>
   );
 }
 

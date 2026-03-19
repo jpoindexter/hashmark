@@ -10,9 +10,11 @@ interface StatusBarProps {
 
 function StatusItem({
   children,
+  title,
   onClick,
 }: {
   children: React.ReactNode;
+  title?: string;
   onClick?: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -21,6 +23,7 @@ function StatusItem({
     <div
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
+      title={title}
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -68,12 +71,12 @@ export default function StatusBar({
     <div className="status-bar" style={containerStyle}>
       {/* Left: branch + changes */}
       <div style={{ display: "flex", alignItems: "center", height: "100%" }}>
-        <StatusItem>
+        <StatusItem title="Current branch">
           <GitBranch size={11} />
           <span>{branch || "no branch"}</span>
         </StatusItem>
         {changedFiles > 0 && (
-          <StatusItem>
+          <StatusItem title="Changed files">
             <span>+{changedFiles}</span>
           </StatusItem>
         )}
@@ -81,8 +84,8 @@ export default function StatusBar({
 
       {/* Right: model + project */}
       <div style={{ display: "flex", alignItems: "center", height: "100%" }}>
-        {modelName && <StatusItem>{modelName}</StatusItem>}
-        {projectName && <StatusItem>{projectName}</StatusItem>}
+        {modelName && <StatusItem title="Active model">{modelName}</StatusItem>}
+        {projectName && <StatusItem title="Project name">{projectName}</StatusItem>}
       </div>
     </div>
   );

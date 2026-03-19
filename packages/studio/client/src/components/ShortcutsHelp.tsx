@@ -1,12 +1,70 @@
+interface ShortcutSection {
+  title: string;
+  rows: [string, string][];
+}
+
+const SECTIONS: ShortcutSection[] = [
+  {
+    title: "NAVIGATION",
+    rows: [
+      ["g s", "Chat"],
+      ["g f", "Files"],
+      ["g a", "Agents"],
+      ["g g", "Git"],
+      ["g r", "Run"],
+      ["g c", "Company"],
+    ],
+  },
+  {
+    title: "UI TOGGLES",
+    rows: [
+      ["\u2318B", "Toggle sidebar"],
+      ["\u2318`", "Toggle terminal"],
+      ["\u2318J", "Toggle terminal"],
+    ],
+  },
+  {
+    title: "FOCUS",
+    rows: [
+      ["\u2318L", "Focus chat input"],
+      ["\u2318K", "Command palette"],
+      ["\u2318\u21E7P", "Command palette"],
+    ],
+  },
+  {
+    title: "VIEWS",
+    rows: [
+      ["\u2318\u21E7E", "Explorer"],
+      ["\u2318\u21E7G", "Source Control"],
+      ["\u2318\u21E7A", "Agents"],
+      ["\u2318,", "Settings"],
+    ],
+  },
+  {
+    title: "OTHER",
+    rows: [
+      ["?", "This help"],
+    ],
+  },
+];
+
+const cellKey: React.CSSProperties = {
+  padding: "3px 16px 3px 0",
+  color: "var(--accent)",
+  whiteSpace: "nowrap",
+};
+const cellLabel: React.CSSProperties = {
+  padding: "3px 0",
+  color: "var(--text-dim)",
+};
+const sectionHeader: React.CSSProperties = {
+  fontSize: 10,
+  letterSpacing: "0.08em",
+  color: "var(--text-dimmer)",
+  marginBottom: 8,
+};
+
 export default function ShortcutsHelp({ onClose }: { onClose: () => void }) {
-  const rows: [string, string][] = [
-    ["g s", "Sessions"],
-    ["g r", "Run"],
-    ["g c", "Company"],
-    ["g a", "Agents"],
-    ["g g", "Git"],
-    ["g f", "Files"],
-  ];
   return (
     <div
       onClick={onClose}
@@ -24,6 +82,7 @@ export default function ShortcutsHelp({ onClose }: { onClose: () => void }) {
           borderRadius: 4,
           padding: "20px 28px",
           minWidth: 280,
+          maxWidth: 360,
           fontFamily: "var(--font)",
           fontSize: 12,
           color: "var(--text-dim)",
@@ -33,35 +92,21 @@ export default function ShortcutsHelp({ onClose }: { onClose: () => void }) {
           KEYBOARD SHORTCUTS
         </div>
 
-        <div style={{ fontSize: 10, letterSpacing: "0.08em", color: "var(--text-dimmer)", marginBottom: 8 }}>
-          NAVIGATION
-        </div>
-        <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: 16 }}>
-          <tbody>
-            {rows.map(([keys, label]) => (
-              <tr key={keys}>
-                <td style={{ padding: "3px 16px 3px 0", color: "var(--accent)", whiteSpace: "nowrap" }}>{keys}</td>
-                <td style={{ padding: "3px 0", color: "var(--text-dim)" }}>{label}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <div style={{ fontSize: 10, letterSpacing: "0.08em", color: "var(--text-dimmer)", marginBottom: 8 }}>
-          ACTIONS
-        </div>
-        <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: 20 }}>
-          <tbody>
-            <tr>
-              <td style={{ padding: "3px 16px 3px 0", color: "var(--accent)", whiteSpace: "nowrap" }}>⌘K</td>
-              <td style={{ padding: "3px 0", color: "var(--text-dim)" }}>Command palette</td>
-            </tr>
-            <tr>
-              <td style={{ padding: "3px 16px 3px 0", color: "var(--accent)", whiteSpace: "nowrap" }}>?</td>
-              <td style={{ padding: "3px 0", color: "var(--text-dim)" }}>This help</td>
-            </tr>
-          </tbody>
-        </table>
+        {SECTIONS.map((section) => (
+          <div key={section.title}>
+            <div style={sectionHeader}>{section.title}</div>
+            <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: 16 }}>
+              <tbody>
+                {section.rows.map(([keys, label]) => (
+                  <tr key={keys}>
+                    <td style={cellKey}>{keys}</td>
+                    <td style={cellLabel}>{label}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
 
         <div style={{ fontSize: 10, color: "var(--text-dimmer)" }}>
           Press <span style={{ color: "var(--accent)" }}>Esc</span> or <span style={{ color: "var(--accent)" }}>?</span> to close

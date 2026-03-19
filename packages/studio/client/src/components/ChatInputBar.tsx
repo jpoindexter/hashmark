@@ -139,7 +139,7 @@ function SlashPicker({
             textTransform: "uppercase",
             letterSpacing: "0.08em",
             userSelect: "none",
-            fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+            fontFamily: "var(--font-ui)",
           }}>
             {CATEGORY_LABEL[cat as SlashCommand["category"]] ?? cat}
           </div>
@@ -182,7 +182,7 @@ function SlashPicker({
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
-                  fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+                  fontFamily: "var(--font-ui)",
                 }}>
                   {cmd.description}
                 </span>
@@ -198,7 +198,7 @@ function SlashPicker({
         borderTop: "1px solid var(--border-dim)",
         display: "flex",
         gap: 10,
-        fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+        fontFamily: "var(--font-ui)",
       }}>
         <span>↑↓ navigate</span>
         <span>↵ / Tab select</span>
@@ -298,7 +298,7 @@ function MentionPicker({
         textTransform: "uppercase",
         letterSpacing: "0.08em",
         userSelect: "none",
-        fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+        fontFamily: "var(--font-ui)",
       }}>
         Files
       </div>
@@ -344,7 +344,7 @@ function MentionPicker({
         borderTop: "1px solid var(--border-dim)",
         display: "flex",
         gap: 10,
-        fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+        fontFamily: "var(--font-ui)",
       }}>
         <span>↑↓ navigate</span>
         <span>↵ / Tab select</span>
@@ -390,8 +390,9 @@ function useAgentSuggestion(query: string, currentFile?: string) {
       const params = new URLSearchParams({ q: trimmed });
       if (currentFile) params.set("file", currentFile);
       fetch(`/api/agents/route?${params}`)
-        .then(r => r.json())
-        .then((d: { suggestions?: AgentSuggestion[] }) => {
+        .then(r => { if (!r.ok) return; return r.json(); })
+        .then((d: { suggestions?: AgentSuggestion[] } | undefined) => {
+          if (!d) return;
           const top = d.suggestions?.[0];
           setSuggestion(top && top.score > 0.3 ? top : null);
         })
@@ -420,7 +421,7 @@ function AgentChip({
       border: "1px solid var(--border-dim)",
       borderRadius: 4,
       fontSize: 10,
-      fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+      fontFamily: "var(--font-ui)",
       color: "var(--text-dimmer)",
       marginBottom: 6,
       width: "fit-content",
@@ -587,21 +588,23 @@ export default function ChatInputBar({
   const sendMessageWithText = async (overrideText?: string) => {
     const text = overrideText ?? input.trim();
     if (!text || streaming) return;
-    if (!overrideText) {
-      setInput("");
-      if (textareaRef.current) textareaRef.current.style.height = "auto";
-    }
 
     let sid = sessionId;
     if (!sid) {
-      const res = await fetch("/api/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      const data = await res.json() as { session: Session };
-      sid = data.session.id;
-      onSessionCreated?.(sid);
+      try {
+        const res = await fetch("/api/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        if (!res.ok) throw new Error("Session creation failed");
+        const data = await res.json() as { session: Session };
+        sid = data.session.id;
+        onSessionCreated?.(sid);
+      } catch {
+        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to create session", type: "error" } }));
+        return;
+      }
     }
 
     onStreamingChange(true);
@@ -621,7 +624,17 @@ export default function ChatInputBar({
       }),
     });
 
-    if (!res.ok || !res.body) { onStreamingChange(false); return; }
+    if (!res.ok || !res.body) {
+      onStreamingChange(false);
+      window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to send message", type: "error" } }));
+      return;
+    }
+
+    // Clear input only after confirmed successful response
+    if (!overrideText) {
+      setInput("");
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
+    }
 
     const reader = res.body.getReader();
     const dec = new TextDecoder();
@@ -633,10 +646,11 @@ export default function ChatInputBar({
       fetch(`/api/sessions/${sid}/interrupt`, { method: "POST" }).catch(() => {});
     };
 
+    let streamCompleted = false;
     try {
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) { streamCompleted = true; break; }
         buf += dec.decode(value, { stream: true });
         const lines = buf.split("\n");
         buf = lines.pop() ?? "";
@@ -650,13 +664,18 @@ export default function ChatInputBar({
               assembled += evt.text;
               onStreamText(assembled);
             }
-          } catch {}
+          } catch {
+            console.warn("Failed to parse SSE event:", raw);
+          }
         }
       }
+    } catch {
+      window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Stream interrupted", type: "error" } }));
     } finally {
       abortRef.current = null;
       onStreamingChange(false);
-      onStreamText("");
+      // Only clear streamed text on normal completion -- preserve partial text on error
+      if (streamCompleted) onStreamText("");
     }
   };
 
@@ -738,7 +757,7 @@ export default function ChatInputBar({
               outline: "none",
               color: "var(--text)",
               fontSize: 13,
-              fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+              fontFamily: "var(--font-ui)",
               resize: "none",
               maxHeight: `${LINE_HEIGHT * MAX_ROWS}px`,
               overflowY: "auto",
@@ -752,7 +771,7 @@ export default function ChatInputBar({
             <span style={{
               fontSize: 11,
               color: "var(--text-dimmer)",
-              fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+              fontFamily: "var(--font-ui)",
               whiteSpace: "nowrap",
               marginTop: 1,
               userSelect: "none",

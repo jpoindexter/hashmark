@@ -47,6 +47,7 @@ interface ChatMessagesProps {
   streamText: string;
   streaming: boolean;
   streamingState?: StreamingState;
+  modelLabel?: string;
 }
 
 function fmtTime(ts: number) {
@@ -501,7 +502,7 @@ function SuggestionItem({ text }: { text: string }) {
   );
 }
 
-function EmptyState() {
+function EmptyState({ modelLabel }: { modelLabel: string }) {
   return (
     <div style={{
       flex: 1,
@@ -527,7 +528,7 @@ function EmptyState() {
           gap: 5,
         }}>
           <span>✦</span>
-          <span>Sonnet 4.6</span>
+          <span>{modelLabel}</span>
         </div>
 
         <div style={{
@@ -578,7 +579,7 @@ const STREAMING_ID = "__streaming__";
 
 type VirtualItem = Message | { id: typeof STREAMING_ID; role: "assistant" };
 
-export default function ChatMessages({ sessionId, streamText, streaming, streamingState }: ChatMessagesProps) {
+export default function ChatMessages({ sessionId, streamText, streaming, streamingState, modelLabel = "Sonnet 4.6" }: ChatMessagesProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -657,7 +658,7 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
   }
 
   if (!sessionId || (messages.length === 0 && !streaming)) {
-    return <EmptyState />;
+    return <EmptyState modelLabel={modelLabel} />;
   }
 
   return (

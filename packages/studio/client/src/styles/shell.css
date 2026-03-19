@@ -16,4 +16,13 @@
 }
 
 /* Activity bar hover (can't be inline) */
-.activity-item:hover { color: var(--text-dim) !important; }
+.activity-item:hover { color: var(--text-dim) !important; background: rgba(255,255,255,0.04); }
+
+/* Focus-visible ring for keyboard navigation */
+button:focus-visible, [role="button"]:focus-visible, [tabindex="0"]:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+/* Button press feedback */
+button:active:not(:disabled) { transform: scale(0.97); }
