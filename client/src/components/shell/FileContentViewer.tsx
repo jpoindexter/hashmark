@@ -191,19 +191,32 @@ export default function FileContentViewer() {
           color: "var(--text-dim)",
         }}
       >
-        <FileCode
-          size={14}
-          style={{ color: "var(--accent)", flexShrink: 0 }}
-        />
-        <span
-          style={{
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {filePath}
-        </span>
+        <FileCode size={14} style={{ color: "var(--accent)", flexShrink: 0 }} />
+        {filePath.split("/").filter(Boolean).map((seg, i, arr) => {
+          const isLast = i === arr.length - 1;
+          const dirPath = arr.slice(0, i + 1).join("/");
+          return (
+            <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+              {i > 0 && <span style={{ color: "var(--text-dimmer)", fontSize: 10 }}>{">"}</span>}
+              <span
+                onClick={() => {
+                  if (!isLast) {
+                    window.dispatchEvent(new CustomEvent("studio:open-dir", { detail: dirPath }));
+                  }
+                }}
+                style={{
+                  cursor: isLast ? "default" : "pointer",
+                  color: isLast ? "var(--text)" : "var(--text-dim)",
+                  fontWeight: isLast ? 500 : 400,
+                }}
+                onMouseEnter={e => { if (!isLast) e.currentTarget.style.color = "var(--accent)"; }}
+                onMouseLeave={e => { if (!isLast) e.currentTarget.style.color = "var(--text-dim)"; }}
+              >
+                {seg}
+              </span>
+            </span>
+          );
+        })}
       </div>
 
       {/* Content — Shiki HTML is generated from source code by a trusted library, safe to render */}

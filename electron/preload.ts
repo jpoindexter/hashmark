@@ -18,6 +18,13 @@ contextBridge.exposeInMainWorld("studio", {
     ipcRenderer.on(channel, wrapped);
     return () => ipcRenderer.removeListener(channel, wrapped);
   },
+  // Dock badge (macOS)
+  setDockBadge: (count: string) => ipcRenderer.invoke("set-dock-badge", count),
+  onWindowFocus: (handler: () => void) => {
+    const wrapped = () => handler();
+    ipcRenderer.on("window:focus", wrapped);
+    return () => ipcRenderer.removeListener("window:focus", wrapped);
+  },
   // Auto-updater
   onUpdateAvailable: (handler: (info: { version: string }) => void) => {
     const wrapped = (_event: Electron.IpcRendererEvent, info: { version: string }) => handler(info);

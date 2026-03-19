@@ -110,7 +110,7 @@ function StatusDot({ status }: { status: string }) {
   const color =
     status === "complete" ? "var(--accent)" :
     status === "error" ? "var(--red)" :
-    status === "running" ? "var(--blue)" :
+    status === "running" ? "var(--accent)" :
     "var(--text-dimmer)";
   const icon =
     status === "complete" ? <CheckCircle size={12} /> :

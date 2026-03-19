@@ -145,22 +145,23 @@ export function scanRoutes(projectDir: string) {
         // Find the hashmark CLI binary — check local install, monorepo, then global
         const localBin = join(projectDir, "node_modules", ".bin", "hashmark");
         const monoBin = join(projectDir, "packages", "cli", "dist", "cli.js");
+        const isMonorepo = !existsSync(localBin) && existsSync(monoBin);
         const bin = existsSync(localBin) ? localBin
-          : existsSync(monoBin) ? "node" : "hashmark";
+          : isMonorepo ? "node" : "hashmark";
         const args = bin === "node"
-          ? [monoBin, "--json", "--output", "/dev/stdout"]
+          ? [monoBin, projectDir, "--json", "--output", "/dev/stdout"]
           : ["--json", "--output", "/dev/stdout"];
 
-        // Include CLI's node_modules in NODE_PATH for dependency resolution
-        const cliNodeModules = join(projectDir, "packages", "cli", "node_modules");
-        const env = { ...process.env } as NodeJS.ProcessEnv;
-        if (existsSync(cliNodeModules)) {
-          env.NODE_PATH = [cliNodeModules, env.NODE_PATH].filter(Boolean).join(":");
-        }
+        // When using monorepo bin, set CWD to packages/cli so Node resolves
+        // ESM imports from the CLI's own node_modules (NODE_PATH doesn't work for ESM).
+        // The target project dir is passed as a positional arg instead.
+        const spawnCwd = isMonorepo
+          ? join(projectDir, "packages", "cli")
+          : projectDir;
 
         const proc = spawn(bin, args, {
-          cwd: projectDir,
-          env,
+          cwd: spawnCwd,
+          env: process.env,
         });
 
         let stdout = "";

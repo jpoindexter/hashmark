@@ -50,16 +50,19 @@ export function generateRoutes(projectDir: string) {
         // Find hashmark binary — check local install, monorepo, then global
         const localBin = join(projectDir, "node_modules", ".bin", "hashmark");
         const monoBin = join(projectDir, "packages", "cli", "dist", "cli.js");
+        const isMonorepo = !existsSync(localBin) && existsSync(monoBin);
         const resolvedBin = existsSync(localBin) ? localBin
-          : existsSync(monoBin) ? "node" : "hashmark";
-        if (resolvedBin === "node") args.unshift(monoBin);
+          : isMonorepo ? "node" : "hashmark";
+        if (resolvedBin === "node") {
+          // For monorepo: node <cli.js> agents <projectDir> ...rest
+          // Insert monoBin first, then projectDir after "agents"
+          const agentsIdx = args.indexOf("agents");
+          args.splice(0, 0, monoBin);
+          // Insert projectDir right after "agents" (now at agentsIdx + 1)
+          args.splice(agentsIdx + 2, 0, projectDir);
+        }
 
         const env: NodeJS.ProcessEnv = { ...process.env };
-        // Include CLI's node_modules in NODE_PATH for dependency resolution
-        const cliNodeModules = join(projectDir, "packages", "cli", "node_modules");
-        if (existsSync(cliNodeModules)) {
-          env.NODE_PATH = [cliNodeModules, env.NODE_PATH].filter(Boolean).join(":");
-        }
         if (body.apiKey) {
           const keyMap: Record<string, string> = {
             anthropic: "ANTHROPIC_API_KEY",
@@ -74,7 +77,13 @@ export function generateRoutes(projectDir: string) {
           if (body.baseURL) env.OPENAI_BASE_URL = body.baseURL;
         }
 
-        const proc = spawn(resolvedBin, args, { cwd: projectDir, env });
+        // When using monorepo bin, set CWD to packages/cli so Node resolves
+        // ESM imports from the CLI's own node_modules. Target dir is passed as positional arg.
+        const spawnCwd = isMonorepo
+          ? join(projectDir, "packages", "cli")
+          : projectDir;
+
+        const proc = spawn(resolvedBin, args, { cwd: spawnCwd, env });
 
         let buffer = "";
         proc.stdout.on("data", (chunk: Buffer) => {

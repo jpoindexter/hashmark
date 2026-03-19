@@ -606,6 +606,14 @@ app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
+// Clear dock badge when window is focused
+app.on("browser-window-focus", () => {
+  if (process.platform === "darwin") {
+    app.dock?.setBadge("");
+  }
+  win?.webContents.send("window:focus");
+});
+
 // IPC: open in finder
 ipcMain.handle("show-in-finder", (_, path: string) => {
   shell.showItemInFolder(path);
@@ -646,6 +654,13 @@ ipcMain.handle("get-recent-projects", () => {
     dir,
     lastOpened: Date.now(),
   }));
+});
+
+// IPC: dock badge (macOS)
+ipcMain.handle("set-dock-badge", (_, count: string) => {
+  if (process.platform === "darwin") {
+    app.dock?.setBadge(count);
+  }
 });
 
 // IPC: auto-updater
