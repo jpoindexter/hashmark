@@ -1,0 +1,19 @@
+/* Sash resize handle */
+.sash { cursor: col-resize; position: relative; }
+.sash::before {
+  content: ''; position: absolute; top: 0; bottom: 0;
+  width: 4px; left: -2px;
+  transition: background-color 0.1s ease-out;
+}
+.sash:hover::before, .sash.active::before { background: var(--border); }
+.sash.at-min { cursor: e-resize; }
+.sash.at-max { cursor: w-resize; }
+
+/* Status bar Mac bottom radius */
+.status-bar {
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+/* Activity bar hover (can't be inline) */
+.activity-item:hover { color: var(--text-dim) !important; }
