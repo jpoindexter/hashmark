@@ -191,24 +191,29 @@ export default function Shell() {
           onToggleSidebar={() => setSidebarOpen(v => !v)}
         />
 
-        <SidebarPanel
-          activeView={activeView}
-          width={sidebarWidth}
-          open={sidebarOpen}
-          onToggle={() => setSidebarOpen(v => !v)}
-          sessionsSidebar={
-            <SessionsSidebar
-              activeSessionId={activeSessionId}
-              onSessionSelect={setActiveSessionId}
+        {/* Sidebar only shows for Chat view (others are self-contained pages) */}
+        {activeView === "chat" && (
+          <>
+            <SidebarPanel
+              activeView={activeView}
+              width={sidebarWidth}
+              open={sidebarOpen}
+              onToggle={() => setSidebarOpen(v => !v)}
+              sessionsSidebar={
+                <SessionsSidebar
+                  activeSessionId={activeSessionId}
+                  onSessionSelect={setActiveSessionId}
+                />
+              }
             />
-          }
-        />
 
-        <SidebarResize
-          onResize={setSidebarWidth}
-          onReset={handleSidebarReset}
-          currentWidth={sidebarWidth}
-        />
+            <SidebarResize
+              onResize={setSidebarWidth}
+              onReset={handleSidebarReset}
+              currentWidth={sidebarWidth}
+            />
+          </>
+        )}
 
         {/* Main content column */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
