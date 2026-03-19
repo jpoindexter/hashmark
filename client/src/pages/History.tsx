@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Clock } from "lucide-react";
 import { DiffPanel } from "../components/DiffPanel.tsx";
 import { SkeletonLine, SkeletonBlock } from "../components/Skeleton";
 
@@ -183,7 +184,51 @@ export default function History() {
         )}
 
         {!loading && !error && runs.length === 0 && (
-          <div style={monoMuted}>No runs yet. Go to Run and kick one off.</div>
+          <div style={{
+            display: "flex", flexDirection: "column", alignItems: "center",
+            justifyContent: "center", padding: "60px 20px", gap: 12,
+          }}>
+            <Clock size={32} style={{ color: "var(--text-dimmer)", opacity: 0.5 }} />
+            <div style={{
+              fontSize: 13, fontWeight: 600, color: "var(--text-dim)",
+              fontFamily: "var(--font-ui, sans-serif)", letterSpacing: "0.02em",
+            }}>
+              No runs yet
+            </div>
+            <div style={{
+              fontSize: 11, color: "var(--text-dimmer)", textAlign: "center",
+              fontFamily: "var(--font-ui, sans-serif)", maxWidth: 320, lineHeight: 1.5,
+            }}>
+              Past agent runs will appear here with their status, timestamps, and diffs. Start a run from the Run page.
+            </div>
+            <a
+              href="/run"
+              style={{
+                marginTop: 4,
+                display: "inline-block",
+                padding: "6px 16px",
+                background: "none",
+                border: "1px solid var(--border)",
+                color: "var(--text-dim)",
+                fontFamily: "var(--font, monospace)",
+                fontSize: 11,
+                textDecoration: "none",
+                letterSpacing: "0.04em",
+                cursor: "pointer",
+                transition: "border-color 0.1s, color 0.1s",
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLAnchorElement).style.borderColor = "var(--accent)";
+                (e.currentTarget as HTMLAnchorElement).style.color = "var(--accent)";
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLAnchorElement).style.borderColor = "var(--border)";
+                (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-dim)";
+              }}
+            >
+              Go to Run
+            </a>
+          </div>
         )}
 
         {!loading && !error && runs.length > 0 && (

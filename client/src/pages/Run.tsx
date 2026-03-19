@@ -222,6 +222,20 @@ export default function Run() {
           } catch {}
         }
       }
+
+      // Process any remaining data left in the buffer
+      if (buffer.trim().startsWith("data: ")) {
+        try {
+          const event = JSON.parse(buffer.trim().slice(6)) as Record<string, unknown>;
+          handleEvent(event);
+        } catch {}
+      }
+
+      // If stream ended without a complete/error event, transition out of running
+      if (!resultRef.current) {
+        setPhase("done");
+        setStatus("Stream ended");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setPhase("idle");

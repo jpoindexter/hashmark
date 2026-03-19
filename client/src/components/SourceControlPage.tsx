@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { GitBranch, CheckCircle } from "lucide-react";
 import { DiffViewer } from "./DiffViewer.tsx";
 import { SkeletonLine } from "./Skeleton.tsx";
 import ConfirmDialog from "./shared/ConfirmDialog.tsx";

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Shield } from "lucide-react";
+import { Shield, Activity, FileText } from "lucide-react";
 import { SkeletonLine, SkeletonBlock } from "../components/Skeleton";
 
 // ---------------------------------------------------------------------------
@@ -609,11 +609,47 @@ function PoliciesTab() {
         </div>
       ) : policies.length === 0 ? (
         <div style={{
-          padding: "40px 0", textAlign: "center",
-          color: "var(--text-dimmer)", fontSize: 12,
-          fontFamily: "var(--font)",
+          display: "flex", flexDirection: "column", alignItems: "center",
+          justifyContent: "center", padding: "48px 20px", gap: 12,
         }}>
-          No policies yet. Create one to start governing agent actions.
+          <Shield size={32} style={{ color: "var(--text-dimmer)", opacity: 0.5 }} />
+          <div style={{
+            fontSize: 13, fontWeight: 600, color: "var(--text-dim)",
+            fontFamily: "var(--font-ui)", letterSpacing: "0.02em",
+          }}>
+            No policies yet
+          </div>
+          <div style={{
+            fontSize: 11, color: "var(--text-dimmer)", textAlign: "center",
+            fontFamily: "var(--font-ui)", maxWidth: 340, lineHeight: 1.5,
+          }}>
+            Policies define rules that govern agent behavior -- block dangerous actions, require tests before merge, or flag risky patterns for review.
+          </div>
+          <button
+            onClick={openCreate}
+            style={{
+              marginTop: 4,
+              padding: "6px 16px",
+              background: "none",
+              border: "1px solid var(--border)",
+              color: "var(--text-dim)",
+              fontFamily: "var(--font)",
+              fontSize: 11,
+              cursor: "pointer",
+              letterSpacing: "0.04em",
+              transition: "border-color 0.1s, color 0.1s",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = "var(--accent)";
+              e.currentTarget.style.color = "var(--accent)";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = "var(--border)";
+              e.currentTarget.style.color = "var(--text-dim)";
+            }}
+          >
+            + NEW POLICY
+          </button>
         </div>
       ) : (
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -818,7 +854,7 @@ function ActionLogTab() {
     return <span style={{ marginLeft: 3, color: "var(--accent)" }}>{sortDir === "asc" ? "↑" : "↓"}</span>;
   };
 
-  const thStyle = (key: SortKey): React.CSSProperties => ({
+  const thStyle = (_key: SortKey): React.CSSProperties => ({
     padding: "6px 10px", textAlign: "left",
     fontSize: 10, letterSpacing: "0.06em",
     color: "var(--text-dimmer)", fontWeight: 600,
@@ -935,8 +971,23 @@ function ActionLogTab() {
           ))}
         </div>
       ) : displayed.length === 0 ? (
-        <div style={{ padding: "40px 0", textAlign: "center", color: "var(--text-dimmer)", fontSize: 12 }}>
-          No actions logged yet.
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "center",
+          justifyContent: "center", padding: "48px 20px", gap: 12,
+        }}>
+          <Activity size={32} style={{ color: "var(--text-dimmer)", opacity: 0.5 }} />
+          <div style={{
+            fontSize: 13, fontWeight: 600, color: "var(--text-dim)",
+            fontFamily: "var(--font-ui)", letterSpacing: "0.02em",
+          }}>
+            No actions logged yet
+          </div>
+          <div style={{
+            fontSize: 11, color: "var(--text-dimmer)", textAlign: "center",
+            fontFamily: "var(--font-ui)", maxWidth: 340, lineHeight: 1.5,
+          }}>
+            Agent actions (file writes, shell commands, git operations) will be logged here as they are evaluated against your policies.
+          </div>
         </div>
       ) : (
         <>
@@ -1163,8 +1214,23 @@ function ActionJournalTab() {
           ))}
         </div>
       ) : events.length === 0 ? (
-        <div style={{ padding: "40px 0", textAlign: "center", color: "var(--text-dimmer)", fontSize: 12, fontFamily: "var(--font)" }}>
-          No actions logged yet.
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "center",
+          justifyContent: "center", padding: "48px 20px", gap: 12,
+        }}>
+          <FileText size={32} style={{ color: "var(--text-dimmer)", opacity: 0.5 }} />
+          <div style={{
+            fontSize: 13, fontWeight: 600, color: "var(--text-dim)",
+            fontFamily: "var(--font-ui)", letterSpacing: "0.02em",
+          }}>
+            No journal entries yet
+          </div>
+          <div style={{
+            fontSize: 11, color: "var(--text-dimmer)", textAlign: "center",
+            fontFamily: "var(--font-ui)", maxWidth: 340, lineHeight: 1.5,
+          }}>
+            The append-only JSONL audit trail records every action taken during agent runs -- file writes, shell commands, git operations, and their outcomes.
+          </div>
         </div>
       ) : (
         <>
