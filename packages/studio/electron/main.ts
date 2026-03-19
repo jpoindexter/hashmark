@@ -4,7 +4,7 @@
  */
 
 import { app, BrowserWindow, Menu, shell, ipcMain, dialog } from "electron";
-import { createServer } from "../server/index.js";
+import { createServer, killAllActiveSessions } from "../server/index.js";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
@@ -12,6 +12,9 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isDev = process.env.NODE_ENV === "development";
 const PORT = 3200;
+
+// Set app name before ready so dock/menu bar shows correctly
+app.setName("hashmark studio");
 
 // Config persistence
 const CONFIG_DIR = `${app.getPath("home")}/.hashmark`;
@@ -441,6 +444,11 @@ function buildMenu() {
 app.whenReady().then(() => {
   buildMenu();
   createWindow();
+});
+
+app.on("before-quit", () => {
+  // Kill all running claude/agent processes before exit to prevent SIGKILL crashes
+  killAllActiveSessions();
 });
 
 app.on("window-all-closed", () => {

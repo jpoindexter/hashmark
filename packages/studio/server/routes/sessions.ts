@@ -132,6 +132,14 @@ function buildConversationPrompt(
 // Active processes — allows interruption
 const activeProcesses = new Map<string, { kill: () => void }>();
 
+/** Kill all running claude/agent processes — call before app exit */
+export function killAllActiveSessions() {
+  for (const proc of activeProcesses.values()) {
+    try { proc.kill(); } catch {}
+  }
+  activeProcesses.clear();
+}
+
 export function sessionsRoutes(projectDir: string) {
   const dataDir = `${projectDir}/.hashmark`;
   const app = new Hono();
