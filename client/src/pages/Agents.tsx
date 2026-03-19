@@ -798,8 +798,8 @@ export default function Agents() {
 
   const STATUS_BADGE: Record<string, { label: string; color: string }> = {
     idle:        { label: "IDLE",        color: "var(--text-dimmer)" },
-    starting:    { label: "STARTING",    color: "var(--blue)" },
-    running:     { label: "RUNNING",     color: "var(--blue)" },
+    starting:    { label: "STARTING",    color: "var(--accent)" },
+    running:     { label: "RUNNING",     color: "var(--accent)" },
     done:        { label: "DONE",        color: "var(--accent)" },
     error:       { label: "ERROR",       color: "var(--red)" },
     stopped:     { label: "STOPPED",     color: "var(--yellow)" },
@@ -1087,10 +1087,10 @@ export default function Agents() {
                   textTransform: "uppercase",
                   letterSpacing: "0.06em",
                   border: "1px solid",
-                  borderColor: sortKey === k ? "var(--blue)" : "var(--border-dim)",
+                  borderColor: sortKey === k ? "var(--accent)" : "var(--border-dim)",
                   borderRadius: "var(--radius-sm)",
-                  background: sortKey === k ? "var(--blue-bg)" : "var(--bg-3)",
-                  color: sortKey === k ? "var(--blue)" : "var(--text-dimmer)",
+                  background: sortKey === k ? "var(--accent-bg)" : "var(--bg-3)",
+                  color: sortKey === k ? "var(--accent)" : "var(--text-dimmer)",
                   cursor: "pointer",
                   transition: "all 0.1s",
                 }}

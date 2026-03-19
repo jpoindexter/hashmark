@@ -305,13 +305,25 @@ export default function Shell() {
     }
   }, []);
 
-  // Fetch context usage after each chat response completes + OS notification
+  // Dock badge: track unread completions while window is not focused
+  const unreadCount = useRef(0);
+
+  // Clear unread count + dock badge when window regains focus
+  useEffect(() => {
+    const unsub = window.studio?.onWindowFocus?.(() => {
+      unreadCount.current = 0;
+      window.studio?.setDockBadge?.("");
+    });
+    return () => { unsub?.(); };
+  }, []);
+
+  // Fetch context usage after each chat response completes + OS notification + dock badge
   const prevStreaming = useRef(streaming);
   useEffect(() => {
     const wasStreaming = prevStreaming.current;
     prevStreaming.current = streaming;
     if (wasStreaming && !streaming) {
-      // OS notification when agent finishes while app is in background
+      // OS notification + dock badge when agent finishes while app is in background
       if (document.visibilityState !== "visible") {
         if ("Notification" in window && Notification.permission === "granted") {
           new Notification("hashmark studio", {
@@ -319,6 +331,8 @@ export default function Shell() {
             icon: "/assets/icon.png",
           });
         }
+        unreadCount.current += 1;
+        window.studio?.setDockBadge?.(String(unreadCount.current));
       }
       // Fetch context usage
       if (activeSessionId) {

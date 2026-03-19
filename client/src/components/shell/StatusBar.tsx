@@ -66,7 +66,7 @@ const containerStyle: CSSProperties = {
 function contextColor(pct: number): string {
   if (pct > 90) return "var(--red)";
   if (pct > 70) return "var(--yellow)";
-  return "rgba(0,0,0,0.55)";
+  return "inherit";
 }
 
 export default function StatusBar({
