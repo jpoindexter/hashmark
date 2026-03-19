@@ -917,18 +917,235 @@ Main content shows run output:
 
 ---
 
-## 10. What This Spec Does NOT Cover
+## 10. Server Streaming Upgrade
 
-These are future work, not part of this shell overhaul:
+The chat message types (section 5.9) require structured data from the server. Currently the server uses `claude --print` which outputs plain text. This must be upgraded.
 
-- Multi-workspace backend (adding multiple repos)
-- Git checkpoint system (backend implementation)
-- MCP tool injection (server-side)
+### Current flow (text-only)
+```
+User types -> POST /api/sessions/:id/message
+Server spawns: claude --print "<prompt>"
+Server streams stdout as SSE text events
+Client renders plain text
+```
+
+### Target flow (structured streaming)
+```
+User types -> POST /api/sessions/:id/message
+Server spawns: claude --output-format stream-json --verbose "<prompt>"
+Server parses JSON events from stdout
+Server forwards typed SSE events: { type: "thinking" | "text" | "tool_use" | "tool_result" | "agent" | "error", data: ... }
+Client renders MessageBlock per event type
+```
+
+### Claude CLI `--output-format stream-json` events
+
+From the Conductor audit, Claude Code with `--output-format stream-json` emits:
+- `assistant` messages with `content` array of parts:
+  - `type: "thinking"` -- extended thinking content
+  - `type: "text"` -- regular text response
+  - `type: "tool_use"` -- tool call with `name`, `input`
+  - `type: "tool_result"` -- tool execution result
+- `system` messages for session metadata
+- `result` messages for completion
+
+### Server changes required
+
+**File: `server/routes/sessions.ts`**:
+1. Change spawn from `claude --print` to `claude --output-format stream-json --verbose`
+2. Parse incoming NDJSON lines from stdout
+3. Map each JSON event to a typed SSE event:
+   - `{ type: "thinking", content: "...", id: "..." }`
+   - `{ type: "text", content: "...", id: "..." }`
+   - `{ type: "tool_use", name: "Edit", input: {...}, id: "..." }`
+   - `{ type: "tool_result", output: "...", id: "..." }`
+   - `{ type: "agent", description: "...", id: "..." }`
+   - `{ type: "error", message: "...", id: "..." }`
+4. Store structured messages in `session_messages` (content as JSON array of parts)
+
+**File: `server/routes/sessions.ts`** (message storage):
+- `session_messages.content` changes from plain text to JSON: `[{ type: "text", content: "..." }, { type: "tool_use", name: "Edit", ... }]`
+- Add `role` column values: `"user"`, `"assistant"`, `"system"`
+
+### Client changes required
+
+**File: `client/src/components/chat/ChatMessages.tsx`**:
+1. Parse SSE events by type instead of concatenating text
+2. Build message parts array: `MessagePart[]`
+3. Render each part via `MessageBlock.tsx` dispatch
+
+**Type definitions** (new file: `client/src/types/messages.ts`):
+```typescript
+type MessagePart =
+  | { type: "text"; content: string }
+  | { type: "thinking"; content: string; id: string }
+  | { type: "tool_use"; name: string; input: Record<string, unknown>; id: string }
+  | { type: "tool_result"; output: string; id: string; isError?: boolean }
+  | { type: "agent"; description: string; id: string }
+  | { type: "skill"; name: string; id: string }
+  | { type: "error"; message: string };
+```
+
+---
+
+## 11. Gap Resolutions
+
+### Gap 1: CSS for pseudo-classes/pseudo-elements
+
+Add `client/src/styles/shell.css` for the ~15 rules that can't be inline:
+
+```css
+/* Sash resize handle indicator */
+.sash::before { content: ''; position: absolute; width: 4px; height: 100%; transition: background-color 0.1s ease-out; }
+.sash:hover::before, .sash.active::before { background: var(--border); }
+.sash { cursor: col-resize; }
+.sash.at-min { cursor: e-resize; }
+.sash.at-max { cursor: w-resize; }
+
+/* Status bar Mac bottom radius */
+.status-bar { border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; }
+
+/* Activity bar hover */
+.activity-item:hover { color: var(--text-dim); }
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-dim); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border); }
+```
+
+All other styling remains inline. This file is <30 lines.
+
+### Gap 2: Side effects migration
+
+Shell.tsx inherits these effects from Layout.tsx:
+
+| Effect | Trigger | Action |
+|--------|---------|--------|
+| Fetch project info | Mount | `GET /api/info` |
+| Fetch git status | Mount + poll during streaming | `GET /api/files/git` every 3s |
+| Drift detection | Mount | `GET /api/drift/check` |
+| Auto-create session | Mount (if no active session) | `POST /api/sessions` |
+| Keyboard shortcuts | Mount | Register `g+key` nav, `Cmd+K`, `?` |
+| Electron menu events | Mount | Wire `menu:navigate`, `menu:toggle-*` |
+| Persist active session | activeSessionId change | `localStorage.setItem` |
+| Persist sidebar state | sidebarOpen/Width change | `localStorage.setItem` |
+| Persist terminal state | termOpen change | `localStorage.setItem` |
+| Auto-open diff drawer | Streaming stops + files changed | `setDiffOpen(true)` |
+
+These move 1:1 into Shell.tsx. Consider extracting to custom hooks if Shell.tsx exceeds 200 lines:
+- `useProjectInfo()` -- fetches info + git + drift
+- `useKeyboardNav()` -- keyboard shortcut registration
+- `useElectronMenu()` -- Electron menu event wiring
+
+### Gap 3: ContextBar placement
+
+ContextBar renders between main content and ChatInputBar:
+
+```
+<main>{view content}</main>
+<ContextBar sessionId={activeSessionId} streaming={streaming} />
+<ChatInputBar ... />
+<ModelBar ... />
+```
+
+Only visible when chat input is visible (hidden on `/settings` and `/setup`).
+
+### Gap 4: Sidebar content mount strategy
+
+All sidebar content components mount simultaneously, toggled with `display: none`:
+
+```jsx
+<div style={{ display: activeView === 'chat' ? 'flex' : 'none' }}>
+  <SessionsSidebar />
+</div>
+<div style={{ display: activeView === 'files' ? 'flex' : 'none' }}>
+  <FileTreeSidebar />
+</div>
+{/* etc */}
+```
+
+This preserves scroll position and expanded state when switching views. Same pattern as VS Code and Conductor.
+
+### Gap 5: DiffDrawer and ProjectSwitcher placement
+
+- **DiffDrawer**: Fixed position, right side, z-index 50. Same as current. Triggered by "Changes N" badge in titlebar.
+- **ProjectSwitcher**: Rendered in StatusBar right section. Click opens dropdown above status bar.
+- **DriftIndicator**: Rendered in Titlebar breadcrumb area (dot badge + popover).
+
+### Gap 6: Sidebar toggle edge cases
+
+| Sidebar State | Icon Clicked | Result |
+|---------------|-------------|--------|
+| Open, icon A active | Click A | Collapse sidebar |
+| Open, icon A active | Click B | Switch to B content (stay open) |
+| Collapsed, icon A was active | Click A | Expand sidebar (show A content) |
+| Collapsed, icon A was active | Click B | Expand sidebar + switch to B content |
+
+Implementation: `activeView` and `sidebarOpen` are independent states. Clicking any icon always sets `activeView`. If clicking the same icon AND sidebar is open, toggle `sidebarOpen`.
+
+### Gap 7: File structure update (adding server + CSS files)
+
+Updated new files list (25 files total):
+
+**Styles (3 CSS files)**:
+- `styles/tokens.css`
+- `styles/reset.css`
+- `styles/shell.css`
+
+**Shell components (7)**:
+- `shell/Shell.tsx`
+- `shell/Titlebar.tsx`
+- `shell/ActivityBar.tsx`
+- `shell/SidebarPanel.tsx`
+- `shell/SidebarResize.tsx`
+- `shell/StatusBar.tsx`
+- `shell/ModelBar.tsx`
+
+**Chat components (4)**:
+- `chat/MessageBlock.tsx`
+- `chat/ToolCallRow.tsx`
+- `chat/ThinkingBlock.tsx`
+- `chat/ToolSummary.tsx`
+
+**Sidebar components (1)**:
+- `sidebar/SessionsSidebar.tsx`
+
+**Shared components (3)**:
+- `shared/IconButton.tsx`
+- `shared/Badge.tsx`
+- `shared/ScrollToBottom.tsx`
+
+**Extracted from Layout.tsx (4)**:
+- `DiffDrawer.tsx`
+- `BranchPicker.tsx`
+- `DriftIndicator.tsx`
+- `ProjectSwitcher.tsx`
+
+**Types (1)**:
+- `types/messages.ts`
+
+**Server changes (2 modified)**:
+- `server/routes/sessions.ts` -- structured streaming
+- `server/db.ts` -- message content schema (JSON parts)
+
+---
+
+## 12. What This Spec Does NOT Cover
+
+These are future work, not part of this overhaul:
+
+- Multi-workspace backend (multiple repos simultaneously)
+- Git checkpoint system (per-turn undo)
+- MCP tool injection (GetWorkspaceDiff, GetTerminalOutput)
 - Multi-model support (Codex/Gemini integration)
-- Plan mode backend (permission mode switching)
+- Plan mode backend (permission mode switching in claude CLI)
 - Auto-updater
 - Remote/SSH development
 - Kanban board view
 - Browser preview pane
+- File tree sidebar content (uses existing Files page for now)
+- Git sidebar content (uses existing SourceControl page for now)
 
-The shell overhaul creates the frontend structure that these features will plug into later.
+The shell overhaul creates the structure. Sidebar content components (FileTreeSidebar, GitSidebar, AgentsSidebar, RunsSidebar) are stubs that render existing page components inline. Full sidebar-native implementations come later.
