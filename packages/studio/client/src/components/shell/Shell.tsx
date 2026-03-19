@@ -275,10 +275,6 @@ export default function Shell() {
                 onToggleThinking={() => setThinking(v => !v)}
                 planMode={planMode}
                 onTogglePlan={() => setPlanMode(v => !v)}
-                canSend={!streaming}
-                onSend={() => {
-                  // Send is handled internally by ChatInputBar on Enter
-                }}
               />
             </>
           )}

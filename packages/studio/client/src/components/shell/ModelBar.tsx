@@ -25,8 +25,6 @@ interface ModelBarProps {
   onToggleThinking: () => void;
   planMode: boolean;
   onTogglePlan: () => void;
-  canSend: boolean;
-  onSend: () => void;
 }
 
 // ─── Toggle button (Thinking / Plan) ─────────────────────────────────────────
@@ -344,8 +342,6 @@ export default function ModelBar({
   onToggleThinking,
   planMode,
   onTogglePlan,
-  canSend,
-  onSend,
 }: ModelBarProps) {
   return (
     <div style={containerStyle}>
@@ -371,11 +367,8 @@ export default function ModelBar({
         />
       </div>
 
-      {/* Right: attach + send */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-        <AttachButton />
-        <SendButton canSend={canSend} onSend={onSend} />
-      </div>
+      {/* Right: spacer (send button is in ChatInputBar) */}
+      <div />
     </div>
   );
 }
