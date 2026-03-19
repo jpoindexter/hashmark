@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import DependencyGraph from "../components/DependencyGraph.tsx";
 
 interface AgentDef {
   id: string;
@@ -517,6 +518,13 @@ export default function Company() {
   const [runs, setRuns] = useState<RunRecord[]>([]);
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
   const [clearCountdown, setClearCountdown] = useState<number | null>(null);
+  const [conflictsOpen, setConflictsOpen] = useState(false);
+  const [conflictData, setConflictData] = useState<{
+    hasConflicts: boolean;
+    conflicts: Array<{ file: string; agents: string[]; severity: "high" | "medium" | "low" }>;
+    summary: string;
+  } | null>(null);
+  const [conflictLoading, setConflictLoading] = useState(false);
   const clearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -579,6 +587,50 @@ export default function Company() {
     const a = availableAgents.find(x => x.id === agentId);
     return a?.name ?? agentId.split("-").pop() ?? agentId;
   }, [availableAgents]);
+
+  async function checkConflicts() {
+    const workerArr = [...workers.values()];
+    const agentsWithFiles = workerArr
+      .filter(w => w.output)
+      .map(w => {
+        const parsed = parseWorkerOutput(w.output);
+        return { id: String(w.id), name: w.agentName, files: parsed.files };
+      })
+      .filter(a => a.files.length > 0);
+
+    if (agentsWithFiles.length < 2) {
+      setConflictData({
+        hasConflicts: false,
+        conflicts: [],
+        summary: "Need at least 2 agents with detected files to check conflicts",
+      });
+      setConflictsOpen(true);
+      return;
+    }
+
+    setConflictLoading(true);
+    try {
+      const res = await fetch("/api/company/conflicts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agents: agentsWithFiles }),
+      });
+      const data = await res.json() as {
+        hasConflicts: boolean;
+        conflicts: Array<{ file: string; agents: string[]; severity: "high" | "medium" | "low" }>;
+        summary: string;
+      };
+      setConflictData(data);
+    } catch {
+      setConflictData({
+        hasConflicts: false,
+        conflicts: [],
+        summary: "Failed to check conflicts",
+      });
+    }
+    setConflictLoading(false);
+    setConflictsOpen(true);
+  }
 
   async function handlePlan() {
     if (!task.trim()) return;
@@ -1002,6 +1054,85 @@ export default function Company() {
               </span>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Dependency conflict graph */}
+      {workerList.length > 1 && (phase === "running" || phase === "done") && (
+        <div>
+          <div
+            onClick={() => {
+              if (!conflictsOpen && !conflictData) {
+                void checkConflicts();
+              } else {
+                setConflictsOpen(v => !v);
+              }
+            }}
+            style={{
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 10,
+              color: "var(--text-dimmer)",
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              padding: "8px 0",
+              borderTop: "1px solid var(--border-dim)",
+              userSelect: "none",
+            }}
+          >
+            <span>{conflictsOpen ? "▾" : "▸"}</span>
+            <span>FILE CONFLICTS</span>
+            {conflictData && conflictData.hasConflicts && (
+              <span style={{
+                fontSize: 9,
+                color: "var(--red)",
+                border: "1px solid var(--red)",
+                padding: "0px 5px",
+                lineHeight: "14px",
+              }}>
+                {conflictData.conflicts.length}
+              </span>
+            )}
+            {conflictData && !conflictData.hasConflicts && (
+              <span style={{ fontSize: 9, color: "var(--accent)" }}>clear</span>
+            )}
+            <span style={{ flex: 1 }} />
+            {(phase === "running" || phase === "done") && (
+              <button
+                onClick={(e) => { e.stopPropagation(); void checkConflicts(); }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: conflictLoading ? "var(--text-dimmer)" : "var(--accent)",
+                  cursor: conflictLoading ? "default" : "pointer",
+                  fontSize: 9,
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                }}
+                disabled={conflictLoading}
+              >
+                {conflictLoading ? "CHECKING..." : "REFRESH"}
+              </button>
+            )}
+          </div>
+
+          {conflictsOpen && conflictData && (
+            <div style={{ paddingBottom: 8 }}>
+              <DependencyGraph
+                agents={[...workers.values()]
+                  .filter(w => w.output)
+                  .map(w => ({
+                    id: String(w.id),
+                    name: w.agentName,
+                    files: parseWorkerOutput(w.output).files,
+                  }))
+                  .filter(a => a.files.length > 0)}
+                conflicts={conflictData.conflicts}
+              />
+            </div>
+          )}
         </div>
       )}
 

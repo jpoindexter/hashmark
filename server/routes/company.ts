@@ -474,5 +474,71 @@ Work in the current directory. Make the necessary code changes, create or modify
     return c.json({ ok: true });
   });
 
+  // POST /api/company/conflicts — detect file-level overlaps from parsed agent output
+  // Accepts a list of agents with their touched files (parsed client-side from output).
+  // Returns conflicts where 2+ agents touch the same file, scored by severity.
+  app.post("/conflicts", async (c) => {
+    const body = await c.req.json<{
+      agents: Array<{ id: string; name: string; files: string[] }>;
+    }>();
+
+    if (!Array.isArray(body.agents) || body.agents.length < 2) {
+      return c.json({
+        hasConflicts: false,
+        conflicts: [],
+        summary: "Need at least 2 agents with file data to detect conflicts",
+      });
+    }
+
+    // Build file -> agents map
+    const fileToAgents = new Map<string, string[]>();
+    for (const agent of body.agents) {
+      for (const file of agent.files ?? []) {
+        const existing = fileToAgents.get(file) ?? [];
+        existing.push(agent.id);
+        fileToAgents.set(file, existing);
+      }
+    }
+
+    // High-impact file patterns (same as dep-graph.ts)
+    const HIGH_IMPACT = [
+      /package\.json$/,
+      /tsconfig.*\.json$/,
+      /\.env/,
+      /prisma\/schema/,
+      /schema\.(ts|js)$/,
+      /middleware\.(ts|js)$/,
+    ];
+
+    interface ConflictItem {
+      file: string;
+      agents: string[];
+      severity: "high" | "medium" | "low";
+    }
+
+    const conflicts: ConflictItem[] = [];
+    for (const [file, agentIds] of fileToAgents) {
+      if (agentIds.length > 1) {
+        let severity: "high" | "medium" | "low" = "medium";
+        if (agentIds.length > 2) severity = "high";
+        else if (HIGH_IMPACT.some(p => p.test(file))) severity = "high";
+
+        conflicts.push({ file, agents: agentIds, severity });
+      }
+    }
+
+    // Sort high severity first
+    const order: Record<string, number> = { high: 0, medium: 1, low: 2 };
+    conflicts.sort((a, b) => order[a.severity] - order[b.severity]);
+
+    return c.json({
+      hasConflicts: conflicts.length > 0,
+      conflicts,
+      summary: conflicts.length === 0
+        ? "No conflicts detected"
+        : `${conflicts.length} file(s) modified by multiple agents`,
+    });
+  });
+
   return app;
 }
