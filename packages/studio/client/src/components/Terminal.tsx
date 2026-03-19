@@ -1,6 +1,7 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from "@xterm/addon-fit";
+import { WebLinksAddon } from "@xterm/addon-web-links";
 import "xterm/css/xterm.css";
 import { encodeTerminalMsg } from "../../../shared/ws-contracts";
 
@@ -77,6 +78,13 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
 
     const fit = new FitAddon();
     term.loadAddon(fit);
+    term.loadAddon(new WebLinksAddon((_, url) => {
+      if (typeof window.studio?.openExternal === "function") {
+        window.studio.openExternal(url);
+      } else {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+    }));
     term.open(containerRef.current);
     fit.fit();
 
