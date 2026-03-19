@@ -233,7 +233,7 @@ export default function WorkspaceSetup() {
     saveRecent(path, projectName || detection?.name || "project");
     setContextGenerated(false);
 
-    // Activate workspace + trigger scan
+    // Activate workspace on the server
     try {
       const listRes = await fetch("/api/workspaces");
       const listData = await listRes.json() as { workspaces: Array<{ id: string; path: string }> };
@@ -246,7 +246,13 @@ export default function WorkspaceSetup() {
     setStep(3);
   };
 
-  const openStudio = () => {
+  const openStudio = async () => {
+    // Persist project dir in Electron main process config so app restarts remember it.
+    // setProjectDir triggers a reload from the main process side.
+    if (typeof window.studio?.setProjectDir === "function") {
+      await window.studio.setProjectDir(path);
+      return;
+    }
     window.location.href = "/";
   };
 

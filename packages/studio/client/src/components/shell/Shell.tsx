@@ -188,8 +188,8 @@ export default function Shell() {
           onToggleSidebar={() => setSidebarOpen(v => !v)}
         />
 
-        {/* Sidebar shows for all views except settings */}
-        {activeView === "chat" && sidebarOpen && (
+        {/* Sidebar shows for chat, files, source-control, agents */}
+        {["chat", "files", "source-control", "agents"].includes(activeView) && sidebarOpen && (
           <>
             <SidebarPanel
               activeView={activeView}

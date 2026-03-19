@@ -5,6 +5,7 @@ declare global {
   interface Window {
     studio?: {
       pickFolder: () => Promise<string | null>;
+      setProjectDir: (dir: string) => Promise<boolean>;
       getRecentProjects: () => Promise<Array<{ name: string; dir: string; lastOpened: number }>>;
     };
   }
@@ -168,6 +169,28 @@ function loadLocalRecent(): RecentProject[] {
 }
 
 async function openWorkspace(dir: string): Promise<void> {
+  // In Electron, use IPC to persist the project dir in the main process config.
+  // The main process set-project-dir handler writes to ~/.hashmark/studio-config.json,
+  // updates HASHMARK_PROJECT_DIR, and triggers a webContents reload.
+  if (typeof window.studio?.setProjectDir === "function") {
+    // Register the workspace in the server DB first so the activate flow works
+    const res = await fetch("/api/workspaces", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: dir }),
+    });
+    const data = await res.json() as { workspace?: { id: string }; error?: string };
+    if (!res.ok) throw new Error(data.error ?? "Failed to open workspace");
+    const id = data.workspace!.id;
+    const activateRes = await fetch(`/api/workspaces/${id}/activate`, { method: "POST" });
+    if (!activateRes.ok) throw new Error("Failed to activate workspace");
+
+    // Persist in Electron config and trigger reload from main process
+    await window.studio.setProjectDir(dir);
+    return;
+  }
+
+  // Web mode: register, activate, and reload
   const res = await fetch("/api/workspaces", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -732,10 +755,15 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
     setError(null);
     try {
       const res = await fetch(`/api/workspaces/${id}/activate`, { method: "POST" });
+      const d = await res.json() as { ok?: boolean; path?: string; error?: string };
       if (!res.ok) {
-        const d = await res.json() as { error?: string };
         setError(d.error ?? "Failed to switch");
         setSwitching(null);
+        return;
+      }
+      // Persist in Electron main process so restarts remember the workspace
+      if (typeof window.studio?.setProjectDir === "function" && d.path) {
+        await window.studio.setProjectDir(d.path);
         return;
       }
       window.location.reload();

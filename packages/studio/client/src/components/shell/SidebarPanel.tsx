@@ -1,4 +1,8 @@
-import type { ReactNode } from "react";
+import { type ReactNode, lazy, Suspense } from "react";
+
+const FileTreeSidebar = lazy(() => import("../sidebar/FileTreeSidebar.tsx"));
+const GitSidebar = lazy(() => import("../sidebar/GitSidebar.tsx"));
+const AgentsSidebar = lazy(() => import("../sidebar/AgentsSidebar.tsx"));
 
 interface SidebarPanelProps {
   activeView: string;
@@ -17,15 +21,6 @@ const VIEW_TITLES: Record<string, string> = {
   governance: "Policies",
 };
 
-const VIEW_DESCRIPTIONS: Record<string, string> = {
-  files: "File explorer",
-  "source-control": "Source control",
-  agents: "Agent management",
-  run: "Run tasks",
-  generate: "Scan & generate",
-  governance: "Policies",
-};
-
 const VIEWS = [
   "chat",
   "files",
@@ -36,10 +31,11 @@ const VIEWS = [
   "governance",
 ] as const;
 
-const placeholderStyle: React.CSSProperties = {
+const fallbackStyle: React.CSSProperties = {
   padding: 16,
-  fontSize: 12,
+  fontSize: 11,
   color: "var(--text-dimmer)",
+  fontFamily: "var(--font)",
 };
 
 function viewContent(
@@ -63,9 +59,39 @@ function viewContent(
     );
   }
 
+  if (view === "files") {
+    return (
+      <div key={view} style={base}>
+        <Suspense fallback={<div style={fallbackStyle}>Loading...</div>}>
+          <FileTreeSidebar />
+        </Suspense>
+      </div>
+    );
+  }
+
+  if (view === "source-control") {
+    return (
+      <div key={view} style={base}>
+        <Suspense fallback={<div style={fallbackStyle}>Loading...</div>}>
+          <GitSidebar />
+        </Suspense>
+      </div>
+    );
+  }
+
+  if (view === "agents") {
+    return (
+      <div key={view} style={base}>
+        <Suspense fallback={<div style={fallbackStyle}>Loading...</div>}>
+          <AgentsSidebar />
+        </Suspense>
+      </div>
+    );
+  }
+
   return (
     <div key={view} style={base}>
-      <div style={placeholderStyle}>{VIEW_DESCRIPTIONS[view] ?? "Opens in main content"}</div>
+      <div style={fallbackStyle}>Opens in main content</div>
     </div>
   );
 }
