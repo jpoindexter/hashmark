@@ -147,7 +147,7 @@ export default function SessionsSidebar({ activeSessionId, onSessionSelect, info
     if (!workspace) return;
     setCtxMenu({
       position: { x: e.clientX, y: e.clientY },
-      items: buildWorkspaceMenuItems(workspace.dir),
+      items: buildWorkspaceMenuItems(workspace.dir, setDialog),
     });
   }, [workspace]);
 
@@ -523,31 +523,45 @@ function buildSessionMenuItems(
 }
 
 // Builds context menu items for the workspace row
-function buildWorkspaceMenuItems(dir: string): ContextMenuItem[] {
-  return [
-    {
+function buildWorkspaceMenuItems(
+  dir: string,
+  setDialog: (d: DialogState | null) => void,
+): ContextMenuItem[] {
+  const items: ContextMenuItem[] = [];
+
+  if (typeof window.studio?.showInFinder === "function") {
+    items.push({
       label: "Open in Finder",
-      onClick: () => {
-        if (window.studio?.showInFinder) {
-          void window.studio.showInFinder(dir);
-        } else {
-          alert("Open in Finder is only available in the desktop app.");
-        }
-      },
+      onClick: () => { void window.studio!.showInFinder(dir); },
+    });
+  }
+
+  items.push({
+    label: "Copy Path",
+    onClick: () => {
+      void navigator.clipboard.writeText(dir);
     },
-    {
-      label: "Copy Path",
-      onClick: () => {
-        void navigator.clipboard.writeText(dir);
-      },
+  });
+
+  items.push({ label: "", onClick: () => {}, separator: true });
+
+  items.push({
+    label: "Remove",
+    danger: true,
+    onClick: () => {
+      setDialog({
+        open: true,
+        title: "Remove workspace?",
+        message: "This will remove the workspace from the sidebar. Your files will not be deleted.",
+        confirmLabel: "Remove",
+        danger: true,
+        onConfirm: () => {
+          // Workspace removal is not yet supported on the backend
+          setDialog(null);
+        },
+      });
     },
-    { label: "", onClick: () => {}, separator: true },
-    {
-      label: "Remove",
-      danger: true,
-      onClick: () => {
-        alert("Remove workspace is not implemented yet.");
-      },
-    },
-  ];
+  });
+
+  return items;
 }

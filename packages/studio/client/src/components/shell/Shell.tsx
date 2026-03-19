@@ -298,17 +298,8 @@ export default function Shell() {
       window.studio.onMenu("menu:stop-agent", () => dispatch("studio:stop-agent")),
       // Edit menu: find/selection/line operations
       window.studio.onMenu("menu:find", () => setCmdOpen(true)),
-      window.studio.onMenu("menu:find-next", () => console.log("menu:find-next not implemented yet")),
-      window.studio.onMenu("menu:find-prev", () => console.log("menu:find-prev not implemented yet")),
-      window.studio.onMenu("menu:expand-selection", () => console.log("menu:expand-selection not implemented yet")),
-      window.studio.onMenu("menu:shrink-selection", () => console.log("menu:shrink-selection not implemented yet")),
-      window.studio.onMenu("menu:copy-line-up", () => console.log("menu:copy-line-up not implemented yet")),
-      window.studio.onMenu("menu:copy-line-down", () => console.log("menu:copy-line-down not implemented yet")),
-      window.studio.onMenu("menu:move-line-up", () => console.log("menu:move-line-up not implemented yet")),
-      window.studio.onMenu("menu:move-line-down", () => console.log("menu:move-line-down not implemented yet")),
-      // Go menu
-      window.studio.onMenu("menu:go-to-symbol", () => console.log("menu:go-to-symbol not implemented yet")),
-      window.studio.onMenu("menu:go-to-line", () => console.log("menu:go-to-line not implemented yet")),
+      // Go menu: go-to-file opens command palette in file mode
+      window.studio.onMenu("menu:go-to-line", () => { setPaletteMode("commands"); setCmdOpen(true); }),
     ];
     return () => subs.forEach(unsub => unsub?.());
   }, [navigate]);

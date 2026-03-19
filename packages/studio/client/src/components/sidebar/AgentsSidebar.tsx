@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Play, Eye, Copy, Pencil, Trash2 } from "lucide-react";
 import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
+import ConfirmDialog from "../shared/ConfirmDialog.tsx";
 
 interface Agent {
   id: string;
@@ -163,12 +164,31 @@ function DeptSection({
   );
 }
 
+interface DialogState {
+  open: boolean;
+  title: string;
+  message?: string;
+  confirmLabel?: string;
+  danger?: boolean;
+  onConfirm: () => void;
+}
+
 export default function AgentsSidebar() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; agent: Agent } | null>(null);
+  const [dialog, setDialog] = useState<DialogState | null>(null);
+  const closeDialog = useCallback(() => setDialog(null), []);
+
+  const refreshAgents = useCallback(() => {
+    fetch("/api/agents")
+      .then((r) => r.json())
+      .then((d: { agents?: Agent[] }) => setAgents(d.agents ?? []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
+    setLoading(true);
     fetch("/api/agents")
       .then((r) => r.json())
       .then((d: { agents?: Agent[] }) => setAgents(d.agents ?? []))
@@ -226,17 +246,30 @@ export default function AgentsSidebar() {
       {
         label: "Edit",
         icon: <Pencil size={12} />,
-        onClick: () => { alert(`Edit agent "${agent.name || agent.id}" (not yet implemented)`); },
+        onClick: () => handleAgentClick(agent.id),
       },
       { label: "", separator: true, onClick: () => {} },
       {
         label: "Delete",
         icon: <Trash2 size={12} />,
         danger: true,
-        onClick: () => { alert(`Delete agent "${agent.name || agent.id}" (not yet implemented)`); },
+        onClick: () => {
+          setDialog({
+            open: true,
+            title: `Delete "${agent.name || agent.id}"?`,
+            message: "This will permanently remove the agent file from .claude/agents/.",
+            confirmLabel: "Delete",
+            danger: true,
+            onConfirm: () => {
+              fetch(`/api/agents/${agent.id}`, { method: "DELETE" })
+                .then(() => { refreshAgents(); setDialog(null); })
+                .catch(() => setDialog(null));
+            },
+          });
+        },
       },
     ];
-  }, [ctxMenu, handleAgentClick]);
+  }, [ctxMenu, handleAgentClick, refreshAgents]);
 
   return (
     <div
@@ -331,6 +364,17 @@ export default function AgentsSidebar() {
         position={ctxMenu ? { x: ctxMenu.x, y: ctxMenu.y } : null}
         onClose={closeCtxMenu}
       />
+      {dialog && (
+        <ConfirmDialog
+          open={dialog.open}
+          title={dialog.title}
+          message={dialog.message}
+          confirmLabel={dialog.confirmLabel}
+          danger={dialog.danger}
+          onConfirm={() => { dialog.onConfirm(); }}
+          onCancel={closeDialog}
+        />
+      )}
     </div>
   );
 }
