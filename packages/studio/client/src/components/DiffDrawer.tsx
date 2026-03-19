@@ -30,8 +30,8 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
   return (
     <div style={{
       position: 'fixed', top: 0, right: 0, bottom: 0,
-      width: 480, background: '#111',
-      borderLeft: '1px solid rgba(255,255,255,0.08)',
+      width: 480, background: 'var(--bg-2)',
+      borderLeft: '1px solid var(--border-dim)',
       display: 'flex', flexDirection: 'column',
       zIndex: 50,
       transform: open ? 'translateX(0)' : 'translateX(100%)',
@@ -39,7 +39,7 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
       pointerEvents: open ? 'auto' : 'none',
     }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: '1px solid var(--border-dim)', flexShrink: 0 }}>
         <span style={{ fontSize: 12, fontFamily: 'var(--font-ui)', color: 'var(--text-dim)' }}>
           Changes {files.length}
         </span>
@@ -47,7 +47,7 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
       </div>
       {/* File list + diff */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <div style={{ width: 180, borderRight: '1px solid rgba(255,255,255,0.06)', overflow: 'auto', flexShrink: 0 }}>
+        <div style={{ width: 180, borderRight: '1px solid var(--border-dim)', overflow: 'auto', flexShrink: 0 }}>
           {files.map(f => (
             <button key={f.path} onClick={() => setSelectedFile(f.path)}
               style={{
@@ -60,7 +60,7 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {f.path.split('/').pop()}
               </span>
-              <span style={{ fontSize: 10, color: '#4ade80', flexShrink: 0 }}>+{f.added ?? 0}</span>
+              <span style={{ fontSize: 10, color: 'var(--accent)', flexShrink: 0 }}>+{f.added ?? 0}</span>
             </button>
           ))}
         </div>
@@ -69,10 +69,10 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
           {diff.split('\n').map((line, i) => (
             <div key={i} style={{
               padding: '0 12px',
-              background: line.startsWith('+') && !line.startsWith('+++') ? 'rgba(16,185,129,0.08)'
-                : line.startsWith('-') && !line.startsWith('---') ? 'rgba(248,113,113,0.08)' : 'transparent',
-              color: line.startsWith('+') && !line.startsWith('+++') ? '#4ade80'
-                : line.startsWith('-') && !line.startsWith('---') ? '#f87171'
+              background: line.startsWith('+') && !line.startsWith('+++') ? 'var(--accent-bg)'
+                : line.startsWith('-') && !line.startsWith('---') ? 'var(--red-bg)' : 'transparent',
+              color: line.startsWith('+') && !line.startsWith('+++') ? 'var(--accent)'
+                : line.startsWith('-') && !line.startsWith('---') ? 'var(--red)'
                 : line.startsWith('@@') ? 'var(--blue)' : 'var(--text-dim)',
             }}>
               {line || '\u00a0'}

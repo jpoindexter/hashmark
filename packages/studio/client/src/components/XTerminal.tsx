@@ -213,8 +213,8 @@ const XTerminal = forwardRef<XTerminalHandle, XTerminalProps>(function XTerminal
             display: "flex",
             alignItems: "center",
             gap: 4,
-            background: "#2d2d2d",
-            border: "1px solid rgba(255,255,255,0.15)",
+            background: "var(--bg-4)",
+            border: "1px solid var(--border)",
             borderRadius: 4,
             padding: "3px 5px",
             zIndex: 100,
@@ -258,7 +258,7 @@ const XTerminal = forwardRef<XTerminalHandle, XTerminalProps>(function XTerminal
           <button
             onClick={closeSearch}
             title="Close"
-            style={{ ...searchBtnStyle, color: "#888" }}
+            style={{ ...searchBtnStyle, color: "var(--text-dim)" }}
           >
             ✕
           </button>

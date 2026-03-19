@@ -22,14 +22,14 @@ interface AgentCardProps {
 }
 
 const DEPT_COLORS: Record<string, string> = {
-  engineering: "#3b82f6",
+  engineering: "var(--blue)",
   product: "#8b5cf6",
   design: "#ec4899",
-  marketing: "#f59e0b",
-  sales: "#10b981",
+  marketing: "var(--yellow)",
+  sales: "var(--accent)",
   operations: "#6366f1",
   pr: "#06b6d4",
-  general: "#71717a",
+  general: "var(--text-dim)",
 };
 
 function fmtRelative(ts: number): string {

@@ -270,7 +270,7 @@ export default function WorkspaceSetup() {
     fontWeight: 700,
     fontFamily: "var(--font-ui)",
     background: step === n ? "var(--accent)" : step > n ? "var(--accent-bg)" : "var(--bg-4)",
-    color: step === n ? "#fff" : step > n ? "var(--accent)" : "var(--text-dimmer)",
+    color: step === n ? "var(--bg)" : step > n ? "var(--accent)" : "var(--text-dimmer)",
     border: step > n ? "1px solid var(--accent-border)" : "1px solid var(--border-dim)",
     transition: "all 0.2s",
     flexShrink: 0,

@@ -149,7 +149,7 @@ export function ContextHeatmap({ sessionId, streaming }: ContextHeatmapProps) {
                     top: 0, left: 0,
                     height: "100%",
                     width: `${pct}%`,
-                    background: "#10b981",
+                    background: "var(--accent)",
                     opacity: barOpacity,
                     transition: "width 0.4s ease, opacity 0.4s ease",
                   }} />
@@ -160,7 +160,7 @@ export function ContextHeatmap({ sessionId, streaming }: ContextHeatmapProps) {
                   textAlign: "right",
                   fontSize: 9,
                   fontFamily: "var(--font)",
-                  color: pct >= 60 ? "#10b981" : "var(--text-dimmer)",
+                  color: pct >= 60 ? "var(--accent)" : "var(--text-dimmer)",
                   flexShrink: 0,
                 }}>
                   {hit.hitCount}

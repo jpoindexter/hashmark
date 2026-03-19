@@ -42,10 +42,10 @@ const CTX_WINDOW: Record<string, number> = {
 
 // Provider dot color per model family
 function providerColor(model: string): string {
-  if (model.includes("opus")) return "#d29922";   // yellow — premium
-  if (model.includes("sonnet")) return "#388bfd";  // blue — standard
-  if (model.includes("haiku")) return "#3fb950";   // green — fast
-  return "#484f58";
+  if (model.includes("opus")) return "var(--yellow)";   // yellow — premium
+  if (model.includes("sonnet")) return "var(--blue)";  // blue — standard
+  if (model.includes("haiku")) return "var(--accent)";   // green — fast
+  return "var(--text-dimmer)";
 }
 
 function modelShortLabel(model: string): string {
@@ -89,9 +89,9 @@ function fmtCost(inputTok: number, outputTok: number, model: string) {
 
 // Token usage bar color based on % used
 function tokenBarColor(pct: number): string {
-  if (pct < 50) return "#3fb950";
-  if (pct < 80) return "#d29922";
-  return "#f85149";
+  if (pct < 50) return "var(--accent)";
+  if (pct < 80) return "var(--yellow)";
+  return "var(--red)";
 }
 
 // Renderer that returns React nodes from assistant markdown text

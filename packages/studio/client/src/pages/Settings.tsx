@@ -108,7 +108,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     >
       <span style={{
         position: "absolute", top: 2, left: checked ? 16 : 2,
-        width: 14, height: 14, borderRadius: "50%", background: "#fff",
+        width: 14, height: 14, borderRadius: "50%", background: "var(--text)",
         transition: "left 0.15s",
       }} />
     </button>
@@ -338,7 +338,7 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
                         disabled={saving === provider.id || !(keyInputs[provider.id] ?? "").trim()}
                         style={{
                           padding: "5px 12px", background: "var(--accent)", border: "none",
-                          borderRadius: "var(--radius)", color: "#000", fontSize: 11,
+                          borderRadius: "var(--radius)", color: "var(--bg)", fontSize: 11,
                           fontFamily: "var(--font-ui)", fontWeight: 600,
                           cursor: (keyInputs[provider.id] ?? "").trim() ? "pointer" : "default",
                           opacity: (keyInputs[provider.id] ?? "").trim() ? 1 : 0.4,
@@ -435,7 +435,7 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
                       style={{
                         padding: "5px 12px", background: effectivelyHasKey ? "var(--accent)" : "var(--bg-4)",
                         border: effectivelyHasKey ? "none" : "1px solid var(--border)",
-                        borderRadius: "var(--radius)", color: effectivelyHasKey ? "#000" : "var(--text-dim)",
+                        borderRadius: "var(--radius)", color: effectivelyHasKey ? "var(--bg)" : "var(--text-dim)",
                         fontSize: 11, fontFamily: "var(--font-ui)", fontWeight: 600, cursor: "pointer",
                       }}
                     >
@@ -610,7 +610,7 @@ function ScanConfigPanel() {
           style={{
             background: dirty ? "var(--accent)" : "var(--bg-4)",
             borderColor: dirty ? "var(--accent)" : "var(--border)",
-            color: dirty ? "#000" : "var(--text-dimmer)",
+            color: dirty ? "var(--bg)" : "var(--text-dimmer)",
             fontWeight: 600, opacity: dirty ? 1 : 0.5,
           }}
         >

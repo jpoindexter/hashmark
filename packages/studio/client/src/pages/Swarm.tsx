@@ -388,7 +388,7 @@ export default function Swarm() {
                     border: "none",
                     borderRight: m === "plan" ? "1px solid var(--border-dim)" : "none",
                     background: mode === m
-                      ? m === "plan" ? "rgba(6,182,212,0.15)" : "rgba(16,185,129,0.15)"
+                      ? m === "plan" ? "rgba(6,182,212,0.15)" : "var(--accent-bg)"
                       : "var(--bg-2)",
                     color: mode === m
                       ? m === "plan" ? "#06b6d4" : "var(--accent)"
@@ -591,7 +591,7 @@ export default function Swarm() {
         @keyframes cursor-blink { 0%,100%{opacity:1} 50%{opacity:0} }
         @keyframes swarm-border-pulse {
           0%,100% { border-left-color: var(--accent); }
-          50% { border-left-color: rgba(16,185,129,0.3); }
+          50% { border-left-color: var(--accent-border); }
         }
       `}</style>
     </div>

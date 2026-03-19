@@ -48,7 +48,7 @@ export function DriftBadge({ drift, navigate }: { drift: DriftResult; navigate: 
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const isMajor = drift.driftLevel === "major";
-  const dotColor = isMajor ? "#f85149" : "#d29922";
+  const dotColor = isMajor ? "var(--red)" : "var(--yellow)";
   const tooltipText = isMajor
     ? "Context is significantly stale"
     : "Context is slightly stale — consider rescanning";
@@ -164,9 +164,9 @@ export function DriftBadge({ drift, navigate }: { drift: DriftResult; navigate: 
 
 export function DriftBanner({ drift, onDismiss }: { drift: DriftResult; onDismiss: () => void }) {
   const isMajor = drift.driftLevel === "major";
-  const accentColor = isMajor ? "#ef4444" : "#eab308";
-  const bgColor = isMajor ? "rgba(239,68,68,0.08)" : "rgba(234,179,8,0.08)";
-  const borderColor = isMajor ? "rgba(239,68,68,0.3)" : "rgba(234,179,8,0.3)";
+  const accentColor = isMajor ? "var(--red)" : "var(--yellow)";
+  const bgColor = isMajor ? "var(--red-bg)" : "var(--yellow-bg)";
+  const borderColor = isMajor ? "var(--red)" : "var(--yellow)";
   const signalCount = drift.signals.length;
 
   return (

@@ -55,11 +55,11 @@ function fmtTime(ts: number) {
 
 function OutcomeBadge({ outcome }: { outcome: string }) {
   const map: Record<string, { bg: string; color: string }> = {
-    allowed: { bg: "rgba(16,185,129,0.12)", color: "#10b981" },
-    blocked: { bg: "rgba(239,68,68,0.12)",  color: "#ef4444" },
-    flagged: { bg: "rgba(234,179,8,0.12)",   color: "#eab308" },
+    allowed: { bg: "var(--accent-bg)", color: "var(--accent)" },
+    blocked: { bg: "var(--red-bg)",  color: "var(--red)" },
+    flagged: { bg: "var(--yellow-bg)",   color: "var(--yellow)" },
   };
-  const s = map[outcome] ?? { bg: "rgba(113,113,122,0.15)", color: "#71717a" };
+  const s = map[outcome] ?? { bg: "rgba(113,113,122,0.15)", color: "var(--text-dim)" };
   return (
     <span style={{
       display: "inline-block",
@@ -127,7 +127,7 @@ function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (
         width: 12,
         height: 12,
         borderRadius: "50%",
-        background: "#fff",
+        background: "var(--text)",
         transition: "left 0.15s",
       }} />
     </button>
@@ -158,11 +158,11 @@ function DeleteButton({ onConfirm }: { onConfirm: () => void }) {
         title="Delete policy"
         style={{
           background: "none", border: "none",
-          color: open ? "#ef4444" : "var(--text-dimmer)",
+          color: open ? "var(--red)" : "var(--text-dimmer)",
           cursor: "pointer", fontSize: 15, lineHeight: 1,
           transition: "color 0.1s", padding: "0 2px",
         }}
-        onMouseEnter={e => { if (!open) e.currentTarget.style.color = "#ef4444"; }}
+        onMouseEnter={e => { if (!open) e.currentTarget.style.color = "var(--red)"; }}
         onMouseLeave={e => { if (!open) e.currentTarget.style.color = "var(--text-dimmer)"; }}
       >
         ×
@@ -174,7 +174,7 @@ function DeleteButton({ onConfirm }: { onConfirm: () => void }) {
           top: "calc(100% + 4px)",
           background: "var(--bg-3)",
           border: "1px solid var(--border)",
-          borderTop: "2px solid #ef4444",
+          borderTop: "2px solid var(--red)",
           padding: "10px 12px",
           whiteSpace: "nowrap",
           zIndex: 100,
@@ -185,7 +185,7 @@ function DeleteButton({ onConfirm }: { onConfirm: () => void }) {
             <button
               onClick={() => { setOpen(false); onConfirm(); }}
               style={{
-                background: "#ef4444", border: "none", color: "#fff",
+                background: "var(--red)", border: "none", color: "var(--text)",
                 padding: "3px 10px", fontFamily: "var(--font)", fontSize: 10,
                 fontWeight: 700, cursor: "pointer", letterSpacing: "0.04em",
               }}
@@ -454,7 +454,7 @@ function PolicyDrawer({ policy, onSave, onClose }: PolicyDrawerProps) {
                 ...inputStyle,
                 height: 180,
                 resize: "vertical",
-                borderColor: rulesErr ? "#ef4444" : "var(--border-dim)",
+                borderColor: rulesErr ? "var(--red)" : "var(--border-dim)",
               }}
               value={rulesRaw}
               onChange={e => setRulesRaw(e.target.value)}
@@ -462,7 +462,7 @@ function PolicyDrawer({ policy, onSave, onClose }: PolicyDrawerProps) {
               spellCheck={false}
             />
             {rulesErr
-              ? <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{rulesErr}</div>
+              ? <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4 }}>{rulesErr}</div>
               : <div style={{ fontSize: 10, color: "var(--text-dimmer)", marginTop: 4 }}>
                   Each rule: <code style={{ color: "var(--text-dim)" }}>{"{ type, pattern, message }"}</code> — type: block | warn | require
                 </div>
@@ -490,7 +490,7 @@ function PolicyDrawer({ policy, onSave, onClose }: PolicyDrawerProps) {
             onClick={e => void handleSubmit(e as unknown as React.FormEvent)}
             disabled={saving || !name.trim()}
             style={{
-              background: "var(--accent)", color: "#000",
+              background: "var(--accent)", color: "var(--bg)",
               border: "none", padding: "6px 16px",
               fontFamily: "var(--font)", fontSize: 11, fontWeight: 700,
               cursor: saving || !name.trim() ? "not-allowed" : "pointer",
@@ -843,8 +843,8 @@ function ActionLogTab() {
         <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
           {[
             { label: "TOTAL ACTIONS", value: summary.total, color: "var(--text)" },
-            { label: "BLOCKED",       value: summary.blocked, color: "#ef4444" },
-            { label: "FLAGGED",       value: summary.flagged, color: "#eab308" },
+            { label: "BLOCKED",       value: summary.blocked, color: "var(--red)" },
+            { label: "FLAGGED",       value: summary.flagged, color: "var(--yellow)" },
           ].map(s => (
             <div key={s.label} style={{
               background: "var(--bg-2)",
@@ -1056,16 +1056,16 @@ function relativeTime(ts: number): string {
 
 function ActionBadge({ action }: { action: string }) {
   const colorMap: Record<string, string> = {
-    file_write:      "#10b981",
+    file_write:      "var(--accent)",
     file_read:       "#6366f1",
-    bash_exec:       "#f59e0b",
-    git_commit:      "#3b82f6",
+    bash_exec:       "var(--yellow)",
+    git_commit:      "var(--blue)",
     git_merge:       "#8b5cf6",
     test_run:        "#ec4899",
     worktree_create: "#14b8a6",
-    worktree_remove: "#71717a",
+    worktree_remove: "var(--text-dim)",
   };
-  const color = colorMap[action] ?? "#71717a";
+  const color = colorMap[action] ?? "var(--text-dim)";
   return (
     <span style={{
       display: "inline-block",
@@ -1086,9 +1086,9 @@ function ActionBadge({ action }: { action: string }) {
 
 function JournalOutcomeBadge({ outcome }: { outcome: string }) {
   const map: Record<string, { bg: string; color: string }> = {
-    success: { bg: "rgba(16,185,129,0.12)", color: "#10b981" },
-    failure: { bg: "rgba(239,68,68,0.12)",  color: "#ef4444" },
-    skipped: { bg: "rgba(113,113,122,0.15)", color: "#71717a" },
+    success: { bg: "var(--accent-bg)", color: "var(--accent)" },
+    failure: { bg: "var(--red-bg)",  color: "var(--red)" },
+    skipped: { bg: "rgba(113,113,122,0.15)", color: "var(--text-dim)" },
   };
   const s = map[outcome] ?? map.skipped;
   return (

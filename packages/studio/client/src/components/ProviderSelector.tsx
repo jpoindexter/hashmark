@@ -230,7 +230,7 @@ export default function ProviderSelector() {
                   disabled={saving || !keyInput.value.trim()}
                   style={{
                     padding: "5px 10px", background: "var(--accent)", border: "none",
-                    borderRadius: "var(--radius)", color: "#000", fontSize: 11,
+                    borderRadius: "var(--radius)", color: "var(--bg)", fontSize: 11,
                     fontFamily: "var(--font-ui)", cursor: keyInput.value.trim() ? "pointer" : "default",
                     opacity: keyInput.value.trim() ? 1 : 0.4,
                   }}

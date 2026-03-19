@@ -47,27 +47,27 @@ function parseDiff(diffText: string): DiffLine[] {
 }
 
 const ROW_BG: Record<LineType, string> = {
-  add:     "rgba(16,185,129,0.12)",
-  remove:  "rgba(239,68,68,0.12)",
+  add:     "var(--accent-bg)",
+  remove:  "var(--red-bg)",
   hunk:    "rgba(255,255,255,0.03)",
   header:  "transparent",
   context: "transparent",
 };
 
 const ROW_BORDER: Record<LineType, string | undefined> = {
-  add:    "#10b981",
-  remove: "#ef4444",
+  add:    "var(--accent)",
+  remove: "var(--red)",
   hunk:   undefined,
   header: undefined,
   context: undefined,
 };
 
 const ROW_FG: Record<LineType, string> = {
-  add:     "#86efac",
-  remove:  "#fca5a5",
-  hunk:    "#52525b",
-  header:  "#3f3f46",
-  context: "var(--text-dim, #a1a1aa)",
+  add:     "var(--accent)",
+  remove:  "var(--red)",
+  hunk:    "var(--text-dimmer)",
+  header:  "var(--text-dimmer)",
+  context: "var(--text-dim)",
 };
 
 function DiffRow({ line }: { line: DiffLine }) {
@@ -103,9 +103,9 @@ function DiffRow({ line }: { line: DiffLine }) {
         width: 38, minWidth: 38,
         textAlign: "right",
         padding: "1px 6px",
-        color: "var(--text-dimmer, #52525b)",
+        color: "var(--text-dimmer)",
         userSelect: "none",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
+        borderRight: "1px solid var(--border-dim)",
         fontFamily: "var(--font, monospace)",
         fontSize: 11,
       }}>
@@ -115,9 +115,9 @@ function DiffRow({ line }: { line: DiffLine }) {
         width: 38, minWidth: 38,
         textAlign: "right",
         padding: "1px 6px",
-        color: "var(--text-dimmer, #52525b)",
+        color: "var(--text-dimmer)",
         userSelect: "none",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
+        borderRight: "1px solid var(--border-dim)",
         fontFamily: "var(--font, monospace)",
         fontSize: 11,
       }}>
@@ -150,8 +150,8 @@ export function DiffPanel({ diff, filename, onClose, fullWidth }: DiffPanelProps
       height: "100%",
       display: "flex",
       flexDirection: "column",
-      background: "var(--bg, #09090b)",
-      borderLeft: fullWidth ? "none" : "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+      background: "var(--bg)",
+      borderLeft: fullWidth ? "none" : "1px solid var(--border-dim)",
       overflow: "hidden",
       flexShrink: 0,
     }}>
@@ -162,15 +162,15 @@ export function DiffPanel({ diff, filename, onClose, fullWidth }: DiffPanelProps
         display: "flex",
         alignItems: "center",
         padding: "0 12px",
-        background: "var(--bg-2, #18181b)",
-        borderBottom: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+        background: "var(--bg-2)",
+        borderBottom: "1px solid var(--border-dim)",
         flexShrink: 0,
         gap: 8,
       }}>
         <span style={{
           fontFamily: "var(--font, monospace)",
           fontSize: 11,
-          color: "var(--text-dim, #a1a1aa)",
+          color: "var(--text-dim)",
           flex: 1,
           overflow: "hidden",
           textOverflow: "ellipsis",
@@ -186,15 +186,15 @@ export function DiffPanel({ diff, filename, onClose, fullWidth }: DiffPanelProps
               background: "none",
               border: "none",
               cursor: "pointer",
-              color: "var(--text-dimmer, #52525b)",
+              color: "var(--text-dimmer)",
               fontSize: 16,
               padding: "0 4px",
               lineHeight: 1,
               flexShrink: 0,
               transition: "color 0.1s",
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text, #fafafa)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer, #52525b)"; }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)"; }}
           >
             ×
           </button>
@@ -208,7 +208,7 @@ export function DiffPanel({ diff, filename, onClose, fullWidth }: DiffPanelProps
             padding: 20,
             fontFamily: "var(--font, monospace)",
             fontSize: 12,
-            color: "var(--text-dimmer, #52525b)",
+            color: "var(--text-dimmer)",
           }}>
             No diff available
           </div>

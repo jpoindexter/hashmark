@@ -46,21 +46,21 @@ function parseDiff(diffText: string): DiffLine[] {
 }
 
 const BG: Record<string, string> = {
-  add: "rgba(16, 185, 129, 0.12)",
-  remove: "rgba(239, 68, 68, 0.12)",
-  hunk: "#1c1c1e",
-  header: "#141414",
+  add: "var(--accent-bg)",
+  remove: "var(--red-bg)",
+  hunk: "var(--bg-3)",
+  header: "var(--bg-2)",
   context: "transparent",
   meta: "transparent",
 };
 
 const FG: Record<string, string> = {
-  add: "#86efac",
-  remove: "#fca5a5",
-  hunk: "#71717a",
-  header: "#52525b",
-  context: "#e4e4e7",
-  meta: "#52525b",
+  add: "var(--accent)",
+  remove: "var(--red)",
+  hunk: "var(--text-dim)",
+  header: "var(--text-dimmer)",
+  context: "var(--text)",
+  meta: "var(--text-dimmer)",
 };
 
 function DiffRow({ line, index }: { line: DiffLine; index: number }) {

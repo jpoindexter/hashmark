@@ -313,7 +313,7 @@ export default function FilesPage() {
                 style={{
                   padding: "1px 6px", fontSize: 10,
                   background: extFilter === ext ? "var(--accent)" : "var(--bg-4)",
-                  color: extFilter === ext ? "#fff" : "var(--text-dimmer)",
+                  color: extFilter === ext ? "var(--bg)" : "var(--text-dimmer)",
                   borderColor: extFilter === ext ? "var(--accent)" : "var(--border-dim)",
                 }}
               >

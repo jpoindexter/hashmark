@@ -21,11 +21,11 @@ interface DiffResponse {
 
 function StatusBadge({ status }: { status: string }) {
   const color =
-    status === "complete" ? "#10b981"
-    : status === "conflict" ? "#eab308"
-    : status === "error" ? "#ef4444"
+    status === "complete" ? "var(--accent)"
+    : status === "conflict" ? "var(--yellow)"
+    : status === "error" ? "var(--red)"
     : status === "running" ? "#06b6d4"
-    : "#52525b";
+    : "var(--text-dimmer)";
 
   return (
     <span style={{
@@ -110,7 +110,7 @@ export default function History() {
     padding: 16,
     fontFamily: "var(--font, monospace)",
     fontSize: 12,
-    color: "var(--text-dimmer, #52525b)",
+    color: "var(--text-dimmer)",
   };
 
   return (
@@ -129,20 +129,20 @@ export default function History() {
             fontSize: 16,
             fontWeight: 700,
             letterSpacing: "-0.01em",
-            color: "var(--text, #fafafa)",
+            color: "var(--text)",
             marginBottom: 4,
             fontFamily: "var(--font-ui, sans-serif)",
           }}>
             HISTORY
           </h1>
-          <div style={{ fontSize: 11, color: "var(--text-dimmer, #52525b)", fontFamily: "var(--font-ui, sans-serif)" }}>
+          <div style={{ fontSize: 11, color: "var(--text-dimmer)", fontFamily: "var(--font-ui, sans-serif)" }}>
             Past agent runs — click "View diff" to inspect changes
           </div>
         </div>
 
         {loading && (
           <div style={{
-            border: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+            border: "1px solid var(--border-dim)",
             borderRadius: "var(--radius, 0)",
             overflow: "hidden",
           }}>
@@ -151,8 +151,8 @@ export default function History() {
               display: "grid",
               gridTemplateColumns: "1fr 120px 100px 90px",
               padding: "6px 14px",
-              background: "var(--bg-3, #27272a)",
-              borderBottom: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+              background: "var(--bg-3)",
+              borderBottom: "1px solid var(--border-dim)",
             }}>
               <SkeletonLine width={40} height={8} />
             </div>
@@ -165,7 +165,7 @@ export default function History() {
                   alignItems: "center",
                   padding: "10px 14px",
                   gap: 8,
-                  borderBottom: i < 4 ? "1px solid var(--border-dim, rgba(255,255,255,0.06))" : "none",
+                  borderBottom: i < 4 ? "1px solid var(--border-dim)" : "none",
                 }}
               >
                 <SkeletonLine height={10} width={`${60 + (i % 3) * 15}%`} />
@@ -177,7 +177,7 @@ export default function History() {
           </div>
         )}
         {error && (
-          <div style={{ ...monoMuted, color: "var(--red, #ef4444)" }}>
+          <div style={{ ...monoMuted, color: "var(--red)" }}>
             Failed to load runs: {error}
           </div>
         )}
@@ -188,7 +188,7 @@ export default function History() {
 
         {!loading && !error && runs.length > 0 && (
           <div style={{
-            border: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+            border: "1px solid var(--border-dim)",
             borderRadius: "var(--radius, 0)",
             overflow: "hidden",
           }}>
@@ -197,11 +197,11 @@ export default function History() {
               display: "grid",
               gridTemplateColumns: "1fr 120px 100px 90px",
               padding: "6px 14px",
-              background: "var(--bg-3, #27272a)",
-              borderBottom: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+              background: "var(--bg-3)",
+              borderBottom: "1px solid var(--border-dim)",
               fontSize: 9,
               letterSpacing: "0.08em",
-              color: "var(--text-dimmer, #52525b)",
+              color: "var(--text-dimmer)",
               textTransform: "uppercase",
               fontFamily: "var(--font-ui, sans-serif)",
             }}>
@@ -222,10 +222,10 @@ export default function History() {
                     alignItems: "center",
                     padding: "10px 14px",
                     borderBottom: idx < runs.length - 1
-                      ? "1px solid var(--border-dim, rgba(255,255,255,0.06))"
+                      ? "1px solid var(--border-dim)"
                       : "none",
                     background: isActive
-                      ? "var(--accent-bg, rgba(16,185,129,0.06))"
+                      ? "var(--accent-bg)"
                       : "transparent",
                     transition: "background 0.1s",
                     gap: 8,
@@ -235,21 +235,21 @@ export default function History() {
                   <div style={{
                     fontFamily: "var(--font, monospace)",
                     fontSize: 12,
-                    color: "var(--text, #fafafa)",
+                    color: "var(--text)",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
                   }}
                     title={run.task}
                   >
-                    {run.task || <span style={{ color: "var(--text-dimmer, #52525b)" }}>—</span>}
+                    {run.task || <span style={{ color: "var(--text-dimmer)" }}>—</span>}
                   </div>
 
                   {/* Date */}
                   <div style={{
                     fontFamily: "var(--font, monospace)",
                     fontSize: 11,
-                    color: "var(--text-dim, #a1a1aa)",
+                    color: "var(--text-dim)",
                     whiteSpace: "nowrap",
                   }}>
                     {formatTs(run.created_at)}
@@ -266,10 +266,10 @@ export default function History() {
                       onClick={() => openDiff(run)}
                       style={{
                         background: "none",
-                        border: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+                        border: "1px solid var(--border-dim)",
                         borderRadius: "var(--radius, 0)",
                         cursor: "pointer",
-                        color: isActive ? "var(--accent, #10b981)" : "var(--text-dim, #a1a1aa)",
+                        color: isActive ? "var(--accent)" : "var(--text-dim)",
                         fontFamily: "var(--font, monospace)",
                         fontSize: 10,
                         padding: "3px 8px",
@@ -278,13 +278,13 @@ export default function History() {
                         whiteSpace: "nowrap",
                       }}
                       onMouseEnter={e => {
-                        (e.currentTarget as HTMLButtonElement).style.color = "var(--accent, #10b981)";
-                        (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--accent, #10b981)";
+                        (e.currentTarget as HTMLButtonElement).style.color = "var(--accent)";
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--accent)";
                       }}
                       onMouseLeave={e => {
                         if (!isActive) {
-                          (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim, #a1a1aa)";
-                          (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-dim, rgba(255,255,255,0.08))";
+                          (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim)";
+                          (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-dim)";
                         }
                       }}
                     >
@@ -327,14 +327,14 @@ export default function History() {
             {diffLoading ? (
               <div style={{
                 flex: 1,
-                background: "var(--bg, #09090b)",
-                borderLeft: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+                background: "var(--bg)",
+                borderLeft: "1px solid var(--border-dim)",
                 display: "flex",
                 alignItems: "flex-start",
                 padding: 20,
                 fontFamily: "var(--font, monospace)",
                 fontSize: 12,
-                color: "var(--text-dimmer, #52525b)",
+                color: "var(--text-dimmer)",
               }}>
                 {/* Filename header while loading */}
                 <div style={{ width: "100%" }}>
@@ -343,17 +343,17 @@ export default function History() {
                     display: "flex",
                     alignItems: "center",
                     padding: "0 12px",
-                    background: "var(--bg-2, #18181b)",
-                    borderBottom: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+                    background: "var(--bg-2)",
+                    borderBottom: "1px solid var(--border-dim)",
                     marginBottom: 16,
                     gap: 8,
                   }}>
-                    <span style={{ flex: 1, fontFamily: "var(--font, monospace)", fontSize: 11, color: "var(--text-dim, #a1a1aa)" }}>
+                    <span style={{ flex: 1, fontFamily: "var(--font, monospace)", fontSize: 11, color: "var(--text-dim)" }}>
                       {diffFilename}
                     </span>
                     <button
                       onClick={() => setActiveDiff(null)}
-                      style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer, #52525b)", fontSize: 16, padding: "0 4px", lineHeight: 1 }}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontSize: 16, padding: "0 4px", lineHeight: 1 }}
                     >
                       ×
                     </button>
@@ -364,12 +364,12 @@ export default function History() {
             ) : diffError ? (
               <div style={{
                 flex: 1,
-                background: "var(--bg, #09090b)",
-                borderLeft: "1px solid var(--border-dim, rgba(255,255,255,0.08))",
+                background: "var(--bg)",
+                borderLeft: "1px solid var(--border-dim)",
                 padding: 20,
                 fontFamily: "var(--font, monospace)",
                 fontSize: 12,
-                color: "var(--red, #ef4444)",
+                color: "var(--red)",
               }}>
                 {diffError}
               </div>

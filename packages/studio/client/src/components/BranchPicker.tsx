@@ -41,7 +41,7 @@ export default function BranchPicker({ currentBranch }: { currentBranch: string 
         style={{
           display: "flex", alignItems: "center", gap: 4,
           background: "none", border: "none", cursor: "pointer",
-          color: "rgba(255,255,255,0.5)", fontSize: 12,
+          color: "var(--text-dim)", fontSize: 12,
           fontFamily: "var(--font-ui)", padding: "2px 4px",
           borderRadius: 4,
         }}
@@ -56,12 +56,12 @@ export default function BranchPicker({ currentBranch }: { currentBranch: string 
           <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 99 }} />
           <div style={{
             position: "absolute", top: "100%", left: 0, zIndex: 100,
-            background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)",
+            background: "var(--bg-2)", border: "1px solid var(--border-dim)",
             borderRadius: 6, minWidth: 200, maxHeight: 280,
             overflow: "auto", marginTop: 4,
           }}>
             {loading && (
-              <div style={{ padding: "8px 12px", color: "rgba(255,255,255,0.3)", fontSize: 11 }}>Loading...</div>
+              <div style={{ padding: "8px 12px", color: "var(--text-dimmer)", fontSize: 11 }}>Loading...</div>
             )}
             {branches.map(branch => (
               <button
@@ -71,7 +71,7 @@ export default function BranchPicker({ currentBranch }: { currentBranch: string 
                 style={{
                   display: "flex", alignItems: "center", gap: 8,
                   width: "100%", padding: "7px 12px", background: "none", border: "none",
-                  color: branch === currentBranch ? "#10b981" : "rgba(255,255,255,0.7)",
+                  color: branch === currentBranch ? "var(--accent)" : "var(--text-dim)",
                   fontSize: 12, fontFamily: "var(--font)", cursor: "pointer",
                   textAlign: "left",
                 }}

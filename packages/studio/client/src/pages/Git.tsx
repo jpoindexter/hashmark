@@ -35,7 +35,7 @@ interface DiffState {
 }
 
 const BRANCH_COLORS = [
-  "#3fb950", "#388bfd", "#8b5cf6", "#f97316", "#06b6d4", "#d29922",
+  "var(--accent)", "var(--blue)", "#8b5cf6", "#f97316", "#06b6d4", "var(--yellow)",
 ];
 
 function branchColor(name: string): string {
@@ -175,7 +175,7 @@ function CommitRow({ commit, isLast, expanded, onToggle, onFileClick, activeDiff
                 {commit.filesChanged} {commit.filesChanged === 1 ? "file" : "files"}
               </span>
               {commit.insertions > 0 && (
-                <span style={{ fontFamily: "var(--font)", fontSize: 11, color: "#3fb950", fontWeight: 600 }}>
+                <span style={{ fontFamily: "var(--font)", fontSize: 11, color: "var(--accent)", fontWeight: 600 }}>
                   +{commit.insertions}
                 </span>
               )}

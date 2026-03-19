@@ -430,7 +430,7 @@ function FolderPickerSection({ info, onFolderChanged }: {
 function NoAgentsEmptyState({ onGenerate }: { onGenerate: () => void }) {
   return (
     <div style={{
-      border: "1px dashed rgba(255,255,255,0.1)",
+      border: "1px dashed var(--border-dim)",
       borderRadius: "8px",
       minHeight: "180px",
       display: "flex",
