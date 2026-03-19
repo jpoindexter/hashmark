@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useReducer, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import AgentCard from "../components/AgentCard.tsx";
+import ConfirmDialog from "../components/shared/ConfirmDialog.tsx";
 
 // ---------------------------------------------------------------------------
 // Agent run state machine (#74)
@@ -84,6 +85,8 @@ export default function Agents() {
 
   // Bulk effectiveness stats keyed by agent id
   const [allStats, setAllStats] = useState<Record<string, AgentStats>>({});
+
+  const [pendingDelete, setPendingDelete] = useState<Agent | null>(null);
 
   // Create form
   const [showCreate, setShowCreate] = useState(false);
@@ -243,7 +246,13 @@ export default function Agents() {
   }
 
   async function deleteAgent(agent: Agent) {
-    if (!window.confirm(`Delete "${agent.name}"?`)) return;
+    setPendingDelete(agent);
+  }
+
+  async function confirmDeleteAgent() {
+    if (!pendingDelete) return;
+    const agent = pendingDelete;
+    setPendingDelete(null);
     await fetch(`/api/agents/${agent.id}`, { method: "DELETE" }).catch(() => {});
     setAgents(prev => prev.filter(a => a.id !== agent.id));
     if (selected?.id === agent.id) setSelected(null);
@@ -1033,6 +1042,17 @@ export default function Agents() {
           </div>
         </div>
       )}
+
+      {/* Delete confirm dialog */}
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={`Delete "${pendingDelete?.name}"?`}
+        message="This will permanently delete the agent file. This cannot be undone."
+        confirmLabel="Delete"
+        danger
+        onConfirm={() => void confirmDeleteAgent()}
+        onCancel={() => setPendingDelete(null)}
+      />
 
       {/* Agent detail panel */}
       {selected && (
