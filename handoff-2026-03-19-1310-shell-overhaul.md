@@ -378,3 +378,15 @@ I'm continuing work on hashmark studio's shell overhaul. The project is at `/Use
 - [ ] Our diff stats show bright green/red (+35673 -24847) which is too loud in the sidebar -- should be muted
 - [ ] Context bar "1% of context used" uses blue which clashes with green accent
 - [ ] Need a color hierarchy: primary accent (green), secondary (blue for links only), semantic only (red=error, yellow=warning, green=success)
+
+### Session 7 TODOs (2026-03-19 late evening)
+
+- [ ] **Project name dynamic** -- Settings shows "hashmark-studio" from package.json. Should read from `/api/info` projectName (the actual open project folder name)
+- [ ] **Light theme button inconsistency** -- "Security Scan" has gray border, "+ New Agent" has green border. All buttons should use same style in both themes
+- [ ] **Unify ALL colors across light+dark themes** -- green/blue/red mix needs clear hierarchy applied consistently
+- [ ] **Chat scroll still jumpy** -- estimateSize bumped to 200 but very long messages with code blocks still cause jumps. Consider removing virtualizer for chat (just render all messages, use native scroll)
+- [ ] **DELTA-V4 audit completed** -- review `docs/shell-reference/DELTA-V4.md` and prioritize remaining gaps
+- [ ] **Activity bar verified** -- simplified to 4 icons (Chat, Explorer, SC, Agents) + Settings
+- [ ] **Source control** -- uses full page now, no more black flash
+- [ ] **All buttons** -- "> " prefix removed, sentence case, unified styles
+- [ ] **AgentPicker** -- custom dropdown replacing native select on Run page
