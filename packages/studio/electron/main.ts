@@ -488,7 +488,7 @@ app.whenReady().then(() => {
   if (process.platform === "darwin") {
     const iconPath = resolve(__dirname, "../../assets/icon.png");
     if (existsSync(iconPath)) {
-      app.dock.setIcon(nativeImage.createFromPath(iconPath));
+      app.dock?.setIcon(nativeImage.createFromPath(iconPath));
     }
   }
   buildMenu();

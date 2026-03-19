@@ -11,7 +11,8 @@ export function governanceRoutes(dataDir: string) {
   app.get("/policies", (c) => {
     const db = getDb(dataDir);
     const policies = db.prepare("SELECT * FROM governance_policies ORDER BY created_at DESC").all();
-    return c.json({ policies: policies.map(p => ({ ...p, rules: JSON.parse((p as { rules: string }).rules) })) });
+    type RawPolicy = { rules: string; [k: string]: unknown };
+    return c.json({ policies: policies.map(p => { const r = p as RawPolicy; return { ...r, rules: JSON.parse(r.rules) }; }) });
   });
 
   // POST /api/governance/policies
