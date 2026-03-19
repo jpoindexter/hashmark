@@ -82,8 +82,10 @@ From VSCode source (`workbench/browser`):
 | Title bar | 35px | `DEFAULT_CUSTOM_TITLEBAR_HEIGHT = 35` |
 | Editor tabs | 35px | `--editor-group-tab-height` |
 | Panel tab bar | 29–30px | Terminal/output section header |
-| Activity bar icons | 40px each | VSCode default |
-| Sidebar section headers | 26–28px | |
+| Activity bar item | 48px each | VSCode `ACTIVITY_BAR_ACTION_HEIGHT = 48` |
+| Activity bar width | 48px | VSCode `ActivitybarPart` default |
+| Sidebar section headers | 22px | VSCode compact tree item height |
+| Sidebar tree items | 22px | VSCode file tree row height |
 | Input height | 26px | `padding: 5px 10px` + 1px border × 2 |
 
 ---

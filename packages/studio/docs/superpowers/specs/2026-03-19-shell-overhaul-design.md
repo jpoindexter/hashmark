@@ -482,18 +482,29 @@ New shortcuts:
 
 ## 8. Migration Plan
 
+### Token Migration Strategy
+
+The Grove tokens (`tokens.css`) replace the current ad-hoc CSS variables. Key changes:
+- `--accent: #10b981` (emerald) -> `--accent: #3fb950` (Grove green)
+- `--radius: 8px` -> `--radius: 4px`
+- Background scale realigned to Grove `#0d1117` -> `#21262d`
+
+All retained components use CSS custom properties, so swapping `tokens.css` applies the new palette globally. Components with hardcoded `rgba()` values (hover states, borders) get a token-alignment pass as part of this overhaul -- each retained component is touched minimally to replace hardcoded values with `var(--token)` references. This is not a rewrite of those components, just a find-and-replace of color literals.
+
 ### What gets deleted
 - `Layout.tsx` (995 lines) -- replaced entirely by `Shell.tsx` + shell components
 - `ActivitySidebar.tsx` (545 lines) -- replaced by `SessionsSidebar.tsx`
+- `ChatPanel.tsx` -- superseded by `ChatMessages.tsx` + `ChatInputBar.tsx`
+- `WorkspaceSidebar.tsx` -- superseded by `SessionsSidebar.tsx`
 
 ### What stays unchanged
-- All page components (Home, Files, Git, Agents, Run, Swarm, Company, etc.)
-- `ChatMessages.tsx` (enhanced, not replaced)
+- All page components (Home, Files, Git, Agents, Run, Swarm, Company, Governance, etc.)
 - `ChatInputBar.tsx`
 - `TerminalTabs.tsx`
 - `CommandPalette.tsx`
 - `ResizableDrawer.tsx`
 - `ContextBar.tsx`
+- All non-shell components (ScanProgress, DiffPanel, DiffViewer, ContextHeatmap, Skeleton, AgentCard, CheckpointPanel, XTerminal, Terminal, ProjectPicker, Toasts, etc.)
 - All server code, all API routes
 - `App.tsx` router (routes stay the same)
 - Electron main process
@@ -501,8 +512,16 @@ New shortcuts:
 ### What gets enhanced
 - `ChatMessages.tsx` -- add MessageBlock type dispatch for thinking/tool/agent blocks
 - `App.tsx` -- swap `<Layout>` wrapper for `<Shell>`
+- All retained components -- token-alignment pass (replace hardcoded rgba values with CSS custom properties)
 
-### New files (13 components + 2 CSS)
+### Inline components extracted from Layout.tsx before deletion
+- `DiffDrawer` (Layout.tsx lines 62-142) -- extracted to `components/DiffDrawer.tsx`
+- `BranchPicker` (Layout.tsx lines 832-917) -- extracted to `components/BranchPicker.tsx`
+- `DriftBanner` / `DriftBadge` (Layout.tsx lines 560-735) -- extracted to `components/DriftIndicator.tsx`
+- `ShortcutsHelp` (Layout.tsx lines 759-830) -- stays in CommandPalette or extracted
+- `ProjectSwitcher` (Layout.tsx lines 919-994) -- extracted to `components/ProjectSwitcher.tsx`
+
+### New files (18 components + 2 CSS)
 - `styles/tokens.css`
 - `styles/reset.css`
 - `shell/Shell.tsx`
@@ -515,9 +534,30 @@ New shortcuts:
 - `chat/MessageBlock.tsx`
 - `chat/ToolCallRow.tsx`
 - `chat/ThinkingBlock.tsx`
+- `chat/AgentBlock.tsx`
 - `chat/ToolSummary.tsx`
 - `sidebar/SessionsSidebar.tsx`
 - `shared/IconButton.tsx`
+- `shared/Badge.tsx`
+- `shared/ScrollToBottom.tsx`
+- `DiffDrawer.tsx` (extracted from Layout.tsx)
+- `BranchPicker.tsx` (extracted from Layout.tsx)
+- `DriftIndicator.tsx` (extracted from Layout.tsx)
+- `ProjectSwitcher.tsx` (extracted from Layout.tsx)
+
+### State threading
+
+`Shell.tsx` manages these state values and threads them to children:
+- `activeView` -> ActivityBar, SidebarPanel
+- `sidebarOpen` + `sidebarWidth` -> SidebarPanel, SidebarResize (persisted to localStorage)
+- `termOpen` -> ResizableDrawer (persisted)
+- `activeSessionId` -> ChatMessages, ChatInputBar, SessionsSidebar (persisted)
+- `streaming` + `streamText` -> ChatMessages, ChatInputBar, StatusBar
+- `info` (ProjectInfo) -> Titlebar, StatusBar
+- `git` (GitStatus) -> Titlebar, StatusBar, SessionsSidebar
+- `drift` (DriftResult) -> Titlebar (DriftBadge)
+
+Sidebar auto-hides when route is `/settings` (checked via `location.pathname`).
 
 ---
 
