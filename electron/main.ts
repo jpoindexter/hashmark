@@ -95,6 +95,77 @@ if (PROJECT_DIR !== "__unset__") {
 const STATIC_DIR = resolve(__dirname, "..", "public");
 const { server } = createServer({ projectDir: PROJECT_DIR, staticDir: STATIC_DIR, port: PORT });
 
+// Register hashmark:// protocol for deep links
+app.setAsDefaultProtocolClient("hashmark");
+
+// Single instance lock -- required for second-instance event on Windows/Linux
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+}
+
+// Queue deep link URLs received before the window is ready
+let pendingDeepLink: string | null = null;
+
+function handleDeepLink(url: string) {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return;
+  }
+
+  // hashmark://open?path=/Users/foo/project -> open that project
+  if (parsed.hostname === "open" || parsed.pathname === "//open") {
+    const projectPath = parsed.searchParams.get("path");
+    if (projectPath && existsSync(projectPath)) {
+      const config = readConfig();
+      const updated = addToRecent({ ...config, projectDir: projectPath }, projectPath);
+      writeConfig(updated);
+      process.env.HASHMARK_PROJECT_DIR = projectPath;
+      if (win) {
+        sendToRenderer("deep-link:open-project", projectPath);
+      }
+      return;
+    }
+  }
+
+  // hashmark://settings -> navigate to settings
+  // hashmark://files -> navigate to files
+  // hashmark://agents -> navigate to agents
+  const route = parsed.hostname || parsed.pathname.replace(/^\/\//, "");
+  if (route && win) {
+    sendToRenderer("deep-link:navigate", `/${route}`);
+  }
+}
+
+// macOS: open-url fires when app is already running or launched via URL
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  if (win) {
+    handleDeepLink(url);
+    // Bring window to front
+    if (win.isMinimized()) win.restore();
+    win.focus();
+  } else {
+    pendingDeepLink = url;
+  }
+});
+
+// Windows/Linux: second-instance fires when protocol URL triggers a new process
+app.on("second-instance", (_event, argv) => {
+  const url = argv.find(a => a.startsWith("hashmark://"));
+  if (url) {
+    if (win) {
+      handleDeepLink(url);
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    } else {
+      pendingDeepLink = url;
+    }
+  }
+});
+
 let win: BrowserWindow | null = null;
 
 function saveWindowState() {
@@ -172,6 +243,14 @@ function createWindow() {
   win.on("maximize", saveWindowState);
   win.on("unmaximize", saveWindowState);
   win.on("close", saveWindowState);
+
+  // Process deep link that arrived before window was ready
+  win.webContents.on("did-finish-load", () => {
+    if (pendingDeepLink) {
+      handleDeepLink(pendingDeepLink);
+      pendingDeepLink = null;
+    }
+  });
 
   // Always open DevTools in development (detached window)
   if (isDev || process.env.STUDIO_DEVTOOLS === "1") {
