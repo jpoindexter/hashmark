@@ -151,6 +151,64 @@ Every page needs a full interaction audit:
 - Auto-updater
 - Dock badge for notifications
 
+## Complete TODO List (Prioritized)
+
+### P0 -- Broken / Blocking
+
+- [ ] App title says "Electron" not "hashmark studio" -- set `app.setName("hashmark studio")` in electron/main.ts, update `title` in BrowserWindow config
+- [ ] SIGKILL crash on close -- node-pty throws during Electron cleanup. Need graceful shutdown: listen for `before-quit`, kill PTY processes before exit
+- [ ] Auto-detect AI CLIs (claude, codex, gemini, aider, amp, goose) -- server endpoint `/api/providers/detect` that checks PATH + common locations, returns installed status + version. Wire to ModelBar dropdown grouped by provider. AGENT BUILDING THIS NOW.
+- [ ] Project open flow still broken in some cases -- test all paths: ProjectPicker, WorkspaceSetup, Electron menu "Open Project"
+
+### P1 -- Core Missing Features
+
+- [ ] Layout toggle icons in titlebar right section (sidebar toggle, terminal toggle, split editor icons -- like VS Code's panel layout buttons)
+- [ ] Enhanced command palette (Cmd+P): file search with fuzzy match, recent files, ">" for commands, keyboard shortcut badges on each row, category headers
+- [ ] Theme system that works: light theme tokens in tokens.css, `html[data-theme="light"]` selector, wire Settings toggle to apply class, persist to localStorage
+- [ ] Wire ALL appearance settings: font size, theme, terminal font, terminal cursor style -- each setting must actually change behavior
+- [ ] Electron menu parity: wire all existing menu events that fire but nobody listens to. Add missing items from VS Code menu structure.
+- [ ] Terminal improvements: split terminal (Cmd+\), new terminal tab, kill terminal, clear terminal -- wire to Electron menu Terminal items
+- [ ] Replace remaining native confirm() in CheckpointPanel.tsx and SourceControlPage.tsx with ConfirmDialog
+- [ ] Context menus on: file tree items (open, copy path, reveal in finder, delete), agent cards (run, edit, delete, duplicate), terminal area (copy, paste, clear), code viewer (copy, select all)
+
+### P2 -- Polish & Parity
+
+- [ ] VS Code-style "Go to File" (Cmd+P) -- separate from command palette, fuzzy file search against /api/files/list
+- [ ] Recent files tracking -- store in localStorage, show in command palette and welcome page
+- [ ] VS Code theme import -- parse .json theme files, map to Grove CSS variables
+- [ ] Custom theme editor -- color pickers for each token
+- [ ] Vibrancy/transparency on sidebar and titlebar (Electron vibrancy option)
+- [ ] Auto-updater (electron-updater)
+- [ ] Dock badge for notifications (agent completion, errors)
+- [ ] Window state persistence (position, size, maximized -- Electron windowStateKeeper)
+- [ ] "About hashmark studio" dialog (custom, not native)
+- [ ] Check for Updates menu item wired
+- [ ] Notification system (toast for agent completion, errors, updates)
+
+### Per-Page Audit TODO
+
+- [ ] **Home page**: verify quick actions work, stats load, recent runs display
+- [ ] **Files/Explorer**: file tree sidebar clicks open code viewer, right-click context menu, breadcrumb navigation
+- [ ] **Source Control**: stage/unstage buttons work, commit from sidebar, diff viewer opens on file click
+- [ ] **Agents**: view/edit/run/delete agents, department grouping, agent detail panel
+- [ ] **Run**: start a run from UI, see streaming output, stop button, completion summary
+- [ ] **Generate**: scan wizard all 4 steps work, progress streaming, output format selection
+- [ ] **Governance**: create/edit/delete policies, action log displays, JSONL export
+- [ ] **Settings**: every toggle/input wired to actual behavior, model defaults persist, env vars
+- [ ] **Swarm**: multi-agent mode works end-to-end, worker status, merge results
+- [ ] **Company**: software company orchestration, task decomposition, parallel agents
+- [ ] **History**: past runs display, diffs reviewable, status badges accurate
+- [ ] **Git**: commit history, branch info, ahead/behind count
+- [ ] **WorkspaceSetup**: folder picker works, recent projects, framework detection
+
+### Missing from Competitor Apps (delta analysis in progress)
+
+- [ ] t3code features -- AGENT RESEARCHING NOW
+- [ ] Conductor: checkpoint undo UI, PR creation button, workspace archiving, big terminal mode
+- [ ] Cursor: composer (Cmd+I), inline edit (Cmd+K), tab completion, codebase indexing, @context system
+- [ ] emdash: multi-agent parallel execution, kanban board, browser preview, SSH remote dev, 23 agent support
+- [ ] VS Code: full menu bar parity, extension system, editor tabs, minimap, breadcrumbs, problems panel
+
 ## Key Decisions Made
 1. **Approach C (design system first)**: Full Grove design system with CSS custom properties, then shell components built on top
 2. **Sidebar only for views with content**: Chat, Files, Source Control, Agents get sidebar. Other pages are self-contained.
