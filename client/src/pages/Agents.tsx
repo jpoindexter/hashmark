@@ -827,17 +827,15 @@ export default function Agents() {
           </div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center", flexShrink: 0 }}>
             <button
-              className="btn"
+              className="btn btn-sm"
               onClick={() => void runSecurityScan()}
               disabled={secScanRunning}
-              style={{ fontSize: "10px", padding: "4px 12px" }}
             >
-              {secScanRunning ? "Scanning..." : "⚑ Security Scan"}
+              {secScanRunning ? "Scanning..." : "Security scan"}
             </button>
             <button
-              className="btn btn-primary"
+              className="btn btn-primary btn-sm"
               onClick={() => setShowCreate(true)}
-              style={{ fontSize: "10px", padding: "4px 12px" }}
             >
               + New Agent
             </button>
@@ -1215,10 +1213,9 @@ export default function Agents() {
             <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
               <button className="btn" onClick={() => setShowCreate(false)}>Cancel</button>
               <button
-                className="btn btn-primary"
+                className="btn btn-primary btn-sm"
                 onClick={() => void handleCreate()}
                 disabled={creating || !createName.trim()}
-                style={{ fontSize: "11px" }}
               >
                 {creating ? "Creating..." : "Create agent"}
               </button>
@@ -1658,7 +1655,7 @@ export default function Agents() {
                       disabled={!runPrompt.trim() || running}
                       style={{ fontSize: "10px", padding: "4px 14px" }}
                     >
-                      &gt; RUN
+                      Run
                     </button>
                   )}
                 </div>
@@ -1763,16 +1760,15 @@ export default function Agents() {
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button
-                        className="btn btn-primary"
+                        className="btn btn-primary btn-sm"
                         onClick={() => { pendingApprovalResolveRef.current?.(true); }}
-                        style={{ fontSize: 10, padding: "4px 14px" }}
                       >
                         Allow
                       </button>
                       <button
-                        className="btn"
+                        className="btn btn-sm"
                         onClick={() => { pendingApprovalResolveRef.current?.(false); }}
-                        style={{ fontSize: 10, padding: "4px 14px", color: "var(--red)", borderColor: "var(--red)" }}
+                        style={{ color: "var(--red)", borderColor: "var(--red)" }}
                       >
                         Deny
                       </button>

@@ -106,6 +106,8 @@ export function createServer(opts: ServerOptions) {
       projectName,
       projectDir: ctx.projectDir,
       configured: ctx.projectDir !== "__unset__",
+      nodeVersion: process.versions.node,
+      port: opts.port,
     });
   });
 

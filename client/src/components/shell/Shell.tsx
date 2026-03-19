@@ -15,6 +15,7 @@ import ResizableDrawer from "../ResizableDrawer";
 import CommandPalette from "../CommandPalette";
 import DiffDrawer from "../DiffDrawer";
 import { DriftBanner, isDismissed, dismissFor24h } from "../DriftIndicator";
+import ErrorBoundary from "../ErrorBoundary";
 import ShortcutsHelp from "../ShortcutsHelp";
 import SessionsSidebar from "../sidebar/SessionsSidebar";
 import { useProjectInfo } from "../../hooks/useProjectInfo";
@@ -93,15 +94,19 @@ export default function Shell() {
   const { toggleTheme } = useTheme();
 
   // Persisted state
-  const [sidebarOpen, setSidebarOpen] = useState(() => restore("sidebarOpen", true));
+  const [sidebarOpen, setSidebarOpen] = useState(() => restore("sidebarOpen", false));
   const [sidebarWidth, setSidebarWidth] = useState(() => restore("sidebarWidth", DEFAULT_SIDEBAR_WIDTH));
   const [termOpen, setTermOpen] = useState(() => restore("termOpen", false));
   const [termBig, setTermBig] = useState(() => restore("termBig", false));
+  const [splitOpen, setSplitOpen] = useState(() => restore("splitOpen", false));
   const [selectedModel, setSelectedModel] = useState(() => restore("selectedModel", "claude-sonnet-4-6"));
   const [thinking, setThinking] = useState(() => restore("thinking", false));
   const [planMode, setPlanMode] = useState(() => restore("planMode", false));
   const [activeSessionId, setActiveSessionId] = useState<string | null>(
-    () => localStorage.getItem("studio_active_session_id") ?? null,
+    () => {
+      const shouldRestore = restore("restoreSession", false);
+      return shouldRestore ? (localStorage.getItem("studio_active_session_id") ?? null) : null;
+    },
   );
 
   // Toast state
@@ -140,6 +145,7 @@ export default function Shell() {
   useEffect(() => { persist("sidebarWidth", sidebarWidth); }, [sidebarWidth]);
   useEffect(() => { persist("termOpen", termOpen); }, [termOpen]);
   useEffect(() => { persist("termBig", termBig); }, [termBig]);
+  useEffect(() => { persist("splitOpen", splitOpen); }, [splitOpen]);
   useEffect(() => { persist("selectedModel", selectedModel); }, [selectedModel]);
   useEffect(() => { persist("thinking", thinking); }, [thinking]);
   useEffect(() => { persist("planMode", planMode); }, [planMode]);
@@ -148,13 +154,40 @@ export default function Shell() {
     else localStorage.removeItem("studio_active_session_id");
   }, [activeSessionId]);
 
-  // Auto-create session on mount
+  // Restore or create session on mount.
+  // If we have a stored session ID from a previous app run, validate it still
+  // exists in the DB (SQLite persists across server restarts). If the session
+  // was deleted or the DB was reset, fall through to creating a new one.
+  const sessionValidated = useRef(false);
   useEffect(() => {
-    if (activeSessionId) return;
-    setSessionError(false);
-    createSession()
-      .then(setActiveSessionId)
-      .catch(() => setSessionError(true));
+    const shouldRestore = restore("restoreSession", false);
+    if (!shouldRestore && !activeSessionId) return;
+
+    if (activeSessionId && !sessionValidated.current) {
+      sessionValidated.current = true;
+      setSessionError(false);
+      fetch(`/api/sessions/${activeSessionId}`)
+        .then(r => {
+          if (r.ok) return;
+          // Session gone -- clear stale ID, will trigger re-run with null
+          setActiveSessionId(null);
+        })
+        .catch(() => {
+          setActiveSessionId(null);
+        });
+      return;
+    }
+
+    if (!activeSessionId) {
+      sessionValidated.current = false;
+      setSessionError(false);
+      createSession()
+        .then((id) => {
+          sessionValidated.current = true;
+          setActiveSessionId(id);
+        })
+        .catch(() => setSessionError(true));
+    }
   }, [activeSessionId]);
 
   // Session switching via custom event
@@ -194,7 +227,11 @@ export default function Shell() {
     const openHandler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       const id = typeof detail === "string" ? detail : detail?.id;
-      if (id) navigate(`/agents?agent=${id}`);
+      if (!id) return;
+      // Only navigate if not already on agents page (avoids scroll reset)
+      if (!location.pathname.startsWith("/agents")) {
+        navigate(`/agents?agent=${id}`);
+      }
     };
     const runHandler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
@@ -207,7 +244,7 @@ export default function Shell() {
       window.removeEventListener("studio:open-agent", openHandler);
       window.removeEventListener("studio:run-agent", runHandler);
     };
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   // Command palette + slash command events
   const handleNewSessionRef = useCallback(() => {
@@ -218,6 +255,9 @@ export default function Shell() {
     const handlers: Array<[string, () => void]> = [
       ["studio:toggle-thinking", () => setThinking(v => !v)],
       ["studio:toggle-plan", () => setPlanMode(v => !v)],
+      ["studio:toggle-sidebar", () => setSidebarOpen(v => !v)],
+      ["studio:toggle-terminal", () => setTermOpen(v => !v)],
+      ["studio:toggle-split", () => setSplitOpen(v => !v)],
       ["studio:refresh-git", refreshGit],
       ["studio:open-diff", () => { if (activeView !== "source-control") setDiffOpen(true); }],
       ["studio:new-session", handleNewSessionRef],
@@ -351,6 +391,7 @@ export default function Shell() {
         onToggleSidebar={() => setSidebarOpen(v => !v)}
         termOpen={termOpen}
         onToggleTerm={() => setTermOpen(v => !v)}
+        splitOpen={splitOpen}
         changedFiles={changedFiles}
         onDiffOpen={() => setDiffOpen(true)}
         streaming={streaming}
@@ -366,8 +407,8 @@ export default function Shell() {
           />
         )}
 
-        {/* Sidebar shows for chat, files, agents (source-control uses full-page layout) */}
-        {["chat", "files", "agents"].includes(activeView) && sidebarOpen && (
+        {/* Sidebar shows for chat, files, search, agents (source-control uses full-page layout) */}
+        {["chat", "files", "search", "agents"].includes(activeView) && sidebarOpen && (
           <>
             <SidebarPanel
               activeView={activeView}
@@ -427,23 +468,27 @@ export default function Shell() {
           )}
 
           {/* Content area */}
-          <div style={{
-            flex: termBig ? 0 : 1,
-            overflow: "hidden",
-            display: termBig ? "none" : "flex",
-            flexDirection: "column",
-            minHeight: 0,
-          }}>
-            {isHome ? (
-              <ChatMessages sessionId={activeSessionId} streamText={streamText} streaming={streaming} modelLabel={modelLabel ?? "Sonnet 4.6"} planMode={planMode} />
-            ) : activeView === "files" ? (
-              <FileContentViewer />
-            ) : (
-              <div style={{ flex: 1, overflow: "auto" }}>
-                <Outlet />
-              </div>
-            )}
-          </div>
+          <ErrorBoundary>
+            <div style={{
+              flex: termBig ? 0 : 1,
+              overflow: "hidden",
+              display: termBig ? "none" : "flex",
+              flexDirection: "column",
+              minHeight: 0,
+            }}>
+              {isHome ? (
+                <ChatMessages sessionId={activeSessionId} streamText={streamText} streaming={streaming} modelLabel={modelLabel ?? "Sonnet 4.6"} planMode={planMode} />
+              ) : activeView === "files" || activeView === "search" ? (
+                <FileContentViewer />
+              ) : (
+                <ErrorBoundary>
+                  <div style={{ flex: 1, overflow: "auto" }}>
+                    <Outlet />
+                  </div>
+                </ErrorBoundary>
+              )}
+            </div>
+          </ErrorBoundary>
 
           {/* Terminal drawer */}
           <ResizableDrawer open={termOpen} onToggle={() => setTermOpen(v => !v)} defaultHeight={280}>
@@ -460,7 +505,6 @@ export default function Shell() {
           {/* Chat bar -- hidden on settings/setup */}
           {showChatBar && (
             <>
-              <ContextBar sessionId={activeSessionId} streaming={streaming} />
               <ChatInputBar
                 sessionId={activeSessionId}
                 onNewSession={handleNewSession}

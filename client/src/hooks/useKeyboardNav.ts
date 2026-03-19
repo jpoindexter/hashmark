@@ -27,6 +27,7 @@ const G_NAV: Record<string, string> = {
  * g+key: navigate to views (g s, g r, g c, g a, g g, g f)
  * ?: toggle shortcuts overlay
  * Cmd+K / Cmd+Shift+P: toggle command palette
+ * Cmd+Shift+F: open search
  * Cmd+` / Cmd+J: toggle terminal
  * Cmd+B: toggle sidebar
  */
@@ -104,10 +105,19 @@ export function useKeyboardNav({
         return;
       }
 
+      // Cmd+1-9: switch session by index
+      if (mod && !e.shiftKey && e.key >= "1" && e.key <= "9") {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("studio:switch-session-by-index", { detail: Number(e.key) - 1 }));
+        return;
+      }
+
       // Cmd+Shift+E: Explorer
       if (mod && e.shiftKey && e.key === "E") { e.preventDefault(); navigate("/files"); return; }
       // Cmd+Shift+G: Source Control
       if (mod && e.shiftKey && e.key === "G") { e.preventDefault(); navigate("/source-control"); return; }
+      // Cmd+Shift+F: Search
+      if (mod && e.shiftKey && e.key === "F") { e.preventDefault(); navigate("/search"); return; }
       // Cmd+Shift+A: Agents
       if (mod && e.shiftKey && e.key === "A") { e.preventDefault(); navigate("/agents"); return; }
       // Cmd+,: Settings

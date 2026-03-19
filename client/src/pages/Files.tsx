@@ -459,11 +459,11 @@ export default function FilesPage() {
                 ))}
               </div>
               <button
-                className="btn"
+                className="btn btn-sm"
                 onClick={onCopy}
-                style={{ fontSize: 10, padding: "2px 8px", flexShrink: 0 }}
+                style={{ flexShrink: 0 }}
               >
-                {copied ? "✓ Copied" : "Copy"}
+                {copied ? "Copied" : "Copy"}
               </button>
             </div>
             <div style={{ flex: 1, overflow: "hidden" }}>

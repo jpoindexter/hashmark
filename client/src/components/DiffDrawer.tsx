@@ -1,4 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Copy, Plus, Minus, Undo2 } from "lucide-react";
+import ContextMenu, { type ContextMenuItem } from "./shared/ContextMenu.tsx";
+import ConfirmDialog from "./shared/ConfirmDialog.tsx";
 
 interface DiffFile { path: string; added: number; removed: number; status: string; }
 
@@ -6,6 +9,8 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
   const [files, setFiles] = useState<DiffFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [diff, setDiff] = useState<string>('');
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
+  const [confirmDiscard, setConfirmDiscard] = useState<{ file: string } | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -26,6 +31,85 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
       .then((d: { diff?: string }) => setDiff(d.diff ?? ''))
       .catch(() => {});
   }, [selectedFile]);
+
+  const reload = useCallback(() => {
+    fetch('/api/files/git')
+      .then(r => r.json())
+      .then((d: { files?: DiffFile[] }) => {
+        const changed = (d.files ?? []).filter((f: DiffFile) => f.status !== '?');
+        setFiles(changed);
+        if (selectedFile && !changed.some(f => f.path === selectedFile)) {
+          setSelectedFile(changed.length > 0 ? changed[0].path : null);
+        }
+      })
+      .catch(() => {});
+  }, [selectedFile]);
+
+  const stageFile = useCallback(async (path: string) => {
+    await fetch("/api/files/stage", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paths: [path] }),
+    });
+    reload();
+  }, [reload]);
+
+  const unstageFile = useCallback(async (path: string) => {
+    await fetch("/api/files/unstage", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paths: [path] }),
+    });
+    reload();
+  }, [reload]);
+
+  const discardFile = useCallback(async (path: string) => {
+    await fetch("/api/files/discard", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paths: [path] }),
+    });
+    reload();
+  }, [reload]);
+
+  const handleDiffContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setCtxMenu({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  const ctxMenuItems = useMemo((): ContextMenuItem[] => {
+    if (!selectedFile) return [];
+    return [
+      {
+        label: "Copy Selection",
+        icon: <Copy size={12} />,
+        onClick: () => {
+          const selection = document.getSelection();
+          if (selection && selection.toString()) {
+            navigator.clipboard.writeText(selection.toString()).catch(() => {});
+          }
+        },
+      },
+      { label: "", separator: true, onClick: () => {} },
+      {
+        label: "Stage File",
+        icon: <Plus size={12} />,
+        onClick: () => stageFile(selectedFile),
+      },
+      {
+        label: "Unstage File",
+        icon: <Minus size={12} />,
+        onClick: () => unstageFile(selectedFile),
+      },
+      { label: "", separator: true, onClick: () => {} },
+      {
+        label: "Discard Changes",
+        icon: <Undo2 size={12} />,
+        danger: true,
+        onClick: () => setConfirmDiscard({ file: selectedFile }),
+      },
+    ];
+  }, [selectedFile, stageFile, unstageFile, discardFile]);
 
   return (
     <div style={{
@@ -65,7 +149,10 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
           ))}
         </div>
         {/* Diff view */}
-        <div style={{ flex: 1, overflow: 'auto', fontFamily: 'var(--font)', fontSize: 11, lineHeight: 1.5 }}>
+        <div
+          onContextMenu={handleDiffContextMenu}
+          style={{ flex: 1, overflow: 'auto', fontFamily: 'var(--font)', fontSize: 11, lineHeight: 1.5 }}
+        >
           {diff.split('\n').map((line, i) => (
             <div key={i} style={{
               padding: '0 12px',
@@ -80,6 +167,25 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
           ))}
         </div>
       </div>
+
+      <ContextMenu
+        items={ctxMenuItems}
+        position={ctxMenu}
+        onClose={() => setCtxMenu(null)}
+      />
+
+      <ConfirmDialog
+        open={!!confirmDiscard}
+        title="Discard Changes"
+        message={`Discard all changes to ${confirmDiscard?.file ?? ""}? This cannot be undone.`}
+        confirmLabel="Discard"
+        danger
+        onConfirm={() => {
+          if (confirmDiscard) discardFile(confirmDiscard.file);
+          setConfirmDiscard(null);
+        }}
+        onCancel={() => setConfirmDiscard(null)}
+      />
     </div>
   );
 }

@@ -3,8 +3,8 @@
  */
 
 import { Hono } from "hono";
-import { readdir, stat, readFile } from "fs/promises";
-import { join, relative, extname } from "path";
+import { readdir, stat, readFile, writeFile, mkdir, rename, rm } from "fs/promises";
+import { join, relative, extname, resolve, dirname } from "path";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { existsSync } from "fs";
@@ -236,6 +236,202 @@ export function filesRoutes(projectDir: string) {
     }
   });
 
+  // ---- File CRUD ----
+
+  /** Resolve and validate a relative path is within projectDir */
+  function safePath(relPath: string): string | null {
+    const full = resolve(projectDir, relPath);
+    if (!full.startsWith(projectDir + "/") && full !== projectDir) return null;
+    return full;
+  }
+
+  // POST /api/files/create — create a file or directory
+  app.post("/create", async (c) => {
+    const body = await c.req.json().catch(() => ({})) as { path?: string; type?: "file" | "dir"; content?: string };
+    const relPath = body.path;
+    if (!relPath || typeof relPath !== "string") return c.json({ error: "path required" }, 400);
+    const fullPath = safePath(relPath);
+    if (!fullPath) return c.json({ error: "forbidden" }, 403);
+    const isDir = body.type === "dir";
+    try {
+      if (isDir) {
+        await mkdir(fullPath, { recursive: true });
+      } else {
+        // Ensure parent directory exists
+        await mkdir(dirname(fullPath), { recursive: true });
+        await writeFile(fullPath, body.content ?? "", "utf-8");
+      }
+      return c.json({ ok: true, path: relPath }, 201);
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    }
+  });
+
+  // PUT /api/files/rename — rename a file or directory
+  app.put("/rename", async (c) => {
+    const body = await c.req.json().catch(() => ({})) as { oldPath?: string; newPath?: string };
+    if (!body.oldPath || !body.newPath) return c.json({ error: "oldPath and newPath required" }, 400);
+    const fullOld = safePath(body.oldPath);
+    const fullNew = safePath(body.newPath);
+    if (!fullOld || !fullNew) return c.json({ error: "forbidden" }, 403);
+    try {
+      // Ensure destination parent exists
+      await mkdir(dirname(fullNew), { recursive: true });
+      await rename(fullOld, fullNew);
+      return c.json({ ok: true, oldPath: body.oldPath, newPath: body.newPath });
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    }
+  });
+
+  // DELETE /api/files/delete — delete a file or directory
+  app.delete("/delete", async (c) => {
+    const relPath = c.req.query("path");
+    if (!relPath) return c.json({ error: "path required" }, 400);
+    const fullPath = safePath(relPath);
+    if (!fullPath) return c.json({ error: "forbidden" }, 403);
+    // Extra guard: never delete project root
+    if (fullPath === projectDir) return c.json({ error: "cannot delete project root" }, 403);
+    try {
+      await rm(fullPath, { recursive: true });
+      return c.json({ ok: true, path: relPath });
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    }
+  });
+
+  // ---- Content search ----
+
+  // GET /api/files/search?q=<query>&glob=<glob>
+  // Uses ripgrep if available, falls back to recursive file search
+  app.get("/search", async (c) => {
+    const q: string = c.req.query("q") ?? "";
+    if (!q) return c.json({ results: [], matchCount: 0 });
+
+    const globPattern = c.req.query("glob") || undefined;
+    const maxResults = 200;
+
+    // Try ripgrep first
+    try {
+      const args = [
+        "--json",
+        "--max-count", "50",           // max matches per file
+        "--max-filesize", "1M",
+        "-n",                          // line numbers
+      ];
+      if (globPattern) {
+        args.push("--glob", globPattern);
+      }
+      args.push("--", q, ".");
+
+      const { stdout } = await execAsync("rg", args, {
+        cwd: projectDir,
+        maxBuffer: 8 * 1024 * 1024,
+      });
+
+      interface RgMatch {
+        path: string;
+        line: number;
+        text: string;
+      }
+
+      const matches: RgMatch[] = [];
+      for (const line of stdout.split("\n")) {
+        if (!line.trim()) continue;
+        try {
+          const obj = JSON.parse(line);
+          if (obj.type === "match" && obj.data) {
+            matches.push({
+              path: obj.data.path?.text ?? "",
+              line: obj.data.line_number ?? 0,
+              text: (obj.data.lines?.text ?? "").replace(/\n$/, ""),
+            });
+          }
+        } catch { /* skip malformed lines */ }
+      }
+
+      // Group by file
+      const grouped: Record<string, Array<{ line: number; text: string }>> = {};
+      for (const m of matches) {
+        const rel = m.path.startsWith("./") ? m.path.slice(2) : m.path;
+        if (!grouped[rel]) grouped[rel] = [];
+        grouped[rel].push({ line: m.line, text: m.text });
+      }
+
+      const results = Object.entries(grouped).slice(0, maxResults).map(([file, lines]) => ({
+        file,
+        matches: lines,
+      }));
+
+      const matchCount = matches.length;
+      return c.json({ results, matchCount });
+
+    } catch {
+      // ripgrep not available -- fallback to manual search
+    }
+
+    // Fallback: recursive file search
+    const SEARCH_EXTS = new Set([
+      "ts", "tsx", "js", "jsx", "mjs", "cjs",
+      "py", "go", "rs", "rb", "java", "c", "cpp", "h", "cs",
+      "swift", "kt", "sh", "bash", "sql", "json", "yaml", "yml",
+      "toml", "md", "txt", "css", "scss", "html", "xml", "vue", "svelte",
+    ]);
+
+    interface SearchResult {
+      file: string;
+      matches: Array<{ line: number; text: string }>;
+    }
+
+    const results: SearchResult[] = [];
+    let matchCount = 0;
+
+    async function searchDir(dir: string, depth: number): Promise<void> {
+      if (depth > 5 || results.length >= maxResults) return;
+      let entries: string[];
+      try { entries = await readdir(dir); } catch { return; }
+
+      for (const name of entries) {
+        if (results.length >= maxResults) break;
+        if (name.startsWith(".")) continue;
+        if (IGNORED.has(name)) continue;
+
+        const fullPath = join(dir, name);
+        let s;
+        try { s = await stat(fullPath); } catch { continue; }
+
+        if (s.isDirectory()) {
+          await searchDir(fullPath, depth + 1);
+        } else if (s.isFile() && s.size < 1_000_000) {
+          const ext = extname(name).slice(1).toLowerCase();
+          if (!SEARCH_EXTS.has(ext)) continue;
+          if (globPattern) {
+            // Simple glob match: *.ext
+            const globExt = globPattern.replace("*.", "");
+            if (ext !== globExt) continue;
+          }
+          try {
+            const content = await readFile(fullPath, "utf-8");
+            const lines = content.split("\n");
+            const fileMatches: Array<{ line: number; text: string }> = [];
+            for (let i = 0; i < lines.length; i++) {
+              if (lines[i].includes(q)) {
+                fileMatches.push({ line: i + 1, text: lines[i] });
+                matchCount++;
+              }
+            }
+            if (fileMatches.length > 0) {
+              results.push({ file: relative(projectDir, fullPath), matches: fileMatches });
+            }
+          } catch { /* skip unreadable files */ }
+        }
+      }
+    }
+
+    await searchDir(projectDir, 0);
+    return c.json({ results, matchCount });
+  });
+
   // GET /api/files/impact?branch=<branch>&base=<base>
   // Returns changed files + downstream files that import them
   app.get("/impact", (c) => {
@@ -244,6 +440,84 @@ export function filesRoutes(projectDir: string) {
     const base = c.req.query("base") ?? "HEAD";
     const report = analyzeImpact(projectDir, branch, base);
     return c.json(report);
+  });
+
+  // GET /api/files/symbols?path=<filepath>
+  // Extracts function/class/const/interface/type names via regex
+  app.get("/symbols", async (c) => {
+    const relPath = c.req.query("path");
+    if (!relPath) return c.json({ error: "path required" }, 400);
+    const fullPath = join(projectDir, relPath);
+    if (!fullPath.startsWith(projectDir)) return c.json({ error: "forbidden" }, 403);
+
+    try {
+      const content = await readFile(fullPath, "utf-8");
+      const lines = content.split("\n");
+
+      interface Symbol {
+        name: string;
+        kind: "function" | "class" | "const" | "interface" | "type" | "method" | "variable";
+        line: number;
+      }
+
+      const symbols: Symbol[] = [];
+
+      const patterns: Array<{ re: RegExp; kind: Symbol["kind"] }> = [
+        // function declarations: function foo(, async function foo(, export function foo(
+        { re: /^(?:export\s+)?(?:async\s+)?function\s+(\w+)/, kind: "function" },
+        // arrow/const functions: const foo = (, export const foo = (
+        { re: /^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\(/, kind: "function" },
+        // arrow/const assigned to arrow: const foo = async? (...) =>
+        { re: /^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[a-zA-Z_]\w*)\s*=>/, kind: "function" },
+        // class declarations
+        { re: /^(?:export\s+)?(?:abstract\s+)?class\s+(\w+)/, kind: "class" },
+        // interface declarations
+        { re: /^(?:export\s+)?interface\s+(\w+)/, kind: "interface" },
+        // type declarations
+        { re: /^(?:export\s+)?type\s+(\w+)\s*[=<]/, kind: "type" },
+        // const/let/var non-function
+        { re: /^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*[=:]/, kind: "const" },
+        // class methods
+        { re: /^\s+(?:(?:public|private|protected|static|async|readonly)\s+)*(\w+)\s*\(/, kind: "method" },
+        // Python: def foo(, class Foo:
+        { re: /^(?:async\s+)?def\s+(\w+)\s*\(/, kind: "function" },
+        { re: /^class\s+(\w+)\s*[:(]/, kind: "class" },
+        // Go: func Foo(, func (r Receiver) Foo(
+        { re: /^func\s+(?:\([^)]*\)\s+)?(\w+)\s*\(/, kind: "function" },
+        // Rust: fn foo(, pub fn foo(, struct Foo, trait Foo
+        { re: /^(?:pub\s+)?fn\s+(\w+)/, kind: "function" },
+        { re: /^(?:pub\s+)?struct\s+(\w+)/, kind: "class" },
+        { re: /^(?:pub\s+)?trait\s+(\w+)/, kind: "interface" },
+      ];
+
+      const skipNames = new Set([
+        "if", "else", "for", "while", "switch", "case", "return",
+        "break", "continue", "try", "catch", "throw", "new",
+        "get", "set", "of", "in", "do", "it", "to",
+      ]);
+
+      for (let i = 0; i < lines.length; i++) {
+        const trimmed = lines[i].trimStart();
+        if (!trimmed || trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*") || trimmed.startsWith("#")) continue;
+
+        for (const { re, kind } of patterns) {
+          const m = trimmed.match(re);
+          if (m && m[1] && m[1].length > 1 && !skipNames.has(m[1])) {
+            // Avoid duplicate const entries for functions already captured
+            if (kind === "const") {
+              const already = symbols.some(s => s.name === m[1] && s.line === i + 1);
+              if (already) break;
+            }
+            symbols.push({ name: m[1], kind, line: i + 1 });
+            break;
+          }
+        }
+      }
+
+      return c.json({ symbols });
+    } catch {
+      return c.json({ symbols: [] });
+    }
   });
 
   app.get("/complexity", async (c) => {
@@ -390,6 +664,43 @@ export function filesRoutes(projectDir: string) {
       return c.json({ success: true });
     } catch (err) {
       return c.json({ error: String(err) }, 500);
+    }
+  });
+
+  // Check if `gh` CLI is installed and authenticated
+  app.get("/git/gh-available", async (c) => {
+    try {
+      await execAsync("which", ["gh"]);
+      // Also verify auth -- gh auth status exits 0 when logged in
+      await execAsync("gh", ["auth", "status"], { cwd: projectDir });
+      return c.json({ available: true });
+    } catch {
+      return c.json({ available: false });
+    }
+  });
+
+  // Create a pull request via `gh pr create`
+  app.post("/git/create-pr", async (c) => {
+    const body = await c.req.json<{ title: string; body?: string; base?: string }>()
+      .catch(() => ({ title: "", body: undefined, base: undefined }));
+    if (!body.title?.trim()) return c.json({ error: "Title is required" }, 400);
+    try {
+      const args = ["pr", "create", "--title", body.title.trim()];
+      if (body.body?.trim()) {
+        args.push("--body", body.body.trim());
+      } else {
+        args.push("--body", "");
+      }
+      if (body.base?.trim()) {
+        args.push("--base", body.base.trim());
+      }
+      const { stdout } = await execAsync("gh", args, { cwd: projectDir, timeout: 30000 });
+      const url = stdout.trim();
+      return c.json({ ok: true, url });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const stderrMatch = msg.match(/stderr:\s*([\s\S]*)/);
+      return c.json({ error: stderrMatch ? stderrMatch[1].trim() : msg }, 500);
     }
   });
 

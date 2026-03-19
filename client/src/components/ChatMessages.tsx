@@ -56,6 +56,7 @@ interface ChatMessagesProps {
   streamingState?: StreamingState;
   modelLabel?: string;
   planMode?: boolean;
+  failedMessageId?: string | null;
 }
 
 function fmtTime(ts: number) {
@@ -91,7 +92,62 @@ function renderInline(text: string): React.ReactNode {
   });
 }
 
-function CodeBlock({ lang, code }: { lang: string; code: string }) {
+function DiffLine({ line }: { line: string }) {
+  // Header lines: --- a/file, +++ b/file
+  if (line.startsWith("---") || line.startsWith("+++")) {
+    return (
+      <div style={{
+        color: "var(--text-dimmer)",
+        fontStyle: "italic",
+      }}>
+        {line}
+      </div>
+    );
+  }
+  // Hunk header: @@ -1,5 +1,7 @@
+  if (line.startsWith("@@")) {
+    return (
+      <div style={{ color: "var(--blue, #388bfd)" }}>
+        {line}
+      </div>
+    );
+  }
+  // Addition
+  if (line.startsWith("+")) {
+    return (
+      <div style={{
+        background: "var(--accent-bg, rgba(63,185,80,0.1))",
+        color: "var(--accent)",
+      }}>
+        {line}
+      </div>
+    );
+  }
+  // Deletion
+  if (line.startsWith("-")) {
+    return (
+      <div style={{
+        background: "var(--red-bg, rgba(248,81,73,0.1))",
+        color: "var(--red, #f85149)",
+      }}>
+        {line}
+      </div>
+    );
+  }
+  // Context line (no prefix or space prefix)
+  return <div style={{ color: "var(--text-dim)" }}>{line}</div>;
+}
+
+function DiffBlock({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  const lines = code.split("\n");
+
+  const handleCopy = () => {
+    void navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   return (
     <div style={{
       position: "relative",
@@ -100,11 +156,16 @@ function CodeBlock({ lang, code }: { lang: string; code: string }) {
       margin: "8px 0",
       overflow: "hidden",
     }}>
-      {lang && (
-        <div style={{
-          position: "absolute",
-          top: 6,
-          right: 8,
+      <div style={{
+        position: "absolute",
+        top: 6,
+        right: 8,
+        display: "flex",
+        gap: 6,
+        alignItems: "center",
+        zIndex: 1,
+      }}>
+        <span style={{
           fontSize: "9px",
           fontFamily: "var(--font)",
           color: "var(--accent)",
@@ -115,11 +176,109 @@ function CodeBlock({ lang, code }: { lang: string; code: string }) {
           textTransform: "uppercase",
           userSelect: "none",
         }}>
-          {lang}
-        </div>
-      )}
+          DIFF
+        </span>
+        <button
+          onClick={handleCopy}
+          style={{
+            fontSize: "10px",
+            fontFamily: "var(--font-ui)",
+            color: copied ? "var(--accent)" : "var(--text-dim)",
+            background: "var(--bg-3)",
+            border: "1px solid var(--border-dim)",
+            padding: "1px 6px",
+            cursor: "pointer",
+            userSelect: "none",
+            lineHeight: 1.4,
+            transition: "background 0.1s, color 0.1s",
+          }}
+          onMouseEnter={e => { if (!copied) e.currentTarget.style.background = "var(--bg-4)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-3)"; }}
+        >
+          {copied ? "Copied!" : "Copy"}
+        </button>
+      </div>
       <pre style={{
-        padding: lang ? "28px 12px 10px" : "10px 12px",
+        padding: "28px 12px 10px",
+        overflow: "auto",
+        fontSize: "11px",
+        lineHeight: "1.5",
+        margin: 0,
+        fontFamily: "var(--font)",
+      }}>
+        {lines.map((line, i) => (
+          <DiffLine key={i} line={line} />
+        ))}
+      </pre>
+    </div>
+  );
+}
+
+function CodeBlock({ lang, code }: { lang: string; code: string }) {
+  if (lang === "diff") return <DiffBlock code={code} />;
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    void navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <div style={{
+      position: "relative",
+      background: "var(--bg-3)",
+      border: "1px solid var(--border-dim)",
+      margin: "8px 0",
+      overflow: "hidden",
+    }}>
+      <div style={{
+        position: "absolute",
+        top: 6,
+        right: 8,
+        display: "flex",
+        gap: 6,
+        alignItems: "center",
+        zIndex: 1,
+      }}>
+        {lang && (
+          <span style={{
+            fontSize: "9px",
+            fontFamily: "var(--font)",
+            color: "var(--accent)",
+            background: "var(--bg-4)",
+            border: "1px solid var(--border-dim)",
+            padding: "1px 6px",
+            letterSpacing: "0.05em",
+            textTransform: "uppercase",
+            userSelect: "none",
+          }}>
+            {lang}
+          </span>
+        )}
+        <button
+          onClick={handleCopy}
+          style={{
+            fontSize: "10px",
+            fontFamily: "var(--font-ui)",
+            color: copied ? "var(--accent)" : "var(--text-dim)",
+            background: "var(--bg-3)",
+            border: "1px solid var(--border-dim)",
+            padding: "1px 6px",
+            cursor: "pointer",
+            userSelect: "none",
+            lineHeight: 1.4,
+            transition: "background 0.1s, color 0.1s",
+          }}
+          onMouseEnter={e => { if (!copied) e.currentTarget.style.background = "var(--bg-4)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-3)"; }}
+        >
+          {copied ? "Copied!" : "Copy"}
+        </button>
+      </div>
+      <pre style={{
+        padding: "28px 12px 10px",
         overflow: "auto",
         fontSize: "11px",
         lineHeight: "1.5",
@@ -273,7 +432,12 @@ function CostLine({ cost, usage }: { cost?: number; usage?: { input_tokens: numb
   );
 }
 
-function UserBubble({ msg, onContextMenu }: { msg: Message; onContextMenu: (e: React.MouseEvent) => void }) {
+function UserBubble({ msg, onContextMenu, showRetry, onRetry }: {
+  msg: Message;
+  onContextMenu: (e: React.MouseEvent) => void;
+  showRetry?: boolean;
+  onRetry?: () => void;
+}) {
   const [hovered, setHovered] = useState(false);
   return (
     <div
@@ -286,7 +450,7 @@ function UserBubble({ msg, onContextMenu }: { msg: Message; onContextMenu: (e: R
         <div style={{ flex: 1 }}>
           <div style={{
             background: "var(--bg-4)",
-            border: "1px solid var(--border)",
+            border: `1px solid ${showRetry ? "var(--red, #f85149)" : "var(--border)"}`,
             padding: "8px 12px 8px 14px",
             fontSize: 13,
             color: "var(--text)",
@@ -318,6 +482,11 @@ function UserBubble({ msg, onContextMenu }: { msg: Message; onContextMenu: (e: R
           U
         </div>
       </div>
+      {showRetry && onRetry && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginRight: 30, marginTop: 4 }}>
+          <RetryButton onClick={onRetry} />
+        </div>
+      )}
       <div style={{
         fontSize: 10,
         color: "var(--text-dimmer)",
@@ -333,7 +502,54 @@ function UserBubble({ msg, onContextMenu }: { msg: Message; onContextMenu: (e: R
   );
 }
 
-function AssistantBubble({ msg, onContextMenu }: { msg: Message; onContextMenu: (e: React.MouseEvent) => void }) {
+function RetryButton({ onClick }: { onClick: () => void }) {
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 8,
+      paddingLeft: 14,
+    }}>
+      <div style={{
+        fontSize: 11,
+        color: "var(--red, #f85149)",
+        fontFamily: "var(--font-ui)",
+      }}>
+        Stream failed
+      </div>
+      <button
+        onClick={onClick}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          padding: "3px 10px",
+          fontSize: 11,
+          fontFamily: "var(--font-ui)",
+          fontWeight: 600,
+          color: "var(--accent)",
+          background: "var(--accent-bg, rgba(63,185,80,0.1))",
+          border: "1px solid var(--accent)",
+          borderRadius: 4,
+          cursor: "pointer",
+          transition: "background 0.1s",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = "rgba(63,185,80,0.2)"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "var(--accent-bg, rgba(63,185,80,0.1))"; }}
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
+function AssistantBubble({ msg, onContextMenu, showRetry, onRetry }: {
+  msg: Message;
+  onContextMenu: (e: React.MouseEvent) => void;
+  showRetry?: boolean;
+  onRetry?: () => void;
+}) {
   const [hovered, setHovered] = useState(false);
   return (
     <div
@@ -343,7 +559,7 @@ function AssistantBubble({ msg, onContextMenu }: { msg: Message; onContextMenu: 
       onContextMenu={onContextMenu}
     >
       <div style={{
-        borderLeft: "2px solid var(--accent)",
+        borderLeft: `2px solid ${showRetry ? "var(--red, #f85149)" : "var(--accent)"}`,
         paddingLeft: 12,
         fontSize: 13,
         color: "var(--text)",
@@ -353,6 +569,7 @@ function AssistantBubble({ msg, onContextMenu }: { msg: Message; onContextMenu: 
       }}>
         <AssistantContent text={msg.content} />
       </div>
+      {showRetry && onRetry && <RetryButton onClick={onRetry} />}
       <div style={{
         display: "flex",
         gap: 8,
@@ -434,11 +651,18 @@ function PlanReviewGate() {
   );
 }
 
-function MessageBubble({ msg, showPlanGate, onContextMenu }: { msg: Message; showPlanGate: boolean; onContextMenu: (e: React.MouseEvent) => void }) {
-  if (msg.role === "user") return <UserBubble msg={msg} onContextMenu={onContextMenu} />;
+function MessageBubble({ msg, showPlanGate, onContextMenu, showRetry, onRetry, showUserRetry }: {
+  msg: Message;
+  showPlanGate: boolean;
+  onContextMenu: (e: React.MouseEvent) => void;
+  showRetry?: boolean;
+  onRetry?: () => void;
+  showUserRetry?: boolean;
+}) {
+  if (msg.role === "user") return <UserBubble msg={msg} onContextMenu={onContextMenu} showRetry={showUserRetry} onRetry={onRetry} />;
   return (
     <div>
-      <AssistantBubble msg={msg} onContextMenu={onContextMenu} />
+      <AssistantBubble msg={msg} onContextMenu={onContextMenu} showRetry={showRetry} onRetry={onRetry} />
       {showPlanGate && <PlanReviewGate />}
     </div>
   );
@@ -539,6 +763,13 @@ function StreamingBubble({ state, legacyText }: { state?: StreamingState; legacy
   );
 }
 
+const START_LINKS = [
+  { label: "New Chat", icon: "\u2b22", action: "new-chat" },
+  { label: "Scan Codebase", icon: "\u21bb", action: "navigate", route: "/generate" },
+  { label: "View Agents", icon: "\u25c6", action: "navigate", route: "/agents" },
+  { label: "Open Settings", icon: "\u2699", action: "navigate", route: "/settings" },
+] as const;
+
 const SUGGESTIONS = [
   "Explain the architecture of this project",
   "Review recent changes for issues",
@@ -546,137 +777,245 @@ const SUGGESTIONS = [
   "Commit staged changes with a message",
 ];
 
-function SuggestionItem({ text }: { text: string }) {
-  const [hovered, setHovered] = useState(false);
+interface Workspace {
+  id: string;
+  name: string;
+  path: string;
+  last_opened: number;
+}
 
-  const handleClick = () => {
-    window.dispatchEvent(new CustomEvent("studio:suggest", { detail: { text } }));
-  };
-
+function WelcomeLink({ icon, label, onClick }: { icon: string; label: string; onClick: () => void }) {
   return (
-    <div
-      onClick={handleClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+    <button
+      onClick={onClick}
+      className="welcome-link"
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 6,
-        padding: "6px 10px",
-        borderRadius: "var(--radius)",
-        background: hovered ? "var(--bg-2)" : "transparent",
-        cursor: "pointer",
-        transition: "background 0.1s",
-        fontSize: 12,
-        fontFamily: "var(--font)",
-        userSelect: "none",
-      }}
-    >
-      <span style={{ color: "var(--accent)", flexShrink: 0 }}>&gt;</span>
-      <span style={{ color: "var(--text-dim)" }}>{text}</span>
-    </div>
-  );
-}
-
-function ActionCard({ icon, label, action }: { icon: string; label: string; action: () => void }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <button
-      onClick={action}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        padding: 16,
-        background: hovered ? "var(--bg-3)" : "var(--bg-2)",
-        border: `1px solid ${hovered ? "var(--border)" : "var(--border-dim)"}`,
-        borderRadius: "var(--radius-lg)",
-        cursor: "pointer",
         gap: 8,
-        transition: "border-color 0.1s, background 0.1s",
+        padding: "4px 0",
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        fontSize: 13,
+        fontFamily: "var(--font-ui)",
+        color: "var(--blue, #388bfd)",
+        lineHeight: 1.6,
       }}
+      onMouseEnter={e => { e.currentTarget.style.textDecoration = "underline"; }}
+      onMouseLeave={e => { e.currentTarget.style.textDecoration = "none"; }}
     >
-      <span style={{ fontSize: 20 }}>{icon}</span>
-      <span style={{ fontSize: 13, color: "var(--text)", fontFamily: "var(--font-ui)" }}>{label}</span>
+      <span style={{ fontSize: 14, opacity: 0.7, width: 20, textAlign: "center", flexShrink: 0 }}>{icon}</span>
+      {label}
     </button>
   );
 }
 
-const ACTION_CARDS = [
-  { icon: "\u{1F4C2}", label: "Open project", route: "/setup" },
-  { icon: "\u26A1", label: "Scan codebase", route: "/generate" },
-  { icon: "\u{1F916}", label: "View agents", route: "/agents" },
-] as const;
-
 function EmptyState({ modelLabel }: { modelLabel: string }) {
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+
+  useEffect(() => {
+    fetch("/api/workspaces")
+      .then(r => r.json())
+      .then((d: { workspaces: Workspace[] }) => setWorkspaces((d.workspaces ?? []).slice(0, 5)))
+      .catch(() => {});
+  }, []);
+
+  const handleStartClick = (item: typeof START_LINKS[number]) => {
+    if (item.action === "new-chat") {
+      window.dispatchEvent(new CustomEvent("studio:suggest", { detail: { text: "" } }));
+    } else if (item.action === "navigate" && item.route) {
+      window.dispatchEvent(new CustomEvent("studio:navigate", { detail: item.route }));
+    }
+  };
+
   return (
     <div style={{
       flex: 1,
       display: "flex",
-      flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
-      padding: 40,
-      maxWidth: 600,
-      margin: "0 auto",
+      overflow: "auto",
     }}>
-      {/* Logo */}
       <div style={{
-        fontSize: 48,
-        fontWeight: 900,
-        color: "var(--accent)",
-        marginBottom: 8,
-        fontFamily: "var(--font)",
+        width: "100%",
+        maxWidth: 700,
+        padding: "60px 40px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 0,
       }}>
-        #
-      </div>
-      <div style={{
-        fontSize: 16,
-        fontWeight: 600,
-        color: "var(--text)",
-        fontFamily: "var(--font-ui)",
-        marginBottom: 4,
-      }}>
-        hashmark studio
-      </div>
-      <div style={{
-        fontSize: 12,
-        color: "var(--text-dimmer)",
-        fontFamily: "var(--font-ui)",
-        marginBottom: 32,
-      }}>
-        {modelLabel}
-      </div>
-
-      {/* Action cards - 3 columns */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 32, width: "100%" }}>
-        {ACTION_CARDS.map((card) => (
-          <ActionCard
-            key={card.label}
-            icon={card.icon}
-            label={card.label}
-            action={() => window.dispatchEvent(new CustomEvent("studio:navigate", { detail: card.route }))}
-          />
-        ))}
-      </div>
-
-      {/* Suggestions */}
-      <div style={{ width: "100%" }}>
-        <div style={{
-          fontSize: 10,
-          color: "var(--text-dimmer)",
-          textTransform: "uppercase",
-          letterSpacing: "0.1em",
-          marginBottom: 8,
-        }}>
-          SUGGESTED
+        {/* Branding */}
+        <div style={{ marginBottom: 36 }}>
+          <h1 style={{
+            fontSize: 28,
+            fontWeight: 300,
+            color: "var(--text)",
+            fontFamily: "var(--font-ui)",
+            letterSpacing: "-0.02em",
+            lineHeight: 1.2,
+            margin: 0,
+          }}>
+            hashmark studio
+          </h1>
+          <div style={{
+            fontSize: 13,
+            color: "var(--text-dimmer)",
+            fontFamily: "var(--font-ui)",
+            marginTop: 4,
+          }}>
+            Agent-first development environment
+          </div>
         </div>
-        {SUGGESTIONS.map((text) => (
-          <SuggestionItem key={text} text={text} />
-        ))}
+
+        {/* Two-column layout like VS Code */}
+        <div style={{ display: "flex", gap: 48 }}>
+          {/* Left column: Start + Recent */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--text)",
+              fontFamily: "var(--font-ui)",
+              margin: "0 0 12px 0",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+            }}>
+              Start
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 28 }}>
+              {START_LINKS.map(item => (
+                <WelcomeLink
+                  key={item.label}
+                  icon={item.icon}
+                  label={item.label}
+                  onClick={() => handleStartClick(item)}
+                />
+              ))}
+            </div>
+
+            {/* Recent workspaces */}
+            {workspaces.length > 0 && (
+              <>
+                <h2 style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "var(--text)",
+                  fontFamily: "var(--font-ui)",
+                  margin: "0 0 8px 0",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                }}>
+                  Recent
+                </h2>
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  {workspaces.map(ws => (
+                    <div
+                      key={ws.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "5px 0",
+                        fontSize: 13,
+                        fontFamily: "var(--font-ui)",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => {
+                        fetch("/api/workspaces/switch", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: ws.id }),
+                        }).then(() => window.location.reload()).catch(() => {});
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget.firstChild as HTMLElement).style.textDecoration = "underline";
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget.firstChild as HTMLElement).style.textDecoration = "none";
+                      }}
+                    >
+                      <span style={{ color: "var(--blue, #388bfd)" }}>{ws.name}</span>
+                      <span style={{
+                        fontSize: 11,
+                        color: "var(--text-dimmer)",
+                        fontFamily: "var(--font)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        maxWidth: 200,
+                        marginLeft: 12,
+                      }}>
+                        {ws.path.replace(/^\/Users\/[^/]+/, "~")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Right column: Quick prompts */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--text)",
+              fontFamily: "var(--font-ui)",
+              margin: "0 0 12px 0",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+            }}>
+              Quick Start
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {SUGGESTIONS.map(text => (
+                <button
+                  key={text}
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent("studio:suggest", { detail: { text } }));
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "5px 0",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontFamily: "var(--font-ui)",
+                    color: "var(--blue, #388bfd)",
+                    textAlign: "left",
+                    lineHeight: 1.5,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.textDecoration = "underline"; }}
+                  onMouseLeave={e => { e.currentTarget.style.textDecoration = "none"; }}
+                >
+                  {text}
+                </button>
+              ))}
+            </div>
+
+            {/* Model info */}
+            <div style={{
+              marginTop: 24,
+              padding: "10px 12px",
+              background: "var(--bg-2)",
+              border: "1px solid var(--border-dim)",
+              borderRadius: "var(--radius)",
+              fontSize: 11,
+              color: "var(--text-dimmer)",
+              fontFamily: "var(--font)",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}>
+              <span style={{ color: "var(--accent)" }}>{"\u2726"}</span>
+              {modelLabel}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -723,11 +1062,20 @@ function isLastAssistantMessage(msgs: Message[], id: string): boolean {
   return false;
 }
 
-export default function ChatMessages({ sessionId, streamText, streaming, streamingState, modelLabel = "Sonnet 4.6", planMode = false }: ChatMessagesProps) {
+// Check if a message is the last user message in the list
+function isLastUserMessage(msgs: Message[], id: string): boolean {
+  for (let i = msgs.length - 1; i >= 0; i--) {
+    if (msgs[i].role === "user") return msgs[i].id === id;
+  }
+  return false;
+}
+
+export default function ChatMessages({ sessionId, streamText, streaming, streamingState, modelLabel = "Sonnet 4.6", planMode = false, failedMessageId }: ChatMessagesProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [failedMsgId, setFailedMsgId] = useState<string | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
   const userScrolledUp = useRef(false);
   const prevScrollTop = useRef(0);
@@ -770,6 +1118,53 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
     }
   }, [streaming, sessionId, loadMessages]);
 
+  // Track external failedMessageId prop
+  useEffect(() => {
+    setFailedMsgId(failedMessageId ?? null);
+  }, [failedMessageId]);
+
+  // Listen for stream failure events from ChatInputBar
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ lastUserMessage?: string }>).detail;
+      // Mark the last assistant message as failed
+      if (messages.length > 0) {
+        for (let i = messages.length - 1; i >= 0; i--) {
+          if (messages[i].role === "assistant") {
+            setFailedMsgId(messages[i].id);
+            break;
+          }
+        }
+      }
+      // If no assistant message yet, store the user message for retry from empty state
+      if (detail?.lastUserMessage && messages.every(m => m.role === "user")) {
+        setFailedMsgId("__last_user__");
+      }
+    };
+    window.addEventListener("studio:stream-failed", handler);
+    return () => window.removeEventListener("studio:stream-failed", handler);
+  }, [messages]);
+
+  // Clear failed state when streaming starts again
+  useEffect(() => {
+    if (streaming) setFailedMsgId(null);
+  }, [streaming]);
+
+  // Find the last user message content for retry
+  const findLastUserMessage = useCallback((): string | null => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "user") return messages[i].content;
+    }
+    return null;
+  }, [messages]);
+
+  const handleRetry = useCallback(() => {
+    const text = findLastUserMessage();
+    if (!text) return;
+    setFailedMsgId(null);
+    window.dispatchEvent(new CustomEvent("studio:retry-message", { detail: { text } }));
+  }, [findLastUserMessage]);
+
   // Build virtual list items, injecting a resume divider when a session with
   // prior history receives new messages (streaming or completed new turns).
   const showResumeDivider = resumedAtCount.current > 0 && messages.length > resumedAtCount.current;
@@ -797,11 +1192,17 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
     measureElement: (el) => el.getBoundingClientRect().height,
   });
 
-  // Smooth scroll to bottom on new messages / stream updates
+  // Scroll to bottom on new messages / stream updates
   useEffect(() => {
     if (items.length === 0) return;
-    if (!userScrolledUp.current) {
-      virtualizer.scrollToIndex(items.length - 1, { behavior: "smooth" });
+    if (userScrolledUp.current) return;
+    const el = parentRef.current;
+    if (!el) return;
+    // Use native scroll during streaming to avoid virtualizer fight with re-measurement
+    if (streaming) {
+      el.scrollTop = el.scrollHeight;
+    } else {
+      virtualizer.scrollToIndex(items.length - 1, { align: "end" });
     }
   }, [items.length, streamText, streamingState]);
 
@@ -891,6 +1292,20 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
                       isLastAssistantMessage(messages, (item as Message).id)
                     }
                     onContextMenu={(e) => handleMessageContextMenu(e, item as Message)}
+                    showRetry={
+                      !streaming &&
+                      failedMsgId != null &&
+                      failedMsgId !== "__last_user__" &&
+                      (item as Message).role === "assistant" &&
+                      isLastAssistantMessage(messages, (item as Message).id)
+                    }
+                    showUserRetry={
+                      !streaming &&
+                      failedMsgId === "__last_user__" &&
+                      (item as Message).role === "user" &&
+                      isLastUserMessage(messages, (item as Message).id)
+                    }
+                    onRetry={handleRetry}
                   />
                 )}
               </div>

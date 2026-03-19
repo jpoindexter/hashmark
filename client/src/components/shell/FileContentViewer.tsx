@@ -1,6 +1,14 @@
-import { useState, useEffect } from "react";
-import { FileCode } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { FileCode, Copy, Terminal, ClipboardCopy, FolderOpen } from "lucide-react";
 import { highlightCode, getLanguageFromPath } from "../../lib/highlight";
+import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
+
+function restoreSetting<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(`studio:${key}`);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch { return fallback; }
+}
 
 export default function FileContentViewer() {
   const [filePath, setFilePath] = useState<string | null>(null);
@@ -8,6 +16,76 @@ export default function FileContentViewer() {
   const [highlightedHtml, setHighlightedHtml] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
+  const [showLineNums, setShowLineNums] = useState<boolean>(() => restoreSetting("line_nums", true));
+
+  // Listen for line_nums setting changes from Settings page
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { key, value } = (e as CustomEvent<{ key: string; value: unknown }>).detail;
+      if (key === "line_nums" && typeof value === "boolean") {
+        setShowLineNums(value);
+      }
+    };
+    window.addEventListener("studio:settings-change", handler);
+    return () => window.removeEventListener("studio:settings-change", handler);
+  }, []);
+
+  const handleContentContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setCtxMenu({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  const ctxMenuItems = useMemo((): ContextMenuItem[] => {
+    if (!filePath) return [];
+
+    const dirPath = filePath.includes("/")
+      ? filePath.substring(0, filePath.lastIndexOf("/"))
+      : filePath;
+
+    // Derive relative path: strip leading slash or common prefix
+    const relativePath = filePath.startsWith("/")
+      ? filePath.replace(/^\//, "")
+      : filePath;
+
+    return [
+      {
+        label: "Copy Selection",
+        icon: <Copy size={12} />,
+        onClick: () => {
+          const selection = document.getSelection();
+          if (selection && selection.toString()) {
+            navigator.clipboard.writeText(selection.toString()).catch(() => {});
+          }
+        },
+      },
+      { label: "", separator: true, onClick: () => {} },
+      {
+        label: "Open in Terminal",
+        icon: <Terminal size={12} />,
+        onClick: () => {
+          window.dispatchEvent(new CustomEvent("studio:terminal-paste", {
+            detail: `cd ${dirPath}\n`,
+          }));
+        },
+      },
+      { label: "", separator: true, onClick: () => {} },
+      {
+        label: "Copy File Path",
+        icon: <ClipboardCopy size={12} />,
+        onClick: () => {
+          navigator.clipboard.writeText(filePath).catch(() => {});
+        },
+      },
+      {
+        label: "Copy Relative Path",
+        icon: <FolderOpen size={12} />,
+        onClick: () => {
+          navigator.clipboard.writeText(relativePath).catch(() => {});
+        },
+      },
+    ];
+  }, [filePath]);
 
   // Listen for file open events from FileTreeSidebar
   useEffect(() => {
@@ -129,7 +207,10 @@ export default function FileContentViewer() {
       </div>
 
       {/* Content — Shiki HTML is generated from source code by a trusted library, safe to render */}
-      <div style={{ flex: 1, overflow: "auto", padding: "8px 0" }}>
+      <div
+        onContextMenu={handleContentContextMenu}
+        style={{ flex: 1, overflow: "auto", padding: "8px 0" }}
+      >
         {loading ? (
           <div
             style={{
@@ -152,7 +233,7 @@ export default function FileContentViewer() {
           </div>
         ) : highlightedHtml ? (
           <div
-            className="shiki-viewer"
+            className={`shiki-viewer${showLineNums ? "" : " hide-line-nums"}`}
             dangerouslySetInnerHTML={{ __html: highlightedHtml }}
             style={{
               fontSize: 13,
@@ -176,25 +257,33 @@ export default function FileContentViewer() {
           >
             {content.split("\n").map((line, i) => (
               <div key={i} style={{ display: "flex", minHeight: 20 }}>
-                <span
-                  style={{
-                    width: 48,
-                    flexShrink: 0,
-                    textAlign: "right",
-                    paddingRight: 12,
-                    color: "var(--text-dimmer)",
-                    userSelect: "none",
-                    fontSize: 12,
-                  }}
-                >
-                  {i + 1}
-                </span>
+                {showLineNums && (
+                  <span
+                    style={{
+                      width: 48,
+                      flexShrink: 0,
+                      textAlign: "right",
+                      paddingRight: 12,
+                      color: "var(--text-dimmer)",
+                      userSelect: "none",
+                      fontSize: 12,
+                    }}
+                  >
+                    {i + 1}
+                  </span>
+                )}
                 <span>{line || " "}</span>
               </div>
             ))}
           </pre>
         )}
       </div>
+
+      <ContextMenu
+        items={ctxMenuItems}
+        position={ctxMenu}
+        onClose={() => setCtxMenu(null)}
+      />
     </div>
   );
 }

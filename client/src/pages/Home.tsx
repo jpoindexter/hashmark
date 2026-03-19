@@ -452,7 +452,7 @@ function NoAgentsEmptyState({ onGenerate }: { onGenerate: () => void }) {
         .claude/agents/ is empty
       </div>
       <button className="btn btn-primary" onClick={onGenerate}>
-        &gt; GENERATE AGENTS
+        Generate Agents
       </button>
     </div>
   );
@@ -717,7 +717,7 @@ export default function Home() {
             <SectionHeader>Start</SectionHeader>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               <button className="btn btn-primary" onClick={() => navigate("/generate")}>
-                &gt; GENERATE AGENTS
+                Generate Agents
               </button>
               <button className="btn" onClick={() => navigate("/agents")}>
                 &#9647; VIEW AGENTS

@@ -21,9 +21,12 @@ export function providersRoutes(projectDir: string) {
   // GET /api/providers
   app.get("/", (c) => {
     const store = loadProviders(dataDir);
+    const cliResults = detectCLIs(projectDir);
+    const cliInstalled = new Set(cliResults.filter(r => r.installed).map(r => r.id));
     const masked = store.providers.map(({ apiKey, ...rest }) => ({
       ...rest,
       hasKey: Boolean(apiKey && apiKey.length > 0),
+      cliDetected: cliInstalled.has(rest.id),
     }));
     return c.json({ active: store.active, model: store.model, providers: masked });
   });

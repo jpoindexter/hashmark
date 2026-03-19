@@ -9,7 +9,7 @@
   "main": "dist/electron/main.js",
   "scripts": {
     "build:server": "tsup bin.ts server/index.ts --format esm --out-dir dist --no-splitting && tsup electron/main.ts --format esm --out-dir dist/electron --no-splitting --external electron --external better-sqlite3 --external node-pty && tsup electron/preload.ts --format cjs --out-dir dist/electron --no-splitting --external electron",
-    "build:client": "vite build client --outDir dist/public",
+    "build:client": "vite build client",
     "build": "npm run build:server && npm run build:client",
     "dev:server": "tsup bin.ts server/index.ts --format esm --out-dir dist --watch",
     "dev:electron": "tsup electron/main.ts --format esm --out-dir dist/electron --no-splitting --external electron --external better-sqlite3 --external node-pty --watch & tsup electron/preload.ts --format cjs --out-dir dist/electron --no-splitting --external electron --watch",
@@ -70,6 +70,7 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@typescript-eslint/typescript-estree": "^8.57.1",
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.2",
     "electron": "^41.0.3",

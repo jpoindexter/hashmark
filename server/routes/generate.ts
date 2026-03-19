@@ -47,11 +47,19 @@ export function generateRoutes(projectDir: string) {
           args.push("--name", body.projectName);
         }
 
-        // Find hashmark binary
-        const cliPath = join(projectDir, "node_modules", ".bin", "hashmark");
-        const bin = existsSync(cliPath) ? cliPath : "hashmark";
+        // Find hashmark binary — check local install, monorepo, then global
+        const localBin = join(projectDir, "node_modules", ".bin", "hashmark");
+        const monoBin = join(projectDir, "packages", "cli", "dist", "cli.js");
+        const resolvedBin = existsSync(localBin) ? localBin
+          : existsSync(monoBin) ? "node" : "hashmark";
+        if (resolvedBin === "node") args.unshift(monoBin);
 
         const env: NodeJS.ProcessEnv = { ...process.env };
+        // Include CLI's node_modules in NODE_PATH for dependency resolution
+        const cliNodeModules = join(projectDir, "packages", "cli", "node_modules");
+        if (existsSync(cliNodeModules)) {
+          env.NODE_PATH = [cliNodeModules, env.NODE_PATH].filter(Boolean).join(":");
+        }
         if (body.apiKey) {
           const keyMap: Record<string, string> = {
             anthropic: "ANTHROPIC_API_KEY",
@@ -66,7 +74,7 @@ export function generateRoutes(projectDir: string) {
           if (body.baseURL) env.OPENAI_BASE_URL = body.baseURL;
         }
 
-        const proc = spawn(bin, args, { cwd: projectDir, env });
+        const proc = spawn(resolvedBin, args, { cwd: projectDir, env });
 
         let buffer = "";
         proc.stdout.on("data", (chunk: Buffer) => {

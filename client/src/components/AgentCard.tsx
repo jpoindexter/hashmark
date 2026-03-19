@@ -240,7 +240,7 @@ export default function AgentCard({ agent, stats, onClick, onRun, onDelete, onDu
                 el.style.borderColor = "var(--accent-border)";
               }}
             >
-              &gt; Run
+              Run
             </button>
           )}
         </div>

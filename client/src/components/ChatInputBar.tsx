@@ -512,6 +512,9 @@ export default function ChatInputBar({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const retryCountRef = useRef(0);
+  const lastSentMessageRef = useRef<string | null>(null);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const agentSuggestion = useAgentSuggestion(input, currentFile);
   const slashCommands = useSlashCommands(
@@ -628,6 +631,27 @@ export default function ChatInputBar({
     setListening(true);
   }, [listening]);
 
+  // Listen for manual retry requests from ChatMessages
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ text: string }>).detail;
+      if (detail?.text) {
+        retryCountRef.current = 0;
+        lastSentMessageRef.current = detail.text;
+        void sendMessageWithText(detail.text);
+      }
+    };
+    window.addEventListener("studio:retry-message", handler);
+    return () => window.removeEventListener("studio:retry-message", handler);
+  }, [sessionId, selectedModel, thinking, planMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cleanup retry timer on unmount
+  useEffect(() => {
+    return () => {
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    };
+  }, []);
+
   // ⌘L focus shortcut
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -698,8 +722,33 @@ export default function ChatInputBar({
 
   const sendMessage = async () => {
     if ((!input.trim() && !attachedImage) || streaming) return;
+    // Fresh user-initiated send resets retry counter
+    retryCountRef.current = 0;
     return sendMessageWithText();
   };
+
+  const scheduleAutoRetry = useCallback((messageText: string) => {
+    const count = retryCountRef.current;
+    if (count >= 2) {
+      // Max auto-retries reached, show manual retry button
+      window.dispatchEvent(new CustomEvent("studio:stream-failed", {
+        detail: { lastUserMessage: messageText },
+      }));
+      window.dispatchEvent(new CustomEvent("studio:toast", {
+        detail: { message: "Stream failed after 2 retries. Use the Retry button to try again.", type: "error" },
+      }));
+      return;
+    }
+    retryCountRef.current = count + 1;
+    const attempt = retryCountRef.current;
+    window.dispatchEvent(new CustomEvent("studio:toast", {
+      detail: { message: `Stream error. Retrying (${attempt}/2)...`, type: "error" },
+    }));
+    retryTimerRef.current = setTimeout(() => {
+      retryTimerRef.current = null;
+      void sendMessageWithText(messageText);
+    }, 2000);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendMessageWithText = async (overrideText?: string) => {
     const raw = overrideText ?? input.trim();
@@ -708,6 +757,9 @@ export default function ChatInputBar({
       ? `${raw}\n\n[Image attached: ${attachedImage.name}]`
       : raw;
     if ((!raw && !attachedImage) || streaming) return;
+
+    // Track last sent message for retry
+    lastSentMessageRef.current = text;
 
     let sid = sessionId;
     if (!sid) {
@@ -745,21 +797,34 @@ export default function ChatInputBar({
     if (thinking) systemPrompt += "\n\nUse extended thinking before responding.";
     if (planMode)  systemPrompt += "\n\nEnter plan mode: respond with a structured plan only, do not write code.";
 
-    const res = await fetch(`/api/sessions/${sid}/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: text,
-        model: resolvedModel,
-        thinking,
-        planMode,
-        ...(systemPrompt.trim() && { systemPrompt: systemPrompt.trim() }),
-      }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`/api/sessions/${sid}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text,
+          model: resolvedModel,
+          thinking,
+          planMode,
+          ...(systemPrompt.trim() && { systemPrompt: systemPrompt.trim() }),
+        }),
+      });
+    } catch {
+      // Network error -- trigger auto-retry
+      onStreamingChange(false);
+      scheduleAutoRetry(text);
+      return;
+    }
 
     if (!res.ok || !res.body) {
       onStreamingChange(false);
-      window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to send message", type: "error" } }));
+      // 5xx errors trigger auto-retry, 4xx show immediate error
+      if (res.status >= 500) {
+        scheduleAutoRetry(text);
+      } else {
+        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: `Failed to send message (${res.status})`, type: "error" } }));
+      }
       return;
     }
 
@@ -790,26 +855,32 @@ export default function ChatInputBar({
         buf = lines.pop() ?? "";
         for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
-          const raw = line.slice(6).trim();
-          if (!raw) continue;
+          const rawLine = line.slice(6).trim();
+          if (!rawLine) continue;
           try {
-            const evt = JSON.parse(raw) as { type: string; text?: string };
+            const evt = JSON.parse(rawLine) as { type: string; text?: string };
             if (evt.type === "text" && evt.text) {
               assembled += evt.text;
               onStreamText(assembled);
             }
           } catch {
-            console.warn("Failed to parse SSE event:", raw);
+            console.warn("Failed to parse SSE event:", rawLine);
           }
         }
       }
     } catch {
-      window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Stream interrupted", type: "error" } }));
+      // SSE disconnect mid-stream -- trigger auto-retry
+      onStreamingChange(false);
+      scheduleAutoRetry(text);
+      return;
     } finally {
       abortRef.current = null;
-      onStreamingChange(false);
-      // Only clear streamed text on normal completion -- preserve partial text on error
-      if (streamCompleted) onStreamText("");
+      if (streamCompleted) {
+        // Successful completion -- reset retry counter
+        retryCountRef.current = 0;
+        onStreamingChange(false);
+        onStreamText("");
+      }
     }
   };
 
@@ -833,13 +904,11 @@ export default function ChatInputBar({
       background: "var(--bg)",
       flexShrink: 0,
     }}>
-      <div style={{ maxWidth: 900, margin: "0 auto", width: "100%", padding: "0 24px 16px" }}>
+      <div style={{ width: "100%" }}>
       <div style={{
         position: "relative",
         background: "var(--bg-2)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-lg)",
-        overflow: "hidden",
+        borderTop: "1px solid var(--border-dim)",
       }}>
         {/* Popups */}
         {slashOpen && (

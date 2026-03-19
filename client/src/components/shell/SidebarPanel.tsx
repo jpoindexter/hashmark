@@ -2,6 +2,7 @@ import { type ReactNode, lazy, Suspense } from "react";
 
 const FileTreeSidebar = lazy(() => import("../sidebar/FileTreeSidebar.tsx"));
 const GitSidebar = lazy(() => import("../sidebar/GitSidebar.tsx"));
+const SearchSidebar = lazy(() => import("../sidebar/SearchSidebar.tsx"));
 const AgentsSidebar = lazy(() => import("../sidebar/AgentsSidebar.tsx"));
 
 interface SidebarPanelProps {
@@ -15,6 +16,7 @@ const VIEW_TITLES: Record<string, string> = {
   chat: "Sessions",
   files: "Explorer",
   "source-control": "Source Control",
+  search: "Search",
   agents: "Agents",
 };
 
@@ -22,6 +24,7 @@ const VIEWS = [
   "chat",
   "files",
   "source-control",
+  "search",
   "agents",
 ] as const;
 
@@ -68,6 +71,16 @@ function viewContent(
       <div key={view} style={base}>
         <Suspense fallback={<div style={fallbackStyle}>Loading...</div>}>
           <GitSidebar />
+        </Suspense>
+      </div>
+    );
+  }
+
+  if (view === "search") {
+    return (
+      <div key={view} style={base}>
+        <Suspense fallback={<div style={fallbackStyle}>Loading...</div>}>
+          <SearchSidebar />
         </Suspense>
       </div>
     );

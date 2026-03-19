@@ -1,6 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { FileCode, FileText, Folder, ChevronRight, ChevronDown, Copy, FolderOpen, ExternalLink } from "lucide-react";
+import {
+  FileCode, FileText, Folder, ChevronRight, ChevronDown,
+  Copy, FolderOpen, ExternalLink, FilePlus, FolderPlus, Pencil, Trash2,
+} from "lucide-react";
 import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
+import ConfirmDialog from "../shared/ConfirmDialog.tsx";
 
 interface FileNode {
   name: string;
@@ -170,12 +174,27 @@ function TreeRow({ node, depth, selectedPath, gitFiles, onFileSelect, onContextM
   );
 }
 
+type DialogState =
+  | null
+  | { kind: "new-file"; dir: string }
+  | { kind: "new-folder"; dir: string }
+  | { kind: "rename"; oldPath: string; oldName: string }
+  | { kind: "delete"; path: string; name: string; isDir: boolean };
+
 export default function FileTreeSidebar() {
   const [tree, setTree] = useState<FileNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; node: FileNode } | null>(null);
   const [gitFiles, setGitFiles] = useState<Record<string, string>>({});
+  const [dialog, setDialog] = useState<DialogState>(null);
+
+  const refreshTree = useCallback(() => {
+    fetch("/api/files/tree")
+      .then((r) => r.json())
+      .then((d: { tree?: FileNode[] }) => setTree(d.tree ?? []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch("/api/files/tree")
@@ -211,10 +230,76 @@ export default function FileTreeSidebar() {
 
   const closeCtxMenu = useCallback(() => setCtxMenu(null), []);
 
+  // ---- CRUD handlers ----
+
+  const handleCreateFile = useCallback(async (name: string) => {
+    if (!dialog || dialog.kind !== "new-file") return;
+    const path = dialog.dir ? `${dialog.dir}/${name}` : name;
+    try {
+      const res = await fetch("/api/files/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path, type: "file" }),
+      });
+      if (res.ok) {
+        refreshTree();
+        handleFileSelect(path);
+      }
+    } catch { /* ignore */ }
+    setDialog(null);
+  }, [dialog, refreshTree, handleFileSelect]);
+
+  const handleCreateFolder = useCallback(async (name: string) => {
+    if (!dialog || dialog.kind !== "new-folder") return;
+    const path = dialog.dir ? `${dialog.dir}/${name}` : name;
+    try {
+      const res = await fetch("/api/files/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path, type: "dir" }),
+      });
+      if (res.ok) refreshTree();
+    } catch { /* ignore */ }
+    setDialog(null);
+  }, [dialog, refreshTree]);
+
+  const handleRename = useCallback(async (newName: string) => {
+    if (!dialog || dialog.kind !== "rename") return;
+    const parts = dialog.oldPath.split("/");
+    parts[parts.length - 1] = newName;
+    const newPath = parts.join("/");
+    try {
+      const res = await fetch("/api/files/rename", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oldPath: dialog.oldPath, newPath }),
+      });
+      if (res.ok) refreshTree();
+    } catch { /* ignore */ }
+    setDialog(null);
+  }, [dialog, refreshTree]);
+
+  const handleDelete = useCallback(async () => {
+    if (!dialog || dialog.kind !== "delete") return;
+    try {
+      const res = await fetch(`/api/files/delete?path=${encodeURIComponent(dialog.path)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        refreshTree();
+        if (selectedPath === dialog.path) setSelectedPath(null);
+      }
+    } catch { /* ignore */ }
+    setDialog(null);
+  }, [dialog, refreshTree, selectedPath]);
+
+  // ---- Context menu items ----
+
   const ctxMenuItems = useMemo((): ContextMenuItem[] => {
     if (!ctxMenu) return [];
     const { node } = ctxMenu;
     const isFile = node.type === "file";
+    const isDir = node.type === "dir";
     const items: ContextMenuItem[] = [];
 
     if (isFile) {
@@ -226,6 +311,39 @@ export default function FileTreeSidebar() {
       items.push({ label: "", separator: true, onClick: () => {} });
     }
 
+    // CRUD: New File / New Folder
+    const targetDir = isDir ? node.path : node.path.split("/").slice(0, -1).join("/");
+
+    items.push({
+      label: "New File",
+      icon: <FilePlus size={12} />,
+      onClick: () => setDialog({ kind: "new-file", dir: targetDir }),
+    });
+    items.push({
+      label: "New Folder",
+      icon: <FolderPlus size={12} />,
+      onClick: () => setDialog({ kind: "new-folder", dir: targetDir }),
+    });
+
+    items.push({ label: "", separator: true, onClick: () => {} });
+
+    // Rename
+    items.push({
+      label: "Rename",
+      icon: <Pencil size={12} />,
+      onClick: () => setDialog({ kind: "rename", oldPath: node.path, oldName: node.name }),
+    });
+
+    // Delete
+    items.push({
+      label: "Delete",
+      icon: <Trash2 size={12} />,
+      danger: true,
+      onClick: () => setDialog({ kind: "delete", path: node.path, name: node.name, isDir }),
+    });
+
+    items.push({ label: "", separator: true, onClick: () => {} });
+
     items.push({
       label: "Copy Path",
       icon: <Copy size={12} />,
@@ -235,7 +353,6 @@ export default function FileTreeSidebar() {
       label: "Copy Relative Path",
       icon: <Copy size={12} />,
       onClick: () => {
-        // path from server is relative to project root already
         navigator.clipboard.writeText(node.path).catch(() => {});
       },
     });
@@ -260,6 +377,45 @@ export default function FileTreeSidebar() {
       }),
     [tree]
   );
+
+  // ---- Dialog helpers ----
+
+  const dialogOpen = dialog !== null;
+  const isInputDialog = dialog?.kind === "new-file" || dialog?.kind === "new-folder" || dialog?.kind === "rename";
+  const isDeleteDialog = dialog?.kind === "delete";
+
+  const dialogTitle = (() => {
+    if (!dialog) return "";
+    if (dialog.kind === "new-file") return "New File";
+    if (dialog.kind === "new-folder") return "New Folder";
+    if (dialog.kind === "rename") return "Rename";
+    if (dialog.kind === "delete") return `Delete ${dialog.isDir ? "folder" : "file"}`;
+    return "";
+  })();
+
+  const dialogMessage = (() => {
+    if (!dialog) return undefined;
+    if (dialog.kind === "delete") {
+      return `Are you sure you want to delete "${dialog.name}"?${dialog.isDir ? " This will remove all contents." : ""}`;
+    }
+    if (dialog.kind === "new-file") {
+      return dialog.dir ? `Create file in ${dialog.dir}/` : "Create file in project root";
+    }
+    if (dialog.kind === "new-folder") {
+      return dialog.dir ? `Create folder in ${dialog.dir}/` : "Create folder in project root";
+    }
+    return undefined;
+  })();
+
+  const dialogPlaceholder = (() => {
+    if (!dialog) return "";
+    if (dialog.kind === "new-file") return "filename.ts";
+    if (dialog.kind === "new-folder") return "folder-name";
+    if (dialog.kind === "rename") return "new name";
+    return "";
+  })();
+
+  const dialogDefault = dialog?.kind === "rename" ? dialog.oldName : "";
 
   return (
     <div
@@ -354,6 +510,40 @@ export default function FileTreeSidebar() {
         position={ctxMenu ? { x: ctxMenu.x, y: ctxMenu.y } : null}
         onClose={closeCtxMenu}
       />
+
+      {/* CRUD dialogs */}
+      {isInputDialog && (
+        <ConfirmDialog
+          open={dialogOpen}
+          title={dialogTitle}
+          message={dialogMessage}
+          confirmLabel={dialog?.kind === "rename" ? "Rename" : "Create"}
+          inputMode
+          inputPlaceholder={dialogPlaceholder}
+          inputDefaultValue={dialogDefault}
+          onConfirm={() => {}}
+          onConfirmWithValue={(val) => {
+            const trimmed = val.trim();
+            if (!trimmed) return;
+            if (dialog?.kind === "new-file") handleCreateFile(trimmed);
+            else if (dialog?.kind === "new-folder") handleCreateFolder(trimmed);
+            else if (dialog?.kind === "rename") handleRename(trimmed);
+          }}
+          onCancel={() => setDialog(null)}
+        />
+      )}
+
+      {isDeleteDialog && (
+        <ConfirmDialog
+          open={dialogOpen}
+          title={dialogTitle}
+          message={dialogMessage}
+          confirmLabel="Delete"
+          danger
+          onConfirm={handleDelete}
+          onCancel={() => setDialog(null)}
+        />
+      )}
     </div>
   );
 }

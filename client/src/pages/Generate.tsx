@@ -288,16 +288,14 @@ export default function Generate() {
               </div>
               <div style={{ display: "flex", gap: "8px" }}>
                 <button
-                  className="btn"
+                  className="btn btn-sm"
                   onClick={selectAll}
-                  style={{ fontSize: "10px", padding: "2px 8px" }}
                 >
                   Select all
                 </button>
                 <button
-                  className="btn"
+                  className="btn btn-sm"
                   onClick={clearAll}
-                  style={{ fontSize: "10px", padding: "2px 8px" }}
                 >
                   Clear
                 </button>
@@ -360,9 +358,9 @@ export default function Generate() {
           {/* Scan options — collapsible */}
           <div style={{ marginBottom: "20px" }}>
             <button
-              className="btn"
+              className="btn btn-sm"
               onClick={() => setOptionsOpen(o => !o)}
-              style={{ fontSize: "11px", gap: "6px" }}
+              style={{ gap: "6px" }}
             >
               <span style={{ color: "var(--text-dimmer)", fontSize: "10px" }}>{optionsOpen ? "▾" : "▸"}</span>
               Scan options
@@ -453,9 +451,8 @@ export default function Generate() {
               className="btn btn-primary"
               onClick={triggerScan}
               disabled={selectedFormats.size === 0}
-              style={{ fontSize: "13px", padding: "8px 20px", letterSpacing: "0.02em" }}
             >
-              &gt; GENERATE CONTEXT
+              Generate Context
             </button>
             <span style={{ fontSize: "10px", color: "var(--text-dimmer)" }}>
               {selectedFormats.size === 0
@@ -479,7 +476,7 @@ export default function Generate() {
               justifyContent: "space-between",
             }}>
               <span>{errorMsg}</span>
-              <button className="btn" onClick={() => setPageState("idle")} style={{ fontSize: "10px", padding: "2px 8px" }}>
+              <button className="btn btn-sm" onClick={() => setPageState("idle")}>
                 Dismiss
               </button>
             </div>
@@ -571,9 +568,8 @@ export default function Generate() {
                             <div style={{ display: "flex", gap: "6px" }}>
                               {rawContent && (
                                 <button
-                                  className="btn"
+                                  className="btn btn-sm"
                                   onClick={() => void copyFile(f.name, rawContent)}
-                                  style={{ fontSize: "10px", padding: "2px 8px" }}
                                 >
                                   {copiedFile === f.name ? "Copied!" : "Copy"}
                                 </button>

@@ -346,7 +346,7 @@ export default function Run() {
           </div>
         </div>
         {phase !== "idle" && (
-          <button className="btn" onClick={handleReset} style={{ fontSize: 11 }}>
+          <button className="btn btn-sm" onClick={handleReset}>
             {phase === "done" ? "Run another" : "Clear"}
           </button>
         )}
@@ -618,9 +618,9 @@ export default function Run() {
                       {formatElapsed(elapsed)}
                     </span>
                     <button
-                      className="btn"
+                      className="btn btn-sm"
                       onClick={handleCancel}
-                      style={{ fontSize: 10, padding: "2px 8px", color: "var(--red)", borderColor: "var(--red)" }}
+                      style={{ color: "var(--red)", borderColor: "var(--red)" }}
                     >
                       Cancel
                     </button>
@@ -754,33 +754,30 @@ export default function Run() {
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {result.hasChanges && result.mode !== "plan" && (
                   <button
-                    className="btn btn-primary"
+                    className="btn btn-primary btn-sm"
                     onClick={handleViewDiff}
                     disabled={diffLoading}
-                    style={{ fontSize: 11 }}
                   >
                     {diffLoading ? "Loading..." : "View diff"}
                   </button>
                 )}
                 <button
-                  className="btn"
+                  className="btn btn-sm"
                   onClick={handleRunAgain}
-                  style={{ fontSize: 11 }}
                 >
                   {"Run again"}
                 </button>
                 <button
-                  className="btn"
+                  className="btn btn-sm"
                   onClick={handleShare}
-                  style={{ fontSize: 11, color: copied ? "var(--accent)" : undefined, borderColor: copied ? "var(--accent)" : undefined }}
+                  style={{ color: copied ? "var(--accent)" : undefined, borderColor: copied ? "var(--accent)" : undefined }}
                 >
                   {copied ? "Copied!" : "Share"}
                 </button>
                 <span style={{ flex: 1 }} />
                 <button
-                  className="btn"
+                  className="btn btn-sm"
                   onClick={handleReset}
-                  style={{ fontSize: 11 }}
                 >
                   {"New run"}
                 </button>

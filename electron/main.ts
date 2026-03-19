@@ -3,17 +3,21 @@
  * Starts Hono server, opens native window
  */
 
-import { app, BrowserWindow, Menu, shell, ipcMain, dialog, nativeImage } from "electron";
+import { app, BrowserWindow, Menu, shell, ipcMain, dialog, nativeImage, session } from "electron";
+import pkg from "electron-updater";
+const { autoUpdater } = pkg;
 import { createServer, killAllActiveSessions } from "../server/index.js";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { execFileSync } from "child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isDev = process.env.NODE_ENV === "development";
 const PORT = 3200;
 
 // Set app name before ready so dock/menu bar shows correctly
+app.name = "hashmark studio";
 app.setName("hashmark studio");
 
 // Config persistence
@@ -130,6 +134,18 @@ function createWindow() {
 
   if (ws?.maximized) win.maximize();
 
+  // Set Content Security Policy to suppress Electron security warning
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        "Content-Security-Policy": [
+          "default-src 'self' http://localhost:*; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:* ws://localhost:*; img-src 'self' data: https:; font-src 'self' data:",
+        ],
+      },
+    });
+  });
+
   const appUrl = isDev ? `http://localhost:3201` : `http://localhost:${PORT}`;
   win.loadURL(appUrl);
 
@@ -195,6 +211,11 @@ function buildMenu() {
       label: "File",
       submenu: [
         {
+          label: "New Session",
+          accelerator: "Cmd+N",
+          click: () => sendToRenderer("menu:new-session"),
+        },
+        {
           label: "New Window",
           accelerator: "Cmd+Shift+N",
           click: () => createWindow(),
@@ -222,7 +243,7 @@ function buildMenu() {
         { type: "separator" },
         {
           label: "Close Window",
-          accelerator: "Cmd+Shift+W",
+          accelerator: "Cmd+W",
           role: "close",
         },
       ],
@@ -468,6 +489,10 @@ function buildMenu() {
           label: "hashmark Documentation",
           click: () => shell.openExternal("https://hashmark.md/docs"),
         },
+        {
+          label: "Release Notes",
+          click: () => shell.openExternal("https://hashmark.md/changelog"),
+        },
         { type: "separator" },
         {
           label: "Report Issue",
@@ -476,13 +501,10 @@ function buildMenu() {
         { type: "separator" },
         {
           label: "Check for Updates...",
-          click: async () => {
-            try {
-              const { autoUpdater } = await import("electron-updater");
-              autoUpdater.checkForUpdates();
-            } catch {
-              dialog.showMessageBox({ message: "Auto-updater not configured.", type: "info" });
-            }
+          click: () => {
+            autoUpdater.checkForUpdates().catch((err) => {
+              dialog.showMessageBox({ message: `Update check failed: ${err.message}`, type: "error" });
+            });
           },
         },
         { type: "separator" },
@@ -503,9 +525,6 @@ function buildMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
-// Set the app name so macOS menu shows "hashmark studio" instead of "Electron"
-app.setName("hashmark studio");
-
 app.whenReady().then(() => {
   // Set dock icon on macOS
   if (process.platform === "darwin") {
@@ -517,25 +536,65 @@ app.whenReady().then(() => {
   buildMenu();
   createWindow();
 
-  // Check for updates in production
+  // Auto-updater setup
   if (!isDev) {
-    import("electron-updater").then(({ autoUpdater }) => {
-      autoUpdater.checkForUpdatesAndNotify().catch(() => {});
-    }).catch(() => {
-      // electron-updater not installed -- skip auto-update
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+
+    autoUpdater.on("update-available", (info) => {
+      sendToRenderer("update:available", { version: info.version });
+    });
+
+    autoUpdater.on("update-downloaded", (info) => {
+      sendToRenderer("update:downloaded", { version: info.version });
+    });
+
+    autoUpdater.on("error", (err) => {
+      console.error("[auto-updater] error:", err.message);
+    });
+
+    autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+      console.error("[auto-updater] check failed:", err.message);
     });
   }
 });
 
 app.on("before-quit", () => {
-  // Graceful shutdown: kill all child processes (PTY sessions) before Electron
-  // tears down the Node environment. Without this, node-pty's ThreadSafeFunction
-  // callback throws SIGABRT during Environment::CleanupHandles().
+  // Graceful shutdown: SIGTERM child processes first, then SIGKILL after 500ms.
+  // Without this, node-pty's ThreadSafeFunction callback throws SIGABRT during
+  // Environment::CleanupHandles().
+
+  // Kill tracked active sessions (claude CLI processes)
+  try { killAllActiveSessions(); } catch {}
+
+  // Collect child PIDs before sending signals
+  let childPids: number[] = [];
   try {
-    const { execFileSync } = require("child_process") as typeof import("child_process");
-    // Kill child processes of the current process (terminals, claude CLI)
-    execFileSync("pkill", ["-P", String(process.pid)], { stdio: "ignore" });
-  } catch {}
+    const raw = execFileSync("pgrep", ["-P", String(process.pid)], {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    childPids = raw.trim().split("\n").map(Number).filter(Boolean);
+  } catch {
+    // No children or pgrep not available
+  }
+
+  if (childPids.length > 0) {
+    // SIGTERM first -- give processes a chance to clean up
+    for (const pid of childPids) {
+      try { process.kill(pid, "SIGTERM"); } catch {}
+    }
+
+    // Wait 500ms, then SIGKILL any survivors
+    const deadline = Date.now() + 500;
+    while (Date.now() < deadline) {
+      // Busy-wait -- we're quitting anyway, can't use setTimeout in before-quit
+    }
+    for (const pid of childPids) {
+      try { process.kill(pid, "SIGKILL"); } catch {}
+    }
+  }
+
   try { server.close(); } catch {}
 });
 
@@ -587,4 +646,9 @@ ipcMain.handle("get-recent-projects", () => {
     dir,
     lastOpened: Date.now(),
   }));
+});
+
+// IPC: auto-updater
+ipcMain.handle("install-update", () => {
+  autoUpdater.quitAndInstall(false, true);
 });

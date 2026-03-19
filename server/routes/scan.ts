@@ -142,13 +142,25 @@ export function scanRoutes(projectDir: string) {
       start(controller) {
         controller.enqueue(send({ type: "start", message: "Starting scan..." }));
 
-        // Find the hashmark CLI binary
-        const cliPath = join(projectDir, "node_modules", ".bin", "hashmark");
-        const bin = existsSync(cliPath) ? cliPath : "hashmark";
+        // Find the hashmark CLI binary — check local install, monorepo, then global
+        const localBin = join(projectDir, "node_modules", ".bin", "hashmark");
+        const monoBin = join(projectDir, "packages", "cli", "dist", "cli.js");
+        const bin = existsSync(localBin) ? localBin
+          : existsSync(monoBin) ? "node" : "hashmark";
+        const args = bin === "node"
+          ? [monoBin, "--json", "--output", "/dev/stdout"]
+          : ["--json", "--output", "/dev/stdout"];
 
-        const proc = spawn(bin, ["--json", "--output", "/dev/stdout"], {
+        // Include CLI's node_modules in NODE_PATH for dependency resolution
+        const cliNodeModules = join(projectDir, "packages", "cli", "node_modules");
+        const env = { ...process.env } as NodeJS.ProcessEnv;
+        if (existsSync(cliNodeModules)) {
+          env.NODE_PATH = [cliNodeModules, env.NODE_PATH].filter(Boolean).join(":");
+        }
+
+        const proc = spawn(bin, args, {
           cwd: projectDir,
-          env: process.env,
+          env,
         });
 
         let stdout = "";

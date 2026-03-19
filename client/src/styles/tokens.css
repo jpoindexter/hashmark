@@ -125,4 +125,19 @@
   --titlebar-height:    28px;
   --status-bar-height:  18px;
   --font-size-base:     11px;
+  --radius:             3px;
+  --radius-sm:          2px;
+  --radius-lg:          4px;
+  --activity-bar-width: 40px;
+  --sidebar-default-width: 200px;
+  --sidebar-min-width:  140px;
 }
+
+/* Compact density: reduce padding and gaps globally */
+[data-density="compact"] .card { padding: 10px; }
+[data-density="compact"] .btn { padding: 3px 8px; gap: 4px; font-size: 11px; }
+[data-density="compact"] .badge { padding: 0 5px; font-size: 10px; }
+[data-density="compact"] input,
+[data-density="compact"] textarea,
+[data-density="compact"] select { padding: 3px 8px; font-size: 11px; }
+[data-density="compact"] button { font-size: 11px; }

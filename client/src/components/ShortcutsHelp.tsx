@@ -36,6 +36,7 @@ const SECTIONS: ShortcutSection[] = [
     rows: [
       ["\u2318\u21E7E", "Explorer"],
       ["\u2318\u21E7G", "Source Control"],
+      ["\u2318\u21E7F", "Search"],
       ["\u2318\u21E7A", "Agents"],
       ["\u2318,", "Settings"],
     ],

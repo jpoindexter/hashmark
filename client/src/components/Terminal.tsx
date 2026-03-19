@@ -1,13 +1,15 @@
-import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
+import { useEffect, useRef, useImperativeHandle, forwardRef, useState } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
+import { SearchAddon } from "@xterm/addon-search";
 import "xterm/css/xterm.css";
 import { encodeTerminalMsg } from "../../../shared/ws-contracts";
 
 export interface TerminalHandle {
   clear: () => void;
   paste: (text: string) => void;
+  openSearch: () => void;
 }
 
 interface TerminalProps {
@@ -34,14 +36,22 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
   const termRef      = useRef<Terminal | null>(null);
   const wsRef        = useRef<WebSocket | null>(null);
   const fitRef       = useRef<FitAddon | null>(null);
+  const searchRef    = useRef<SearchAddon | null>(null);
+
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useImperativeHandle(ref, () => ({
     clear: () => {
       if (termRef.current) termRef.current.reset();
     },
     paste: (text: string) => {
-      // Writing to the terminal triggers onData which sends through WebSocket
       if (termRef.current) termRef.current.paste(text);
+    },
+    openSearch: () => {
+      setSearchVisible(true);
+      setTimeout(() => searchInputRef.current?.focus(), 0);
     },
   }));
 
@@ -49,6 +59,7 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
     if (!containerRef.current || termRef.current) return;
 
     const term = new Terminal({
+      allowProposedApi: true,
       fontFamily: "JetBrains Mono, Fira Code, Menlo, monospace",
       fontSize,
       lineHeight: 1.5,
@@ -82,6 +93,7 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
     });
 
     const fit = new FitAddon();
+    const search = new SearchAddon();
     term.loadAddon(fit);
     term.loadAddon(new WebLinksAddon((_, url) => {
       if (typeof window.studio?.openExternal === "function") {
@@ -90,11 +102,13 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
         window.open(url, "_blank", "noopener,noreferrer");
       }
     }));
+    term.loadAddon(search);
     term.open(containerRef.current);
     fit.fit();
 
-    termRef.current = term;
-    fitRef.current  = fit;
+    termRef.current  = term;
+    fitRef.current   = fit;
+    searchRef.current = search;
 
     // --- VSCode shell integration (OSC 633) ---
     let commandStartMarker: ReturnType<Terminal["registerMarker"]> | null = null;
@@ -194,8 +208,9 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
       observer.disconnect();
       ws.close();
       term.dispose();
-      termRef.current = null;
-      wsRef.current   = null;
+      termRef.current   = null;
+      wsRef.current     = null;
+      searchRef.current = null;
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -206,17 +221,134 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
     fitRef.current?.fit();
   }, [fontSize]);
 
+  // Cmd+F to open search, Escape to close
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
+        e.preventDefault();
+        e.stopPropagation();
+        setSearchVisible(true);
+        setTimeout(() => searchInputRef.current?.focus(), 0);
+      }
+      if (e.key === "Escape" && searchVisible) {
+        setSearchVisible(false);
+        setSearchQuery("");
+      }
+    };
+    el.addEventListener("keydown", handler);
+    return () => el.removeEventListener("keydown", handler);
+  }, [searchVisible]);
+
+  // Incremental search as query changes
+  useEffect(() => {
+    if (!searchRef.current || !searchVisible) return;
+    if (searchQuery) {
+      searchRef.current.findNext(searchQuery, { incremental: true });
+    }
+  }, [searchQuery, searchVisible]);
+
+  const closeSearch = () => {
+    setSearchVisible(false);
+    setSearchQuery("");
+  };
+
+  const findNext = () => {
+    if (searchRef.current && searchQuery) {
+      searchRef.current.findNext(searchQuery);
+    }
+  };
+
+  const findPrev = () => {
+    if (searchRef.current && searchQuery) {
+      searchRef.current.findPrevious(searchQuery);
+    }
+  };
+
   return (
-    <div
-      ref={containerRef}
-      style={{
-        width: "100%",
-        height: "100%",
-        overflow: "hidden",
-        padding: "4px 0",
-      }}
-    />
+    <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+      <div
+        ref={containerRef}
+        style={{
+          width: "100%",
+          height: "100%",
+          overflow: "hidden",
+          padding: "4px 0",
+        }}
+      />
+
+      {searchVisible && (
+        <div
+          style={{
+            position: "absolute",
+            top: 6,
+            right: 10,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            background: "var(--bg-4)",
+            border: "1px solid var(--border)",
+            borderRadius: 4,
+            padding: "3px 5px",
+            zIndex: 100,
+            boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
+          }}
+        >
+          <input
+            ref={searchInputRef}
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.shiftKey ? findPrev() : findNext();
+              }
+              if (e.key === "Escape") closeSearch();
+            }}
+            placeholder="Find..."
+            style={{
+              background: "transparent",
+              border: "none",
+              outline: "none",
+              color: "#e6edf3",
+              fontSize: 12,
+              fontFamily: "var(--font-ui, -apple-system, sans-serif)",
+              width: 160,
+              padding: "2px 4px",
+            }}
+          />
+          <button onClick={findPrev} title="Previous match (Shift+Enter)" style={searchBtnStyle}>
+            ↑
+          </button>
+          <button onClick={findNext} title="Next match (Enter)" style={searchBtnStyle}>
+            ↓
+          </button>
+          <button
+            onClick={closeSearch}
+            title="Close (Escape)"
+            style={{ ...searchBtnStyle, color: "var(--text-dim)" }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+    </div>
   );
 });
+
+const searchBtnStyle: React.CSSProperties = {
+  background: "none",
+  border: "none",
+  color: "#e6edf3",
+  cursor: "pointer",
+  fontSize: 13,
+  lineHeight: 1,
+  padding: "2px 4px",
+  borderRadius: 3,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
 
 export default TerminalPane;

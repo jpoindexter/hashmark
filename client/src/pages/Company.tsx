@@ -812,7 +812,7 @@ export default function Company() {
                   </button>
                 </span>
               )}
-              <button className="btn" onClick={() => { cancelAutoClear(); handleClear(); }} style={{ fontSize: 11 }}>CLEAR</button>
+              <button className="btn btn-sm" onClick={() => { cancelAutoClear(); handleClear(); }}>Clear</button>
             </div>
           )}
         </div>

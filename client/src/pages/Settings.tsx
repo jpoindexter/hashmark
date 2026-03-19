@@ -1,9 +1,18 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
 /* ─── types ─────────────────────────────────────────────────────────────── */
 interface InfoData {
   projectName: string;
   projectDir: string;
+  nodeVersion?: string;
+  port?: number;
+}
+interface DetectedCLI {
+  id: string;
+  name: string;
+  installed: boolean;
+  version?: string;
+  path?: string;
 }
 interface McpServer {
   command: string;
@@ -22,6 +31,7 @@ interface ProviderInfo {
   name: string;
   enabled: boolean;
   hasKey: boolean;
+  cliDetected: boolean;
   baseUrl?: string;
 }
 interface ProvidersData {
@@ -241,7 +251,7 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
         const isActive = data.active === provider.id;
         const needsKey = provider.id !== "claude" && provider.id !== "ollama";
         const hasEnvKey = envVars.some(v => v.key === PROVIDER_ENV_KEYS[provider.id]);
-        const effectivelyHasKey = provider.hasKey || hasEnvKey || provider.id === "claude" || provider.id === "ollama";
+        const effectivelyHasKey = provider.hasKey || hasEnvKey || provider.cliDetected || provider.id === "claude" || provider.id === "ollama";
         const icon = PROVIDER_ICONS[provider.id] ?? "◎";
         const ts = testStatus[provider.id] ?? "idle";
         const provModels = models[provider.id] ?? [];
@@ -285,7 +295,12 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
                   active
                 </span>
               )}
-              {effectivelyHasKey && !isActive && (
+              {provider.cliDetected && !isActive && (
+                <span style={{ fontSize: 9, color: "var(--accent)", opacity: 0.8, flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                  <span style={{ fontSize: 10 }}>&#x2713;</span> CLI detected
+                </span>
+              )}
+              {effectivelyHasKey && !provider.cliDetected && !isActive && (
                 <span style={{ fontSize: 9, color: "var(--accent)", opacity: 0.6, flexShrink: 0 }}>key set</span>
               )}
               {needsKey && !effectivelyHasKey && (
@@ -439,11 +454,10 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
                     </button>
                   )}
                   <button
-                    className="btn"
+                    className="btn btn-sm"
                     onClick={() => void testConnection(provider.id)}
                     disabled={ts === "testing"}
                     style={{
-                      fontSize: 11,
                       color: ts === "ok" ? "var(--accent)" : ts === "fail" ? "var(--red)" : undefined,
                     }}
                   >
@@ -617,10 +631,31 @@ function ScanConfigPanel() {
 export default function Settings() {
   const [active, setActive] = useState<string>(() => restore("settings_tab", "appearance"));
   const [navWidth, setNavWidth] = useState<number>(() => restore("settings_nav_w", 180));
+  const [navSearch, setNavSearch] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const filteredGroups = useMemo(() => {
+    const q = navSearch.trim().toLowerCase();
+    if (!q) return GROUPS;
+    return GROUPS.filter(group => {
+      if (group.toLowerCase().includes(q)) return true;
+      return SECTIONS.some(s => s.group === group && s.label.toLowerCase().includes(q));
+    });
+  }, [navSearch]);
+
+  const filteredSections = useMemo(() => {
+    const q = navSearch.trim().toLowerCase();
+    if (!q) return SECTIONS;
+    return SECTIONS.filter(s =>
+      s.label.toLowerCase().includes(q) || s.group.toLowerCase().includes(q)
+    );
+  }, [navSearch]);
 
   const [info, setInfo]         = useState<InfoData | null>(null);
   const [mcpConfig, setMcpConfig] = useState<McpConfigData | null>(null);
   const [envVars, setEnvVars]   = useState<EnvVar[]>([]);
+  const [detectedCLIs, setDetectedCLIs] = useState<DetectedCLI[]>([]);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   // Appearance
   const [theme,       setTheme]       = useState<"dark" | "light">(() => restore("theme", "dark"));
@@ -633,6 +668,7 @@ export default function Settings() {
   const [thinkingMode, setThinkingMode] = useState<boolean>(() => restore("thinking", false));
   const [streamingUI,  setStreamingUI]  = useState<boolean>(() => restore("streaming_ui", true));
   const [systemPrompt, setSystemPrompt] = useState<string>(() => restore("system_prompt", ""));
+  const [restoreSession, setRestoreSession] = useState<boolean>(() => restore("restoreSession", true));
 
   // Git
   const [autoStage,    setAutoStage]    = useState<boolean>(() => restore("git_auto_stage", false));
@@ -667,6 +703,7 @@ export default function Settings() {
   useEffect(() => { persist("thinking", thinkingMode); dispatch("thinking", thinkingMode); }, [thinkingMode]);
   useEffect(() => { persist("streaming_ui", streamingUI); dispatch("streaming_ui", streamingUI); }, [streamingUI]);
   useEffect(() => { persist("system_prompt", systemPrompt); dispatch("system_prompt", systemPrompt); }, [systemPrompt]);
+  useEffect(() => { persist("restoreSession", restoreSession); dispatch("restoreSession", restoreSession); }, [restoreSession]);
   useEffect(() => { persist("git_auto_stage", autoStage); dispatch("git_auto_stage", autoStage); }, [autoStage]);
   useEffect(() => { persist("git_commit_fmt", commitFormat); dispatch("git_commit_fmt", commitFormat); }, [commitFormat]);
   useEffect(() => { persist("git_in_nav", showGitInNav); dispatch("git_in_nav", showGitInNav); }, [showGitInNav]);
@@ -678,6 +715,7 @@ export default function Settings() {
     fetch("/api/info").then(r => r.json()).then(setInfo).catch(() => {});
     fetch("/api/mcp/config").then(r => r.json()).then(setMcpConfig).catch(() => {});
     fetch("/api/settings/env").then(r => r.json()).then((d: { vars: EnvVar[] }) => setEnvVars(d.vars ?? [])).catch(() => {});
+    fetch("/api/providers/detect").then(r => r.json()).then((d: { providers: DetectedCLI[] }) => setDetectedCLIs(d.providers ?? [])).catch(() => {});
   }, []);
 
   /* ── draggable nav ─────────────────────────────────────────────────────── */
@@ -730,56 +768,112 @@ export default function Settings() {
           Settings
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto", padding: "0 6px 12px" }}>
-          {GROUPS.map(group => (
-            <div key={group} style={{ marginBottom: 4 }}>
-              <div style={{
-                fontSize: 9,
+        {/* Search input */}
+        <div style={{ padding: "0 8px 6px", position: "relative" }}>
+          <input
+            ref={searchRef}
+            type="text"
+            value={navSearch}
+            onChange={e => setNavSearch(e.target.value)}
+            placeholder="Search settings..."
+            style={{
+              width: "100%",
+              fontSize: 11,
+              fontFamily: "var(--font-ui)",
+              background: "var(--bg-3)",
+              border: "1px solid var(--border-dim)",
+              borderRadius: "var(--radius)",
+              color: "var(--text)",
+              padding: "4px 24px 4px 8px",
+              outline: "none",
+            }}
+          />
+          {navSearch && (
+            <button
+              onClick={() => { setNavSearch(""); searchRef.current?.focus(); }}
+              style={{
+                position: "absolute",
+                right: 14,
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: 11,
                 color: "var(--text-dimmer)",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                padding: "10px 8px 4px",
-                opacity: 0.6,
-              }}>
-                {group}
+                padding: 2,
+                lineHeight: 1,
+              }}
+            >
+              x
+            </button>
+          )}
+        </div>
+
+        <div style={{ flex: 1, overflowY: "auto", padding: "0 6px 12px" }}>
+          {filteredGroups.map(group => {
+            const groupSections = filteredSections.filter(s => s.group === group);
+            if (groupSections.length === 0) return null;
+            return (
+              <div key={group} style={{ marginBottom: 4 }}>
+                <div style={{
+                  fontSize: 9,
+                  color: "var(--text-dimmer)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  padding: "10px 8px 4px",
+                  opacity: 0.6,
+                }}>
+                  {group}
+                </div>
+                {groupSections.map(section => (
+                  <button
+                    key={section.id}
+                    onClick={() => setActive(section.id)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      width: "100%",
+                      padding: "6px 8px",
+                      background: active === section.id ? "var(--accent-bg)" : "none",
+                      border: "none",
+                      borderLeft: active === section.id ? "2px solid var(--accent)" : "2px solid transparent",
+                      borderRadius: active === section.id ? "0 var(--radius-sm) var(--radius-sm) 0" : 0,
+                      color: active === section.id ? "var(--accent)" : "var(--text-dim)",
+                      fontSize: 12,
+                      fontFamily: "var(--font-ui)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      transition: "background 0.1s, color 0.1s, border-color 0.1s",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                    onMouseEnter={e => {
+                      if (active !== section.id)
+                        (e.currentTarget).style.background = "var(--hover-bg)";
+                    }}
+                    onMouseLeave={e => {
+                      if (active !== section.id)
+                        (e.currentTarget).style.background = "none";
+                    }}
+                  >
+                    {section.label}
+                  </button>
+                ))}
               </div>
-              {SECTIONS.filter(s => s.group === group).map(section => (
-                <button
-                  key={section.id}
-                  onClick={() => setActive(section.id)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    width: "100%",
-                    padding: "6px 8px",
-                    background: active === section.id ? "var(--accent-bg)" : "none",
-                    border: "none",
-                    borderLeft: active === section.id ? "2px solid var(--accent)" : "2px solid transparent",
-                    borderRadius: active === section.id ? "0 var(--radius-sm) var(--radius-sm) 0" : 0,
-                    color: active === section.id ? "var(--accent)" : "var(--text-dim)",
-                    fontSize: 12,
-                    fontFamily: "var(--font-ui)",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    transition: "background 0.1s, color 0.1s, border-color 0.1s",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                  onMouseEnter={e => {
-                    if (active !== section.id)
-                      (e.currentTarget).style.background = "var(--hover-bg)";
-                  }}
-                  onMouseLeave={e => {
-                    if (active !== section.id)
-                      (e.currentTarget).style.background = "none";
-                  }}
-                >
-                  {section.label}
-                </button>
-              ))}
+            );
+          })}
+          {filteredSections.length === 0 && navSearch && (
+            <div style={{
+              padding: "16px 8px",
+              fontSize: 11,
+              color: "var(--text-dimmer)",
+              textAlign: "center",
+            }}>
+              No matching settings
             </div>
-          ))}
+          )}
         </div>
       </nav>
 
@@ -854,6 +948,9 @@ export default function Settings() {
             </SettingRow>
             <SettingRow label="Streaming UI" hint="Stream responses as they arrive rather than waiting">
               <Toggle checked={streamingUI} onChange={setStreamingUI} />
+            </SettingRow>
+            <SettingRow label="Restore Session on Startup" hint="Automatically resume last session when the app opens. Disable to see the welcome page.">
+              <Toggle checked={restoreSession} onChange={setRestoreSession} />
             </SettingRow>
             <SettingRow label="System Prompt" hint="Injected into every session. Use for persistent context." vertical>
               <textarea
@@ -1096,31 +1193,95 @@ export default function Settings() {
         {active === "studio" && (
           <SectionView title="About Studio" description="Version information and diagnostic details.">
             <ReadonlyField label="Version" value="0.1.0" mono />
-            <ReadonlyField label="Port" value="3200" mono />
             <ReadonlyField label="Runtime" value="Electron + Vite + React" />
-            <ReadonlyField label="Node Version" value={typeof process !== "undefined" ? process.versions?.node ?? "—" : "—"} mono />
+            <ReadonlyField label="Node Version" value={info?.nodeVersion ?? "..."} mono />
+
+            {/* Detected AI CLIs */}
+            {detectedCLIs.length > 0 && (
+              <div style={{ marginTop: 24 }}>
+                <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
+                  Detected CLI Tools
+                </div>
+                <div style={{
+                  background: "var(--bg-2)", border: "1px solid var(--border-dim)",
+                  borderRadius: "var(--radius)", overflow: "hidden",
+                }}>
+                  {detectedCLIs.filter(c => c.installed).length === 0 && (
+                    <div style={{ padding: "12px 14px", fontSize: 12, color: "var(--text-dimmer)" }}>
+                      No AI CLI tools detected on this system.
+                    </div>
+                  )}
+                  {detectedCLIs.filter(c => c.installed).map((cli, i, arr) => (
+                    <div
+                      key={cli.id}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "10px 14px",
+                        borderBottom: i < arr.length - 1 ? "1px solid var(--border-dim)" : "none",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", flexShrink: 0 }} />
+                        <span style={{ fontSize: 12, color: "var(--text)" }}>{cli.name}</span>
+                      </div>
+                      <span style={{ fontSize: 11, color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>
+                        {cli.version ?? "installed"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Links */}
             <div style={{ marginTop: 24 }}>
               <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
                 Links
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 {[
-                  ["Changelog", "https://hashmark.md/changelog"],
-                  ["Docs",      "https://hashmark.md/docs"],
-                  ["Feedback",  "https://github.com/hashmark/studio/issues"],
+                  ["Changelog", "https://github.com/jpoindexter/hashmark/releases"],
+                  ["Docs",      "https://hashmark.md"],
+                  ["Feedback",  "https://github.com/jpoindexter/hashmark/issues"],
                 ].map(([label, href]) => (
                   <a
                     key={label}
                     href={href}
                     target="_blank"
                     rel="noreferrer"
-                    className="btn"
-                    style={{ fontSize: 11 }}
+                    className="btn btn-sm"
                   >
                     {label} ↗
                   </a>
                 ))}
               </div>
+            </div>
+
+            {/* Advanced (collapsible) */}
+            <div style={{ marginTop: 24 }}>
+              <button
+                onClick={() => setAdvancedOpen(v => !v)}
+                style={{
+                  background: "none", border: "none", cursor: "pointer", padding: 0,
+                  fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase",
+                  letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: 6,
+                }}
+              >
+                <span style={{
+                  display: "inline-block", transition: "transform 0.15s",
+                  transform: advancedOpen ? "rotate(90deg)" : "rotate(0deg)",
+                  fontSize: 8,
+                }}>
+                  ▶
+                </span>
+                Advanced
+              </button>
+              {advancedOpen && (
+                <div style={{ marginTop: 12 }}>
+                  <ReadonlyField label="Port" value={info?.port != null ? String(info.port) : "..."} mono />
+                  <ReadonlyField label="Project Directory" value={info?.projectDir ?? "..."} mono />
+                </div>
+              )}
             </div>
           </SectionView>
         )}

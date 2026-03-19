@@ -57,6 +57,7 @@ function AppShell() {
           <Route path="files" element={<PageTransition><Files /></PageTransition>} />
           <Route path="git" element={<PageTransition><Git /></PageTransition>} />
           <Route path="source-control" element={<PageTransition><SourceControlPage /></PageTransition>} />
+          <Route path="search" element={<PageTransition><Files /></PageTransition>} />
           <Route path="agents" element={<PageTransition><Agents /></PageTransition>} />
           <Route path="generate" element={<PageTransition><Generate /></PageTransition>} />
           <Route path="run" element={<PageTransition><Run /></PageTransition>} />

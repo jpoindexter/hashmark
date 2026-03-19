@@ -252,13 +252,13 @@ export default function Swarm() {
             </span>
           )}
           {phase === "running" && (
-            <button className="btn" onClick={handleCancel} style={{ fontSize: 11, color: "var(--red)", borderColor: "var(--red)" }}>
-              CANCEL
+            <button className="btn btn-sm" onClick={handleCancel} style={{ color: "var(--red)", borderColor: "var(--red)" }}>
+              Cancel
             </button>
           )}
           {(phase === "done" || phase === "idle") && agents.length > 0 && (
-            <button className="btn" onClick={handleReset} style={{ fontSize: 11 }}>
-              NEW SWARM
+            <button className="btn btn-sm" onClick={handleReset}>
+              New swarm
             </button>
           )}
         </div>
@@ -364,11 +364,10 @@ export default function Swarm() {
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {tasks.length < 8 && (
               <button
-                className="btn"
+                className="btn btn-sm"
                 onClick={addTask}
-                style={{ fontSize: 11 }}
               >
-                + ADD TASK
+                + Add task
               </button>
             )}
 
@@ -408,7 +407,7 @@ export default function Swarm() {
               onClick={handleLaunch}
               disabled={validCount === 0}
             >
-              {`> LAUNCH SWARM (${validCount})`}
+              {`Launch Swarm (${validCount})`}
             </button>
           </div>
         </div>
@@ -566,7 +565,7 @@ export default function Swarm() {
             {agents.some((a) => a.status === "cancelled") && ` — ${agents.filter((a) => a.status === "cancelled").length} cancelled`}
           </span>
           <span style={{ flex: 1 }} />
-          <button className="btn btn-primary" onClick={handleReset} style={{ fontSize: 11 }}>
+          <button className="btn btn-primary btn-sm" onClick={handleReset}>
             {"New swarm"}
           </button>
         </div>

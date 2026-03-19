@@ -128,6 +128,18 @@ export default function SessionsSidebar({ activeSessionId, onSessionSelect, info
     }
   }, [onSessionSelect, navigate]);
 
+  // Cmd+1-9 session switching via custom event from useKeyboardNav
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const index = (e as CustomEvent<number>).detail;
+      if (index >= 0 && index < sessions.length) {
+        handleSessionClick(sessions[index].id);
+      }
+    };
+    window.addEventListener("studio:switch-session-by-index", handler);
+    return () => window.removeEventListener("studio:switch-session-by-index", handler);
+  }, [sessions, handleSessionClick]);
+
   const handleNewSession = useCallback(() => {
     navigate("/setup");
   }, [navigate]);

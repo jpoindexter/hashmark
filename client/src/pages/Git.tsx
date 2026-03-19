@@ -388,8 +388,8 @@ export default function GitPage() {
           )}
         </div>
 
-        <button onClick={load} className="btn" style={{ fontSize: 11 }}>
-          ↻ Refresh
+        <button onClick={load} className="btn btn-sm">
+          Refresh
         </button>
       </div>
 

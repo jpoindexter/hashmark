@@ -4,7 +4,11 @@ import {
   MessageSquare,
   FolderTree,
   GitCompare,
+  Search,
   Bot,
+  Play,
+  Zap,
+  Shield,
   Settings,
 } from "lucide-react";
 
@@ -25,7 +29,11 @@ const topItems: NavItem[] = [
   { path: "/", icon: MessageSquare, label: "Chat" },
   { path: "/files", icon: FolderTree, label: "Explorer", shortcut: "\u2318\u21E7E" },
   { path: "/source-control", icon: GitCompare, label: "Source Control", shortcut: "\u2318\u21E7G" },
+  { path: "/search", icon: Search, label: "Search", shortcut: "\u2318\u21E7F" },
   { path: "/agents", icon: Bot, label: "Agents", shortcut: "\u2318\u21E7A" },
+  { path: "/run", icon: Play, label: "Run" },
+  { path: "/generate", icon: Zap, label: "Generate" },
+  { path: "/governance", icon: Shield, label: "Governance" },
 ];
 
 const bottomItems: NavItem[] = [
@@ -101,6 +109,16 @@ export default function ActivityBar({
 
   const handleClick = (path: string) => {
     const clickingSameView = isPathActive(path, location.pathname);
+
+    // Settings is a full-page route -- toggle back to chat on re-click
+    if (path === "/settings") {
+      if (clickingSameView) {
+        navigate("/");
+      } else {
+        navigate(path);
+      }
+      return;
+    }
 
     if (clickingSameView && sidebarOpen) {
       // Toggle sidebar closed when clicking the already-active icon
