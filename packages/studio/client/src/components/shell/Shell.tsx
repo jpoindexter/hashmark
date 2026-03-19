@@ -217,18 +217,22 @@ export default function Shell() {
   }, [navigate]);
 
   // Command palette + slash command events
+  const handleNewSessionRef = useCallback(() => {
+    createSession().then(setActiveSessionId).catch(() => {});
+  }, []);
+
   useEffect(() => {
     const handlers: Array<[string, () => void]> = [
       ["studio:toggle-thinking", () => setThinking(v => !v)],
       ["studio:toggle-plan", () => setPlanMode(v => !v)],
       ["studio:refresh-git", refreshGit],
       ["studio:open-diff", () => setDiffOpen(true)],
-      ["studio:new-session", handleNewSession],
+      ["studio:new-session", handleNewSessionRef],
       ["studio:toggle-theme", toggleTheme],
     ];
     handlers.forEach(([event, handler]) => window.addEventListener(event, handler));
     return () => handlers.forEach(([event, handler]) => window.removeEventListener(event, handler));
-  }, [refreshGit, handleNewSession, toggleTheme]);
+  }, [refreshGit, handleNewSessionRef, toggleTheme]);
 
   // Plan mode review checkpoint events
   useEffect(() => {
@@ -336,9 +340,7 @@ export default function Shell() {
     return () => subs.forEach(unsub => unsub?.());
   }, [navigate]);
 
-  const handleNewSession = useCallback(() => {
-    createSession().then(setActiveSessionId).catch(() => {});
-  }, []);
+  const handleNewSession = handleNewSessionRef;
   const handleSidebarReset = useCallback(() => setSidebarWidth(DEFAULT_SIDEBAR_WIDTH), []);
 
   const currentModelEntry = ALL_MODELS.find(m => m.id === selectedModel);

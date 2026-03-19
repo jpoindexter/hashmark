@@ -531,7 +531,6 @@ export function sessionsRoutes(projectDir: string) {
             cliArgs = [
               "--output-format", "stream-json",
               "--verbose",
-              "--no-interactive",
             ];
             // Resume previous Claude session if we captured its ID
             if (session.claude_session_id) {
