@@ -93,14 +93,14 @@ function createWindow() {
     titleBarStyle: "hidden",
     trafficLightPosition: { x: 13, y: 8 },
     vibrancy: "under-window",
-    backgroundColor: "#09090b",
+    backgroundColor: "#0d1117",
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       preload: resolve(__dirname, "preload.cjs"),
     },
     title: "hashmark studio",
-    icon: resolve(__dirname, "../../assets/icon.svg"),
+    icon: resolve(__dirname, "../../assets/icon.png"),
   });
 
   win.loadURL(isDev ? `http://localhost:3201` : `http://localhost:${PORT}`);
@@ -122,7 +122,7 @@ function buildMenu() {
   const template: Electron.MenuItemConstructorOptions[] = [
     // ── hashmark ──────────────────────────────────────────────────────────
     {
-      label: "hashmark",
+      label: "hashmark studio",
       submenu: [
         { label: "About hashmark studio", role: "about" },
         { type: "separator" },
@@ -132,11 +132,11 @@ function buildMenu() {
           click: () => sendToRenderer("menu:navigate", "/settings"),
         },
         { type: "separator" },
-        { label: "Hide hashmark", role: "hide" },
+        { label: "Hide hashmark studio", role: "hide" },
         { label: "Hide Others", role: "hideOthers" },
         { label: "Show All", role: "unhide" },
         { type: "separator" },
-        { label: "Quit hashmark", accelerator: "Cmd+Q", role: "quit" },
+        { label: "Quit hashmark studio", accelerator: "Cmd+Q", role: "quit" },
       ],
     },
 
@@ -441,14 +441,25 @@ function buildMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
+// Set the app name so macOS menu shows "hashmark studio" instead of "Electron"
+app.setName("hashmark studio");
+
 app.whenReady().then(() => {
+  // Set dock icon on macOS
+  if (process.platform === "darwin") {
+    const iconPath = resolve(__dirname, "../../assets/icon.png");
+    if (existsSync(iconPath)) {
+      const { nativeImage } = require("electron") as typeof import("electron");
+      app.dock.setIcon(nativeImage.createFromPath(iconPath));
+    }
+  }
   buildMenu();
   createWindow();
 });
 
 app.on("before-quit", () => {
-  // Kill all running claude/agent processes before exit to prevent SIGKILL crashes
-  killAllActiveSessions();
+  // Graceful shutdown: close server to prevent PTY SIGABRT on exit
+  try { server.close(); } catch {}
 });
 
 app.on("window-all-closed", () => {
