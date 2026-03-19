@@ -15,6 +15,11 @@ interface AgentPickerProps {
   deptColor: (id: string) => string;
 }
 
+function deptFromId(id: string): string {
+  const seg = id.split("-")[0].toLowerCase();
+  return seg;
+}
+
 export default function AgentPicker({
   agents,
   selectedId,
@@ -27,9 +32,11 @@ export default function AgentPicker({
   const [highlightIdx, setHighlightIdx] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const selected = agents.find((a) => a.id === selectedId);
   const label = selected ? selected.name : "No specific agent";
+  const selectedDept = selectedId ? deptFromId(selectedId) : null;
 
   // Close on outside click
   useEffect(() => {
@@ -66,9 +73,11 @@ export default function AgentPicker({
     .filter(([, items]) => items.length > 0);
 
   // Flat list: "none" option + all filtered agents
-  const flatItems: Array<{ id: string; name: string }> = [
+  const flatItems: Array<{ id: string; name: string; dept?: string }> = [
     { id: "", name: "No specific agent" },
-    ...filteredGroups.flatMap(([, items]) => items.map((a) => ({ id: a.id, name: a.name }))),
+    ...filteredGroups.flatMap(([dept, items]) =>
+      items.map((a) => ({ id: a.id, name: a.name, dept })),
+    ),
   ];
 
   // Keyboard nav
@@ -77,10 +86,18 @@ export default function AgentPicker({
     function onKey(e: KeyboardEvent) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setHighlightIdx((i) => Math.min(i + 1, flatItems.length - 1));
+        setHighlightIdx((i) => {
+          const next = Math.min(i + 1, flatItems.length - 1);
+          scrollToIdx(next);
+          return next;
+        });
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        setHighlightIdx((i) => Math.max(i - 1, 0));
+        setHighlightIdx((i) => {
+          const next = Math.max(i - 1, 0);
+          scrollToIdx(next);
+          return next;
+        });
       } else if (e.key === "Enter") {
         e.preventDefault();
         const item = flatItems[highlightIdx];
@@ -99,6 +116,14 @@ export default function AgentPicker({
     return () => window.removeEventListener("keydown", onKey, { capture: true });
   }, [open, highlightIdx, flatItems, onSelect]);
 
+  // Scroll highlighted item into view
+  function scrollToIdx(idx: number) {
+    if (!listRef.current) return;
+    const rows = listRef.current.querySelectorAll("[data-picker-row]");
+    const el = rows[idx] as HTMLElement | undefined;
+    if (el) el.scrollIntoView({ block: "nearest" });
+  }
+
   // Reset highlight when filter changes
   useEffect(() => {
     setHighlightIdx(0);
@@ -116,37 +141,67 @@ export default function AgentPicker({
           alignItems: "center",
           gap: 6,
           padding: "6px 10px",
-          background: "var(--bg-2)",
-          border: "1px solid var(--border-dim)",
+          background: "var(--bg-3)",
+          border: "1px solid var(--border)",
           borderRadius: "var(--radius)",
           color: selectedId ? "var(--text)" : "var(--text-dimmer)",
-          fontFamily: "var(--font)",
+          fontFamily: "var(--font-ui)",
           fontSize: 11,
           cursor: "pointer",
-          minWidth: 160,
+          minWidth: 180,
           outline: "none",
+          transition: "border-color 0.12s ease",
         }}
       >
-        {selectedId && (
-          <span
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: deptColor(selectedId),
-              flexShrink: 0,
-            }}
-          />
+        {selectedId ? (
+          <span style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 0 }}>
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: deptColor(selectedId),
+                flexShrink: 0,
+              }}
+            />
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {label}
+            </span>
+            {selectedDept && (
+              <span style={{
+                fontSize: 9,
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                color: deptColor(selectedId),
+                border: `1px solid ${deptColor(selectedId)}`,
+                padding: "0px 4px",
+                borderRadius: "var(--radius)",
+                flexShrink: 0,
+                opacity: 0.7,
+                lineHeight: "16px",
+              }}>
+                {selectedDept}
+              </span>
+            )}
+          </span>
+        ) : (
+          <span style={{ flex: 1, textAlign: "left" }}>No specific agent</span>
         )}
-        <span style={{ flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {label}
-        </span>
-        <ChevronDown size={12} style={{ flexShrink: 0, opacity: 0.5 }} />
+        <ChevronDown
+          size={12}
+          style={{
+            flexShrink: 0,
+            opacity: 0.5,
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.15s ease",
+          }}
+        />
       </button>
 
       {/* Dropdown */}
       {open && (
         <div
+          ref={listRef}
           className="dropdown-animate"
           role="listbox"
           aria-label="Select agent"
@@ -158,14 +213,14 @@ export default function AgentPicker({
             background: "var(--bg-3)",
             border: "1px solid var(--border)",
             borderRadius: "var(--radius-lg)",
-            minWidth: 240,
+            minWidth: 280,
             maxHeight: 360,
             overflowY: "auto",
             boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
           }}
         >
           {/* Search input */}
-          <div style={{ padding: "8px 8px 4px", borderBottom: "1px solid var(--border-dim)" }}>
+          <div style={{ padding: "8px 8px 4px", borderBottom: "1px solid var(--border-dim)", position: "sticky", top: 0, background: "var(--bg-3)", zIndex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 8px", background: "var(--bg-2)", borderRadius: "var(--radius)", border: "1px solid var(--border-dim)" }}>
               <Search size={12} style={{ color: "var(--text-dimmer)", flexShrink: 0 }} />
               <input
@@ -185,6 +240,13 @@ export default function AgentPicker({
                   padding: 0,
                 }}
               />
+              {filter && (
+                <span
+                  style={{ fontSize: 9, color: "var(--text-dimmer)", flexShrink: 0 }}
+                >
+                  {flatItems.length - 1} result{flatItems.length - 1 !== 1 ? "s" : ""}
+                </span>
+              )}
             </div>
           </div>
 
@@ -198,8 +260,11 @@ export default function AgentPicker({
           />
 
           {/* Grouped agents */}
-          {filteredGroups.map(([dept, items]) => (
+          {filteredGroups.map(([dept, items], gi) => (
             <div key={dept}>
+              {gi > 0 && (
+                <div style={{ borderTop: "1px solid var(--border-dim)" }} />
+              )}
               <div style={{
                 padding: "6px 12px 3px",
                 fontSize: 10,
@@ -219,6 +284,7 @@ export default function AgentPicker({
                   <PickerRow
                     key={a.id}
                     label={a.name}
+                    dept={dept}
                     dotColor={deptColor(a.id)}
                     isSelected={a.id === selectedId}
                     isHighlighted={idx === highlightIdx}
@@ -235,6 +301,23 @@ export default function AgentPicker({
               No agents match "{filter}"
             </div>
           )}
+
+          {/* Footer hint */}
+          <div
+            style={{
+              padding: "4px 12px 6px",
+              fontSize: 10,
+              color: "var(--text-dimmer)",
+              borderTop: "1px solid var(--border-dim)",
+              display: "flex",
+              gap: 10,
+              fontFamily: "var(--font-ui)",
+            }}
+          >
+            <span>up/down navigate</span>
+            <span>enter select</span>
+            <span>esc close</span>
+          </div>
         </div>
       )}
     </div>
@@ -244,6 +327,7 @@ export default function AgentPicker({
 // Single row in the picker dropdown
 function PickerRow({
   label,
+  dept,
   dotColor,
   isSelected,
   isHighlighted,
@@ -251,6 +335,7 @@ function PickerRow({
   onMouseEnter,
 }: {
   label: string;
+  dept?: string;
   dotColor?: string;
   isSelected: boolean;
   isHighlighted: boolean;
@@ -259,6 +344,7 @@ function PickerRow({
 }) {
   return (
     <button
+      data-picker-row
       role="option"
       aria-selected={isSelected}
       onClick={onSelect}
@@ -284,6 +370,22 @@ function PickerRow({
         <span style={{ width: 6, height: 6, borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
       )}
       <span style={{ flex: 1 }}>{label}</span>
+      {dept && dotColor && (
+        <span style={{
+          fontSize: 9,
+          textTransform: "uppercase",
+          letterSpacing: "0.06em",
+          color: dotColor,
+          border: `1px solid ${dotColor}`,
+          padding: "0px 4px",
+          borderRadius: "var(--radius)",
+          opacity: 0.5,
+          lineHeight: "16px",
+          flexShrink: 0,
+        }}>
+          {dept}
+        </span>
+      )}
       {isSelected && <Check size={12} style={{ flexShrink: 0 }} />}
     </button>
   );

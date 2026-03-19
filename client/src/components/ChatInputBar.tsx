@@ -508,6 +508,7 @@ export default function ChatInputBar({
   const [atQuery, setAtQuery] = useState<string | null>(null);
   const [chipDismissed, setChipDismissed] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [pendingDismissed, setPendingDismissed] = useState(false);
   const [attachedImage, setAttachedImage] = useState<{ name: string; dataUrl: string } | null>(null);
   const [listening, setListening] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -525,9 +526,12 @@ export default function ChatInputBar({
   );
   const mentionFiles = useMentionFiles();
 
-  // Check for pending (unsent) messages from a previous failed turn
+  // Check for pending (unsent) messages from a previous failed turn.
+  // Only fetch on session change -- not on every streaming toggle.
+  // Reset dismissed flag when session changes.
   useEffect(() => {
-    if (!sessionId || streaming) {
+    setPendingDismissed(false);
+    if (!sessionId) {
       setPendingMessage(null);
       return;
     }
@@ -537,7 +541,7 @@ export default function ChatInputBar({
         setPendingMessage(d.hasPending ? d.message : null);
       })
       .catch(() => setPendingMessage(null));
-  }, [sessionId, streaming]);
+  }, [sessionId]);
 
   // Listen for suggestion clicks from EmptyState
   useEffect(() => {
@@ -829,7 +833,9 @@ export default function ChatInputBar({
       return;
     }
 
-    // Clear input and attachment only after confirmed successful response
+    // Clear input, attachment, and pending banner after confirmed successful response
+    setPendingMessage(null);
+    setPendingDismissed(true);
     if (!overrideText) {
       setInput("");
       setAttachedImage(null);
@@ -945,7 +951,7 @@ export default function ChatInputBar({
         )}
 
         {/* Pending message warning -- unsent message from a crashed turn */}
-        {pendingMessage && !streaming && (
+        {pendingMessage && !streaming && !pendingDismissed && (
           <div style={{
             display: "flex",
             alignItems: "center",
@@ -962,7 +968,7 @@ export default function ChatInputBar({
               Unsent message will be included: {pendingMessage.slice(0, 60)}{pendingMessage.length > 60 ? "..." : ""}
             </span>
             <button
-              onClick={() => setPendingMessage(null)}
+              onClick={() => { setPendingMessage(null); setPendingDismissed(true); }}
               title="Dismiss"
               style={{
                 display: "flex",

@@ -17,6 +17,7 @@ import DiffDrawer from "../DiffDrawer";
 import { DriftBanner, isDismissed, dismissFor24h } from "../DriftIndicator";
 import ErrorBoundary from "../ErrorBoundary";
 import ShortcutsHelp from "../ShortcutsHelp";
+import AboutDialog from "../shared/AboutDialog";
 import SessionsSidebar from "../sidebar/SessionsSidebar";
 import { useProjectInfo } from "../../hooks/useProjectInfo";
 import { useKeyboardNav } from "../../hooks/useKeyboardNav";
@@ -125,6 +126,7 @@ export default function Shell() {
   const [cmdOpen, setCmdOpen] = useState(false);
   const [paletteMode, setPaletteMode] = useState<"commands" | "files">("files");
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [activityBarVisible, setActivityBarVisible] = useState(() => restore("activityBarVisible", true));
 
   // Hooks
@@ -406,6 +408,7 @@ export default function Shell() {
       window.studio.onMenu("menu:copy-line-down", () => dispatch("studio:copy-line-down")),
       window.studio.onMenu("menu:move-line-up", () => dispatch("studio:move-line-up")),
       window.studio.onMenu("menu:move-line-down", () => dispatch("studio:move-line-down")),
+      window.studio.onMenu("menu:about", () => setAboutOpen(true)),
       // Deep link navigation
       window.studio.onMenu("deep-link:navigate", (p: unknown) => { if (typeof p === "string") navigate(p); }),
       window.studio.onMenu("deep-link:open-project", (dir: unknown) => {
@@ -585,6 +588,7 @@ export default function Shell() {
 
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} mode={paletteMode} />
       {shortcutsOpen && <ShortcutsHelp onClose={() => setShortcutsOpen(false)} />}
+      <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <DiffDrawer open={diffOpen && activeView !== "source-control"} onClose={() => setDiffOpen(false)} projectDir={info?.projectDir ?? ""} />
 
       {/* Toast notifications -- positioned above status bar */}

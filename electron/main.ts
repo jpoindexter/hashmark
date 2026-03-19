@@ -271,7 +271,7 @@ function buildMenu() {
     {
       label: "hashmark studio",
       submenu: [
-        { label: "About hashmark studio", role: "about" },
+        { label: "About hashmark studio", click: () => sendToRenderer("menu:about") },
         { type: "separator" },
         {
           label: "Preferences...",

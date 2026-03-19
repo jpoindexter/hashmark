@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import ThinkingBlock from "./chat/ThinkingBlock";
+import ToolCallSummary, { FileBadge, getReadFilePath, categorize } from "./chat/ToolSummary";
 import ContextMenu, { type ContextMenuItem } from "./shared/ContextMenu";
 import ScrollToBottom from "./shared/ScrollToBottom";
 
@@ -683,9 +684,85 @@ function MessageBubble({ msg, showPlanGate, onContextMenu, showRetry, onRetry, s
   );
 }
 
+// Group consecutive tool_use blocks into collapsible summaries, interleaving
+// text/thinking/progress blocks between them. Returns a flat list of
+// renderable segments: either a React node (text/thinking/progress) or a
+// { type: "tool_group", blocks: ... } that gets wrapped in ToolCallSummary.
+type StreamSegment =
+  | { kind: "node"; key: number; node: React.ReactNode }
+  | { kind: "tool_group"; key: number; blocks: ToolUseBlockData[]; startIdx: number };
+
+function segmentBlocks(blocks: ContentBlock[]): StreamSegment[] {
+  const segments: StreamSegment[] = [];
+  let segKey = 0;
+  let i = 0;
+
+  while (i < blocks.length) {
+    const block = blocks[i];
+
+    // Accumulate consecutive tool_use blocks into a group
+    if (block.type === "tool_use") {
+      const startIdx = i;
+      const toolBlocks: ToolUseBlockData[] = [];
+      while (i < blocks.length && blocks[i].type === "tool_use") {
+        toolBlocks.push(blocks[i] as ToolUseBlockData);
+        i++;
+      }
+      segments.push({ kind: "tool_group", key: segKey++, blocks: toolBlocks, startIdx });
+      continue;
+    }
+
+    if (block.type === "text") {
+      if (block.text) {
+        segments.push({ kind: "node", key: segKey++, node: <AssistantContent text={block.text} /> });
+      }
+      i++;
+      continue;
+    }
+
+    if (block.type === "progress") {
+      segments.push({
+        kind: "node",
+        key: segKey++,
+        node: (
+          <div style={{
+            fontSize: 11,
+            color: "var(--text-dimmer)",
+            fontFamily: "var(--font)",
+            margin: "2px 0",
+            fontStyle: "italic",
+          }}>
+            {block.text}
+          </div>
+        ),
+      });
+      i++;
+      continue;
+    }
+
+    if (block.type === "thinking") {
+      segments.push({
+        kind: "node",
+        key: segKey++,
+        node: <ThinkingBlock content={block.content} id={block.id ?? String(i)} />,
+      });
+      i++;
+      continue;
+    }
+
+    i++;
+  }
+
+  return segments;
+}
+
 function StreamingBubble({ state, legacyText, streamStartTime }: { state?: StreamingState; legacyText: string; streamStartTime?: number }) {
-  // If we have rich streaming state, render mixed blocks
   const hasBlocks = state && state.blocks.length > 0;
+
+  const segments = useMemo(
+    () => (hasBlocks ? segmentBlocks(state.blocks) : []),
+    [hasBlocks, state?.blocks]
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
@@ -700,32 +777,36 @@ function StreamingBubble({ state, legacyText, streamStartTime }: { state?: Strea
       }}>
         {hasBlocks ? (
           <>
-            {state.blocks.map((block, i) => {
-              if (block.type === "text") {
-                return block.text ? (
-                  <AssistantContent key={i} text={block.text} />
-                ) : null;
+            {segments.map((seg) => {
+              if (seg.kind === "node") {
+                return <div key={seg.key}>{seg.node}</div>;
               }
-              if (block.type === "tool_use") {
-                return <ToolUseBlock key={i} block={block} />;
-              }
-              if (block.type === "progress") {
+              // Tool group -- if only 1 tool call, render inline without collapse
+              if (seg.blocks.length === 1) {
+                const b = seg.blocks[0];
+                const isRead = categorize(b.tool) === "Read";
+                const fp = isRead ? getReadFilePath(b.input) : null;
                 return (
-                  <div key={i} style={{
-                    fontSize: 11,
-                    color: "var(--text-dimmer)",
-                    fontFamily: "var(--font)",
-                    margin: "2px 0",
-                    fontStyle: "italic",
-                  }}>
-                    {block.text}
+                  <div key={seg.key}>
+                    <ToolUseBlock block={b} />
+                    {fp && (
+                      <div style={{ paddingLeft: 2, marginTop: 2, marginBottom: 4 }}>
+                        <FileBadge filePath={fp} />
+                      </div>
+                    )}
                   </div>
                 );
               }
-              if (block.type === "thinking") {
-                return <ThinkingBlock key={i} content={block.content} id={block.id ?? String(i)} />;
-              }
-              return null;
+              // Multiple tool calls -- collapsible summary
+              return (
+                <ToolCallSummary
+                  key={seg.key}
+                  groups={seg.blocks.map((b) => ({
+                    block: b,
+                    node: <ToolUseBlock block={b} />,
+                  }))}
+                />
+              );
             })}
             {/* Blinking cursor after last block */}
             <span style={{

@@ -636,7 +636,7 @@ function TabItem({
         fontFamily: "var(--font)",
         color: active ? "var(--text)" : "var(--text-dimmer)",
         borderRight: "1px solid var(--border-dim)",
-        borderBottom: active ? "1px solid var(--accent)" : "1px solid transparent",
+        borderBottom: active ? "2px solid var(--accent)" : "2px solid transparent",
         background: active ? "var(--bg-3)" : hovered ? "var(--surface-subtle)" : "transparent",
         flexShrink: 0,
         userSelect: "none",
