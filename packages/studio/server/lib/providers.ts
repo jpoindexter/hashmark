@@ -1,5 +1,17 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
+import { execSync } from "child_process";
+
+function detectInstalledCLIs(): Set<string> {
+  const detected = new Set<string>();
+  try {
+    execSync("which codex", { stdio: "pipe" });
+    detected.add("codex");
+  } catch { /* not found */ }
+  if (process.env.OPENAI_API_KEY) detected.add("codex");
+  if (process.env.ANTHROPIC_API_KEY) detected.add("claude");
+  return detected;
+}
 
 export interface ProviderConfig {
   id: string;
@@ -31,7 +43,14 @@ const DEFAULT_STORE: ProvidersStore = {
 
 export function loadProviders(dataDir: string): ProvidersStore {
   const filePath = join(dataDir, "providers.json");
-  if (!existsSync(filePath)) return structuredClone(DEFAULT_STORE);
+  if (!existsSync(filePath)) {
+    const store = structuredClone(DEFAULT_STORE);
+    const detected = detectInstalledCLIs();
+    store.providers = store.providers.map(p =>
+      detected.has(p.id) ? { ...p, enabled: true } : p
+    );
+    return store;
+  }
   try {
     const raw = readFileSync(filePath, "utf-8");
     const parsed = JSON.parse(raw) as Partial<ProvidersStore>;
