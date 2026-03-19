@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { DiffViewer } from "./DiffViewer.tsx";
 import { SkeletonLine } from "./Skeleton.tsx";
+import ConfirmDialog from "./shared/ConfirmDialog.tsx";
 
 interface GitFile {
   status: string;
@@ -233,6 +234,7 @@ export default function SourceControlPage() {
   const [stagedExpanded, setStagedExpanded] = useState(true);
   const [unstagedExpanded, setUnstagedExpanded] = useState(true);
   const [untrackedExpanded, setUntrackedExpanded] = useState(true);
+  const [discardTarget, setDiscardTarget] = useState<{ file: string; isUntracked: boolean } | null>(null);
 
   const dragging = useRef(false);
   const dragStartX = useRef(0);
@@ -333,10 +335,12 @@ export default function SourceControlPage() {
     }
   };
 
-  const discardFile = async (e: React.MouseEvent, file: string, isUntracked: boolean) => {
+  const discardFile = (e: React.MouseEvent, file: string, isUntracked: boolean) => {
     e.stopPropagation();
-    const verb = isUntracked ? "Delete" : "Discard changes to";
-    if (!window.confirm(`${verb} ${file}?`)) return;
+    setDiscardTarget({ file, isUntracked });
+  };
+
+  const doDiscard = async (file: string, isUntracked: boolean) => {
     setFileLoading(file);
     try {
       const r = await fetch("/api/files/discard", {
@@ -411,8 +415,23 @@ export default function SourceControlPage() {
     ? statusMsg.toLowerCase().includes("fail") || statusMsg.toLowerCase().includes("error")
     : false;
 
+  const discardVerb = discardTarget?.isUntracked ? "Delete" : "Discard changes to";
+
   return (
-    <div style={{ display: "flex", height: "100%", overflow: "hidden", background: "var(--bg)" }}>
+    <div style={{ display: "flex", height: "100%", overflow: "hidden", background: "var(--bg)", position: "relative" }}>
+      <ConfirmDialog
+        open={discardTarget !== null}
+        title={discardTarget ? `${discardVerb} ${discardTarget.file.split("/").pop()}?` : ""}
+        message={discardTarget && !discardTarget.isUntracked ? "This will permanently discard all local changes to this file." : undefined}
+        confirmLabel={discardTarget?.isUntracked ? "Delete" : "Discard"}
+        danger
+        onConfirm={() => {
+          const target = discardTarget;
+          setDiscardTarget(null);
+          if (target) void doDiscard(target.file, target.isUntracked);
+        }}
+        onCancel={() => setDiscardTarget(null)}
+      />
 
       {/* Left: file list + actions */}
       <div style={{

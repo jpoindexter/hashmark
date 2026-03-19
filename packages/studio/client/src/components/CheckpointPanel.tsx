@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Clock, Plus, RotateCcw, X, GitBranch, Trash2, Eye, EyeOff } from "lucide-react";
 import { DiffPanel } from "./DiffPanel";
+import ConfirmDialog from "./shared/ConfirmDialog.tsx";
 
 interface Checkpoint {
   id: string;
@@ -67,6 +68,8 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
   const [diffFor, setDiffFor] = useState<{ id: string; label: string; diff: string } | null>(null);
   const [loadingDiffId, setLoadingDiffId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<Checkpoint | null>(null);
+  const [pruneConfirmOpen, setPruneConfirmOpen] = useState(false);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -102,7 +105,10 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
   };
 
   const handleRestore = async (cp: Checkpoint) => {
-    if (!window.confirm(`Create a new branch from checkpoint "${cp.label}"? Your working tree is not modified.`)) return;
+    setRestoreTarget(cp);
+  };
+
+  const doRestore = async (cp: Checkpoint) => {
     setRestoringId(cp.id);
     try {
       const r = await fetch(`/api/checkpoints/${encodeURIComponent(cp.id)}/restore`, {
@@ -144,8 +150,11 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
     } catch {}
   };
 
-  const handlePrune = async () => {
-    if (!window.confirm("Remove merged and abandoned checkpoints older than 7 days?")) return;
+  const handlePrune = () => {
+    setPruneConfirmOpen(true);
+  };
+
+  const doPrune = async () => {
     setPruning(true);
     try {
       const r = await fetch("/api/checkpoints/prune", { method: "DELETE" });
@@ -396,6 +405,31 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
           onClose={() => setDiffFor(null)}
         />
       )}
+
+      {/* Restore confirm */}
+      <ConfirmDialog
+        open={restoreTarget !== null}
+        title={`Restore checkpoint?`}
+        message={restoreTarget ? `Create a new branch from "${restoreTarget.label}"? Your working tree must not have uncommitted changes.` : undefined}
+        confirmLabel="Restore"
+        onConfirm={() => {
+          const cp = restoreTarget;
+          setRestoreTarget(null);
+          if (cp) void doRestore(cp);
+        }}
+        onCancel={() => setRestoreTarget(null)}
+      />
+
+      {/* Prune confirm */}
+      <ConfirmDialog
+        open={pruneConfirmOpen}
+        title="Prune old checkpoints?"
+        message="Remove merged and abandoned checkpoints older than 7 days. This cannot be undone."
+        confirmLabel="Prune"
+        danger
+        onConfirm={() => { setPruneConfirmOpen(false); void doPrune(); }}
+        onCancel={() => setPruneConfirmOpen(false)}
+      />
 
       {/* Toast */}
       {toast && (
