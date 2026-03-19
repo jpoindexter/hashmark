@@ -110,12 +110,16 @@ export default function Shell() {
     () => localStorage.getItem("studio_active_session_id") ?? null,
   );
 
+  // Toast state
+  const [toasts, setToasts] = useState<Array<{ id: string; message: string; type: string }>>([]);
+
   // Ephemeral state
   const [activeTab, setActiveTab] = useState<"TERMINAL" | "OUTPUT">("TERMINAL");
   const [streamText, setStreamText] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [contextPercent, setContextPercent] = useState<number | null>(null);
   const [terminalCwd, setTerminalCwd] = useState("");
+  const [sessionError, setSessionError] = useState(false);
   const [diffOpen, setDiffOpen] = useState(false);
   const [driftDismissed, setDriftDismissed] = useState<boolean>(isDismissed);
   const [cmdOpen, setCmdOpen] = useState(false);
@@ -153,7 +157,10 @@ export default function Shell() {
   // Auto-create session on mount
   useEffect(() => {
     if (activeSessionId) return;
-    createSession().then(setActiveSessionId).catch(() => {});
+    setSessionError(false);
+    createSession()
+      .then(setActiveSessionId)
+      .catch(() => setSessionError(true));
   }, [activeSessionId]);
 
   // Session switching via custom event
@@ -175,6 +182,50 @@ export default function Shell() {
     window.addEventListener("studio:navigate", handler);
     return () => window.removeEventListener("studio:navigate", handler);
   }, [navigate]);
+
+  // Toast listener -- dispatched by git push/pull, agent runs, errors, etc.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { message, type } = (e as CustomEvent<{ message: string; type?: string }>).detail;
+      const id = Date.now().toString();
+      setToasts(prev => [...prev, { id, message, type: type || "info" }]);
+      setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+    };
+    window.addEventListener("studio:toast", handler);
+    return () => window.removeEventListener("studio:toast", handler);
+  }, []);
+
+  // Agent open/run events -- dispatched by sidebar, command palette, etc.
+  useEffect(() => {
+    const openHandler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const id = typeof detail === "string" ? detail : detail?.id;
+      if (id) navigate(`/agents?agent=${id}`);
+    };
+    const runHandler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const id = typeof detail === "string" ? detail : detail?.id;
+      if (id) navigate(`/run?agent=${id}`);
+    };
+    window.addEventListener("studio:open-agent", openHandler);
+    window.addEventListener("studio:run-agent", runHandler);
+    return () => {
+      window.removeEventListener("studio:open-agent", openHandler);
+      window.removeEventListener("studio:run-agent", runHandler);
+    };
+  }, [navigate]);
+
+  // Plan/think toggle events -- dispatched by ChatInputBar slash commands
+  useEffect(() => {
+    const planHandler = () => setPlanMode(v => !v);
+    const thinkHandler = () => setThinking(v => !v);
+    window.addEventListener("studio:toggle-plan", planHandler);
+    window.addEventListener("studio:toggle-thinking", thinkHandler);
+    return () => {
+      window.removeEventListener("studio:toggle-plan", planHandler);
+      window.removeEventListener("studio:toggle-thinking", thinkHandler);
+    };
+  }, []);
 
   // Request notification permission on mount
   useEffect(() => {
@@ -333,6 +384,29 @@ export default function Shell() {
             />
           )}
 
+          {/* Session error state */}
+          {sessionError && (
+            <div style={{ padding: 20, textAlign: "center", color: "var(--red)" }}>
+              <div>Failed to create session</div>
+              <button
+                onClick={() => {
+                  setSessionError(false);
+                  createSession()
+                    .then(setActiveSessionId)
+                    .catch(() => setSessionError(true));
+                }}
+                style={{
+                  marginTop: 8, padding: "4px 12px",
+                  background: "var(--bg-3)", border: "1px solid var(--border)",
+                  borderRadius: "var(--radius)", color: "var(--text-dim)", cursor: "pointer",
+                  fontFamily: "var(--font-ui)", fontSize: 12,
+                }}
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
           {/* Content area */}
           <div style={{
             flex: termBig ? 0 : 1,
@@ -408,6 +482,30 @@ export default function Shell() {
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} mode={paletteMode} />
       {shortcutsOpen && <ShortcutsHelp onClose={() => setShortcutsOpen(false)} />}
       <DiffDrawer open={diffOpen} onClose={() => setDiffOpen(false)} projectDir={info?.projectDir ?? ""} />
+
+      {/* Toast notifications -- positioned above status bar */}
+      {toasts.length > 0 && (
+        <div style={{
+          position: "fixed", bottom: 30, right: 12, zIndex: 9999,
+          display: "flex", flexDirection: "column", gap: 6,
+        }}>
+          {toasts.map(t => (
+            <div key={t.id} style={{
+              padding: "8px 16px",
+              borderRadius: "var(--radius)",
+              fontSize: 12,
+              fontFamily: "var(--font-ui)",
+              background: t.type === "error" ? "var(--red)" : t.type === "success" ? "var(--accent)" : "var(--bg-4)",
+              color: t.type === "error" || t.type === "success" ? "#fff" : "var(--text)",
+              border: "1px solid var(--border)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+              animation: "fadeIn 0.2s ease",
+            }}>
+              {t.message}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

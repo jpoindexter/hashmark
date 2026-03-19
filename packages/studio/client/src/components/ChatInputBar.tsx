@@ -499,7 +499,11 @@ export default function ChatInputBar({
   const abortRef = useRef<(() => void) | null>(null);
 
   const agentSuggestion = useAgentSuggestion(input, currentFile);
-  const slashCommands = useSlashCommands(onNewSession, () => {}, () => {});
+  const slashCommands = useSlashCommands(
+    onNewSession,
+    () => window.dispatchEvent(new CustomEvent("studio:toggle-plan")),
+    () => window.dispatchEvent(new CustomEvent("studio:toggle-thinking")),
+  );
   const mentionFiles = useMentionFiles();
 
   // Check for pending (unsent) messages from a previous failed turn
