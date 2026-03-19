@@ -198,24 +198,6 @@ export default function Titlebar({
 
   return (
     <div style={containerStyle}>
-      {/* Left section - sidebar toggle */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          ...noDrag,
-        }}
-      >
-        <IconButton
-          title={`Toggle sidebar (\u2318B)`}
-          onClick={onToggleSidebar}
-          style={{ color: sidebarOpen ? "var(--text-dim)" : "var(--text-dimmer)" }}
-        >
-          <PanelLeft size={14} />
-        </IconButton>
-      </div>
-
       {/* Center section -- draggable, shows project info */}
       <div
         style={{
