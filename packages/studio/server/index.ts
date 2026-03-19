@@ -14,7 +14,7 @@ import { agentsRoutes } from "./routes/agents.js";
 import { generateRoutes } from "./routes/generate.js";
 import { scanRoutes } from "./routes/scan.js";
 import { tasksRoutes } from "./routes/tasks.js";
-import { sessionsRoutes, killAllActiveSessions } from "./routes/sessions.js";
+import { sessionsRoutes, killAllActiveSessions, setStudioPort } from "./routes/sessions.js";
 export { killAllActiveSessions };
 import { attachTerminalWS } from "./routes/terminal.js";
 import { filesRoutes } from "./routes/files.js";
@@ -78,6 +78,9 @@ export function createServer(opts: ServerOptions) {
       }
     } catch {}
   }
+
+  // Tell the sessions module which port we're on so the MCP bridge can call back
+  setStudioPort(opts.port);
 
   app.use("*", cors({ origin: "*" }));
 

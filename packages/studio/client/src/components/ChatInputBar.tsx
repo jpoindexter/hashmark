@@ -516,6 +516,23 @@ export default function ChatInputBar({
       .catch(() => setPendingMessage(null));
   }, [sessionId, streaming]);
 
+  // Listen for suggestion clicks from EmptyState
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const text = (e as CustomEvent<{ text: string }>).detail?.text;
+      if (text) {
+        setInput(text);
+        requestAnimationFrame(() => {
+          textareaRef.current?.focus();
+          const ta = textareaRef.current;
+          if (ta) { ta.style.height = "auto"; ta.style.height = `${Math.min(ta.scrollHeight, 20 * 6)}px`; }
+        });
+      }
+    };
+    window.addEventListener("studio:suggest", handler);
+    return () => window.removeEventListener("studio:suggest", handler);
+  }, []);
+
   const injectTerminalCwd = useCallback(() => {
     if (!terminalCwd) return;
     const snippet = `\n\n[Terminal cwd: ${terminalCwd}]`;

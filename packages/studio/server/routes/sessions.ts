@@ -4,11 +4,10 @@
  */
 
 import { Hono } from "hono";
-import { randomUUID, createHash } from "crypto";
+import { randomUUID } from "crypto";
 import { spawn } from "child_process";
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { join, extname } from "path";
-import { tmpdir, homedir } from "os";
 import { getDb } from "../db.js";
 import { loadScanContext } from "../context.js";
 import { analyzeSessionLoop } from "../lib/loop-detector.js";
@@ -21,6 +20,7 @@ import {
 } from "../lib/context-analytics.js";
 import { createCheckpoint } from "../lib/checkpoint.js";
 import { loadProjectEnvVars } from "../lib/env.js";
+import { createStudioMcpConfig } from "../lib/mcp-studio.js";
 
 /**
  * Expand @file mentions in a message.
@@ -61,34 +61,12 @@ function expandMentions(message: string, projectDir: string): string {
   return blocks.length > 0 ? message + blocks.join("") : message;
 }
 
-/**
- * Resolve MCP config from project-level or global Claude config.
- * Writes a temp file and returns its path, or null if no MCP servers found.
- */
-function resolveMcpConfig(projectDir: string): string | null {
-  const candidates = [
-    join(projectDir, ".mcp.json"),
-    join(homedir(), ".claude", "claude_desktop_config.json"),
-  ];
+// Port extracted from the server startup -- set by sessionsRoutes caller
+let studioPort = 3200;
 
-  for (const filePath of candidates) {
-    if (!existsSync(filePath)) continue;
-    try {
-      const raw = readFileSync(filePath, "utf-8");
-      const parsed = JSON.parse(raw) as { mcpServers?: Record<string, unknown> };
-      if (parsed.mcpServers && Object.keys(parsed.mcpServers).length > 0) {
-        const hash = createHash("md5").update(raw).digest("hex");
-        const tmpPath = join(tmpdir(), `studio-mcp-${hash}.json`);
-        if (!existsSync(tmpPath)) {
-          writeFileSync(tmpPath, raw, "utf-8");
-        }
-        return tmpPath;
-      }
-    } catch {
-      // Malformed JSON — skip
-    }
-  }
-  return null;
+/** Called by the server entrypoint to set the port for MCP bridge config */
+export function setStudioPort(port: number) {
+  studioPort = port;
 }
 
 // Candidates for the claude binary — same as runner.ts
@@ -525,7 +503,14 @@ export function sessionsRoutes(projectDir: string) {
           // -- CLI streaming agent path (Claude, Codex, or Gemini) --
           const provider = resolveProvider(body.model || "claude-sonnet-4-6");
           const cliBin = findBin(provider === "codex" ? "codex" : provider === "gemini" ? "gemini" : "claude", projectDir);
-          const mcpConfigPath = resolveMcpConfig(projectDir);
+
+          // Build merged MCP config: user servers + Studio tool bridge
+          let mcpConfigPath: string | null = null;
+          try {
+            mcpConfigPath = createStudioMcpConfig(projectDir, studioPort);
+          } catch {
+            // MCP config generation failed -- continue without it
+          }
 
           let cliArgs: string[];
           // Layer env vars: process.env < project .env/.env.local < explicit overrides

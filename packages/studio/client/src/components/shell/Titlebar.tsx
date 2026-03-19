@@ -232,14 +232,6 @@ export default function Titlebar({
           <GitCompare size={14} />
         </IconButton>
 
-        <IconButton
-          title="Split View"
-          onClick={() => console.log("split view not implemented yet")}
-          style={{ color: "var(--text-dimmer)" }}
-        >
-          <Columns2 size={14} />
-        </IconButton>
-
         <div style={{ width: 8 }} />
         <Badge>{routeTitle}</Badge>
       </div>
