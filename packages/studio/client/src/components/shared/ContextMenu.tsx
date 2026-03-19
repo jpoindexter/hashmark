@@ -191,7 +191,7 @@ function ContextMenuItemRow({
   onHover: () => void;
 }) {
   const baseColor = isDanger ? "var(--red)" : "var(--text-dim)";
-  const hoverBg = isDanger ? "var(--red-bg)" : "rgba(255,255,255,0.06)";
+  const hoverBg = isDanger ? "var(--red-bg)" : "var(--active-bg)";
   const hoverColor = isDanger ? "var(--red)" : "var(--text)";
 
   return (

@@ -118,7 +118,7 @@ function DeptSection({
         }}
         onMouseEnter={(e) => {
           (e.currentTarget as HTMLDivElement).style.background =
-            "rgba(255,255,255,0.03)";
+            "var(--surface-subtle)";
         }}
         onMouseLeave={(e) => {
           (e.currentTarget as HTMLDivElement).style.background = "transparent";

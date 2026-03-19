@@ -103,7 +103,7 @@ export default function TerminalPanel({
               onMouseEnter={() => setHoveredTab(tab)}
               onMouseLeave={() => setHoveredTab(null)}
               style={{
-                background: !isActive && isHovered ? "rgba(255,255,255,0.04)" : "none",
+                background: !isActive && isHovered ? "var(--hover-bg)" : "none",
                 border: "none",
                 cursor: "pointer",
                 padding: "0 14px",
@@ -126,7 +126,7 @@ export default function TerminalPanel({
           onMouseEnter={() => setMaxHover(true)}
           onMouseLeave={() => setMaxHover(false)}
           style={{
-            background: maxHover ? "rgba(255,255,255,0.08)" : "none",
+            background: maxHover ? "var(--hover-bg-strong)" : "none",
             border: "none",
             cursor: "pointer",
             color: "var(--text-dimmer)",
@@ -143,7 +143,7 @@ export default function TerminalPanel({
           onMouseEnter={() => setCloseHover(true)}
           onMouseLeave={() => setCloseHover(false)}
           style={{
-            background: closeHover ? "rgba(255,255,255,0.08)" : "none",
+            background: closeHover ? "var(--hover-bg-strong)" : "none",
             border: "none",
             cursor: "pointer",
             color: "var(--text-dimmer)",

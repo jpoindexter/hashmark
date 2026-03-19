@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ArrowUp, Square, Plus } from "lucide-react";
+import { ArrowUp, Square, Plus, X, ImageIcon } from "lucide-react";
 
 // ─── Slash command registry ───────────────────────────────────────────────────
 
@@ -494,6 +494,7 @@ export default function ChatInputBar({
   const [atQuery, setAtQuery] = useState<string | null>(null);
   const [chipDismissed, setChipDismissed] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [attachedImage, setAttachedImage] = useState<{ name: string; dataUrl: string } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
 
@@ -527,6 +528,38 @@ export default function ChatInputBar({
       ta.style.height = `${Math.min(ta.scrollHeight, LINE_HEIGHT * MAX_ROWS)}px`;
     });
   }, [terminalCwd]);
+
+  const handleImageFile = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAttachedImage({ name: file.name, dataUrl: reader.result as string });
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    const items = Array.from(e.clipboardData.items);
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) handleImageFile(file);
+        return;
+      }
+    }
+  }, [handleImageFile]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) {
+      handleImageFile(file);
+    }
+  }, [handleImageFile]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
 
   // ⌘L focus shortcut
   useEffect(() => {
@@ -597,13 +630,17 @@ export default function ChatInputBar({
   }, [input]);
 
   const sendMessage = async () => {
-    if (!input.trim() || streaming) return;
+    if ((!input.trim() && !attachedImage) || streaming) return;
     return sendMessageWithText();
   };
 
   const sendMessageWithText = async (overrideText?: string) => {
-    const text = overrideText ?? input.trim();
-    if (!text || streaming) return;
+    const raw = overrideText ?? input.trim();
+    // Append image reference when an image is attached
+    const text = attachedImage
+      ? `${raw}\n\n[Image attached: ${attachedImage.name}]`
+      : raw;
+    if ((!raw && !attachedImage) || streaming) return;
 
     let sid = sessionId;
     if (!sid) {
@@ -649,9 +686,10 @@ export default function ChatInputBar({
       return;
     }
 
-    // Clear input only after confirmed successful response
+    // Clear input and attachment only after confirmed successful response
     if (!overrideText) {
       setInput("");
+      setAttachedImage(null);
       if (textareaRef.current) textareaRef.current.style.height = "auto";
     }
 
@@ -711,7 +749,7 @@ export default function ChatInputBar({
     el.style.height = `${Math.min(el.scrollHeight, LINE_HEIGHT * MAX_ROWS)}px`;
   };
 
-  const hasText = input.trim().length > 0;
+  const hasText = input.trim().length > 0 || attachedImage !== null;
 
   return (
     <div style={{
@@ -773,6 +811,58 @@ export default function ChatInputBar({
           </div>
         )}
 
+        {/* Image attachment preview */}
+        {attachedImage && (
+          <div style={{
+            padding: "8px 14px",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            borderBottom: "1px solid var(--border-dim)",
+          }}>
+            <img
+              src={attachedImage.dataUrl}
+              alt=""
+              style={{
+                height: 40,
+                borderRadius: "var(--radius)",
+                border: "1px solid var(--border-dim)",
+                objectFit: "cover",
+              }}
+            />
+            <span style={{
+              fontSize: 11,
+              color: "var(--text-dim)",
+              fontFamily: "var(--font-ui)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              flex: 1,
+            }}>
+              {attachedImage.name}
+            </span>
+            <button
+              onClick={() => setAttachedImage(null)}
+              title="Remove image"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 20,
+                height: 20,
+                background: "none",
+                border: "none",
+                color: "var(--text-dimmer)",
+                cursor: "pointer",
+                borderRadius: "var(--radius-sm)",
+                flexShrink: 0,
+              }}
+            >
+              <X size={12} />
+            </button>
+          </div>
+        )}
+
         {/* Textarea row */}
         <div style={{
           display: "flex",
@@ -786,6 +876,9 @@ export default function ChatInputBar({
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onInput={handleInput}
+            onPaste={handlePaste}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
             placeholder="Ask to make changes, @mention files, run /commands"
             disabled={streaming}
             rows={1}
@@ -919,7 +1012,7 @@ export default function ChatInputBar({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    background: hasText ? "var(--text)" : "rgba(255,255,255,0.07)",
+                    background: hasText ? "var(--text)" : "var(--surface-input)",
                     border: "none",
                     borderRadius: 6,
                     color: hasText ? "var(--bg)" : "var(--text-dimmer)",

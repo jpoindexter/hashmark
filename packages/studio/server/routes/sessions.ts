@@ -20,6 +20,7 @@ import {
   loadSessionAnalytics,
 } from "../lib/context-analytics.js";
 import { createCheckpoint } from "../lib/checkpoint.js";
+import { loadProjectEnvVars } from "../lib/env.js";
 
 /**
  * Expand @file mentions in a message.
@@ -145,12 +146,43 @@ function buildConversationPrompt(
 // Active processes — allows interruption
 const activeProcesses = new Map<string, { kill: () => void }>();
 
+// Idle eviction: kill sessions with no messages for 30 minutes, cap at 5 concurrent
+const SESSION_IDLE_TIMEOUT = 30 * 60 * 1000;
+const MAX_ACTIVE_SESSIONS = 5;
+const sessionLastActivity = new Map<string, number>();
+
+setInterval(() => {
+  const now = Date.now();
+
+  // Evict idle sessions past timeout
+  for (const [sid, lastActive] of sessionLastActivity) {
+    if (now - lastActive > SESSION_IDLE_TIMEOUT && activeProcesses.has(sid)) {
+      const proc = activeProcesses.get(sid);
+      try { proc?.kill(); } catch {}
+      activeProcesses.delete(sid);
+      sessionLastActivity.delete(sid);
+    }
+  }
+
+  // Enforce max concurrent -- evict least-recently-active first
+  if (activeProcesses.size > MAX_ACTIVE_SESSIONS) {
+    const sorted = [...sessionLastActivity.entries()].sort((a, b) => a[1] - b[1]);
+    while (activeProcesses.size > MAX_ACTIVE_SESSIONS && sorted.length > 0) {
+      const [sid] = sorted.shift()!;
+      try { activeProcesses.get(sid)?.kill(); } catch {}
+      activeProcesses.delete(sid);
+      sessionLastActivity.delete(sid);
+    }
+  }
+}, 60_000);
+
 /** Kill all running claude/agent processes — call before app exit */
 export function killAllActiveSessions() {
   for (const proc of activeProcesses.values()) {
     try { proc.kill(); } catch {}
   }
   activeProcesses.clear();
+  sessionLastActivity.clear();
 }
 
 export function sessionsRoutes(projectDir: string) {
@@ -256,6 +288,8 @@ export function sessionsRoutes(projectDir: string) {
     const id = c.req.param("id");
     const active = activeProcesses.get(id);
     if (active) active.kill();
+    activeProcesses.delete(id);
+    sessionLastActivity.delete(id);
     const db = getDb(dataDir);
     db.prepare("DELETE FROM sessions WHERE id = ?").run(id);
     return c.json({ ok: true });
@@ -289,9 +323,12 @@ export function sessionsRoutes(projectDir: string) {
 
   // POST /api/sessions/:id/interrupt
   app.post("/:id/interrupt", (c) => {
-    const active = activeProcesses.get(c.req.param("id"));
+    const id = c.req.param("id");
+    const active = activeProcesses.get(id);
     if (active) {
       active.kill();
+      activeProcesses.delete(id);
+      sessionLastActivity.delete(id);
       return c.json({ ok: true });
     }
     return c.json({ ok: false });
@@ -314,6 +351,9 @@ export function sessionsRoutes(projectDir: string) {
     } | undefined;
 
     if (!session) return c.json({ error: "Not found" }, 404);
+
+    // Track activity for idle eviction
+    sessionLastActivity.set(sessionId, Date.now());
 
     // Pre-turn checkpoint -- snapshot working tree before Claude touches anything
     await createCheckpoint(projectDir, `pre-turn-${sessionId.slice(0, 8)}`).catch(() => null);
@@ -437,6 +477,7 @@ export function sessionsRoutes(projectDir: string) {
             },
             onDone: () => {
               activeProcesses.delete(sessionId);
+              sessionLastActivity.delete(sessionId);
               markMessagesSent();
               const savedText = fullText.trim() || "[no response]";
               const msgInputEstimate = Math.ceil(body.message.length / 4);
@@ -461,6 +502,7 @@ export function sessionsRoutes(projectDir: string) {
             },
             onError: (err) => {
               activeProcesses.delete(sessionId);
+              sessionLastActivity.delete(sessionId);
               send({ type: "error", message: err.message });
 
               db.prepare(`
@@ -486,7 +528,12 @@ export function sessionsRoutes(projectDir: string) {
           const mcpConfigPath = resolveMcpConfig(projectDir);
 
           let cliArgs: string[];
-          const cliEnv: Record<string, string> = { ...process.env as Record<string, string> };
+          // Layer env vars: process.env < project .env/.env.local < explicit overrides
+          const projectEnv = loadProjectEnvVars(projectDir);
+          const cliEnv: Record<string, string> = {
+            ...process.env as Record<string, string>,
+            ...projectEnv,
+          };
 
           if (provider === "codex") {
             cliArgs = ["--quiet"];
@@ -604,6 +651,7 @@ export function sessionsRoutes(projectDir: string) {
 
           proc.on("close", (code: number | null) => {
             activeProcesses.delete(sessionId);
+            sessionLastActivity.delete(sessionId);
 
             const killed = code === null || code === 130 || code === 143;
             const savedText = fullText.trim() || (killed ? "[interrupted]" : "[no response]");
@@ -634,6 +682,7 @@ export function sessionsRoutes(projectDir: string) {
 
           proc.on("error", (err: Error) => {
             activeProcesses.delete(sessionId);
+            sessionLastActivity.delete(sessionId);
             send({ type: "error", message: err.message });
 
             db.prepare(`

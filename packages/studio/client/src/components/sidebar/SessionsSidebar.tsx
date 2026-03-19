@@ -78,12 +78,12 @@ const AVATAR_TEXT_COLORS: Record<string, string> = {
 
 function avatarBg(name: string): string {
   const key = name.charAt(0).toLowerCase();
-  return AVATAR_COLORS[key] ?? "rgba(255,255,255,0.08)";
+  return AVATAR_COLORS[key] ?? "var(--avatar-fallback-bg)";
 }
 
 function avatarColor(name: string): string {
   const key = name.charAt(0).toLowerCase();
-  return AVATAR_TEXT_COLORS[key] ?? "rgba(255,255,255,0.5)";
+  return AVATAR_TEXT_COLORS[key] ?? "var(--avatar-fallback-text)";
 }
 
 export default function SessionsSidebar({ activeSessionId, onSessionSelect, info, git, streaming, streamingSessionId }: SessionsSidebarProps) {
@@ -222,7 +222,7 @@ function SectionHeader({ onAdd }: { onAdd: () => void }) {
       padding: "0 3px 0 20px",
       height: 22,
       flexShrink: 0,
-      background: "rgba(255,255,255,0.02)",
+      background: "var(--surface-muted)",
     }}>
       <span style={{
         flex: 1,
@@ -282,7 +282,7 @@ function WorkspaceGroup({
           paddingRight: 8,
           gap: 4,
           cursor: "pointer",
-          background: hovered ? "rgba(255,255,255,0.04)" : "transparent",
+          background: hovered ? "var(--hover-bg)" : "transparent",
           transition: "background 0.1s",
         }}
       >
@@ -419,9 +419,9 @@ function SessionRow({
         padding: "0 8px 0 28px",
         cursor: "pointer",
         background: active
-          ? "rgba(255,255,255,0.06)"
+          ? "var(--active-bg)"
           : hovered
-          ? "rgba(255,255,255,0.04)"
+          ? "var(--hover-bg)"
           : "transparent",
         transition: "background 0.1s",
       }}

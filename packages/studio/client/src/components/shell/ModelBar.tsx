@@ -207,7 +207,7 @@ function ModelRow({
         justifyContent: "space-between",
         width: "100%",
         padding: "7px 12px 7px 24px",
-        background: isHighlighted ? "rgba(255,255,255,0.05)" : "none",
+        background: isHighlighted ? "var(--surface-dim)" : "none",
         border: "none",
         borderLeft: isSelected
           ? "2px solid var(--accent)"

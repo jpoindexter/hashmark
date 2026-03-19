@@ -22,7 +22,7 @@ const baseStyle: CSSProperties = {
   transition: "color 0.1s ease",
 };
 
-const hoverBg = "rgba(255,255,255,0.08)";
+const hoverBg = "var(--hover-bg-strong)";
 
 export default function IconButton({ children, title, onClick, style }: IconButtonProps) {
   const [hovered, setHovered] = useState(false);
