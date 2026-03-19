@@ -47,13 +47,14 @@ interface TreeRowProps {
   onContextMenu: (e: React.MouseEvent, node: FileNode) => void;
 }
 
-function TreeRow({ node, depth, selectedPath, onFileSelect, onContextMenu }: TreeRowProps) {
+function TreeRow({ node, depth, selectedPath, gitFiles, onFileSelect, onContextMenu }: TreeRowProps) {
   const [open, setOpen] = useState(depth < 1);
   const [hovered, setHovered] = useState(false);
   const isDir = node.type === "dir";
   const isSelected = selectedPath === node.path;
   const Icon = isDir ? Folder : fileIcon(node.ext);
   const Chevron = open ? ChevronDown : ChevronRight;
+  const status = gitFiles[node.path];
 
   const handleClick = () => {
     if (isDir) {
@@ -70,6 +71,11 @@ function TreeRow({ node, depth, selectedPath, onFileSelect, onContextMenu }: Tre
     });
   }, [node.children]);
 
+  // Color the filename based on git status
+  const nameColor = status
+    ? gitStatusColor(status)
+    : "var(--text-dim)";
+
   return (
     <>
       <div
@@ -78,11 +84,13 @@ function TreeRow({ node, depth, selectedPath, onFileSelect, onContextMenu }: Tre
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
+          position: "relative",
           display: "flex",
           alignItems: "center",
           gap: 4,
           height: 22,
-          paddingLeft: 8 + depth * 12,
+          paddingLeft: 8 + depth * 16,
+          paddingRight: 8,
           cursor: "pointer",
           userSelect: "none",
           fontSize: 12,
@@ -94,6 +102,19 @@ function TreeRow({ node, depth, selectedPath, onFileSelect, onContextMenu }: Tre
           borderLeft: isSelected ? "2px solid var(--accent)" : "2px solid transparent",
         }}
       >
+        {/* Indent guide lines */}
+        {Array.from({ length: depth }).map((_, i) => (
+          <div key={i} style={{
+            position: "absolute",
+            left: 20 + i * 16,
+            top: 0,
+            bottom: 0,
+            width: 1,
+            background: "var(--border-dim)",
+            pointerEvents: "none",
+          }} />
+        ))}
+
         {isDir && (
           <Chevron
             size={12}
@@ -112,10 +133,25 @@ function TreeRow({ node, depth, selectedPath, onFileSelect, onContextMenu }: Tre
           style={{
             overflow: "hidden",
             textOverflow: "ellipsis",
+            color: nameColor,
+            textDecoration: status === "D" ? "line-through" : undefined,
           }}
         >
           {node.name}
         </span>
+
+        {/* Git status badge */}
+        {status && (
+          <span style={{
+            fontSize: 10,
+            fontWeight: 600,
+            marginLeft: "auto",
+            flexShrink: 0,
+            color: gitStatusColor(status),
+          }}>
+            {status}
+          </span>
+        )}
       </div>
       {isDir &&
         open &&
@@ -125,6 +161,7 @@ function TreeRow({ node, depth, selectedPath, onFileSelect, onContextMenu }: Tre
             node={child}
             depth={depth + 1}
             selectedPath={selectedPath}
+            gitFiles={gitFiles}
             onFileSelect={onFileSelect}
             onContextMenu={onContextMenu}
           />
@@ -138,6 +175,7 @@ export default function FileTreeSidebar() {
   const [loading, setLoading] = useState(true);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; node: FileNode } | null>(null);
+  const [gitFiles, setGitFiles] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetch("/api/files/tree")
@@ -145,6 +183,17 @@ export default function FileTreeSidebar() {
       .then((d: { tree?: FileNode[] }) => setTree(d.tree ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/files/git")
+      .then((r) => r.json())
+      .then((d: { files?: Array<{ path: string; status: string }> }) => {
+        const map: Record<string, string> = {};
+        for (const f of d.files ?? []) map[f.path] = f.status;
+        setGitFiles(map);
+      })
+      .catch(() => {});
   }, []);
 
   const fileCount = useMemo(() => countFiles(tree), [tree]);
@@ -291,6 +340,7 @@ export default function FileTreeSidebar() {
               node={node}
               depth={0}
               selectedPath={selectedPath}
+              gitFiles={gitFiles}
               onFileSelect={handleFileSelect}
               onContextMenu={handleContextMenu}
             />
