@@ -1,0 +1,31 @@
+{
+  "sessionId": "de8e4f6f-312d-486b-96b8-a4e7f804a324",
+  "sectionHits": [
+    {
+      "heading": "CLAUDE.md",
+      "hitCount": 2,
+      "lastHitAt": 1773941670561
+    },
+    {
+      "heading": "Development",
+      "hitCount": 1,
+      "lastHitAt": 1773941670561
+    },
+    {
+      "heading": "Architecture",
+      "hitCount": 1,
+      "lastHitAt": 1773941670561
+    },
+    {
+      "heading": "Components",
+      "hitCount": 2,
+      "lastHitAt": 1773941670561
+    },
+    {
+      "heading": "API Routes",
+      "hitCount": 3,
+      "lastHitAt": 1773941670561
+    }
+  ],
+  "updatedAt": 1773941670561
+}
