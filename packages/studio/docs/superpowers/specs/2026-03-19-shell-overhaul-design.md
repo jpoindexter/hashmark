@@ -561,7 +561,363 @@ Sidebar auto-hides when route is `/settings` (checked via `location.pathname`).
 
 ---
 
-## 9. What This Spec Does NOT Cover
+## 9. Interaction Flows (exhaustive)
+
+Based on UX flow audits of VS Code, Conductor, Cursor, and emdash.
+
+### Flow 1: First Launch / Onboarding
+
+**Trigger**: User opens hashmark studio for the first time (no project selected).
+
+1. Window opens with `WorkspaceSetup` view (project picker)
+2. Options: "Open Folder" (native dialog), recent projects list, CLI-launched path
+3. If project has `.claude/agents/`: go to Chat view (home)
+4. If no agents: empty state -- "No agents yet. Run a scan to build your AI company."
+5. CTA button: "Generate Agents" -> navigates to `/generate`
+
+**Empty state design**:
+- Centered layout with hashmark logo
+- Tagline: "Scan any codebase. Generate AI agents. Ship faster."
+- Three action cards: "Open Project", "Scan Codebase", "View Demo"
+- Recent projects list below (if any exist in config)
+
+**State persistence**: Last-opened project stored in `~/.hashmark/studio-config.json`. On subsequent launches, auto-opens last project.
+
+### Flow 2: Activity Bar Click Behavior
+
+**From VS Code source** (exact behavior):
+
+- **Click same active icon**: Toggles sidebar visibility (collapse/expand)
+- **Click different icon**: Switches sidebar content to that view
+- **Right-click**: Context menu with "Hide", position options (Default/Top/Bottom/Hidden)
+- **Drag to reorder**: Supported via DnD with 40%/60% threshold for insertion position
+- **Hover**: Tooltip appears after 300ms delay with action name + keybinding
+- **Active indicator**: 2px solid `--accent` left border, full item height
+- **Badge**: Positioned `top: 24px, right: 8px`, 9px font, 600 weight, 20px border-radius
+
+**Our implementation**:
+- Same toggle-on-same, switch-on-different behavior
+- No drag reorder (not needed for fixed nav)
+- Tooltip on hover (native `title` attribute initially, custom tooltip later)
+- Badge support for: changes count on Source Control, running count on Run
+
+### Flow 3: Sidebar Resize (Sash)
+
+**From VS Code source** (exact CSS and behavior):
+
+```css
+/* Sash hit target */
+.sash {
+  position: absolute;
+  z-index: 35;
+  touch-action: none;
+  /* width set via --vscode-sash-size: 4px */
+}
+
+/* Visual indicator (shown on hover/drag) */
+.sash::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  width: var(--vscode-sash-hover-size);
+  height: 100%;
+  transition: background-color 0.1s ease-out;
+  background: transparent;
+}
+.sash.hover::before,
+.sash.active::before {
+  background: var(--vscode-sash-hoverBorder);
+}
+```
+
+**Hover delay**: 300ms before showing visual indicator (cancels if mouse leaves).
+
+**Drag behavior**:
+1. Pointer down: add `.active` class, lock cursor via dynamic stylesheet (`* { cursor: col-resize !important }`)
+2. Pointer move: fire resize event with delta
+3. Pointer up: remove `.active`, unlock cursor
+4. Double-click: fire reset event (returns to default width)
+
+**Constraints**: min 170px, snap-to-close below min, no max (capped at 50% in our impl).
+
+**Cursor states**: `col-resize` normal, `e-resize` at min (can only grow), `w-resize` at max (can only shrink).
+
+### Flow 4: Chat Interaction (sending a message)
+
+**Trigger**: User types in input bar and presses Enter.
+
+1. **Message created** in session_messages with `role: 'user'`, `sent_at: null` (queued)
+2. **Input bar clears**, shows "Stop" button replacing "Send"
+3. **Streaming begins**: SSE connection to `/api/sessions/:id/stream`
+4. **Visual feedback during streaming**:
+   - Status dot on session row turns yellow (active)
+   - Model bar shows pulsing indicator
+   - "Stop" button visible in input area
+   - Chat auto-scrolls as new content appears
+5. **Message parts stream in order**: thinking blocks, tool calls, text, agent dispatches
+6. **Completion**: streaming stops, "Stop" reverts to "Send", status dot returns to idle
+
+**Auto-scroll behavior**:
+- Auto-scroll ON when user is at bottom (within 50px threshold)
+- Auto-scroll OFF when user manually scrolls up
+- "Scroll to bottom" sticky button appears when scrolled up (Conductor pattern):
+  - Positioned above input bar, full-width
+  - Shows chevron-down + "Scroll to bottom" + truncated preview of latest content
+  - Click scrolls to bottom and re-enables auto-scroll
+
+**Message queuing during streaming**:
+- User can type while agent is responding
+- New message queued (not sent until current stream completes)
+- Or user can click "Stop" to interrupt, then send
+
+### Flow 5: Session Lifecycle
+
+**Creating a session**:
+1. Click "+" in Sessions sidebar section header
+2. New session created via `POST /api/sessions`
+3. Session appears in sidebar, becomes active
+4. Empty chat with welcome message
+
+**Switching sessions**:
+1. Click session row in sidebar
+2. `activeSessionId` updates, chat history loads
+3. Keyboard: Cmd+1/2/3 for quick switching (maps to session index, not workspace)
+
+**Session states** (visual indicators):
+- Idle: dim status dot (`--text-dimmer`)
+- Active/selected: blue dot (`--blue`)
+- Running (agent streaming): yellow pulsing dot (`--yellow`) with glow
+- Error: red dot (`--red`)
+
+**Deleting/archiving**: No delete in MVP. Sessions persist. Future: soft-delete via `is_hidden` flag.
+
+### Flow 6: Workspace Management
+
+**Adding a workspace**:
+1. Click "+" in Workspaces section header
+2. Native folder picker opens (`dialog.showOpenDialog`)
+3. Selected folder added to config, workspace appears in sidebar
+
+**Switching workspaces**:
+1. Click workspace row in sidebar
+2. Server reloads for new project directory
+3. All views update (file tree, git status, agents, etc.)
+
+**Multi-workspace** (future, not MVP):
+- Multiple repos in sidebar simultaneously
+- Each with nested sessions
+- Independent git status per workspace
+
+### Flow 7: File Explorer Interaction
+
+**When Explorer is active in activity bar**:
+
+Sidebar shows `FileTreeSidebar`:
+- Recursive file tree with expand/collapse folders
+- Single click: select file (highlight in tree)
+- Double click: open in code viewer (main content area)
+- File icons by language (use Lucide icons: FileCode, FileText, Folder, etc.)
+- Search/filter: type to filter visible files
+
+Main content shows code viewer:
+- Read-only syntax-highlighted code (existing CodeViewer component)
+- File path breadcrumb at top
+- Line numbers
+- Chat input still visible at bottom
+
+**Empty state**: "No files found" or "Open a project to browse files"
+
+### Flow 8: Source Control Interaction
+
+**When Source Control is active in activity bar**:
+
+Sidebar shows `GitSidebar`:
+- Section: "Changes" with file count badge
+- Each file: status badge (M/A/D), filename, +N/-N diff stats
+- Click file: opens diff in main content area
+- Stage button (+) per file
+- "Stage All" button in section header
+- Commit message input at bottom of sidebar
+- "Commit" button below message
+
+Main content shows diff viewer:
+- Side-by-side or inline diff (existing DiffViewer component)
+- Green additions, red deletions
+- File navigation (prev/next changed file)
+
+**Empty state**: "No changes" with checkmark icon
+
+### Flow 9: Agent Run Flow
+
+**When Run is active in activity bar**:
+
+Sidebar shows `RunsSidebar`:
+- Active runs with status (running/completed/failed)
+- Run history (recent completed runs)
+- Each run: agent name, task description, timestamp, status badge
+
+Main content shows run output:
+- Streaming output from agent execution
+- Tool calls, file edits, terminal commands
+- Diff summary on completion
+
+**Starting a run**:
+1. Navigate to Run view
+2. Select agent from dropdown
+3. Type task description
+4. Click "Run" or press Enter
+5. Agent executes in background, output streams in main content
+
+### Flow 10: Model Selector (Conductor pattern)
+
+**ModelBar component** (below input):
+
+1. Click model name (e.g., "Sonnet 4.6")
+2. Dropdown appears ABOVE the model bar:
+   - Section: "Claude" with model list
+   - Each row: model name, badges (NEW, default), checkmark for selected
+   - Keyboard: 1-4 to select by index
+3. Click model -> updates session, dropdown closes
+4. Model bar updates immediately
+
+**Available models** (from our server):
+- Opus 4.6 (claude-opus-4-6)
+- Opus 4.6 1M (claude-opus-4-6[1m])
+- Sonnet 4.6 (claude-sonnet-4-6) -- default
+- Haiku 4.5 (claude-haiku-4-5)
+
+### Flow 11: Thinking Toggle
+
+1. Click brain icon in model bar
+2. Icon color: `--text-dimmer` (off) -> `--accent` (on)
+3. "Thinking" label appears/disappears next to icon
+4. Server passes `--thinking adaptive` or `--thinking disabled` to claude CLI
+5. When active: thinking blocks appear in chat as collapsible amber sections
+
+### Flow 12: Plan Mode Toggle
+
+1. Click clipboard icon in model bar
+2. Icon color: `--text-dimmer` (off) -> `--accent` (on)
+3. "Plan" label appears next to icon
+4. Agent proposes plan before executing
+5. Plan appears in chat as a structured block
+6. User sees approve/deny/feedback buttons below plan
+7. Approve: agent executes, deny: agent stops, feedback: agent revises
+
+### Flow 13: Branch Picker (with search)
+
+1. Click branch name in titlebar
+2. Dropdown opens below with search input at top
+3. List of all branches (from `/api/files/git/branches`)
+4. Current branch has checkmark
+5. Type to filter branches (fuzzy match)
+6. Click branch -> switches branch, page reloads
+7. Escape or click outside -> closes dropdown
+
+### Flow 14: Terminal Panel
+
+**Toggle**: Cmd+` or Cmd+J
+
+1. Terminal drawer slides up from bottom (ResizableDrawer)
+2. Tab bar: "TERMINAL" | "OUTPUT" tabs
+3. Active terminal with PTY connection
+4. Multiple terminal tabs (existing TerminalTabs component)
+5. Maximize button: terminal fills entire main area
+6. Close button: hides terminal drawer
+
+**Big terminal mode** (Conductor pattern):
+- Terminal becomes the primary pane
+- Chat input still visible below
+- Toggle via a maximize button in terminal tab bar
+
+### Flow 15: Command Palette
+
+**Trigger**: Cmd+K or Cmd+Shift+P
+
+**VS Code dimensions**: 600px wide, centered, border-radius 12px (cornerRadius-xLarge), shadow-xl, z-index 2550.
+
+1. Overlay opens with dark backdrop
+2. Search input auto-focused
+3. Results grouped by: Navigation, Actions, Settings
+4. Fuzzy matching with bold highlights on matched characters
+5. Arrow keys to navigate, Enter to select, Escape to close
+6. Max 20 visible items, scrollable
+
+### Flow 16: Status Bar Interactions
+
+**Click behavior** (from VS Code):
+- Branch name: opens branch picker
+- Error/warning counts: opens Problems panel
+- Model name: opens model selector
+- Each item has `cursor: pointer` and hover background (`rgba(0,0,0,0.12)`)
+
+**Mac bottom radius**: 10px (16px on Tahoe+) -- rounds the bottom corners of the window.
+
+### Flow 17: Empty States
+
+| View | Empty State |
+|------|-------------|
+| Chat (no sessions) | Welcome message + suggested actions |
+| Chat (session, no messages) | Model info + "Ask me anything" |
+| Explorer (no project) | "Open a project" button |
+| Explorer (project, no files) | "Empty directory" |
+| Source Control (no changes) | Checkmark + "No changes" |
+| Agents (no agents) | "Run a scan to generate agents" + CTA |
+| Run (no runs) | "Select an agent and describe a task" |
+| Generate (not scanned) | "Scan your codebase" + CTA |
+| Governance (no policies) | "No policies configured" |
+| Settings | Always has content |
+| Sidebar (no workspace) | "Open a project" button |
+| Terminal (no session) | Auto-creates default PTY |
+
+### Flow 18: Loading States
+
+| Context | Indicator |
+|---------|-----------|
+| Chat streaming | Pulsing status dot, "Stop" button, auto-scroll |
+| Session loading | Skeleton lines in sidebar |
+| File tree loading | Skeleton tree structure |
+| Git status loading | Spinner in titlebar changes badge |
+| Agent running | Yellow pulsing dot in sidebar |
+| Scan in progress | Progress bar in Generate view |
+| Branch switching | Page reload with brief flash |
+
+### Flow 19: Error States
+
+| Error | User Sees | Recovery |
+|-------|-----------|----------|
+| Claude CLI not found | Banner: "Claude Code not installed" + install link | Install claude CLI |
+| Agent crash mid-stream | Error message in chat + red status dot | Send new message to retry |
+| Network timeout | Toast: "Connection lost" | Auto-retry or manual refresh |
+| Git operation conflict | Banner: "Git operation in progress" | Wait for completion |
+| Database error | Toast: "Failed to save" | Retry action |
+| Auth expired | Banner: "Claude auth expired" + re-auth link | Run `claude login` |
+
+### Flow 20: Notifications/Toasts
+
+**VS Code pattern**:
+- Position: fixed, bottom-right (above status bar), z-index 2545
+- Width: 320px (our spec), VS Code uses max 450px
+- Animation: slide up from bottom, 300ms ease-out
+- Auto-dismiss: info 10s, warning 12s, error 15s
+- Pauses on hover/focus
+- Max 3 visible at once
+- Severity icons colored: error red, warning yellow, info blue
+
+**Our implementation**: Existing `Toasts.tsx` component -- keep as-is, ensure it uses Grove tokens.
+
+### Flow 21: Keyboard Focus Management
+
+**Tab order**: Activity bar -> Sidebar -> Main content -> Terminal -> Input bar -> Model bar
+**Escape chain**: Command palette -> Settings -> Diff drawer -> Terminal (unfocus) -> Input bar (unfocus)
+**Focus shortcuts**:
+- Cmd+L: Focus input bar
+- Cmd+B: Toggle sidebar (focus shifts to sidebar or main)
+- Cmd+`: Toggle terminal (focus shifts to terminal or main)
+
+---
+
+## 10. What This Spec Does NOT Cover
 
 These are future work, not part of this shell overhaul:
 
