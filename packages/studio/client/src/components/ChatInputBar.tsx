@@ -622,6 +622,7 @@ export default function ChatInputBar({
       body: JSON.stringify({
         message: text,
         model: selectedModel,
+        thinking,
         ...(systemPrompt.trim() && { systemPrompt: systemPrompt.trim() }),
       }),
     });

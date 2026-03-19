@@ -281,6 +281,8 @@ export function sessionsRoutes(projectDir: string) {
     const body = await c.req.json<{
       message: string;
       systemPrompt?: string;
+      thinking?: boolean;
+      model?: string;
     }>();
 
     const db = getDb(dataDir);
@@ -430,6 +432,7 @@ export function sessionsRoutes(projectDir: string) {
             "--verbose",
             "--no-interactive",
           ];
+          if (body.thinking) claudeArgs.push("--thinking");
           if (mcpConfigPath) {
             claudeArgs.unshift("--mcp-config", mcpConfigPath);
           }
