@@ -785,7 +785,7 @@ export default function Settings() {
                   }}
                   onMouseEnter={e => {
                     if (active !== section.id)
-                      (e.currentTarget).style.background = "rgba(255,255,255,0.04)";
+                      (e.currentTarget).style.background = "var(--hover-bg)";
                   }}
                   onMouseLeave={e => {
                     if (active !== section.id)

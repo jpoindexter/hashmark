@@ -26,11 +26,11 @@ export default function ProjectSwitcher({ projectName }: { projectName: string |
         style={{
           display: "flex", alignItems: "center", gap: 4,
           padding: "2px 8px", height: 22, borderRadius: 3,
-          background: open ? "rgba(255,255,255,0.06)" : "transparent",
+          background: open ? "var(--active-bg)" : "transparent",
           cursor: "pointer", fontSize: 11, color: "var(--text-dim)",
           transition: "background 0.1s", whiteSpace: "nowrap",
         }}
-        onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.06)"}
+        onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "var(--active-bg)"}
         onMouseLeave={e => { if (!open) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
       >
         {projectName ?? "project"}

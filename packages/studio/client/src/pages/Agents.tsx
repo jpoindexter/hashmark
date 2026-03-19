@@ -1032,7 +1032,7 @@ export default function Agents() {
                         textAlign: "left",
                         transition: "background 0.1s",
                       }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "var(--surface-dim)"; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
                     >
                       {/* Checkbox */}

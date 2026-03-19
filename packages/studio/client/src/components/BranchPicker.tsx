@@ -280,7 +280,7 @@ export default function BranchPicker({ currentBranch }: { currentBranch: string 
                   style={{
                     display: "flex", alignItems: "center", gap: 8,
                     width: "100%", padding: "7px 12px",
-                    background: idx === highlightedIndex ? "rgba(255,255,255,0.05)" : "none",
+                    background: idx === highlightedIndex ? "var(--surface-dim)" : "none",
                     border: "none",
                     color: branch === currentBranch ? "var(--accent)" : "var(--text-dim)",
                     fontSize: 12, fontFamily: "var(--font)", cursor: "pointer",

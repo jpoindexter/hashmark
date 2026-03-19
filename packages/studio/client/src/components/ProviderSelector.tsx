@@ -175,7 +175,7 @@ export default function ProviderSelector() {
           cursor: "pointer", transition: "background 0.1s, color 0.1s", whiteSpace: "nowrap",
         }}
         onMouseEnter={e => {
-          (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)";
+          (e.currentTarget as HTMLButtonElement).style.background = "var(--active-bg)";
           (e.currentTarget as HTMLButtonElement).style.color = "var(--text)";
         }}
         onMouseLeave={e => {
@@ -266,7 +266,7 @@ export default function ProviderSelector() {
                   borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
                   transition: "background 0.05s",
                 }}
-                onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "var(--hover-bg)"; }}
                 onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
               >
                 <span style={{ fontSize: 13, color: isActive ? "var(--accent)" : "var(--text-dimmer)", flexShrink: 0 }}>
@@ -343,7 +343,7 @@ export default function ProviderSelector() {
                       borderLeft: isActiveModel ? "2px solid var(--accent)" : "2px solid transparent",
                       transition: "background 0.05s",
                     }}
-                    onMouseEnter={e => { if (!isActiveModel) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"; }}
+                    onMouseEnter={e => { if (!isActiveModel) (e.currentTarget as HTMLDivElement).style.background = "var(--hover-bg)"; }}
                     onMouseLeave={e => { if (!isActiveModel) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
                   >
                     <span style={{ fontFamily: "var(--font)", fontWeight: isActiveModel ? 600 : 400 }}>{m}</span>

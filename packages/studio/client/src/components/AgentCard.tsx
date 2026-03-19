@@ -35,7 +35,7 @@ const DEPT_COLORS: Record<string, string> = {
   marketing: "var(--yellow)",
   sales: "var(--accent)",
   operations: "#6366f1",
-  pr: "#06b6d4",
+  pr: "var(--cyan)",
   general: "var(--text-dim)",
 };
 

@@ -36,7 +36,7 @@ interface DiffState {
 
 // Branch-specific colors for visual distinction (no Grove token equivalent)
 const BRANCH_COLORS = [
-  "var(--accent)", "var(--blue)", "#8b5cf6", "#f97316", "#06b6d4", "var(--yellow)",
+  "var(--accent)", "var(--blue)", "#8b5cf6", "#f97316", "var(--cyan)", "var(--yellow)",
 ];
 
 function branchColor(name: string): string {

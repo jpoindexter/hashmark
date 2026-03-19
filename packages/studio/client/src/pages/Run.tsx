@@ -28,7 +28,7 @@ const DEPT_COLORS: Record<string, string> = {
   marketing:   "var(--yellow)",
   sales:       "var(--accent)",
   operations:  "#6366f1",
-  pr:          "#06b6d4",
+  pr:          "var(--cyan)",
   general:     "var(--text-dim)",
 };
 
@@ -623,8 +623,8 @@ export default function Run() {
                   fontSize: 9,
                   textTransform: "uppercase",
                   letterSpacing: "0.06em",
-                  color: mode === "plan" ? "#06b6d4" : "var(--accent)",
-                  border: `1px solid ${mode === "plan" ? "#06b6d4" : "var(--accent)"}`,
+                  color: mode === "plan" ? "var(--cyan)" : "var(--accent)",
+                  border: `1px solid ${mode === "plan" ? "var(--cyan)" : "var(--accent)"}`,
                   padding: "1px 5px",
                   borderRadius: "var(--radius)",
                   flexShrink: 0,
@@ -732,7 +732,7 @@ export default function Run() {
               background: "var(--bg-2)",
               border: `1px solid ${
                 result.mode === "plan"
-                  ? "#06b6d4"
+                  ? "var(--cyan)"
                   : result.conflictBranch
                     ? "var(--yellow)"
                     : result.hasChanges
@@ -748,7 +748,7 @@ export default function Run() {
                 <span style={{
                   width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
                   background: result.mode === "plan"
-                    ? "#06b6d4"
+                    ? "var(--cyan)"
                     : result.conflictBranch
                       ? "var(--yellow)"
                       : result.hasChanges
@@ -758,7 +758,7 @@ export default function Run() {
                 <span style={{
                   fontSize: 12,
                   color: result.mode === "plan"
-                    ? "#06b6d4"
+                    ? "var(--cyan)"
                     : result.conflictBranch
                       ? "var(--yellow)"
                       : result.hasChanges

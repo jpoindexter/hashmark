@@ -52,7 +52,7 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
             <button key={f.path} onClick={() => setSelectedFile(f.path)}
               style={{
                 width: '100%', textAlign: 'left', padding: '6px 10px',
-                background: selectedFile === f.path ? 'rgba(255,255,255,0.06)' : 'none',
+                background: selectedFile === f.path ? 'var(--active-bg)' : 'none',
                 border: 'none', color: 'var(--text-dim)', fontSize: 11,
                 fontFamily: 'var(--font)', cursor: 'pointer',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',

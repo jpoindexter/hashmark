@@ -49,7 +49,7 @@ function parseDiff(diffText: string): DiffLine[] {
 const ROW_BG: Record<LineType, string> = {
   add:     "var(--accent-bg)",
   remove:  "var(--red-bg)",
-  hunk:    "rgba(255,255,255,0.03)",
+  hunk:    "var(--surface-subtle)",
   header:  "transparent",
   context: "transparent",
 };

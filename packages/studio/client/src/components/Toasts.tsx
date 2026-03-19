@@ -342,7 +342,7 @@ function ToastCard({ item, onDismiss }: ToastCardProps) {
           }}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLButtonElement).style.background =
-              "rgba(255,255,255,0.08)";
+              "var(--hover-bg-strong)";
             (e.currentTarget as HTMLButtonElement).style.color = "var(--text)";
           }}
           onMouseLeave={(e) => {

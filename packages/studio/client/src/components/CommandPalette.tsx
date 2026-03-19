@@ -166,7 +166,7 @@ function KeyPill({ keybind }: { keybind: string }) {
       fontFamily: "var(--font)",
       fontSize: 10,
       color: "var(--text-dimmer)",
-      background: "rgba(255,255,255,0.05)",
+      background: "var(--surface-dim)",
       border: "1px solid var(--border-dim)",
       borderRadius: 3,
       padding: "1px 5px",

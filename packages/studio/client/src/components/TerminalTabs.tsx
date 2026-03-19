@@ -47,7 +47,7 @@ function ToolbarBtn({
         background: hovered
           ? danger
             ? "rgba(248, 81, 73, 0.15)"
-            : "rgba(255,255,255,0.08)"
+            : "var(--hover-bg-strong)"
           : "none",
         color: hovered
           ? danger ? "var(--red)" : "var(--text)"
@@ -267,7 +267,7 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
                       alignItems: "center",
                       gap: 8,
                     }}
-                    onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.06)"}
+                    onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "var(--active-bg)"}
                     onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
                   >
                     <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>$</span>
@@ -363,7 +363,7 @@ function TabItem({
         color: active ? "var(--text)" : "var(--text-dimmer)",
         borderRight: "1px solid var(--border-dim)",
         borderBottom: active ? "1px solid var(--accent)" : "1px solid transparent",
-        background: active ? "var(--bg-3)" : hovered ? "rgba(255,255,255,0.03)" : "transparent",
+        background: active ? "var(--bg-3)" : hovered ? "var(--surface-subtle)" : "transparent",
         flexShrink: 0,
         userSelect: "none",
         minWidth: 80,
@@ -401,7 +401,7 @@ function TabItem({
             flexShrink: 0,
           }}
           onMouseEnter={e => {
-            (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.1)";
+            (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-strong)";
             (e.currentTarget as HTMLButtonElement).style.color = "var(--text)";
           }}
           onMouseLeave={e => {

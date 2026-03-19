@@ -26,7 +26,7 @@ const STATUS_COLOR: Record<string, string> = {
   D: "var(--red)",
   "?": "var(--blue)",
   R: "#8b5cf6",
-  C: "#06b6d4",
+  C: "var(--cyan)",
   U: "#f97316",
 };
 

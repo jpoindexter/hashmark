@@ -17,7 +17,7 @@ const DEPT_COLORS: Record<string, string> = {
   product: "var(--blue)",
   security: "var(--red)",
   ops: "var(--yellow)",
-  data: "#06b6d4",
+  data: "var(--cyan)",
   general: "var(--text-dimmer)",
 };
 

@@ -30,7 +30,7 @@ const STATUS_COLOR: Record<string, string> = {
   D: "var(--red)",
   "?": "var(--blue)",
   R: "#8b5cf6",
-  C: "#06b6d4",
+  C: "var(--cyan)",
   U: "#f97316",
 };
 
@@ -101,7 +101,7 @@ function SectionHeader({
         display: "flex", alignItems: "center", gap: 6,
         padding: "5px 8px 5px 12px",
         cursor: "pointer",
-        background: hover ? "rgba(255,255,255,0.03)" : "transparent",
+        background: hover ? "var(--surface-subtle)" : "transparent",
         userSelect: "none",
         flexShrink: 0,
       }}

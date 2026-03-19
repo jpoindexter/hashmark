@@ -388,10 +388,10 @@ export default function Swarm() {
                     border: "none",
                     borderRight: m === "plan" ? "1px solid var(--border-dim)" : "none",
                     background: mode === m
-                      ? m === "plan" ? "rgba(6,182,212,0.15)" : "var(--accent-bg)"
+                      ? m === "plan" ? "var(--cyan-bg)" : "var(--accent-bg)"
                       : "var(--bg-2)",
                     color: mode === m
-                      ? m === "plan" ? "#06b6d4" : "var(--accent)"
+                      ? m === "plan" ? "var(--cyan)" : "var(--accent)"
                       : "var(--text-dimmer)",
                     fontWeight: mode === m ? 700 : 400,
                   }}

@@ -24,7 +24,7 @@ function StatusBadge({ status }: { status: string }) {
     status === "complete" ? "var(--accent)"
     : status === "conflict" ? "var(--yellow)"
     : status === "error" ? "var(--red)"
-    : status === "running" ? "#06b6d4"
+    : status === "running" ? "var(--cyan)"
     : "var(--text-dimmer)";
 
   return (
