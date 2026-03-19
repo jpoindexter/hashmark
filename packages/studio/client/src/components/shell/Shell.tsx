@@ -347,8 +347,6 @@ export default function Shell() {
               <FileContentViewer />
             ) : activeView === "source-control" ? (
               <DiffContentViewer />
-            ) : activeView === "agents" ? (
-              <AgentDetailViewer />
             ) : (
               <div style={{ flex: 1, overflow: "auto" }}>
                 <Outlet />

@@ -1,13 +1,19 @@
 /**
- * /api/mcp — MCP server configuration discovery and testing
+ * /api/mcp — MCP server configuration discovery, testing, and tool endpoints.
+ * Tool endpoints (/tools/*) are consumed by the MCP bridge process to serve
+ * GetWorkspaceDiff, GetTerminalOutput, and GetFileContent to the Claude agent.
  */
 
 import { Hono } from "hono";
 import { existsSync, readFileSync, writeFileSync } from "fs";
+import { readFile } from "fs/promises";
 import { join } from "path";
 import { createHash } from "crypto";
 import { tmpdir, homedir } from "os";
-import { spawn } from "child_process";
+import { spawn, execFile as execFileCb } from "child_process";
+import { promisify } from "util";
+
+const execFile = promisify(execFileCb);
 
 interface McpServerEntry {
   command: string;
@@ -149,6 +155,122 @@ export function mcpRoutes(projectDir: string) {
         resolve(c.json({ ok: false, error: err.message }));
       });
     });
+  });
+
+  // ── Tool endpoints (consumed by the MCP bridge and the Studio UI) ──
+
+  // GET /api/mcp/tools/diff — workspace diff via git
+  app.get("/tools/diff", async (c) => {
+    const file = c.req.query("file");
+    const stat = c.req.query("stat") === "true";
+    const opts = { cwd: projectDir, maxBuffer: 4 * 1024 * 1024 };
+
+    try {
+      // Find merge base to show full branch diff (same approach as Conductor)
+      let mergeBase = "";
+      try {
+        const { stdout: mb } = await execFile(
+          "git", ["merge-base", "HEAD", "HEAD@{upstream}"], opts
+        );
+        mergeBase = mb.trim();
+      } catch {
+        // No upstream -- fall back to diffing against HEAD (uncommitted only)
+        mergeBase = "HEAD";
+      }
+
+      const args = stat ? ["diff", "--stat"] : ["diff"];
+
+      if (file) {
+        args.push(mergeBase, "--", file);
+      } else {
+        args.push(mergeBase);
+      }
+
+      const { stdout: tracked } = await execFile("git", args, opts);
+
+      // Also include untracked files as "new file" diffs
+      let untracked = "";
+      if (!file && !stat) {
+        try {
+          const { stdout: untrackedFiles } = await execFile(
+            "git", ["ls-files", "--others", "--exclude-standard"], opts
+          );
+          const newFiles = untrackedFiles.trim().split("\n").filter(Boolean);
+          for (const f of newFiles.slice(0, 20)) {
+            try {
+              const { stdout: content } = await execFile(
+                "git", ["diff", "--no-index", "--", "/dev/null", f],
+                { ...opts, env: { ...process.env } }
+              );
+              untracked += content;
+            } catch (e: unknown) {
+              // git diff --no-index exits 1 when files differ (expected)
+              if (e && typeof e === "object" && "stdout" in e) {
+                untracked += (e as { stdout: string }).stdout;
+              }
+            }
+          }
+        } catch { /* no untracked files */ }
+      }
+
+      const diff = (tracked + untracked).trim();
+      return c.json({ diff: diff || "No changes detected" });
+    } catch (err) {
+      return c.json({ diff: "", error: String(err) }, 500);
+    }
+  });
+
+  // GET /api/mcp/tools/terminal — recent terminal output
+  app.get("/tools/terminal", async (c) => {
+    const maxLines = parseInt(c.req.query("maxLines") ?? "100", 10);
+
+    // Read from the run command output log if it exists
+    const logPath = join(projectDir, ".hashmark", "terminal-output.log");
+    try {
+      if (existsSync(logPath)) {
+        const raw = readFileSync(logPath, "utf-8");
+        const lines = raw.split("\n");
+        const tail = lines.slice(-maxLines).join("\n");
+        return c.json({ output: tail, source: "log", lines: lines.length });
+      }
+    } catch { /* fall through */ }
+
+    // Fallback: show recent git log as a proxy for "what happened"
+    try {
+      const { stdout } = await execFile(
+        "git", ["log", "--oneline", "-20"],
+        { cwd: projectDir }
+      );
+      return c.json({
+        output: `No terminal output log found. Recent git activity:\n${stdout}`,
+        source: "git-fallback",
+      });
+    } catch {
+      return c.json({
+        output: "No terminal output available. Terminal log not found at .hashmark/terminal-output.log",
+        source: "none",
+      });
+    }
+  });
+
+  // GET /api/mcp/tools/file — read file content
+  app.get("/tools/file", async (c) => {
+    const relPath = c.req.query("path");
+    if (!relPath) return c.json({ error: "path query parameter is required" }, 400);
+
+    const fullPath = join(projectDir, relPath);
+
+    // Prevent path traversal
+    if (!fullPath.startsWith(projectDir + "/") && fullPath !== projectDir) {
+      return c.json({ error: "path traversal blocked" }, 403);
+    }
+
+    try {
+      const content = await readFile(fullPath, "utf-8");
+      return c.json({ content, path: relPath });
+    } catch {
+      return c.json({ error: `File not found: ${relPath}` }, 404);
+    }
   });
 
   return app;
