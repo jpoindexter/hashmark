@@ -189,7 +189,7 @@ export default function Shell() {
         />
 
         {/* Sidebar shows for all views except settings */}
-        {activeView !== "settings" && (
+        {activeView === "chat" && sidebarOpen && (
           <>
             <SidebarPanel
               activeView={activeView}
