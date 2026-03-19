@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import Layout from "./components/Layout.tsx";
+import Shell from "./components/shell/Shell.tsx";
 import Home from "./pages/Home.tsx";
 import Agents from "./pages/Agents.tsx";
 import Generate from "./pages/Generate.tsx";
@@ -42,7 +42,7 @@ function AppShell() {
         alignItems: "center",
         justifyContent: "center",
         height: "100vh",
-        background: "#09090b",
+        background: "var(--bg)",
       }} />
     );
   }
@@ -52,7 +52,7 @@ function AppShell() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<Layout />}>
+        <Route path="/" element={<Shell />}>
           <Route index element={<PageTransition><Home /></PageTransition>} />
           <Route path="files" element={<PageTransition><Files /></PageTransition>} />
           <Route path="git" element={<PageTransition><Git /></PageTransition>} />

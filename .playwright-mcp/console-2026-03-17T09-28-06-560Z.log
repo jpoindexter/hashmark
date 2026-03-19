@@ -1,0 +1,2926 @@
+[ 1072482ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1072581ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1072629ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1072677ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1072724ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1072772ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1072819ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1072871ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1072917ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1072964ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073014ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073061ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073108ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073155ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073202ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073249ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073297ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073343ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073391ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073438ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073485ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073532ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073578ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073625ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073672ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073720ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073766ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073812ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073860ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073908ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1073955ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074003ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074050ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074097ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074145ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074192ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074239ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074285ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074333ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074380ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074427ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074475ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074521ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074569ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074613ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074659ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074706ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074753ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074800ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074846ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074893ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074941ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1074988ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075034ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075081ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075127ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075175ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075221ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075268ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075314ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075362ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075411ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075458ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075505ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075552ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075600ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075647ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075693ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075742ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075788ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075835ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075882ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075928ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1075974ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076022ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076068ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076116ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076164ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076212ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076260ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076308ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076355ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076403ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076450ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076497ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076547ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076602ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076655ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076703ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076750ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076798ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076846ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076894ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076942ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1076989ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077037ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077084ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077131ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077179ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077227ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077274ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077321ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077368ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077418ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077464ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077512ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077558ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077605ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077652ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077700ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077746ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077791ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077838ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077886ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077933ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1077981ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078028ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078072ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078119ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078165ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078212ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078258ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078306ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078353ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078396ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078441ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078488ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078535ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078582ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078619ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078666ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078711ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078758ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078804ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078850ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078897ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078944ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1078991ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079038ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079085ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079131ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079178ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079225ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079272ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079319ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079367ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079413ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079459ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079506ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079553ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079601ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079648ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079695ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079743ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079789ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079836ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079883ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079930ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1079977ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080024ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080071ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080118ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080165ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080211ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080258ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080305ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080352ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080405ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080452ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080500ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080546ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080592ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080639ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080685ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080733ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080780ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080827ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080874ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080920ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1080967ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081014ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081061ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081108ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081155ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081200ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081246ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081289ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081339ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081386ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081433ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081480ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081525ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081572ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081619ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081666ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081713ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081764ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081810ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081856ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081903ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081950ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1081996ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1082043ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1082090ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1082136ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1082182ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1082231ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1082278ms] [ERROR] ./src/components/dashboard/dashboard-shell-wrapper.tsx:100:1
+Parsing ecmascript source code failed
+   98 |     </DashboardShell>
+   99 |   );
+> 100 | }
+      | ^
+  101 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  Server Component:
+    ./src/components/dashboard/dashboard-shell-wrapper.tsx
+    ./src/app/(dashboard)/layout.tsx @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:3127
+[ 1250465ms] [WARNING] [HMR] Invalid message: {"isTrusted":true}
+TypeError: Cannot convert undefined or null to object
+    at Object.keys (<anonymous>)
+    at extractModulesFromTurbopackMessage (http://localhost:3000/_next/static/chunks/b2b3e_next_dist_client_121ab40e._.js:11210:39)
+    at TurbopackHmr.onTurbopackMessage (http://localhost:3000/_next/static/chunks/b2b3e_next_dist_client_121ab40e._.js:11157:32)
+    at processMessage (http://localhost:3000/_next/static/chunks/b2b3e_next_dist_client_121ab40e._.js:11589:30)
+    at WebSocket.handleMessage (http://localhost:3000/_next/static/chunks/b2b3e_next_dist_client_121ab40e._.js:10914:52) @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:2297
+[ 1855157ms] [WARNING] [HMR] Invalid message: {"isTrusted":true}
+TypeError: Cannot convert undefined or null to object
+    at Object.keys (<anonymous>)
+    at extractModulesFromTurbopackMessage (http://localhost:3000/_next/static/chunks/b2b3e_next_dist_client_121ab40e._.js:11210:39)
+    at TurbopackHmr.onTurbopackMessage (http://localhost:3000/_next/static/chunks/b2b3e_next_dist_client_121ab40e._.js:11157:32)
+    at processMessage (http://localhost:3000/_next/static/chunks/b2b3e_next_dist_client_121ab40e._.js:11589:30)
+    at WebSocket.handleMessage (http://localhost:3000/_next/static/chunks/b2b3e_next_dist_client_121ab40e._.js:10914:52) @ http://localhost:3000/_next/static/chunks/b2b3e_next_dist_77a734fe._.js:2297

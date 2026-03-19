@@ -15,7 +15,7 @@
     "dev:electron": "tsup electron/main.ts --format esm --out-dir dist/electron --no-splitting --external electron --external better-sqlite3 --external node-pty --watch & tsup electron/preload.ts --format cjs --out-dir dist/electron --no-splitting --external electron --watch",
     "dev:client": "vite client",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "electron": "lsof -ti :3200 | xargs kill -9 2>/dev/null; sleep 0.5; NODE_ENV=development electron dist/electron/main.js",
+    "electron": "lsof -ti :3200 | xargs kill -9 2>/dev/null; sleep 0.5; electron dist/electron/main.js",
     "electron:dev": "concurrently \"npm run dev:server\" \"npm run dev:electron\" \"npm run dev:client\" \"wait-on http://localhost:3200 && wait-on http://localhost:5173 && wait-on dist/electron/preload.cjs && electron dist/electron/main.js\"",
     "typecheck": "tsc --noEmit"
   },
