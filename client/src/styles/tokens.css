@@ -22,6 +22,14 @@
   --accent-bg:     rgba(63, 185, 80, 0.08);
   --accent-border: rgba(63, 185, 80, 0.2);
 
+  /* Color hierarchy:
+     --accent (green): primary brand, active states, success, CTA buttons
+     --blue: links only, focus outlines
+     --red: errors, deletions, danger buttons
+     --yellow: warnings, pending states
+     Context bar, status bar, and interactive highlights should all use --accent, not --blue
+  */
+
   /* Semantic */
   --blue:      #388bfd;
   --blue-bg:   rgba(56, 139, 253, 0.10);
