@@ -29,6 +29,7 @@ import { providersRoutes } from "./routes/providers.js";
 import { governanceRoutes } from "./routes/governance.js";
 import { workspacesRoutes, type WorkspaceCtx } from "./routes/workspaces.js";
 import { configRoutes } from "./routes/config.js";
+import { sandboxRoutes } from "./routes/sandbox.js";
 import { getDb } from "./db.js";
 
 export interface ServerOptions {
@@ -148,6 +149,7 @@ export function createServer(opts: ServerOptions) {
   app.route("/api/governance", governanceRoutes(opts.projectDir));
   app.route("/api/workspaces", workspacesRoutes(globalDataDir, ctx));
   app.route("/api/config", configRoutes(opts.projectDir));
+  app.route("/api/sandbox", sandboxRoutes(opts.projectDir));
 
   // Serve static client files
   app.use(
