@@ -79,7 +79,9 @@ export default function Agents() {
   const [selected, setSelected] = useState<Agent | null>(null);
   const [editContent, setEditContent] = useState("");
   const [saving, setSaving] = useState(false);
-  const [filter, setFilter] = useState(ALL_DEPTS);
+  const [selectedDepts, setSelectedDepts] = useState<Set<string>>(new Set());
+  const [deptDropdownOpen, setDeptDropdownOpen] = useState(false);
+  const deptDropdownRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
 
@@ -212,11 +214,50 @@ export default function Agents() {
     }
   }, [output]);
 
-  const departments = [ALL_DEPTS, ...Array.from(new Set(agents.map((a) => a.department))).sort()];
+  const departments = useMemo(
+    () => Array.from(new Set(agents.map((a) => a.department))).sort(),
+    [agents],
+  );
+
+  // Close department dropdown on outside click or Escape
+  useEffect(() => {
+    if (!deptDropdownOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (deptDropdownRef.current && !deptDropdownRef.current.contains(e.target as Node)) {
+        setDeptDropdownOpen(false);
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setDeptDropdownOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [deptDropdownOpen]);
+
+  const deptCounts = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const a of agents) {
+      map[a.department] = (map[a.department] ?? 0) + 1;
+    }
+    return map;
+  }, [agents]);
+
+  function toggleDept(dept: string) {
+    setSelectedDepts((prev) => {
+      const next = new Set(prev);
+      if (next.has(dept)) next.delete(dept);
+      else next.add(dept);
+      return next;
+    });
+  }
 
   const filtered = useMemo(() => {
     const base = agents.filter((a) => {
-      const matchDept = filter === ALL_DEPTS || a.department === filter;
+      const matchDept = selectedDepts.size === 0 || selectedDepts.has(a.department);
       const matchSearch = !search ||
         a.name.toLowerCase().includes(search.toLowerCase()) ||
         a.description.toLowerCase().includes(search.toLowerCase());

@@ -467,6 +467,18 @@ function buildMenu() {
         },
         { type: "separator" },
         {
+          label: "Check for Updates...",
+          click: async () => {
+            try {
+              const { autoUpdater } = await import("electron-updater");
+              autoUpdater.checkForUpdates();
+            } catch {
+              dialog.showMessageBox({ message: "Auto-updater not configured.", type: "info" });
+            }
+          },
+        },
+        { type: "separator" },
+        {
           label: "Toggle Developer Tools",
           accelerator: "Cmd+Option+I",
           click: () => win?.webContents.toggleDevTools(),
@@ -496,6 +508,15 @@ app.whenReady().then(() => {
   }
   buildMenu();
   createWindow();
+
+  // Check for updates in production
+  if (!isDev) {
+    import("electron-updater").then(({ autoUpdater }) => {
+      autoUpdater.checkForUpdatesAndNotify().catch(() => {});
+    }).catch(() => {
+      // electron-updater not installed -- skip auto-update
+    });
+  }
 });
 
 app.on("before-quit", () => {
