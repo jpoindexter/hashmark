@@ -221,7 +221,7 @@ export default function ActivitySidebar({ onSessionSelect }: ActivitySidebarProp
     }}>
       {/* Header */}
       <div style={{
-        height: 38,
+        height: 52,
         display: "flex",
         alignItems: "center",
         padding: "0 8px 0 12px",

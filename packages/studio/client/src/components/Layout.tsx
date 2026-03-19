@@ -362,13 +362,17 @@ export default function Layout() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        paddingTop: 44,
+        paddingTop: 52,
         flexShrink: 0,
         zIndex: 10,
       }}>
-        <div style={{ fontSize: 16, fontWeight: 900, color: "var(--accent)", marginBottom: 16, letterSpacing: "-0.02em", lineHeight: 1, fontFamily: "var(--font-ui)" }}>
+        <button
+          onClick={() => navigate("/")}
+          title="Home — Open project"
+          style={{ fontSize: 16, fontWeight: 900, color: "var(--accent)", marginBottom: 16, letterSpacing: "-0.02em", lineHeight: 1, fontFamily: "var(--font-ui)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+        >
           #
-        </div>
+        </button>
 
         <nav style={{ display: "flex", flexDirection: "column", gap: 0, width: "100%", flex: 1 }}>
           {NAV.map(item => (
@@ -706,16 +710,20 @@ export default function Layout() {
       </div>{/* end main body row */}
 
       {/* ── Full-width chat bar ──────────────────────────────────────── */}
-      <ContextBar sessionId={activeSessionId} streaming={streaming} />
-      <ChatInputBar
-        sessionId={activeSessionId}
-        onNewSession={handleNewSession}
-        onSessionCreated={setActiveSessionId}
-        onStreamText={setStreamText}
-        onStreamingChange={setStreaming}
-        streaming={streaming}
-        terminalCwd={terminalCwd || undefined}
-      />
+      {!location.pathname.startsWith("/settings") && !location.pathname.startsWith("/setup") && (
+        <>
+          <ContextBar sessionId={activeSessionId} streaming={streaming} />
+          <ChatInputBar
+            sessionId={activeSessionId}
+            onNewSession={handleNewSession}
+            onSessionCreated={setActiveSessionId}
+            onStreamText={setStreamText}
+            onStreamingChange={setStreaming}
+            streaming={streaming}
+            terminalCwd={terminalCwd || undefined}
+          />
+        </>
+      )}
 
       {/* ── Status bar ───────────────────────────────────────────────── */}
       <div style={{
@@ -810,7 +818,6 @@ function DriftBadge({ drift, navigate }: { drift: DriftResult; navigate: (to: st
             border: "1px solid var(--border)",
             borderRadius: 0,
             width: 220,
-            boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
             fontSize: 11,
             fontFamily: "var(--font-ui)",
           }}
@@ -992,7 +999,6 @@ function ShortcutsHelp({ onClose }: { onClose: () => void }) {
           fontFamily: "var(--font)",
           fontSize: 12,
           color: "var(--text-dim)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
         }}
       >
         <div style={{ fontSize: 10, letterSpacing: "0.1em", color: "var(--text-dimmer)", marginBottom: 16 }}>
@@ -1095,7 +1101,6 @@ function BranchPicker({ currentBranch }: { currentBranch: string }) {
             background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 6, minWidth: 200, maxHeight: 280,
             overflow: "auto", marginTop: 4,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
           }}>
             {loading && (
               <div style={{ padding: "8px 12px", color: "rgba(255,255,255,0.3)", fontSize: 11 }}>Loading...</div>
@@ -1167,7 +1172,6 @@ function ProjectSwitcher({ projectName }: { projectName: string | null }) {
           zIndex: 9999,
           background: "var(--bg-2)", border: "1px solid var(--border)", borderRadius: 6,
           minWidth: 280, maxWidth: 380,
-          boxShadow: "0 -4px 16px rgba(0,0,0,0.4)",
           overflow: "hidden",
         }}>
           {recent.length > 0 && (
