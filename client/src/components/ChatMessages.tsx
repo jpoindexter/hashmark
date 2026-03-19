@@ -792,7 +792,7 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
   const virtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 90,
+    estimateSize: () => 200,
     overscan: 5,
     measureElement: (el) => el.getBoundingClientRect().height,
   });

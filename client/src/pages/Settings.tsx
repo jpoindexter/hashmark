@@ -603,7 +603,7 @@ function ScanConfigPanel() {
           disabled={!dirty || saving}
           className={dirty ? "btn btn-primary" : "btn"}
         >
-          {saving ? "Saving..." : "> Save Changes"}
+          {saving ? "Saving..." : "Save changes"}
         </button>
         {saved && (
           <span style={{ fontSize: 11, color: "var(--accent)" }}>Saved</span>
