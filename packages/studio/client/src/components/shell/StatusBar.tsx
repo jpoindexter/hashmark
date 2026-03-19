@@ -1,11 +1,12 @@
 import { useState, type CSSProperties } from "react";
-import { GitBranch } from "lucide-react";
+import { GitBranch, Sparkles } from "lucide-react";
 
 interface StatusBarProps {
   branch?: string;
   changedFiles: number;
   projectName?: string;
   modelName?: string;
+  providerName?: string;
 }
 
 function StatusItem({
@@ -66,6 +67,7 @@ export default function StatusBar({
   changedFiles,
   projectName,
   modelName,
+  providerName,
 }: StatusBarProps) {
   return (
     <div className="status-bar" style={containerStyle}>
@@ -82,9 +84,18 @@ export default function StatusBar({
         )}
       </div>
 
-      {/* Right: model + project */}
+      {/* Right: provider + model + project */}
       <div style={{ display: "flex", alignItems: "center", height: "100%" }}>
-        {modelName && <StatusItem title="Active model">{modelName}</StatusItem>}
+        {(providerName || modelName) && (
+          <StatusItem title={`Active: ${providerName ?? ""} ${modelName ?? ""}`}>
+            <Sparkles size={10} />
+            {providerName && <span>{providerName}</span>}
+            {providerName && modelName && (
+              <span style={{ opacity: 0.5 }}>/</span>
+            )}
+            {modelName && <span>{modelName}</span>}
+          </StatusItem>
+        )}
         {projectName && <StatusItem title="Project name">{projectName}</StatusItem>}
       </div>
     </div>

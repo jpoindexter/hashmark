@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { loadProviders, saveProviders, type ProvidersStore } from "../lib/providers.js";
+import { loadProviders, saveProviders, detectCLIs } from "../lib/providers.js";
 
 const STATIC_MODELS: Record<string, string[]> = {
   claude:  ["claude-opus-4-6", "claude-sonnet-4-6", "claude-haiku-4-5-20251001"],
@@ -8,6 +8,10 @@ const STATIC_MODELS: Record<string, string[]> = {
   mistral: ["mistral-large-latest", "mistral-small-latest", "codestral-latest"],
   grok:    ["grok-3", "grok-3-mini"],
   codex:   ["gpt-4o", "gpt-4o-mini", "o3", "o3-mini", "o1", "o1-mini"],
+  aider:   ["gpt-4o", "claude-sonnet-4-6", "deepseek-chat"],
+  amp:     ["amp-default"],
+  goose:   ["goose-default"],
+  copilot: ["copilot-default"],
 };
 
 export function providersRoutes(projectDir: string) {
@@ -22,6 +26,12 @@ export function providersRoutes(projectDir: string) {
       hasKey: Boolean(apiKey && apiKey.length > 0),
     }));
     return c.json({ active: store.active, model: store.model, providers: masked });
+  });
+
+  // GET /api/providers/detect — scan system for installed AI CLI tools
+  app.get("/detect", (c) => {
+    const providers = detectCLIs(projectDir);
+    return c.json({ providers });
   });
 
   // PUT /api/providers/active

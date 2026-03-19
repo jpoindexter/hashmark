@@ -30,10 +30,20 @@ function restore<T>(key: string, fallback: T): T {
   } catch { return fallback; }
 }
 
-const MODELS = [
-  { id: "claude-opus-4-6", label: "Opus 4.6" },
-  { id: "claude-sonnet-4-6", label: "Sonnet 4.6" },
-  { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5" },
+// Model-to-label + provider mapping for StatusBar display
+const ALL_MODELS: Array<{ id: string; label: string; provider: string }> = [
+  { id: "claude-opus-4-6", label: "Opus 4.6", provider: "Claude" },
+  { id: "claude-sonnet-4-6", label: "Sonnet 4.6", provider: "Claude" },
+  { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5", provider: "Claude" },
+  { id: "o3", label: "o3", provider: "Codex" },
+  { id: "o3-mini", label: "o3 mini", provider: "Codex" },
+  { id: "gpt-4o", label: "GPT-4o", provider: "OpenAI" },
+  { id: "gpt-4o-mini", label: "GPT-4o mini", provider: "OpenAI" },
+  { id: "gemini-2.0-flash", label: "2.0 Flash", provider: "Gemini" },
+  { id: "gemini-1.5-pro", label: "1.5 Pro", provider: "Gemini" },
+  { id: "amp-default", label: "Default", provider: "Amp" },
+  { id: "goose-default", label: "Default", provider: "Goose" },
+  { id: "copilot-default", label: "Default", provider: "Copilot" },
 ];
 
 const DEFAULT_SIDEBAR_WIDTH = 240;
@@ -163,7 +173,9 @@ export default function Shell() {
   }, []);
   const handleSidebarReset = useCallback(() => setSidebarWidth(DEFAULT_SIDEBAR_WIDTH), []);
 
-  const modelLabel = MODELS.find(m => m.id === selectedModel)?.label;
+  const currentModelEntry = ALL_MODELS.find(m => m.id === selectedModel);
+  const modelLabel = currentModelEntry?.label;
+  const providerName = currentModelEntry?.provider;
 
   // Render
   return (
@@ -289,6 +301,7 @@ export default function Shell() {
         changedFiles={changedFiles}
         projectName={info?.projectName}
         modelName={modelLabel}
+        providerName={providerName}
       />
 
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
