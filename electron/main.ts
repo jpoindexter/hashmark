@@ -220,9 +220,11 @@ function createWindow() {
   const appUrl = isDev ? `http://localhost:3201` : `http://localhost:${PORT}`;
   win.loadURL(appUrl);
 
-  // Retry loading if server isn't ready yet
+  // Retry loading if server isn't ready yet (max 20 attempts)
+  let loadRetries = 0;
   win.webContents.on("did-fail-load", (_event, _code, _desc, url) => {
-    if (url.includes("localhost")) {
+    if (url.includes("localhost") && loadRetries < 20) {
+      loadRetries++;
       setTimeout(() => win?.loadURL(appUrl), 1000);
     }
   });

@@ -10,7 +10,7 @@ import ModelBar from "./ModelBar";
 import TerminalPanel from "./TerminalPanel";
 import ChatMessages from "../ChatMessages";
 import ChatInputBar from "../ChatInputBar";
-import { ContextBar } from "../ContextBar";
+
 import ResizableDrawer from "../ResizableDrawer";
 import CommandPalette from "../CommandPalette";
 import DiffDrawer from "../DiffDrawer";
@@ -22,7 +22,7 @@ import { useProjectInfo } from "../../hooks/useProjectInfo";
 import { useKeyboardNav } from "../../hooks/useKeyboardNav";
 import { useTheme } from "../../hooks/useTheme";
 import FileContentViewer from "./FileContentViewer";
-import AgentDetailViewer from "./AgentDetailViewer";
+
 
 function persist(key: string, val: unknown) {
   try { localStorage.setItem(`studio:${key}`, JSON.stringify(val)); } catch { /* noop */ }
@@ -202,7 +202,8 @@ export default function Shell() {
     const handler = (e: Event) => {
       const id = (e as CustomEvent<string>).detail;
       if (id) {
-        setChatHasMessages(true); // Switching to existing session implies messages
+        sessionValidated.current = false;
+        setChatHasMessages(true);
         setActiveSessionId(id);
       }
     };

@@ -104,7 +104,7 @@ export function filesRoutes(projectDir: string) {
     const relPath = c.req.query("path");
     if (!relPath) return c.json({ error: "path required" }, 400);
     const fullPath = join(projectDir, relPath);
-    if (!fullPath.startsWith(projectDir)) return c.json({ error: "forbidden" }, 403);
+    if (!fullPath.startsWith(projectDir + "/") && fullPath !== projectDir) return c.json({ error: "forbidden" }, 403);
     try {
       const content = await readFile(fullPath, "utf-8");
       return c.json({ content, path: relPath });
@@ -115,7 +115,7 @@ export function filesRoutes(projectDir: string) {
     const relPath = c.req.query("path");
     if (!relPath) return c.json({ error: "path required" }, 400);
     const fullPath = join(projectDir, relPath);
-    if (!fullPath.startsWith(projectDir)) return c.json({ error: "forbidden" }, 403);
+    if (!fullPath.startsWith(projectDir + "/") && fullPath !== projectDir) return c.json({ error: "forbidden" }, 403);
     const stagedParam = c.req.query("staged");
     const staged = stagedParam === "true" || stagedParam === "1";
     try {
@@ -448,7 +448,7 @@ export function filesRoutes(projectDir: string) {
     const relPath = c.req.query("path");
     if (!relPath) return c.json({ error: "path required" }, 400);
     const fullPath = join(projectDir, relPath);
-    if (!fullPath.startsWith(projectDir)) return c.json({ error: "forbidden" }, 403);
+    if (!fullPath.startsWith(projectDir + "/") && fullPath !== projectDir) return c.json({ error: "forbidden" }, 403);
 
     try {
       const content = await readFile(fullPath, "utf-8");
