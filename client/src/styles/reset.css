@@ -118,6 +118,30 @@ input:focus, textarea:focus, select:focus {
 .badge-zinc   { background: var(--bg-4);       color: var(--text-dim); border: 1px solid var(--border); }
 .badge-yellow { background: var(--yellow-bg);  color: var(--yellow); border: 1px solid rgba(210,153,34,.2); }
 
+/* ---- Shiki syntax highlighting ---- */
+.shiki-viewer .shiki {
+  background: transparent !important;
+  margin: 0;
+  padding: 0;
+}
+
+.shiki-viewer .shiki code {
+  counter-reset: line;
+  display: block;
+}
+
+.shiki-viewer .shiki code .line::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  width: 48px;
+  text-align: right;
+  padding-right: 12px;
+  color: var(--text-dimmer);
+  user-select: none;
+  font-size: 12px;
+}
+
 /* ---- Keyframe animations ---- */
 @keyframes blink        { 0%,100%{opacity:1} 50%{opacity:0} }
 @keyframes fadeIn       { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }

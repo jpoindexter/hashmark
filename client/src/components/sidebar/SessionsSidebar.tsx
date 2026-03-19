@@ -305,9 +305,9 @@ function WorkspaceGroup({
           </span>
         )}
         {(totalAdded > 0 || totalRemoved > 0) && (
-          <span style={{ display: "flex", gap: 3, fontFamily: "var(--font)", fontSize: 10, flexShrink: 0 }}>
-            {totalAdded > 0 && <span style={{ color: "var(--accent)" }}>+{totalAdded}</span>}
-            {totalRemoved > 0 && <span style={{ color: "var(--red)" }}>-{totalRemoved}</span>}
+          <span style={{ display: "flex", gap: 3, fontFamily: "var(--font)", fontSize: 10, flexShrink: 0, opacity: 0.6 }}>
+            {totalAdded > 0 && <span style={{ color: "var(--text-dim)" }}>+{totalAdded}</span>}
+            {totalRemoved > 0 && <span style={{ color: "var(--text-dim)" }}>-{totalRemoved}</span>}
           </span>
         )}
       </div>
@@ -400,7 +400,7 @@ function SessionRow({
   const dotColor = isStreaming
     ? "var(--yellow)"
     : active
-    ? "var(--blue)"
+    ? "var(--accent)"
     : "var(--text-dimmer)";
 
   const dotShadow = isStreaming ? "0 0 4px var(--yellow)" : undefined;

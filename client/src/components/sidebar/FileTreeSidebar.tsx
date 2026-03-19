@@ -29,10 +29,20 @@ function countFiles(nodes: FileNode[]): number {
   return count;
 }
 
+type GitStatus = "M" | "A" | "D" | "?" | string;
+
+function gitStatusColor(status: GitStatus): string {
+  if (status === "M") return "var(--yellow)";
+  if (status === "A" || status === "?") return "var(--accent)";
+  if (status === "D") return "var(--red)";
+  return "var(--text-dimmer)";
+}
+
 interface TreeRowProps {
   node: FileNode;
   depth: number;
   selectedPath: string | null;
+  gitFiles: Record<string, string>;
   onFileSelect: (path: string) => void;
   onContextMenu: (e: React.MouseEvent, node: FileNode) => void;
 }

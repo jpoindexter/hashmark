@@ -1,4 +1,5 @@
-import { getLang, tokenizeLine, TOKEN_COLORS } from "../lib/highlight";
+import { useState, useEffect } from "react";
+import { highlightCode, getLanguageFromPath } from "../lib/highlight";
 
 interface CodeViewerProps {
   content: string;
@@ -14,98 +15,84 @@ function isBinary(content: string): boolean {
   return false;
 }
 
-function renderMarkdownLine(line: string, idx: number) {
-  const headingMatch = line.match(/^(#{1,6})\s+(.+)/);
-  if (headingMatch) {
-    const level = headingMatch[1].length;
-    const sizes = [20, 17, 15, 13, 12, 12];
-    return (
-      <div key={idx} style={{
-        fontSize: sizes[level - 1],
-        fontWeight: 700,
-        color: level === 1 ? "var(--accent)" : "var(--text)",
-        marginTop: level <= 2 ? 16 : 8,
-        marginBottom: 4,
-        fontFamily: "var(--font)",
-      }}>
-        {headingMatch[2]}
-      </div>
-    );
-  }
+export function CodeViewer({ content, ext, path }: CodeViewerProps) {
+  const [highlightedHtml, setHighlightedHtml] = useState<string>("");
 
-  if (/^[-*]\s/.test(line)) {
-    return (
-      <div key={idx} style={{ color: "var(--text-dim)", lineHeight: 1.7, fontFamily: "var(--font)", fontSize: 12 }}>
-        {"  • " + line.slice(2)}
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!content || isBinary(content)) return;
+    let cancelled = false;
+    const lang = path ? getLanguageFromPath(path) : ext;
+    highlightCode(content, lang)
+      .then((html) => {
+        if (!cancelled) setHighlightedHtml(html);
+      })
+      .catch(() => {
+        if (!cancelled) setHighlightedHtml("");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [content, ext, path]);
 
-  return (
-    <div key={idx} style={{ color: "var(--text-dim)", lineHeight: 1.7, minHeight: 24, fontFamily: "var(--font)", fontSize: 12 }}>
-      {line || " "}
-    </div>
-  );
-}
-
-export function CodeViewer({ content, ext, path: _path }: CodeViewerProps) {
   if (isBinary(content)) {
     return (
-      <div style={{
-        padding: 24,
-        color: "var(--text-dimmer)",
-        fontFamily: "var(--font)",
-        fontSize: 12,
-      }}>
-        Binary file — cannot display
+      <div
+        style={{
+          padding: 24,
+          color: "var(--text-dimmer)",
+          fontFamily: "var(--font)",
+          fontSize: 12,
+        }}
+      >
+        Binary file -- cannot display
       </div>
     );
   }
 
-  const lang = getLang(ext);
-  const lines = content.split("\n");
-
-  if (lang === "md") {
+  if (highlightedHtml) {
     return (
-      <div style={{
-        padding: "16px 24px",
+      <div
+        className="shiki-viewer"
+        /* Shiki HTML is generated from source code by a trusted library, safe to render */
+        dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+        style={{
+          fontFamily: "var(--font)",
+          fontSize: 12,
+          lineHeight: 1.6,
+          overflow: "auto",
+          height: "100%",
+          background: "var(--bg)",
+          padding: "8px 0",
+        }}
+      />
+    );
+  }
+
+  // Plain text fallback while Shiki loads
+  const lines = content.split("\n");
+  return (
+    <div
+      style={{
+        fontFamily: "var(--font)",
+        fontSize: 12,
+        lineHeight: 1.6,
         overflow: "auto",
         height: "100%",
         background: "var(--bg)",
-      }}>
-        {lines.map((line, idx) => renderMarkdownLine(line, idx))}
-      </div>
-    );
-  }
-
-  const shouldHighlight = lang === "ts" || lang === "js" || lang === "json" || lang === "css";
-  let inBlockComment = false;
-
-  return (
-    <div style={{
-      fontFamily: "var(--font)",
-      fontSize: 12,
-      lineHeight: 1.6,
-      overflow: "auto",
-      height: "100%",
-      background: "var(--bg)",
-      padding: "8px 0",
-    }}>
-      {lines.map((line, idx) => {
-        if (line.includes("/*")) inBlockComment = true;
-        const isBlockComment = inBlockComment;
-        if (line.includes("*/")) inBlockComment = false;
-
-        const tokens = (shouldHighlight && !isBlockComment)
-          ? tokenizeLine(line)
-          : [{ type: "comment" as const, value: line }];
-
-        return (
-          <div
-            key={idx}
-            style={{ display: "flex", minWidth: "max-content", paddingRight: 24 }}
-          >
-            <span style={{
+        padding: "8px 0",
+      }}
+    >
+      {lines.map((line, idx) => (
+        <div
+          key={idx}
+          style={{
+            display: "flex",
+            minWidth: "max-content",
+            paddingRight: 24,
+          }}
+        >
+          <span
+            style={{
               width: 44,
               minWidth: 44,
               textAlign: "right",
@@ -113,19 +100,15 @@ export function CodeViewer({ content, ext, path: _path }: CodeViewerProps) {
               color: "var(--text-dimmer)",
               userSelect: "none",
               flexShrink: 0,
-            }}>
-              {idx + 1}
-            </span>
-            <span style={{ whiteSpace: "pre" }}>
-              {tokens.map((tok, ti) => (
-                <span key={ti} style={{ color: TOKEN_COLORS[tok.type] }}>
-                  {tok.value}
-                </span>
-              ))}
-            </span>
-          </div>
-        );
-      })}
+            }}
+          >
+            {idx + 1}
+          </span>
+          <span style={{ whiteSpace: "pre", color: "var(--text-dim)" }}>
+            {line || " "}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

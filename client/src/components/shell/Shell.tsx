@@ -78,11 +78,6 @@ function deriveActiveView(pathname: string): string {
   return segment || "chat";
 }
 
-function deriveRouteTitle(pathname: string): string {
-  const segment = pathname.slice(1);
-  if (!segment || segment === "sessions") return "Chat";
-  return segment.charAt(0).toUpperCase() + segment.slice(1);
-}
 
 export default function Shell() {
   const location = useLocation();
@@ -90,7 +85,6 @@ export default function Shell() {
 
   // Derived from route
   const activeView = deriveActiveView(location.pathname);
-  const routeTitle = deriveRouteTitle(location.pathname);
   const isHome = location.pathname === "/" || location.pathname === "/sessions";
   const showChatBar =
     !location.pathname.startsWith("/settings") &&
@@ -361,7 +355,6 @@ export default function Shell() {
         changedFiles={changedFiles}
         onDiffOpen={() => setDiffOpen(true)}
         streaming={streaming}
-        routeTitle={routeTitle}
         onRefreshGit={refreshGit}
       />
 
@@ -508,7 +501,7 @@ export default function Shell() {
 
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} mode={paletteMode} />
       {shortcutsOpen && <ShortcutsHelp onClose={() => setShortcutsOpen(false)} />}
-      <DiffDrawer open={diffOpen} onClose={() => setDiffOpen(false)} projectDir={info?.projectDir ?? ""} />
+      <DiffDrawer open={diffOpen && activeView !== "source-control"} onClose={() => setDiffOpen(false)} projectDir={info?.projectDir ?? ""} />
 
       {/* Toast notifications -- positioned above status bar */}
       {toasts.length > 0 && (

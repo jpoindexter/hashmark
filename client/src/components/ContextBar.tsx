@@ -102,7 +102,7 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
         style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "3px 10px",
-          fontSize: 10,
+          fontSize: 12,
           fontFamily: "var(--font)",
           color: "var(--text-dimmer)",
           cursor: "pointer",
@@ -141,7 +141,7 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
         <div style={{
           borderTop: "1px solid var(--border-dim)",
           padding: "8px 12px",
-          fontSize: 10,
+          fontSize: 11,
           fontFamily: "var(--font)",
           color: "var(--text-dim)",
           display: "flex",
@@ -162,21 +162,21 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
               <span style={{ color: "var(--text-dimmer)" }}>Token flow</span>
               {historyDominates && (
-                <span style={{ color: "var(--yellow)", fontSize: 9 }}>history-heavy</span>
+                <span style={{ color: "var(--yellow)", fontSize: 10 }}>history-heavy</span>
               )}
             </div>
             {/* Stacked bar */}
             <div style={{ height: 4, background: "var(--border-dim)", display: "flex", overflow: "hidden" }}>
-              <div style={{ width: `${yourMsgPct}%`, background: "var(--accent)", transition: "width 0.3s", flexShrink: 0 }} title={`Your messages: ${fmt(info.userInputTokens)}`} />
-              <div style={{ width: `${historyPct}%`, background: "var(--yellow)", opacity: 0.7, transition: "width 0.3s", flexShrink: 0 }} title={`History overhead: ${fmt(historyOverhead)}`} />
-              <div style={{ flex: 1, background: "var(--blue)", opacity: 0.5 }} title={`Responses: ${fmt(info.outputTokens)}`} />
+              <div style={{ width: `${yourMsgPct}%`, background: "var(--accent)", transition: "width 0.3s", flexShrink: 0, cursor: "pointer" }} title={`Your messages: ${fmt(info.userInputTokens)} tokens (${yourMsgPct}%)`} />
+              <div style={{ width: `${historyPct}%`, background: "var(--yellow)", opacity: 0.7, transition: "width 0.3s", flexShrink: 0, cursor: "pointer" }} title={`History overhead: ${fmt(historyOverhead)} tokens (${historyPct}%)`} />
+              <div style={{ flex: 1, background: "var(--accent)", opacity: 0.5, cursor: "pointer" }} title={`Responses: ${fmt(info.outputTokens)} tokens (${responsesPct}%)`} />
             </div>
             {/* Legend */}
             <div style={{ display: "flex", gap: 10, marginTop: 4, flexWrap: "wrap" }}>
               {([
                 ["Your msgs", "var(--accent)", yourMsgPct, info.userInputTokens],
                 ["History", "var(--yellow)", historyPct, historyOverhead],
-                ["Responses", "var(--blue)", responsesPct, info.outputTokens],
+                ["Responses", "var(--accent)", responsesPct, info.outputTokens],
               ] as [string, string, number, number][]).map(([label, color, pct, tokens]) => (
                 <span key={label} style={{ display: "flex", alignItems: "center", gap: 3, color: "var(--text-dimmer)" }}>
                   <span style={{ width: 6, height: 6, background: color, opacity: 0.8, borderRadius: 1, flexShrink: 0 }} />
@@ -207,7 +207,7 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
                   <span style={{ color: "var(--text-dimmer)" }}>Conversation stages</span>
                   <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     {recencyLabel && (
-                      <span style={{ color: recencyLabel.color, fontSize: 9 }}>{recencyLabel.text}</span>
+                      <span style={{ color: recencyLabel.color, fontSize: 10 }}>{recencyLabel.text}</span>
                     )}
                     {info.avgMessageTokens !== undefined && (
                       <span style={{ color: "var(--text-dimmer)" }}>~{fmt(info.avgMessageTokens)}t avg/msg</span>
@@ -215,14 +215,14 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
                   </span>
                 </div>
                 <div style={{ height: 4, background: "var(--border-dim)", display: "flex", overflow: "hidden" }}>
-                  <div style={{ width: `${earlyPct}%`, background: "var(--text-dimmer)", opacity: 0.6, flexShrink: 0 }} title={`Early: ${fmt(early)}`} />
-                  <div style={{ width: `${midPct}%`, background: "var(--blue)", opacity: 0.6, flexShrink: 0 }} title={`Middle: ${fmt(middle)}`} />
-                  <div style={{ flex: 1, background: "var(--accent)" }} title={`Recent: ${fmt(recent)}`} />
+                  <div style={{ width: `${earlyPct}%`, background: "var(--text-dimmer)", opacity: 0.6, flexShrink: 0, cursor: "pointer" }} title={`Early: ${fmt(early)} tokens (${earlyPct}%)`} />
+                  <div style={{ width: `${midPct}%`, background: "var(--accent)", opacity: 0.6, flexShrink: 0, cursor: "pointer" }} title={`Middle: ${fmt(middle)} tokens (${midPct}%)`} />
+                  <div style={{ flex: 1, background: "var(--accent)", cursor: "pointer" }} title={`Recent: ${fmt(recent)} tokens (${recentPct}%)`} />
                 </div>
                 <div style={{ display: "flex", gap: 10, marginTop: 4, flexWrap: "wrap" }}>
                   {([
                     ["Early", "var(--text-dimmer)", earlyPct, early],
-                    ["Mid", "var(--blue)", midPct, middle],
+                    ["Mid", "var(--accent)", midPct, middle],
                     ["Recent", "var(--accent)", recentPct, recent],
                   ] as [string, string, number, number][]).map(([label, color, p, tokens]) => (
                     <span key={label} style={{ display: "flex", alignItems: "center", gap: 3, color: "var(--text-dimmer)" }}>
@@ -265,7 +265,7 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
               ] as [string, number][]).map(([label, pctShare]) => (
                 <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <div style={{ width: 80, color: "var(--text-dimmer)" }}>{label}</div>
-                  <div style={{ flex: 1, height: 2, background: "var(--border-dim)" }}>
+                  <div style={{ flex: 1, height: 2, background: "var(--border-dim)", cursor: "pointer" }} title={`${label}: ${pctShare}% of structural waste`}>
                     <div style={{
                       width: `${pctShare}%`, height: "100%",
                       background: "var(--red)", opacity: 0.6,
@@ -277,7 +277,7 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 4, color: "var(--text-dimmer)", fontStyle: "italic" }}>
+            <div style={{ marginTop: 4, fontSize: 10, color: "var(--text-dimmer)", fontStyle: "italic" }}>
               Typical distribution per Pichay (2603.09023), 857 sessions
             </div>
           </div>
@@ -304,7 +304,7 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
                 <div key={f.pattern} style={{ marginBottom: 5 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 1 }}>
                     <span style={{
-                      fontSize: 9, fontWeight: 700, padding: "1px 4px",
+                      fontSize: 10, fontWeight: 700, padding: "1px 4px",
                       background: f.severity === "critical" ? "rgba(248,81,73,0.15)" : "rgba(226,197,65,0.15)",
                       color: f.severity === "critical" ? "var(--red)" : "var(--yellow)",
                     }}>
@@ -314,7 +314,7 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
                   <div style={{ color: "var(--text-dimmer)", lineHeight: 1.4 }}>{f.description}</div>
                   {f.snippet && (
                     <div style={{
-                      marginTop: 3, fontFamily: "var(--font)", fontSize: 9,
+                      marginTop: 3, fontFamily: "var(--font)", fontSize: 10,
                       color: "var(--text-dimmer)", background: "var(--bg-2)",
                       padding: "2px 5px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                     }}>
