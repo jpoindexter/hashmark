@@ -35,3 +35,13 @@ button:active:not(:disabled) { transform: scale(0.97); }
 .dropdown-animate {
   animation: dropdownIn 0.12s ease-out;
 }
+
+/* Light theme overrides -- hover/active states need inverted alpha */
+[data-theme="light"] .activity-item:hover {
+  color: var(--text-dim) !important;
+  background: rgba(0, 0, 0, 0.04);
+}
+[data-theme="light"] .sash:hover::before,
+[data-theme="light"] .sash.active::before {
+  background: var(--border);
+}

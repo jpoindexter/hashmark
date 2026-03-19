@@ -1,8 +1,11 @@
 import { useEffect, useRef, useCallback } from "react";
 
+type PaletteMode = "commands" | "files";
+
 interface UseKeyboardNavParams {
   navigate: (to: string | number) => void;
   setCmdOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setPaletteMode: React.Dispatch<React.SetStateAction<PaletteMode>>;
   shortcutsOpen: boolean;
   setShortcutsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setTermOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -30,6 +33,7 @@ const G_NAV: Record<string, string> = {
 export function useKeyboardNav({
   navigate,
   setCmdOpen,
+  setPaletteMode,
   shortcutsOpen,
   setShortcutsOpen,
   setTermOpen,
@@ -77,9 +81,18 @@ export function useKeyboardNav({
         return;
       }
 
-      // Cmd+K or Cmd+Shift+P: toggle command palette
+      // Cmd+P (no shift): open palette in file mode
+      if (mod && e.key === "p" && !e.shiftKey) {
+        e.preventDefault();
+        setPaletteMode("files");
+        setCmdOpen(true);
+        return;
+      }
+
+      // Cmd+K or Cmd+Shift+P: open palette in command mode
       if (mod && (e.key === "k" || (e.key === "p" && e.shiftKey))) {
         e.preventDefault();
+        setPaletteMode("commands");
         setCmdOpen(v => !v);
         return;
       }
@@ -139,5 +152,5 @@ export function useKeyboardNav({
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [navigate, clearLastKey, setCmdOpen, setShortcutsOpen, setTermOpen, setSidebarOpen]);
+  }, [navigate, clearLastKey, setCmdOpen, setPaletteMode, setShortcutsOpen, setTermOpen, setSidebarOpen]);
 }

@@ -159,3 +159,12 @@ input:focus, textarea:focus, select:focus {
   z-index: 9999;
 }
 .nav-tooltip-wrap:hover .nav-tooltip { opacity: 1; }
+
+/* ---- Light theme overrides ---- */
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.12); }
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.2); }
+[data-theme="light"] input:focus,
+[data-theme="light"] textarea:focus,
+[data-theme="light"] select:focus { border-color: var(--blue); }
+[data-theme="light"] .btn { background: rgba(0, 0, 0, 0.04); }
+[data-theme="light"] .btn:hover { background: var(--bg-3); }

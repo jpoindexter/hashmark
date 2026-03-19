@@ -1,31 +1,5 @@
 /* Grove design tokens -- hashmark studio */
 
-html[data-theme="light"] {
-  --bg:          #ffffff;
-  --bg-2:        #f4f4f5;
-  --bg-3:        #e4e4e7;
-  --bg-4:        #d4d4d8;
-
-  --border:      rgba(0,0,0,0.12);
-  --border-dim:  rgba(0,0,0,0.06);
-
-  --text:        rgba(0,0,0,0.87);
-  --text-dim:    rgba(0,0,0,0.6);
-  --text-dimmer: rgba(0,0,0,0.38);
-
-  --accent:        #059669;
-  --accent-dim:    #047857;
-  --accent-bg:     rgba(5,150,105,0.1);
-  --accent-border: rgba(5,150,105,0.25);
-
-  --blue:      #2563eb;
-  --blue-bg:   rgba(37,99,235,0.08);
-  --red:       #dc2626;
-  --red-bg:    rgba(220,38,38,0.08);
-  --yellow:    #d97706;
-  --yellow-bg: rgba(217,119,6,0.08);
-}
-
 :root {
   /* Backgrounds -- darkest to lightest */
   --bg:          #0d1117;
@@ -79,6 +53,33 @@ html[data-theme="light"] {
   --transition-fast:    0.1s ease;
   --transition-sidebar: 0.18s ease;
   --transition-status:  0.15s ease-out;
+}
+
+/* GitHub Light Default */
+[data-theme="light"] {
+  --bg:          #ffffff;
+  --bg-2:        #f6f8fa;
+  --bg-3:        #eaeef2;
+  --bg-4:        #d0d7de;
+
+  --border:      #d0d7de;
+  --border-dim:  #eaeef2;
+
+  --text:        #1f2328;
+  --text-dim:    #656d76;
+  --text-dimmer: #8b949e;
+
+  --accent:        #1a7f37;
+  --accent-dim:    #116329;
+  --accent-bg:     rgba(26, 127, 55, 0.08);
+  --accent-border: rgba(26, 127, 55, 0.2);
+
+  --blue:     #0969da;
+  --blue-bg:  rgba(9, 105, 218, 0.08);
+  --red:      #cf222e;
+  --red-bg:   rgba(207, 34, 46, 0.08);
+  --yellow:   #9a6700;
+  --yellow-bg: rgba(154, 103, 0, 0.08);
 }
 
 /* Compact density overrides */

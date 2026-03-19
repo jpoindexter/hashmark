@@ -19,6 +19,7 @@ import ShortcutsHelp from "../ShortcutsHelp";
 import SessionsSidebar from "../sidebar/SessionsSidebar";
 import { useProjectInfo } from "../../hooks/useProjectInfo";
 import { useKeyboardNav } from "../../hooks/useKeyboardNav";
+import { useTheme } from "../../hooks/useTheme";
 
 function persist(key: string, val: unknown) {
   try { localStorage.setItem(`studio:${key}`, JSON.stringify(val)); } catch { /* noop */ }
@@ -91,6 +92,9 @@ export default function Shell() {
     !location.pathname.startsWith("/settings") &&
     !location.pathname.startsWith("/setup");
 
+  // Theme -- applies data-theme attribute on <html>, syncs with Settings
+  useTheme();
+
   // Persisted state
   const [sidebarOpen, setSidebarOpen] = useState(() => restore("sidebarOpen", true));
   const [sidebarWidth, setSidebarWidth] = useState(() => restore("sidebarWidth", DEFAULT_SIDEBAR_WIDTH));
@@ -111,6 +115,7 @@ export default function Shell() {
   const [diffOpen, setDiffOpen] = useState(false);
   const [driftDismissed, setDriftDismissed] = useState<boolean>(isDismissed);
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [paletteMode, setPaletteMode] = useState<"commands" | "files">("files");
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [activityBarVisible, setActivityBarVisible] = useState(() => restore("activityBarVisible", true));
 
@@ -121,6 +126,7 @@ export default function Shell() {
   useKeyboardNav({
     navigate,
     setCmdOpen,
+    setPaletteMode,
     shortcutsOpen,
     setShortcutsOpen,
     setTermOpen,
@@ -172,11 +178,24 @@ export default function Shell() {
       window.studio.onMenu("menu:kill-terminal", () => dispatch("studio:kill-terminal")),
       window.studio.onMenu("menu:kill-all-terminals", () => dispatch("studio:kill-all-terminals")),
       window.studio.onMenu("menu:clear-terminal", () => dispatch("studio:clear-terminal")),
-      window.studio.onMenu("menu:command-palette", () => setCmdOpen(true)),
-      window.studio.onMenu("menu:go-to-file", () => setCmdOpen(true)),
+      window.studio.onMenu("menu:command-palette", () => { setPaletteMode("commands"); setCmdOpen(true); }),
+      window.studio.onMenu("menu:go-to-file", () => { setPaletteMode("files"); setCmdOpen(true); }),
       window.studio.onMenu("menu:run-scan", () => navigate("/generate")),
       window.studio.onMenu("menu:start-agent", () => navigate("/run")),
       window.studio.onMenu("menu:stop-agent", () => dispatch("studio:stop-agent")),
+      // Edit menu: find/selection/line operations
+      window.studio.onMenu("menu:find", () => setCmdOpen(true)),
+      window.studio.onMenu("menu:find-next", () => console.log("menu:find-next not implemented yet")),
+      window.studio.onMenu("menu:find-prev", () => console.log("menu:find-prev not implemented yet")),
+      window.studio.onMenu("menu:expand-selection", () => console.log("menu:expand-selection not implemented yet")),
+      window.studio.onMenu("menu:shrink-selection", () => console.log("menu:shrink-selection not implemented yet")),
+      window.studio.onMenu("menu:copy-line-up", () => console.log("menu:copy-line-up not implemented yet")),
+      window.studio.onMenu("menu:copy-line-down", () => console.log("menu:copy-line-down not implemented yet")),
+      window.studio.onMenu("menu:move-line-up", () => console.log("menu:move-line-up not implemented yet")),
+      window.studio.onMenu("menu:move-line-down", () => console.log("menu:move-line-down not implemented yet")),
+      // Go menu
+      window.studio.onMenu("menu:go-to-symbol", () => console.log("menu:go-to-symbol not implemented yet")),
+      window.studio.onMenu("menu:go-to-line", () => console.log("menu:go-to-line not implemented yet")),
     ];
     return () => subs.forEach(unsub => unsub?.());
   }, [navigate]);
@@ -321,7 +340,7 @@ export default function Shell() {
         providerName={providerName}
       />
 
-      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
+      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} mode={paletteMode} />
       {shortcutsOpen && <ShortcutsHelp onClose={() => setShortcutsOpen(false)} />}
       <DiffDrawer open={diffOpen} onClose={() => setDiffOpen(false)} projectDir={info?.projectDir ?? ""} />
     </div>

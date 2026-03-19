@@ -661,6 +661,7 @@ export default function Settings() {
   useEffect(() => {
     persist("theme", theme);
     document.documentElement.setAttribute("data-theme", theme);
+    window.dispatchEvent(new CustomEvent("studio:theme-change", { detail: theme }));
   }, [theme]);
   useEffect(() => {
     persist("font_size", fontSize);

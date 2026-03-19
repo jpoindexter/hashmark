@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from "react";
-import { ChevronLeft, RefreshCw, PanelBottom, GitCompare, Sidebar } from "lucide-react";
+import { ChevronLeft, RefreshCw, PanelBottom, GitCompare, Sidebar, Columns2 } from "lucide-react";
 import type { GitStatus, DriftResult } from "../../hooks/useProjectInfo";
 import BranchPicker from "../BranchPicker";
 import { DriftBadge } from "../DriftIndicator";
@@ -190,6 +190,14 @@ export default function Titlebar({
           style={{ color: changedFiles > 0 ? "var(--text-dim)" : "var(--text-dimmer)" }}
         >
           <GitCompare size={14} />
+        </IconButton>
+
+        <IconButton
+          title="Split View"
+          onClick={() => console.log("split view not implemented yet")}
+          style={{ color: "var(--text-dimmer)" }}
+        >
+          <Columns2 size={14} />
         </IconButton>
 
         <div style={{ width: 8 }} />
