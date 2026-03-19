@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 
 type Theme = "dark" | "light";
 
-const STORAGE_KEY = "settings_theme";
+const STORAGE_KEY = "studio:theme";
 
 function readStored(): Theme {
   try {

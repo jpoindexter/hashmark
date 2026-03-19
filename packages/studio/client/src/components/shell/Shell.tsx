@@ -162,6 +162,18 @@ export default function Shell() {
     return () => window.removeEventListener("studio:switch-session", handler);
   }, []);
 
+  // Sync settings changed from Settings page while Shell is mounted
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { key, value } = (e as CustomEvent<{ key: string; value: unknown }>).detail;
+      if (key === "selectedModel" && typeof value === "string") setSelectedModel(value);
+      if (key === "thinking" && typeof value === "boolean") setThinking(value);
+      if (key === "planMode" && typeof value === "boolean") setPlanMode(value);
+    };
+    window.addEventListener("studio:settings-change", handler);
+    return () => window.removeEventListener("studio:settings-change", handler);
+  }, []);
+
   // Electron menu events
   useEffect(() => {
     if (typeof window.studio?.onMenu !== "function") return;

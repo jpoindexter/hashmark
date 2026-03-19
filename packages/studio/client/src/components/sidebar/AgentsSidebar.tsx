@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { Play, Eye, Copy, Pencil, Trash2 } from "lucide-react";
+import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
 
 interface Agent {
   id: string;
@@ -39,13 +41,16 @@ function DeptDot({ dept }: { dept: string }) {
 function AgentRow({
   agent,
   onClick,
+  onContextMenu,
 }: {
   agent: Agent;
   onClick: () => void;
+  onContextMenu: (e: React.MouseEvent, agent: Agent) => void;
 }) {
   return (
     <div
       onClick={onClick}
+      onContextMenu={(e) => { e.preventDefault(); onContextMenu(e, agent); }}
       title={agent.description || agent.path}
       style={{
         display: "flex",
@@ -86,10 +91,12 @@ function DeptSection({
   dept,
   agents,
   onAgentClick,
+  onContextMenu,
 }: {
   dept: string;
   agents: Agent[];
   onAgentClick: (id: string) => void;
+  onContextMenu: (e: React.MouseEvent, agent: Agent) => void;
 }) {
   const [open, setOpen] = useState(true);
 
@@ -149,6 +156,7 @@ function DeptSection({
             key={agent.id}
             agent={agent}
             onClick={() => onAgentClick(agent.id)}
+            onContextMenu={onContextMenu}
           />
         ))}
     </div>
@@ -158,6 +166,7 @@ function DeptSection({
 export default function AgentsSidebar() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; agent: Agent } | null>(null);
 
   useEffect(() => {
     fetch("/api/agents")
@@ -175,7 +184,6 @@ export default function AgentsSidebar() {
       list.push(a);
       map.set(dept, list);
     }
-    // Sort departments alphabetically
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
   }, [agents]);
 
@@ -184,6 +192,51 @@ export default function AgentsSidebar() {
       new CustomEvent("studio:open-agent", { detail: { id } })
     );
   }, []);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, agent: Agent) => {
+    setCtxMenu({ x: e.clientX, y: e.clientY, agent });
+  }, []);
+
+  const closeCtxMenu = useCallback(() => setCtxMenu(null), []);
+
+  const ctxMenuItems = useMemo((): ContextMenuItem[] => {
+    if (!ctxMenu) return [];
+    const { agent } = ctxMenu;
+    return [
+      {
+        label: "Run Agent",
+        icon: <Play size={12} />,
+        onClick: () => {
+          window.dispatchEvent(
+            new CustomEvent("studio:run-agent", { detail: { id: agent.id, name: agent.name } })
+          );
+        },
+      },
+      {
+        label: "View Details",
+        icon: <Eye size={12} />,
+        onClick: () => handleAgentClick(agent.id),
+      },
+      { label: "", separator: true, onClick: () => {} },
+      {
+        label: "Copy Name",
+        icon: <Copy size={12} />,
+        onClick: () => { navigator.clipboard.writeText(agent.name || agent.id).catch(() => {}); },
+      },
+      {
+        label: "Edit",
+        icon: <Pencil size={12} />,
+        onClick: () => { alert(`Edit agent "${agent.name || agent.id}" (not yet implemented)`); },
+      },
+      { label: "", separator: true, onClick: () => {} },
+      {
+        label: "Delete",
+        icon: <Trash2 size={12} />,
+        danger: true,
+        onClick: () => { alert(`Delete agent "${agent.name || agent.id}" (not yet implemented)`); },
+      },
+    ];
+  }, [ctxMenu, handleAgentClick]);
 
   return (
     <div
@@ -267,10 +320,17 @@ export default function AgentsSidebar() {
               dept={dept}
               agents={deptAgents}
               onAgentClick={handleAgentClick}
+              onContextMenu={handleContextMenu}
             />
           ))
         )}
       </div>
+
+      <ContextMenu
+        items={ctxMenuItems}
+        position={ctxMenu ? { x: ctxMenu.x, y: ctxMenu.y } : null}
+        onClose={closeCtxMenu}
+      />
     </div>
   );
 }

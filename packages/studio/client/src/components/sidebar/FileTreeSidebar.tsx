@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { FileCode, FileText, Folder, ChevronRight, ChevronDown, Copy, FolderOpen, ExternalLink } from "lucide-react";
+import { FileCode, FileText, Folder, ChevronRight, ChevronDown, Copy, FolderOpen, ExternalLink, FilePlus } from "lucide-react";
 import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
 
 interface FileNode {
@@ -184,6 +184,15 @@ export default function FileTreeSidebar() {
         label: "Reveal in Finder",
         icon: <ExternalLink size={12} />,
         onClick: () => { void window.studio!.showInFinder(node.path); },
+      });
+    }
+
+    if (!isFile) {
+      items.push({ label: "", separator: true, onClick: () => {} });
+      items.push({
+        label: "New File",
+        icon: <FilePlus size={12} />,
+        onClick: () => { alert(`New file in ${node.path} (not yet implemented)`); },
       });
     }
 

@@ -83,14 +83,20 @@ const ALL_FORMATS = [
 ];
 
 /* ─── persists ───────────────────────────────────────────────────────────── */
+// Use `studio:` prefix to match Shell.tsx -- both read/write the same keys
 function persist(key: string, val: unknown) {
-  try { localStorage.setItem(`settings_${key}`, JSON.stringify(val)); } catch {}
+  try { localStorage.setItem(`studio:${key}`, JSON.stringify(val)); } catch {}
 }
 function restore<T>(key: string, fallback: T): T {
   try {
-    const raw = localStorage.getItem(`settings_${key}`);
+    const raw = localStorage.getItem(`studio:${key}`);
     return raw ? (JSON.parse(raw) as T) : fallback;
   } catch { return fallback; }
+}
+
+/** Notify other mounted components (Shell, ModelBar, etc.) that a setting changed */
+function dispatch(key: string, value: unknown) {
+  window.dispatchEvent(new CustomEvent("studio:settings-change", { detail: { key, value } }));
 }
 
 /* ─── Toggle component ──────────────────────────────────────────────────── */
@@ -650,12 +656,12 @@ export default function Settings() {
   const [commitFormat, setCommitFormat] = useState<string>(() => restore("git_commit_fmt", "conventional"));
   const [showGitInNav, setShowGitInNav] = useState<boolean>(() => restore("git_in_nav", true));
 
-  // Experimental
-  const [planMode,      setPlanMode]      = useState<boolean>(() => restore("plan_mode", false));
+  // Experimental -- key must be "planMode" to match Shell.tsx
+  const [planMode,      setPlanMode]      = useState<boolean>(() => restore("planMode", false));
   const [multiAgent,    setMultiAgent]    = useState<boolean>(() => restore("multi_agent", false));
   const [betaFeatures,  setBetaFeatures]  = useState<boolean>(() => restore("beta_features", false));
 
-  // Persist on change
+  // Persist on change -- dispatch events so Shell picks up live changes
   useEffect(() => persist("settings_tab", active), [active]);
   useEffect(() => persist("settings_nav_w", navWidth), [navWidth]);
   useEffect(() => {
@@ -666,22 +672,24 @@ export default function Settings() {
   useEffect(() => {
     persist("font_size", fontSize);
     document.documentElement.style.setProperty("--font-size-base", `${fontSize}px`);
+    dispatch("font_size", fontSize);
   }, [fontSize]);
   useEffect(() => {
     persist("ui_density", uiDensity);
     document.documentElement.setAttribute("data-density", uiDensity);
+    dispatch("ui_density", uiDensity);
   }, [uiDensity]);
-  useEffect(() => persist("line_nums", showLineNums), [showLineNums]);
-  useEffect(() => persist("selectedModel", defaultModel), [defaultModel]);
-  useEffect(() => persist("thinking", thinkingMode), [thinkingMode]);
-  useEffect(() => persist("streaming_ui", streamingUI), [streamingUI]);
-  useEffect(() => persist("system_prompt", systemPrompt), [systemPrompt]);
-  useEffect(() => persist("git_auto_stage", autoStage), [autoStage]);
-  useEffect(() => persist("git_commit_fmt", commitFormat), [commitFormat]);
-  useEffect(() => persist("git_in_nav", showGitInNav), [showGitInNav]);
-  useEffect(() => persist("plan_mode", planMode), [planMode]);
-  useEffect(() => persist("multi_agent", multiAgent), [multiAgent]);
-  useEffect(() => persist("beta_features", betaFeatures), [betaFeatures]);
+  useEffect(() => { persist("line_nums", showLineNums); dispatch("line_nums", showLineNums); }, [showLineNums]);
+  useEffect(() => { persist("selectedModel", defaultModel); dispatch("selectedModel", defaultModel); }, [defaultModel]);
+  useEffect(() => { persist("thinking", thinkingMode); dispatch("thinking", thinkingMode); }, [thinkingMode]);
+  useEffect(() => { persist("streaming_ui", streamingUI); dispatch("streaming_ui", streamingUI); }, [streamingUI]);
+  useEffect(() => { persist("system_prompt", systemPrompt); dispatch("system_prompt", systemPrompt); }, [systemPrompt]);
+  useEffect(() => { persist("git_auto_stage", autoStage); dispatch("git_auto_stage", autoStage); }, [autoStage]);
+  useEffect(() => { persist("git_commit_fmt", commitFormat); dispatch("git_commit_fmt", commitFormat); }, [commitFormat]);
+  useEffect(() => { persist("git_in_nav", showGitInNav); dispatch("git_in_nav", showGitInNav); }, [showGitInNav]);
+  useEffect(() => { persist("planMode", planMode); dispatch("planMode", planMode); }, [planMode]);
+  useEffect(() => { persist("multi_agent", multiAgent); dispatch("multi_agent", multiAgent); }, [multiAgent]);
+  useEffect(() => { persist("beta_features", betaFeatures); dispatch("beta_features", betaFeatures); }, [betaFeatures]);
 
   useEffect(() => {
     fetch("/api/info").then(r => r.json()).then(setInfo).catch(() => {});

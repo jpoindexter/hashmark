@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { Copy, ClipboardPaste, Trash2, Plus, XCircle } from "lucide-react";
 import TerminalTabs from "../TerminalTabs";
+import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
 
 const PANEL_TABS = ["TERMINAL", "OUTPUT"] as const;
 type PanelTab = (typeof PANEL_TABS)[number];
@@ -24,6 +26,54 @@ export default function TerminalPanel({
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [maxHover, setMaxHover] = useState(false);
   const [closeHover, setCloseHover] = useState(false);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
+
+  const handleTerminalContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setCtxMenu({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  const closeCtxMenu = useCallback(() => setCtxMenu(null), []);
+
+  const dispatch = useCallback((eventName: string) => {
+    window.dispatchEvent(new CustomEvent(eventName));
+  }, []);
+
+  const ctxMenuItems = useMemo((): ContextMenuItem[] => [
+    {
+      label: "Copy",
+      icon: <Copy size={12} />,
+      onClick: () => {
+        const selection = document.getSelection();
+        if (selection && selection.toString()) {
+          navigator.clipboard.writeText(selection.toString()).catch(() => {});
+        }
+      },
+    },
+    {
+      label: "Paste",
+      icon: <ClipboardPaste size={12} />,
+      onClick: () => { alert("Paste (not yet implemented — needs terminal input integration)"); },
+    },
+    { label: "", separator: true, onClick: () => {} },
+    {
+      label: "Clear Terminal",
+      icon: <Trash2 size={12} />,
+      onClick: () => dispatch("studio:clear-terminal"),
+    },
+    {
+      label: "New Terminal",
+      icon: <Plus size={12} />,
+      onClick: () => dispatch("studio:new-terminal"),
+    },
+    { label: "", separator: true, onClick: () => {} },
+    {
+      label: "Kill Terminal",
+      icon: <XCircle size={12} />,
+      danger: true,
+      onClick: () => dispatch("studio:kill-terminal"),
+    },
+  ], [dispatch]);
 
   return (
     <div style={{
@@ -107,7 +157,10 @@ export default function TerminalPanel({
       </div>
 
       {/* Terminal content */}
-      <div style={{ flex: 1, overflow: "hidden", display: activeTab === "TERMINAL" ? "flex" : "none", flexDirection: "column" }}>
+      <div
+        onContextMenu={handleTerminalContextMenu}
+        style={{ flex: 1, overflow: "hidden", display: activeTab === "TERMINAL" ? "flex" : "none", flexDirection: "column" }}
+      >
         <TerminalTabs onCwdChange={onCwdChange} />
       </div>
       {activeTab === "OUTPUT" && (
@@ -115,6 +168,12 @@ export default function TerminalPanel({
           No output yet.
         </div>
       )}
+
+      <ContextMenu
+        items={ctxMenuItems}
+        position={ctxMenu}
+        onClose={closeCtxMenu}
+      />
     </div>
   );
 }

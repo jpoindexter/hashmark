@@ -4,7 +4,8 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.tsx";
 import "./index.css";
 
-const savedTheme = localStorage.getItem("settings_theme");
+// Restore appearance settings before first paint (matches Settings.tsx `studio:` prefix)
+const savedTheme = localStorage.getItem("studio:theme");
 if (savedTheme) {
   try {
     const theme = JSON.parse(savedTheme) as string;
@@ -14,7 +15,7 @@ if (savedTheme) {
   } catch { /* noop */ }
 }
 
-const savedDensity = localStorage.getItem("settings_ui_density");
+const savedDensity = localStorage.getItem("studio:ui_density");
 if (savedDensity) {
   try {
     const density = JSON.parse(savedDensity) as string;
@@ -24,7 +25,7 @@ if (savedDensity) {
   } catch { /* noop */ }
 }
 
-const savedFontSize = localStorage.getItem("settings_font_size");
+const savedFontSize = localStorage.getItem("studio:font_size");
 if (savedFontSize) {
   try {
     const size = JSON.parse(savedFontSize) as number;
