@@ -13,7 +13,6 @@ import {
 
 interface ActivityBarProps {
   activeView: string;
-  onViewChange: (path: string) => void;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
 }
@@ -94,7 +93,6 @@ function ActivityItem({
 
 export default function ActivityBar({
   activeView,
-  onViewChange,
   sidebarOpen,
   onToggleSidebar,
 }: ActivityBarProps) {
@@ -108,8 +106,6 @@ export default function ActivityBar({
       // Toggle sidebar closed when clicking the already-active icon
       onToggleSidebar();
     } else {
-      // Switch to the new view
-      onViewChange(path);
       navigate(path);
       // Ensure sidebar is open when switching views
       if (!sidebarOpen) {

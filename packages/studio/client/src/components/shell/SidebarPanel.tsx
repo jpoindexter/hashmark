@@ -5,7 +5,6 @@ interface SidebarPanelProps {
   width: number;
   open: boolean;
   sessionsSidebar: ReactNode;
-  onToggle: () => void;
 }
 
 const VIEW_TITLES: Record<string, string> = {
@@ -67,7 +66,6 @@ export default function SidebarPanel({
   width,
   open,
   sessionsSidebar,
-  onToggle: _onToggle,
 }: SidebarPanelProps) {
   const resolvedWidth = open ? width : 0;
   const title = VIEW_TITLES[activeView] ?? "Sessions";

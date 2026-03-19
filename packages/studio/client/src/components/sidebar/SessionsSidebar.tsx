@@ -25,6 +25,8 @@ interface WorkspaceInfo {
 interface SessionsSidebarProps {
   activeSessionId: string | null;
   onSessionSelect?: (sessionId: string) => void;
+  info?: { projectName: string; projectDir: string } | null;
+  git?: { branch: string; files: { status: string; added?: number; removed?: number }[] } | null;
 }
 
 // Avatar background colors keyed by first letter
@@ -66,9 +68,8 @@ function isRecent(ts: number): boolean {
   return Date.now() - ts < 5 * 60 * 1000;
 }
 
-export default function SessionsSidebar({ activeSessionId, onSessionSelect }: SessionsSidebarProps) {
+export default function SessionsSidebar({ activeSessionId, onSessionSelect, info, git }: SessionsSidebarProps) {
   const navigate = useNavigate();
-  const [workspace, setWorkspace] = useState<WorkspaceInfo | null>(null);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
 
   useEffect(() => {
@@ -83,23 +84,10 @@ export default function SessionsSidebar({ activeSessionId, onSessionSelect }: Se
     return () => clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    const load = () => {
-      Promise.all([
-        fetch("/api/info").then(r => r.json()),
-        fetch("/api/files/git").then(r => r.json()).catch(() => null),
-      ]).then(([info, git]) => {
-        setWorkspace({
-          name: info.projectName ?? "project",
-          dir: info.projectDir ?? "",
-          git: git as GitStatus | null,
-        });
-      }).catch(() => {});
-    };
-    load();
-    const id = setInterval(load, 6000);
-    return () => clearInterval(id);
-  }, []);
+  // Derive workspace display from props passed by Shell (avoids duplicate fetches)
+  const workspace: WorkspaceInfo | null = info
+    ? { name: info.projectName ?? "project", dir: info.projectDir ?? "", git: git ?? null }
+    : null;
 
   const handleSessionClick = useCallback((id: string) => {
     if (onSessionSelect) {

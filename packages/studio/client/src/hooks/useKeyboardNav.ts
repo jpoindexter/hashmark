@@ -91,6 +91,15 @@ export function useKeyboardNav({
         return;
       }
 
+      // Cmd+Shift+E: Explorer
+      if (mod && e.shiftKey && e.key === "E") { e.preventDefault(); navigate("/files"); return; }
+      // Cmd+Shift+G: Source Control
+      if (mod && e.shiftKey && e.key === "G") { e.preventDefault(); navigate("/source-control"); return; }
+      // Cmd+Shift+A: Agents
+      if (mod && e.shiftKey && e.key === "A") { e.preventDefault(); navigate("/agents"); return; }
+      // Cmd+,: Settings
+      if (mod && e.key === ",") { e.preventDefault(); navigate("/settings"); return; }
+
       // ?: toggle shortcuts overlay
       if (!mod && e.key === "?") {
         e.preventDefault();

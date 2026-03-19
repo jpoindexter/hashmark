@@ -3,8 +3,6 @@ import {
   Sparkles,
   Brain,
   ClipboardList,
-  Plus,
-  ArrowUp,
   Check,
 } from "lucide-react";
 
@@ -240,82 +238,6 @@ function ModelSelector({
         />
       )}
     </div>
-  );
-}
-
-// ─── Send button ─────────────────────────────────────────────────────────────
-
-function SendButton({
-  canSend,
-  onSend,
-}: {
-  canSend: boolean;
-  onSend: () => void;
-}) {
-  const [hovered, setHovered] = useState(false);
-
-  const bg = canSend
-    ? hovered
-      ? "var(--accent-dim)"
-      : "var(--accent)"
-    : "var(--bg-4)";
-
-  const color = canSend ? "#fff" : "var(--text-dimmer)";
-
-  return (
-    <button
-      onClick={onSend}
-      disabled={!canSend}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      title="Send (Enter)"
-      style={{
-        width: 24,
-        height: 24,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: bg,
-        border: "none",
-        borderRadius: "var(--radius-sm)",
-        color,
-        cursor: canSend ? "pointer" : "default",
-        transition: "background 0.15s ease",
-        flexShrink: 0,
-      }}
-    >
-      <ArrowUp size={14} />
-    </button>
-  );
-}
-
-// ─── Attach button (future) ──────────────────────────────────────────────────
-
-function AttachButton() {
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <button
-      title="Attach files"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        width: 24,
-        height: 24,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: hovered ? "rgba(255,255,255,0.08)" : "none",
-        border: "none",
-        borderRadius: "var(--radius-sm)",
-        color: hovered ? "var(--text-dim)" : "var(--text-dimmer)",
-        cursor: "pointer",
-        transition: "color 0.1s ease, background 0.1s ease",
-        flexShrink: 0,
-      }}
-    >
-      <Plus size={14} />
-    </button>
   );
 }
 

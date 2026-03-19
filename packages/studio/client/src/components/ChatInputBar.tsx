@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowUp, Square, Plus } from "lucide-react";
-import ProviderSelector from "./ProviderSelector.tsx";
 
 // ─── Slash command registry ───────────────────────────────────────────────────
 
@@ -472,132 +471,23 @@ interface ChatInputBarProps {
   terminalCwd?: string;
   currentFile?: string;
   modelName?: string;
+  selectedModel?: string;
+  thinking?: boolean;
+  planMode?: boolean;
 }
 
-// ─── Model + persistence ──────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-const MODELS = [
-  { id: "claude-opus-4-6",           label: "Opus 4.6",   note: "1M ctx" },
-  { id: "claude-sonnet-4-6",         label: "Sonnet 4.6", note: "default" },
-  { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5",  note: "fast" },
-];
-
-function persist(key: string, val: unknown) {
-  try { localStorage.setItem(`studio_${key}`, JSON.stringify(val)); } catch {}
-}
-function restore<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(`studio_${key}`);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch { return fallback; }
-}
-
-// ─── Model pill (dropdown) ────────────────────────────────────────────────────
-
-function ModelPill({ selected, onChange }: { selected: string; onChange: (id: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const current = MODELS.find(m => m.id === selected) ?? MODELS[1];
-
-  useEffect(() => {
-    if (!open) return;
-    const h = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, [open]);
-
-  return (
-    <div ref={ref} style={{ position: "relative" }}>
-      <button
-        onClick={() => setOpen(v => !v)}
-        style={{
-          display: "flex", alignItems: "center", gap: 5,
-          padding: "2px 6px", background: "none", border: "none", borderRadius: 4,
-          color: "var(--text-dimmer)", fontSize: 12,
-          fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
-          cursor: "pointer", transition: "color 0.1s", whiteSpace: "nowrap",
-        }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)"; }}
-      >
-        {/* Anthropic sparkle */}
-        <span style={{ fontSize: 13, lineHeight: 1, color: "var(--text-dim)" }}>✦</span>
-        <span>{current.label}</span>
-      </button>
-
-      {open && (
-        <div style={{
-          position: "absolute", bottom: "calc(100% + 6px)", left: 0, zIndex: 300,
-          background: "var(--bg-3)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)",
-          minWidth: 180, boxShadow: "0 -4px 20px rgba(0,0,0,0.5)", overflow: "hidden",
-        }}>
-          {MODELS.map(m => (
-            <button
-              key={m.id}
-              onClick={() => { onChange(m.id); setOpen(false); }}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                width: "100%", padding: "7px 12px", background: "none", border: "none",
-                borderLeft: m.id === selected ? "2px solid var(--accent)" : "2px solid transparent",
-                color: m.id === selected ? "var(--accent)" : "var(--text-dim)",
-                fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", fontSize: 12,
-                cursor: "pointer", textAlign: "left", transition: "background 0.1s",
-              }}
-              onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)"}
-              onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "none"}
-            >
-              <span>{m.label}</span>
-              <span style={{ color: "var(--text-dimmer)", fontSize: 10 }}>{m.note}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Thinking badge ───────────────────────────────────────────────────────────
-
-function ThinkingBadge({ visible }: { visible: boolean }) {
-  if (!visible) return null;
-  return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 5,
-      padding: "2px 7px",
-      background: "rgba(96, 165, 250, 0.1)",
-      border: "1px solid rgba(96, 165, 250, 0.2)",
-      borderRadius: 99,
-      fontSize: 11,
-      fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
-      color: "rgba(147, 197, 253, 0.8)",
-      userSelect: "none",
-    }}>
-      <span style={{
-        display: "inline-block",
-        width: 5,
-        height: 5,
-        borderRadius: "50%",
-        background: "rgba(147, 197, 253, 0.7)",
-        animation: "thinking-pulse 1.4s ease-in-out infinite",
-        flexShrink: 0,
-      }} />
-      Thinking
-    </div>
-  );
-}
+const DEFAULT_MODEL = "claude-sonnet-4-6";
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ChatInputBar({
   sessionId, onNewSession, onSessionCreated, onStreamText, onStreamingChange,
   streaming, terminalCwd, currentFile,
+  selectedModel = DEFAULT_MODEL, thinking = false, planMode = false,
 }: ChatInputBarProps) {
   const [input, setInput] = useState("");
-  const [selectedModel, setSelectedModel] = useState(() => restore("model", "claude-sonnet-4-6"));
-  const [thinking, setThinking] = useState(() => restore("thinking", false));
-  const [planMode, setPlanMode] = useState(() => restore("plan_mode", false));
   const [slashOpen, setSlashOpen] = useState(false);
   const [atQuery, setAtQuery] = useState<string | null>(null);
   const [chipDismissed, setChipDismissed] = useState(false);
@@ -605,7 +495,7 @@ export default function ChatInputBar({
   const abortRef = useRef<(() => void) | null>(null);
 
   const agentSuggestion = useAgentSuggestion(input, currentFile);
-  const slashCommands = useSlashCommands(onNewSession, () => setPlanMode(v => !v), () => setThinking(v => !v));
+  const slashCommands = useSlashCommands(onNewSession, () => {}, () => {});
   const mentionFiles = useMentionFiles();
 
   const injectTerminalCwd = useCallback(() => {
@@ -620,10 +510,6 @@ export default function ChatInputBar({
       ta.style.height = `${Math.min(ta.scrollHeight, LINE_HEIGHT * MAX_ROWS)}px`;
     });
   }, [terminalCwd]);
-
-  useEffect(() => persist("model", selectedModel), [selectedModel]);
-  useEffect(() => persist("thinking", thinking), [thinking]);
-  useEffect(() => persist("plan_mode", planMode), [planMode]);
 
   // ⌘L focus shortcut
   useEffect(() => {
@@ -775,7 +661,6 @@ export default function ChatInputBar({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); setPlanMode(v => !v); return; }
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void sendMessage(); return; }
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendMessage(); }
   };
@@ -789,7 +674,6 @@ export default function ChatInputBar({
   };
 
   const hasText = input.trim().length > 0;
-  const currentModelLabel = (MODELS.find(m => m.id === selectedModel) ?? MODELS[1]).label;
 
   return (
     <div style={{
@@ -993,10 +877,6 @@ export default function ChatInputBar({
       </div>
 
       <style>{`
-        @keyframes thinking-pulse {
-          0%, 100% { opacity: 0.4; transform: scale(0.85); }
-          50%       { opacity: 1;   transform: scale(1.15); }
-        }
         textarea::placeholder {
           color: var(--text-dimmer);
         }

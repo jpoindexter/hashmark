@@ -161,8 +161,6 @@ export default function Shell() {
   const handleNewSession = useCallback(() => {
     createSession().then(setActiveSessionId).catch(() => {});
   }, []);
-  // ActivityBar handles navigation internally; this satisfies the required prop
-  const handleViewChange = useCallback((_path: string) => {}, []);
   const handleSidebarReset = useCallback(() => setSidebarWidth(DEFAULT_SIDEBAR_WIDTH), []);
 
   const modelLabel = MODELS.find(m => m.id === selectedModel)?.label;
@@ -186,23 +184,23 @@ export default function Shell() {
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
         <ActivityBar
           activeView={activeView}
-          onViewChange={handleViewChange}
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen(v => !v)}
         />
 
-        {/* Sidebar only shows for Chat view (others are self-contained pages) */}
-        {activeView === "chat" && (
+        {/* Sidebar shows for all views except settings */}
+        {activeView !== "settings" && (
           <>
             <SidebarPanel
               activeView={activeView}
               width={sidebarWidth}
               open={sidebarOpen}
-              onToggle={() => setSidebarOpen(v => !v)}
               sessionsSidebar={
                 <SessionsSidebar
                   activeSessionId={activeSessionId}
                   onSessionSelect={setActiveSessionId}
+                  info={info}
+                  git={git}
                 />
               }
             />
@@ -267,6 +265,9 @@ export default function Shell() {
                 streaming={streaming}
                 terminalCwd={terminalCwd || undefined}
                 modelName={selectedModel}
+                selectedModel={selectedModel}
+                thinking={thinking}
+                planMode={planMode}
               />
               <ModelBar
                 selectedModel={selectedModel}
