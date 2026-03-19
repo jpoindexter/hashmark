@@ -586,14 +586,6 @@ export default function Swarm() {
         </div>
       )}
 
-      <style>{`
-        @keyframes run-pulse { 0%,100%{opacity:.5;transform:scale(.8)} 50%{opacity:1;transform:scale(1.3)} }
-        @keyframes cursor-blink { 0%,100%{opacity:1} 50%{opacity:0} }
-        @keyframes swarm-border-pulse {
-          0%,100% { border-left-color: var(--accent); }
-          50% { border-left-color: var(--accent-border); }
-        }
-      `}</style>
     </div>
   );
 }

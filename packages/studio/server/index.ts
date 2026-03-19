@@ -81,6 +81,9 @@ export function createServer(opts: ServerOptions) {
 
   app.use("*", cors({ origin: "*" }));
 
+  // Health check
+  app.get("/api/health", (c) => c.json({ ok: true, timestamp: Date.now() }));
+
   // Project info — reads from mutable ctx so it reflects workspace switches
   app.get("/api/info", async (c) => {
     const { join: pathJoin, basename: pathBasename } = await import("path");

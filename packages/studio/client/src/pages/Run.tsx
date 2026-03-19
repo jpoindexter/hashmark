@@ -20,8 +20,7 @@ interface RunResult {
   worktreeBranch?: string;
 }
 
-// ─── Department colors (mirrors AgentCard) ────────────────────────────────────
-
+// Department-specific colors (no Grove token equivalent)
 const DEPT_COLORS: Record<string, string> = {
   engineering: "var(--blue)",
   product:     "#8b5cf6",
@@ -837,10 +836,6 @@ export default function Run() {
         )}
       </div>
 
-      <style>{`
-        @keyframes run-pulse { 0%,100%{opacity:.5;transform:scale(.8)} 50%{opacity:1;transform:scale(1.3)} }
-        @keyframes cursor-blink { 0%,100%{opacity:1} 50%{opacity:0} }
-      `}</style>
     </div>
   );
 }

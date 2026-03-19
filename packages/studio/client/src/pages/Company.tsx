@@ -1103,11 +1103,6 @@ export default function Company() {
         )}
       </div>
 
-      <style>{`
-        @keyframes swarm-pulse { 0%,100%{opacity:.5;transform:scale(.8)} 50%{opacity:1;transform:scale(1.3)} }
-        @keyframes cursor-blink { 0%,100%{opacity:1} 50%{opacity:0} }
-        @keyframes verify-spin { to{transform:rotate(360deg)} }
-      `}</style>
     </div>
   );
 }

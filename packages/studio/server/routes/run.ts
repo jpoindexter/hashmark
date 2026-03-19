@@ -86,6 +86,12 @@ export function runRoutes(projectDir: string) {
 
   app.get("/status", (c) => c.json({ active: activeRun }));
 
+  // DELETE /api/run — cancel an active run
+  app.delete("/", (c) => {
+    activeRun = false;
+    return c.json({ ok: true, message: "Run cancelled" });
+  });
+
   // GET /api/runs — list past runs newest first
   app.get("/runs", (c) => {
     try {

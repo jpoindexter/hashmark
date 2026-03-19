@@ -53,6 +53,7 @@ interface RecentProject {
 
 const STORAGE_KEY = "studio:recent_projects";
 
+// Department-specific colors (no Grove token equivalent)
 const DEPT_COLORS: Record<string, string> = {
   engineering: "var(--blue)",
   product: "#8b5cf6",
