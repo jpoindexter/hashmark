@@ -1,7 +1,126 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ArrowUp, Square, Plus, X, ImageIcon, Mic } from "lucide-react";
+import { ArrowUp, Square, Plus, X, Mic } from "lucide-react";
 
-// ─── Slash command registry ───────────────────────────────────────────────────
+const PICKER_CONTAINER_STYLE: React.CSSProperties = {
+  position: "absolute",
+  bottom: "calc(100% + 6px)",
+  left: 0,
+  right: 0,
+  background: "var(--bg-3)",
+  border: "1px solid var(--border)",
+  borderRadius: "var(--radius-lg)",
+  boxShadow: "0 -8px 32px rgba(0,0,0,0.6)",
+  zIndex: 500,
+  overflow: "auto",
+};
+
+const PICKER_FOOTER_STYLE: React.CSSProperties = {
+  padding: "4px 12px 6px",
+  fontSize: 10,
+  color: "var(--text-dimmer)",
+  borderTop: "1px solid var(--border-dim)",
+  display: "flex",
+  gap: 10,
+  fontFamily: "var(--font-ui)",
+};
+
+const PICKER_GROUP_LABEL_STYLE: React.CSSProperties = {
+  padding: "6px 12px 3px",
+  fontSize: 10,
+  fontWeight: 600,
+  color: "var(--text-dimmer)",
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+  userSelect: "none",
+  fontFamily: "var(--font-ui)",
+};
+
+const ICON_BTN_BASE: React.CSSProperties = {
+  width: 28,
+  height: 28,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: 6,
+  cursor: "pointer",
+  flexShrink: 0,
+};
+
+function dimBorderHover(e: React.MouseEvent<HTMLButtonElement>) {
+  e.currentTarget.style.borderColor = "var(--border)";
+  e.currentTarget.style.color = "var(--text-dim)";
+}
+
+function dimBorderUnhover(e: React.MouseEvent<HTMLButtonElement>) {
+  e.currentTarget.style.borderColor = "var(--border-dim)";
+  e.currentTarget.style.color = "var(--text-dimmer)";
+}
+
+const CLOSE_BTN_STYLE: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "none",
+  border: "none",
+  color: "var(--text-dimmer)",
+  cursor: "pointer",
+  flexShrink: 0,
+  padding: 0,
+};
+
+function pickerRowStyle(isActive: boolean): React.CSSProperties {
+  return {
+    display: "flex",
+    alignItems: "center",
+    cursor: "pointer",
+    background: isActive ? "var(--accent-bg)" : "transparent",
+    borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
+    transition: "background 0.05s",
+  };
+}
+
+function PickerFooter() {
+  return (
+    <div style={PICKER_FOOTER_STYLE}>
+      <span>↑↓ navigate</span>
+      <span>↵ / Tab select</span>
+      <span>Esc dismiss</span>
+    </div>
+  );
+}
+
+function usePicker<T>(
+  query: string,
+  filtered: T[],
+  onSelect: (item: T) => void,
+  onDismiss: () => void,
+) {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setActiveIdx(0); }, [query]);
+  useEffect(() => {
+    const el = listRef.current?.querySelector("[data-active='true']") as HTMLElement | null;
+    el?.scrollIntoView({ block: "nearest" });
+  }, [activeIdx]);
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape")    { e.preventDefault(); onDismiss(); return; }
+      if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, filtered.length - 1)); return; }
+      if (e.key === "ArrowUp")   { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)); return; }
+      if (e.key === "Tab" || e.key === "Enter") {
+        if (filtered.length === 0) return;
+        e.preventDefault();
+        onSelect(filtered[activeIdx]);
+      }
+    };
+    window.addEventListener("keydown", h, { capture: true });
+    return () => window.removeEventListener("keydown", h, { capture: true });
+  }, [filtered, activeIdx, onSelect, onDismiss]);
+
+  return { activeIdx, setActiveIdx, listRef };
+}
 
 interface SlashCommand {
   name: string;
@@ -62,8 +181,6 @@ function useSlashCommands(onNewSession: () => void, onTogglePlan: () => void, on
   ];
 }
 
-// ─── Slash picker ─────────────────────────────────────────────────────────────
-
 function SlashPicker({
   query, commands, onSelect, onDismiss,
 }: {
@@ -77,30 +194,7 @@ function SlashPicker({
     ? commands.filter(c => c.name.startsWith(q) || c.description.toLowerCase().includes(q))
     : commands;
 
-  const [activeIdx, setActiveIdx] = useState(0);
-  const listRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => { setActiveIdx(0); }, [query]);
-
-  useEffect(() => {
-    const el = listRef.current?.querySelector("[data-active='true']") as HTMLElement | null;
-    el?.scrollIntoView({ block: "nearest" });
-  }, [activeIdx]);
-
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => {
-      if (e.key === "Escape")    { e.preventDefault(); onDismiss(); return; }
-      if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, filtered.length - 1)); return; }
-      if (e.key === "ArrowUp")   { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)); return; }
-      if (e.key === "Tab" || e.key === "Enter") {
-        if (filtered.length === 0) return;
-        e.preventDefault();
-        onSelect(filtered[activeIdx]);
-      }
-    };
-    window.addEventListener("keydown", h, { capture: true });
-    return () => window.removeEventListener("keydown", h, { capture: true });
-  }, [filtered, activeIdx, onSelect, onDismiss]);
+  const { activeIdx, setActiveIdx, listRef } = usePicker(query, filtered, onSelect, onDismiss);
 
   if (filtered.length === 0) return null;
 
@@ -113,35 +207,10 @@ function SlashPicker({
   let globalIdx = 0;
 
   return (
-    <div
-      ref={listRef}
-      className="dropdown-animate"
-      style={{
-        position: "absolute",
-        bottom: "calc(100% + 6px)",
-        left: 0,
-        right: 0,
-        background: "var(--bg-3)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-lg)",
-        boxShadow: "0 -8px 32px rgba(0,0,0,0.6)",
-        zIndex: 500,
-        maxHeight: 320,
-        overflow: "auto",
-      }}
-    >
+    <div ref={listRef} className="dropdown-animate" style={{ ...PICKER_CONTAINER_STYLE, maxHeight: 320 }}>
       {Object.entries(grouped).map(([cat, cmds]) => (
         <div key={cat}>
-          <div style={{
-            padding: "6px 12px 3px",
-            fontSize: 10,
-            fontWeight: 600,
-            color: "var(--text-dimmer)",
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            userSelect: "none",
-            fontFamily: "var(--font-ui)",
-          }}>
+          <div style={PICKER_GROUP_LABEL_STYLE}>
             {CATEGORY_LABEL[cat as SlashCommand["category"]] ?? cat}
           </div>
           {cmds.map(cmd => {
@@ -153,16 +222,7 @@ function SlashPicker({
                 data-active={isActive}
                 onClick={() => onSelect(cmd)}
                 onMouseEnter={() => setActiveIdx(idx)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "6px 12px",
-                  cursor: "pointer",
-                  background: isActive ? "var(--accent-bg)" : "transparent",
-                  borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
-                  transition: "background 0.05s",
-                }}
+                style={{ ...pickerRowStyle(isActive), gap: 10, padding: "6px 12px" }}
               >
                 <span style={{
                   fontFamily: "var(--font)",
@@ -192,24 +252,10 @@ function SlashPicker({
           })}
         </div>
       ))}
-      <div style={{
-        padding: "4px 12px 6px",
-        fontSize: 10,
-        color: "var(--text-dimmer)",
-        borderTop: "1px solid var(--border-dim)",
-        display: "flex",
-        gap: 10,
-        fontFamily: "var(--font-ui)",
-      }}>
-        <span>↑↓ navigate</span>
-        <span>↵ / Tab select</span>
-        <span>Esc dismiss</span>
-      </div>
+      <PickerFooter />
     </div>
   );
 }
-
-// ─── @mention file picker ─────────────────────────────────────────────────────
 
 interface FileEntry {
   name: string;
@@ -228,6 +274,12 @@ function useMentionFiles() {
   return files;
 }
 
+const EXT_COLORS: Record<string, string> = {
+  ts: "var(--blue)", tsx: "var(--blue)", js: "var(--yellow)", jsx: "var(--yellow)",
+  py: "var(--accent)", go: "#00add8", rs: "#dea584", md: "var(--text-dim)",
+  json: "var(--text-dim)", css: "#264de4", html: "#e34c26",
+};
+
 function MentionPicker({
   query, files, onSelect, onDismiss,
 }: {
@@ -241,68 +293,13 @@ function MentionPicker({
     ? files.filter(f => f.path.toLowerCase().includes(q) || f.name.toLowerCase().includes(q))
     : files.slice(0, 20);
 
-  const [activeIdx, setActiveIdx] = useState(0);
-  const listRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => { setActiveIdx(0); }, [query]);
-
-  useEffect(() => {
-    const el = listRef.current?.querySelector("[data-active='true']") as HTMLElement | null;
-    el?.scrollIntoView({ block: "nearest" });
-  }, [activeIdx]);
-
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => {
-      if (e.key === "Escape")    { e.preventDefault(); onDismiss(); return; }
-      if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, filtered.length - 1)); return; }
-      if (e.key === "ArrowUp")   { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)); return; }
-      if (e.key === "Tab" || e.key === "Enter") {
-        if (filtered.length === 0) return;
-        e.preventDefault();
-        onSelect(filtered[activeIdx]);
-      }
-    };
-    window.addEventListener("keydown", h, { capture: true });
-    return () => window.removeEventListener("keydown", h, { capture: true });
-  }, [filtered, activeIdx, onSelect, onDismiss]);
+  const { activeIdx, setActiveIdx, listRef } = usePicker(query, filtered, onSelect, onDismiss);
 
   if (filtered.length === 0) return null;
 
-  const EXT_COLORS: Record<string, string> = {
-    ts: "var(--blue)", tsx: "var(--blue)", js: "var(--yellow)", jsx: "var(--yellow)",
-    py: "var(--accent)", go: "#00add8", rs: "#dea584", md: "var(--text-dim)",
-    json: "var(--text-dim)", css: "#264de4", html: "#e34c26",
-  };
-
   return (
-    <div
-      ref={listRef}
-      style={{
-        position: "absolute",
-        bottom: "calc(100% + 6px)",
-        left: 0,
-        right: 0,
-        background: "var(--bg-3)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-lg)",
-        boxShadow: "0 -8px 32px rgba(0,0,0,0.6)",
-        zIndex: 500,
-        maxHeight: 280,
-        overflow: "auto",
-      }}
-    >
-      <div style={{
-        padding: "6px 12px 3px",
-        fontSize: 10,
-        fontWeight: 600,
-        color: "var(--text-dimmer)",
-        textTransform: "uppercase",
-        letterSpacing: "0.08em",
-        userSelect: "none",
-        fontFamily: "var(--font-ui)",
-      }}>
-        Files
-      </div>
+    <div ref={listRef} style={{ ...PICKER_CONTAINER_STYLE, maxHeight: 280 }}>
+      <div style={PICKER_GROUP_LABEL_STYLE}>Files</div>
       {filtered.map((file, idx) => {
         const isActive = idx === activeIdx;
         const color = file.ext ? (EXT_COLORS[file.ext] ?? "var(--text-dimmer)") : "var(--text-dimmer)";
@@ -313,16 +310,7 @@ function MentionPicker({
             data-active={isActive}
             onClick={() => onSelect(file)}
             onMouseEnter={() => setActiveIdx(idx)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "5px 12px",
-              cursor: "pointer",
-              background: isActive ? "var(--accent-bg)" : "transparent",
-              borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
-              transition: "background 0.05s",
-            }}
+            style={{ ...pickerRowStyle(isActive), gap: 8, padding: "5px 12px" }}
           >
             <span style={{ fontFamily: "var(--font)", fontSize: 10, fontWeight: 700, color, minWidth: 22, textAlign: "center", flexShrink: 0 }}>
               {file.ext ? file.ext.toUpperCase().slice(0, 2) : "  "}
@@ -338,24 +326,10 @@ function MentionPicker({
           </div>
         );
       })}
-      <div style={{
-        padding: "4px 12px 6px",
-        fontSize: 10,
-        color: "var(--text-dimmer)",
-        borderTop: "1px solid var(--border-dim)",
-        display: "flex",
-        gap: 10,
-        fontFamily: "var(--font-ui)",
-      }}>
-        <span>↑↓ navigate</span>
-        <span>↵ / Tab select</span>
-        <span>Esc dismiss</span>
-      </div>
+      <PickerFooter />
     </div>
   );
 }
-
-// ─── helpers ──────────────────────────────────────────────────────────────────
 
 function getAtQuery(val: string, cursorPos: number): string | null {
   const before = val.slice(0, cursorPos);
@@ -365,8 +339,6 @@ function getAtQuery(val: string, cursorPos: number): string | null {
   if (segment.includes(" ") || segment.includes("\n")) return null;
   return segment;
 }
-
-// ─── Agent suggestion chip ────────────────────────────────────────────────────
 
 interface AgentSuggestion {
   id: string;
@@ -455,8 +427,6 @@ function AgentChip({
   );
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface Session {
   id: string;
   title: string;
@@ -479,7 +449,9 @@ interface ChatInputBarProps {
   planMode?: boolean;
 }
 
-// ─── Auto model routing ───────────────────────────────────────────────────────
+function toast(message: string, type: "info" | "error" = "error") {
+  window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message, type } }));
+}
 
 const DEFAULT_MODEL = "claude-sonnet-4-6";
 
@@ -496,7 +468,8 @@ function resolveAutoModel(message: string): string {
   return "claude-opus-4-6";
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+const LINE_HEIGHT = 20;
+const MAX_ROWS = 6;
 
 export default function ChatInputBar({
   sessionId, hasMessages = false, onNewSession, onSessionCreated, onStreamText, onStreamingState, onStreamingChange,
@@ -526,9 +499,6 @@ export default function ChatInputBar({
   );
   const mentionFiles = useMentionFiles();
 
-  // Check for pending (unsent) messages from a previous failed turn.
-  // Only fetch on session change -- not on every streaming toggle.
-  // Reset dismissed flag when session changes.
   useEffect(() => {
     setPendingDismissed(false);
     if (!sessionId) {
@@ -543,27 +513,7 @@ export default function ChatInputBar({
       .catch(() => setPendingMessage(null));
   }, [sessionId]);
 
-  // Listen for suggestion clicks from EmptyState
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const text = (e as CustomEvent<{ text: string }>).detail?.text;
-      if (text) {
-        setInput(text);
-        requestAnimationFrame(() => {
-          textareaRef.current?.focus();
-          const ta = textareaRef.current;
-          if (ta) { ta.style.height = "auto"; ta.style.height = `${Math.min(ta.scrollHeight, 20 * 6)}px`; }
-        });
-      }
-    };
-    window.addEventListener("studio:suggest", handler);
-    return () => window.removeEventListener("studio:suggest", handler);
-  }, []);
-
-  const injectTerminalCwd = useCallback(() => {
-    if (!terminalCwd) return;
-    const snippet = `\n\n[Terminal cwd: ${terminalCwd}]`;
-    setInput(prev => prev + snippet);
+  const resizeTextarea = useCallback(() => {
     requestAnimationFrame(() => {
       const ta = textareaRef.current;
       if (!ta) return;
@@ -571,7 +521,25 @@ export default function ChatInputBar({
       ta.style.height = "auto";
       ta.style.height = `${Math.min(ta.scrollHeight, LINE_HEIGHT * MAX_ROWS)}px`;
     });
-  }, [terminalCwd]);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const text = (e as CustomEvent<{ text: string }>).detail?.text;
+      if (text) {
+        setInput(text);
+        resizeTextarea();
+      }
+    };
+    window.addEventListener("studio:suggest", handler);
+    return () => window.removeEventListener("studio:suggest", handler);
+  }, [resizeTextarea]);
+
+  const injectTerminalCwd = useCallback(() => {
+    if (!terminalCwd) return;
+    setInput(prev => prev + `\n\n[Terminal cwd: ${terminalCwd}]`);
+    resizeTextarea();
+  }, [terminalCwd, resizeTextarea]);
 
   const handleImageFile = useCallback((file: File) => {
     const reader = new FileReader();
@@ -623,8 +591,7 @@ export default function ChatInputBar({
     recognition.interimResults = true;
     recognition.lang = "en-US";
 
-    // Capture whatever text is already in the input so we can append to it
-    const prefix = input.trim() ? input.trimEnd() + " " : "";
+      const prefix = input.trim() ? input.trimEnd() + " " : "";
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       let transcript = "";
@@ -642,7 +609,6 @@ export default function ChatInputBar({
     setListening(true);
   }, [listening, input]);
 
-  // Listen for manual retry requests from ChatMessages
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<{ text: string }>).detail;
@@ -656,14 +622,12 @@ export default function ChatInputBar({
     return () => window.removeEventListener("studio:retry-message", handler);
   }, [sessionId, selectedModel, thinking, planMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Cleanup retry timer on unmount
   useEffect(() => {
     return () => {
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
     };
   }, []);
 
-  // ⌘L focus shortcut
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "l") { e.preventDefault(); textareaRef.current?.focus(); }
@@ -672,15 +636,12 @@ export default function ChatInputBar({
     return () => window.removeEventListener("keydown", h);
   }, []);
 
-  const isSlashTrigger = (val: string) => val.startsWith("/") && !val.includes(" ");
-
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setInput(val);
-    setSlashOpen(isSlashTrigger(val));
+    setSlashOpen(val.startsWith("/") && !val.includes(" "));
     const cursor = e.target.selectionStart ?? val.length;
-    const aq = getAtQuery(val, cursor);
-    setAtQuery(aq !== null ? aq : null);
+    setAtQuery(getAtQuery(val, cursor));
     if (chipDismissed) setChipDismissed(false);
   };
 
@@ -696,8 +657,7 @@ export default function ChatInputBar({
       setInput("");
       return;
     }
-    const hasArgs = cmd.argHint;
-    if (hasArgs) {
+    if (cmd.argHint) {
       setInput(`/${cmd.name} `);
       requestAnimationFrame(() => textareaRef.current?.focus());
     } else {
@@ -718,22 +678,15 @@ export default function ChatInputBar({
     const ta = textareaRef.current;
     if (!ta) return;
     const cursor = ta.selectionStart ?? input.length;
-    const before = input.slice(0, cursor);
-    const atIdx = before.lastIndexOf("@");
-    const after = input.slice(cursor);
-    const newVal = `${input.slice(0, atIdx)}@${file.path} ${after}`;
+    const atIdx = input.slice(0, cursor).lastIndexOf("@");
+    const newVal = `${input.slice(0, atIdx)}@${file.path} ${input.slice(cursor)}`;
     setInput(newVal);
-    requestAnimationFrame(() => {
-      if (!ta) return;
-      const pos = atIdx + file.path.length + 2;
-      ta.focus();
-      ta.setSelectionRange(pos, pos);
-    });
+    const pos = atIdx + file.path.length + 2;
+    requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(pos, pos); });
   }, [input]);
 
   const sendMessage = async () => {
     if ((!input.trim() && !attachedImage) || streaming) return;
-    // Fresh user-initiated send resets retry counter
     retryCountRef.current = 0;
     return sendMessageWithText();
   };
@@ -741,20 +694,15 @@ export default function ChatInputBar({
   const scheduleAutoRetry = useCallback((messageText: string) => {
     const count = retryCountRef.current;
     if (count >= 2) {
-      // Max auto-retries reached, show manual retry button
       window.dispatchEvent(new CustomEvent("studio:stream-failed", {
         detail: { lastUserMessage: messageText },
       }));
-      window.dispatchEvent(new CustomEvent("studio:toast", {
-        detail: { message: "Stream failed after 2 retries. Use the Retry button to try again.", type: "error" },
-      }));
+      toast("Stream failed after 2 retries. Use the Retry button to try again.");
       return;
     }
     retryCountRef.current = count + 1;
     const attempt = retryCountRef.current;
-    window.dispatchEvent(new CustomEvent("studio:toast", {
-      detail: { message: `Stream error. Retrying (${attempt}/2)...`, type: "error" },
-    }));
+    toast(`Stream error. Retrying (${attempt}/2)...`);
     retryTimerRef.current = setTimeout(() => {
       retryTimerRef.current = null;
       void sendMessageWithText(messageText);
@@ -763,13 +711,11 @@ export default function ChatInputBar({
 
   const sendMessageWithText = async (overrideText?: string) => {
     const raw = overrideText ?? input.trim();
-    // Append image reference when an image is attached
     const text = attachedImage
       ? `${raw}\n\n[Image attached: ${attachedImage.name}]`
       : raw;
     if ((!raw && !attachedImage) || streaming) return;
 
-    // Track last sent message for retry
     lastSentMessageRef.current = text;
 
     let sid = sessionId;
@@ -785,7 +731,7 @@ export default function ChatInputBar({
         sid = data.session.id;
         onSessionCreated?.(sid);
       } catch {
-        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to create session", type: "error" } }));
+        toast("Failed to create session");
         return;
       }
     }
@@ -794,20 +740,16 @@ export default function ChatInputBar({
     onStreamText("");
     onStreamingState?.(null);
 
-    // Resolve auto-routing: pick model based on message complexity
     let resolvedModel = selectedModel;
     if (selectedModel === "auto") {
       resolvedModel = resolveAutoModel(text);
       const label = AUTO_MODEL_LABELS[resolvedModel] ?? resolvedModel;
-      window.dispatchEvent(new CustomEvent("studio:toast", {
-        detail: { message: `Auto-routed to ${label}`, type: "info" },
-      }));
+      toast(`Auto-routed to ${label}`, "info");
     }
 
-    const globalSystemPrompt = (localStorage.getItem("studio:system_prompt") ?? "").trim();
-    let systemPrompt = globalSystemPrompt;
+    let systemPrompt = (localStorage.getItem("studio:system_prompt") ?? "").trim();
     if (thinking) systemPrompt += "\n\nUse extended thinking before responding.";
-    if (planMode)  systemPrompt += "\n\nEnter plan mode: respond with a structured plan only, do not write code.";
+    if (planMode) systemPrompt += "\n\nEnter plan mode: respond with a structured plan only, do not write code.";
 
     let res: Response;
     try {
@@ -819,11 +761,10 @@ export default function ChatInputBar({
           model: resolvedModel,
           thinking,
           planMode,
-          ...(systemPrompt.trim() && { systemPrompt: systemPrompt.trim() }),
+          ...(systemPrompt && { systemPrompt }),
         }),
       });
     } catch {
-      // Network error -- trigger auto-retry
       onStreamingChange(false);
       scheduleAutoRetry(text);
       return;
@@ -831,16 +772,14 @@ export default function ChatInputBar({
 
     if (!res.ok || !res.body) {
       onStreamingChange(false);
-      // 5xx errors trigger auto-retry, 4xx show immediate error
       if (res.status >= 500) {
         scheduleAutoRetry(text);
       } else {
-        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: `Failed to send message (${res.status})`, type: "error" } }));
+        toast(`Failed to send message (${res.status})`);
       }
       return;
     }
 
-    // Clear input, attachment, and pending banner after confirmed successful response
     setPendingMessage(null);
     setPendingDismissed(true);
     if (!overrideText) {
@@ -859,7 +798,6 @@ export default function ChatInputBar({
       fetch(`/api/sessions/${sid}/interrupt`, { method: "POST" }).catch(() => {});
     };
 
-    // Structured blocks for real-time streaming state
     type SBlock = import("./ChatMessages").ContentBlock;
     const blocks: SBlock[] = [];
     let activeThinkingIdx = -1;
@@ -884,7 +822,6 @@ export default function ChatInputBar({
               assembled += evt.text as string;
               onStreamText(assembled);
 
-              // Append or merge into text block
               const lastBlock = blocks[blocks.length - 1];
               if (lastBlock && lastBlock.type === "text") {
                 (lastBlock as { text: string }).text += evt.text as string;
@@ -912,7 +849,6 @@ export default function ChatInputBar({
               blocks.push({ type: "progress", text: (evt.text ?? "") as string });
             }
 
-            // Emit structured state on every event
             onStreamingState?.({
               blocks: [...blocks],
               cost: evt.cost as number | undefined,
@@ -924,14 +860,12 @@ export default function ChatInputBar({
         }
       }
     } catch {
-      // SSE disconnect mid-stream -- trigger auto-retry
       onStreamingChange(false);
       scheduleAutoRetry(text);
       return;
     } finally {
       abortRef.current = null;
       if (streamCompleted) {
-        // Successful completion -- reset retry counter
         retryCountRef.current = 0;
         onStreamingChange(false);
         onStreamText("");
@@ -944,8 +878,6 @@ export default function ChatInputBar({
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendMessage(); }
   };
 
-  const LINE_HEIGHT = 20;
-  const MAX_ROWS = 6;
   const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
     const el = e.currentTarget;
     el.style.height = "auto";
@@ -965,7 +897,6 @@ export default function ChatInputBar({
         background: "var(--bg-2)",
         borderTop: "1px solid var(--border-dim)",
       }}>
-        {/* Popups */}
         {slashOpen && (
           <div style={{ position: "absolute", bottom: "100%", left: 0, right: 0, padding: "0 14px" }}>
             <SlashPicker
@@ -987,7 +918,6 @@ export default function ChatInputBar({
           </div>
         )}
 
-        {/* Agent chip -- sits just above the input */}
         {agentSuggestion && !chipDismissed && !slashOpen && atQuery === null && (
           <div style={{ padding: "8px 14px 0" }}>
             <AgentChip
@@ -998,7 +928,6 @@ export default function ChatInputBar({
           </div>
         )}
 
-        {/* Pending message warning -- unsent message from a crashed turn */}
         {pendingMessage && !streaming && !pendingDismissed && (
           <div style={{
             display: "flex",
@@ -1018,28 +947,13 @@ export default function ChatInputBar({
             <button
               onClick={() => { setPendingMessage(null); setPendingDismissed(true); }}
               title="Dismiss"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 18,
-                height: 18,
-                background: "none",
-                border: "none",
-                color: "var(--text-dimmer)",
-                cursor: "pointer",
-                flexShrink: 0,
-                fontSize: 13,
-                lineHeight: 1,
-                padding: 0,
-              }}
+              style={{ ...CLOSE_BTN_STYLE, width: 18, height: 18 }}
             >
               <X size={12} />
             </button>
           </div>
         )}
 
-        {/* Image attachment preview */}
         {attachedImage && (
           <div style={{
             padding: "8px 14px",
@@ -1072,26 +986,13 @@ export default function ChatInputBar({
             <button
               onClick={() => setAttachedImage(null)}
               title="Remove image"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 20,
-                height: 20,
-                background: "none",
-                border: "none",
-                color: "var(--text-dimmer)",
-                cursor: "pointer",
-                borderRadius: "var(--radius-sm)",
-                flexShrink: 0,
-              }}
+              style={{ ...CLOSE_BTN_STYLE, width: 20, height: 20, borderRadius: "var(--radius-sm)" }}
             >
               <X size={12} />
             </button>
           </div>
         )}
 
-        {/* Textarea row */}
         <div style={{
           display: "flex",
           alignItems: "flex-start",
@@ -1126,7 +1027,6 @@ export default function ChatInputBar({
               padding: 0,
             }}
           />
-          {/* ⌘L hint — right side of textarea row */}
           {!streaming && !hasText && (
             <span style={{
               fontSize: 11,
@@ -1142,7 +1042,6 @@ export default function ChatInputBar({
           )}
         </div>
 
-        {/* Bottom action row */}
         <div style={{
           display: "flex",
           alignItems: "center",
@@ -1150,7 +1049,6 @@ export default function ChatInputBar({
           padding: "4px 14px 10px",
           gap: 8,
         }}>
-          {/* Left: terminal cwd context */}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             {terminalCwd && (
               <button
@@ -1175,92 +1073,52 @@ export default function ChatInputBar({
             )}
           </div>
 
-          {/* Right: + button + stop/send */}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {/* + (new session / attachments) */}
             <button
               onClick={onNewSession}
               title="New conversation"
               style={{
-                width: 28,
-                height: 28,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                ...ICON_BTN_BASE,
                 background: "none",
                 border: "1px solid var(--border-dim)",
-                borderRadius: 6,
                 color: "var(--text-dimmer)",
-                cursor: "pointer",
                 transition: "border-color 0.1s, color 0.1s",
-                flexShrink: 0,
               }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)";
-                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim)";
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-dim)";
-                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)";
-              }}
+              onMouseEnter={dimBorderHover}
+              onMouseLeave={dimBorderUnhover}
             >
               <Plus size={14} />
             </button>
 
-            {/* Voice input -- hidden when Speech API not available */}
             {speechAvailable && (
               <button
                 onClick={toggleVoiceInput}
                 title={listening ? "Stop recording" : "Voice input"}
                 style={{
-                  width: 28,
-                  height: 28,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  ...ICON_BTN_BASE,
                   background: listening ? "rgba(239, 68, 68, 0.15)" : "none",
                   border: listening ? "1px solid var(--red)" : "1px solid var(--border-dim)",
-                  borderRadius: 6,
                   color: listening ? "var(--red)" : "var(--text-dimmer)",
-                  cursor: "pointer",
                   transition: "border-color 0.1s, color 0.1s, background 0.1s",
-                  flexShrink: 0,
                   animation: listening ? "pulse 1.5s ease-in-out infinite" : "none",
                 }}
-                onMouseEnter={e => {
-                  if (!listening) {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)";
-                    (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim)";
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (!listening) {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-dim)";
-                    (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)";
-                  }
-                }}
+                onMouseEnter={e => { if (!listening) dimBorderHover(e); }}
+                onMouseLeave={e => { if (!listening) dimBorderUnhover(e); }}
               >
                 <Mic size={14} />
               </button>
             )}
 
-            {/* Stop / Send -- fixed-size container prevents layout shift */}
             <div style={{ width: 28, height: 28, flexShrink: 0 }}>
               {streaming ? (
                 <button
                   onClick={() => abortRef.current?.()}
                   title="Stop generation"
                   style={{
-                    width: 28,
-                    height: 28,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    ...ICON_BTN_BASE,
                     background: "var(--red-bg)",
                     border: "1px solid var(--red)",
-                    borderRadius: 6,
                     color: "var(--red)",
-                    cursor: "pointer",
                     transition: "background-color 0.15s ease",
                   }}
                 >
@@ -1272,14 +1130,9 @@ export default function ChatInputBar({
                   disabled={!hasText}
                   title="Send (⌘↵)"
                   style={{
-                    width: 28,
-                    height: 28,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    ...ICON_BTN_BASE,
                     background: hasText ? "var(--text)" : "var(--surface-input)",
                     border: "none",
-                    borderRadius: 6,
                     color: hasText ? "var(--bg)" : "var(--text-dimmer)",
                     cursor: hasText ? "pointer" : "default",
                     transition: "background-color 0.15s ease, color 0.15s ease",

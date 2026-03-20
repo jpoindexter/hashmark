@@ -3,27 +3,11 @@ import { useNavigate } from "react-router-dom";
 import AgentCard from "../components/AgentCard.tsx";
 import ConfirmDialog from "../components/shared/ConfirmDialog.tsx";
 
-// ---------------------------------------------------------------------------
-// Agent run state machine (#74)
-// ---------------------------------------------------------------------------
-
-type RunStatus =
-  | "idle"        // no run in progress
-  | "starting"    // session created, waiting for first response byte
-  | "running"     // streaming text
-  | "done"        // clean finish
-  | "error"       // run ended with error
-  | "stopped"     // user-initiated stop
-  | "interrupted" // loop-detected auto-stop
+type RunStatus = "idle" | "starting" | "running" | "done" | "error" | "stopped" | "interrupted";
 
 type RunAction =
-  | { type: "START" }
-  | { type: "FIRST_CHUNK" }
-  | { type: "DONE" }
-  | { type: "ERROR" }
-  | { type: "STOP" }
-  | { type: "INTERRUPT" }
-  | { type: "RESET" }
+  | { type: "START" } | { type: "FIRST_CHUNK" } | { type: "DONE" }
+  | { type: "ERROR" } | { type: "STOP" } | { type: "INTERRUPT" } | { type: "RESET" }
 
 const VALID_TRANSITIONS: Record<RunStatus, RunStatus[]> = {
   idle:        ["starting"],
@@ -84,13 +68,9 @@ export default function Agents() {
   const deptDropdownRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
-
-  // Bulk effectiveness stats keyed by agent id
   const [allStats, setAllStats] = useState<Record<string, AgentStats>>({});
-
   const [pendingDelete, setPendingDelete] = useState<Agent | null>(null);
 
-  // Create form
   const [showCreate, setShowCreate] = useState(false);
   const [createName, setCreateName] = useState("");
   const [createDesc, setCreateDesc] = useState("");
@@ -98,7 +78,6 @@ export default function Agents() {
   const [createTask, setCreateTask] = useState("");
   const [creating, setCreating] = useState(false);
 
-  // Run mode state
   const [tab, setTab] = useState<"edit" | "run" | "gov">("edit");
   const [runPrompt, setRunPrompt] = useState("");
   const [runModel, setRunModel] = useState("claude-sonnet-4-6");
@@ -116,7 +95,6 @@ export default function Agents() {
   const [pendingApproval, setPendingApproval] = useState<{ tools: string[] } | null>(null);
   const pendingApprovalResolveRef = useRef<((approved: boolean) => void) | null>(null);
 
-  // Security scanner (#49 + #59)
   type SecurityFinding = {
     agentId: string; agentName: string;
     severity: "critical" | "high" | "medium";
@@ -151,7 +129,6 @@ export default function Agents() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Fetch bulk effectiveness once agents load
   useEffect(() => {
     if (agents.length === 0) return;
     fetch("/api/agents/effectiveness")
@@ -171,8 +148,6 @@ export default function Agents() {
     setCreating(true);
     const frontmatter = `---\nname: ${createName.trim()}\ndescription: ${createDesc.trim()}\n---\n\n${createTask.trim()}`;
     try {
-      // POST to /api/agents — server may or may not support this yet;
-      // fall back to writing via PUT if needed
       const res = await fetch("/api/agents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -187,10 +162,9 @@ export default function Agents() {
         const d = await res.json() as { agent?: Agent };
         if (d.agent) setAgents((prev) => [...prev, d.agent!]);
       }
-    } catch { /* server stub may not exist yet */ }
+    } catch {}
     setShowCreate(false);
     setCreateName(""); setCreateDesc(""); setCreateDept("engineering"); setCreateTask("");
-    // Refresh agent list
     fetch("/api/agents")
       .then((r) => r.json())
       .then((d) => setAgents(d.agents ?? []))
@@ -198,7 +172,6 @@ export default function Agents() {
     setCreating(false);
   }, [createName, createDesc, createDept, createTask]);
 
-  // Close model dropdown on outside click
   useEffect(() => {
     if (!modelOpen) return;
     const handler = (e: MouseEvent) => {
@@ -210,7 +183,6 @@ export default function Agents() {
     return () => document.removeEventListener("mousedown", handler);
   }, [modelOpen]);
 
-  // Auto-scroll output to bottom
   useEffect(() => {
     if (outputRef.current) {
       outputRef.current.scrollTop = outputRef.current.scrollHeight;
@@ -222,7 +194,6 @@ export default function Agents() {
     [agents],
   );
 
-  // Close department dropdown on outside click or Escape
   useEffect(() => {
     if (!deptDropdownOpen) return;
     function handleClick(e: MouseEvent) {
@@ -289,7 +260,7 @@ export default function Agents() {
     grouped[agent.department].push(agent);
   }
 
-  async function deleteAgent(agent: Agent) {
+  function deleteAgent(agent: Agent) {
     setPendingDelete(agent);
   }
 
@@ -348,7 +319,6 @@ export default function Agents() {
   async function runAgent() {
     if (!selected || !runPrompt.trim() || running) return;
 
-    // Approval gate — show dialog before starting if enabled and agent has tools
     if (approvalRequired) {
       const tools = govInfo?.tools ?? [];
       if (tools.length > 0) {
@@ -424,7 +394,6 @@ export default function Agents() {
                 if (runStatus === "starting") dispatchRunStatus({ type: "FIRST_CHUNK" });
                 assembled += evt.text;
                 setOutput(assembled);
-                // Loop detection: check if the last 250 chars repeat earlier in output
                 if (assembled.length > 600) {
                   const tail = assembled.slice(-250);
                   const earlier = assembled.slice(0, assembled.length - 250);
@@ -451,7 +420,6 @@ export default function Agents() {
         }
       } finally {
         abortRef.current = null;
-        // Ensure we always land in a terminal state
         if (loopInterrupted) dispatchRunStatus({ type: "INTERRUPT" });
         else if (userStopped) dispatchRunStatus({ type: "STOP" });
         else dispatchRunStatus({ type: "DONE" });
@@ -470,7 +438,6 @@ export default function Agents() {
 
   const currentModel = MODELS.find((m) => m.id === runModel) ?? MODELS[1];
 
-  // Parse output into typed segments for structured rendering
   type Segment =
     | { type: "h1" | "h2" | "h3"; text: string }
     | { type: "code"; lang: string; content: string }
@@ -478,7 +445,6 @@ export default function Agents() {
     | { type: "para"; text: string }
     | { type: "tool_event"; tool: string; detail: string };
 
-  // Patterns to detect tool invocations from Claude's narrated output
   const TOOL_PATTERNS: Array<{ re: RegExp; tool: string }> = [
     { re: /^(?:Bash|Running bash|Executing)\s*[:：]\s*(.+)/i, tool: "Bash" },
     { re: /^(?:Read(?:ing)?(?: file)?)\s*[:：]\s*(.+)/i, tool: "Read" },
@@ -497,7 +463,6 @@ export default function Agents() {
     while (i < lines.length) {
       const line = lines[i];
 
-      // Code block
       if (line.startsWith("```")) {
         const lang = line.slice(3).trim() || "text";
         const contentLines: string[] = [];
@@ -511,7 +476,6 @@ export default function Agents() {
         continue;
       }
 
-      // Headings
       const h3 = line.match(/^###\s+(.*)/);
       if (h3) { result.push({ type: "h3", text: h3[1] }); i++; continue; }
       const h2 = line.match(/^##\s+(.*)/);
@@ -519,7 +483,6 @@ export default function Agents() {
       const h1 = line.match(/^#\s+(.*)/);
       if (h1) { result.push({ type: "h1", text: h1[1] }); i++; continue; }
 
-      // List block — collect consecutive list items
       if (line.match(/^[-*]\s+/) || line.match(/^\d+\.\s+/)) {
         const items: string[] = [];
         while (i < lines.length && (lines[i].match(/^[-*]\s+/) || lines[i].match(/^\d+\.\s+/))) {
@@ -530,10 +493,8 @@ export default function Agents() {
         continue;
       }
 
-      // Blank line — skip
       if (!line.trim()) { i++; continue; }
 
-      // Tool event — detect narrated tool invocations
       const toolMatch = TOOL_PATTERNS.reduce<{ tool: string; detail: string } | null>((found, p) => {
         if (found) return found;
         const m = line.match(p.re);
@@ -545,7 +506,6 @@ export default function Agents() {
         continue;
       }
 
-      // Paragraph — collect consecutive non-special lines
       const paraLines: string[] = [];
       while (
         i < lines.length &&
@@ -565,7 +525,6 @@ export default function Agents() {
   }, [output]);
 
   function renderInline(text: string) {
-    // Render bold and inline code
     const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g);
     return parts.map((part, idx) => {
       if (part.startsWith("`") && part.endsWith("`")) {
@@ -588,7 +547,6 @@ export default function Agents() {
     });
   }
 
-  // #66 — skill effectiveness delta tracker
   type RecentTrend = "improving" | "stable" | "degrading" | "insufficient_data";
   interface EffectivenessData {
     agentId: string;
@@ -610,7 +568,6 @@ export default function Agents() {
       .catch(() => {});
   }, [selected?.id]);
 
-  // #32 — quality guardrails for agent skill definitions
   type CheckStatus = "pass" | "warn" | "error";
   type SkillCheck = { id: string; label: string; status: CheckStatus; detail: string };
 
@@ -619,8 +576,6 @@ export default function Agents() {
   const skillChecks = useMemo((): SkillCheck[] => {
     const text = editContent;
     const len = text.length;
-
-    // Extract frontmatter block
     const fmMatch = text.match(/^---\n([\s\S]*?)\n---/);
     const fm = fmMatch ? fmMatch[1] : "";
 
@@ -628,79 +583,61 @@ export default function Agents() {
     const hasDesc = /^description\s*:/m.test(fm);
     const descLine = fm.match(/^description\s*:\s*(.+)/m)?.[1]?.trim() ?? "";
 
-    // Strip frontmatter for body checks
     const body = fmMatch ? text.slice(fmMatch[0].length).trim() : text.trim();
-
     const checks: SkillCheck[] = [];
 
-    // 1. Has name frontmatter
     checks.push({
-      id: "has-name",
-      label: "HAS NAME",
+      id: "has-name", label: "HAS NAME",
       status: hasName ? "pass" : "error",
       detail: hasName ? "name: present" : "Missing name: in frontmatter",
     });
 
-    // 2. Has description frontmatter
     checks.push({
-      id: "has-desc",
-      label: "HAS DESCRIPTION",
+      id: "has-desc", label: "HAS DESCRIPTION",
       status: hasDesc ? "pass" : "error",
       detail: hasDesc ? "description: present" : "Missing description: in frontmatter",
     });
 
-    // 3. Description is specific enough
     const descVague = /^agent for\s/i.test(descLine);
     const descShort = descLine.length > 0 && descLine.length < 20;
     const descStatus: CheckStatus = !hasDesc ? "error" : (descShort || descVague) ? "warn" : "pass";
     checks.push({
-      id: "desc-specific",
-      label: "DESCRIPTION QUALITY",
+      id: "desc-specific", label: "DESCRIPTION QUALITY",
       status: descStatus,
       detail: !hasDesc ? "No description" : descVague ? "Too generic — avoid 'Agent for X'" : descShort ? `Only ${descLine.length} chars — be more specific` : "Looks specific",
     });
 
-    // 4. Has at least one example or concrete instruction
     const bodyLen = body.length;
     checks.push({
-      id: "has-instructions",
-      label: "HAS INSTRUCTIONS",
+      id: "has-instructions", label: "HAS INSTRUCTIONS",
       status: bodyLen >= 100 ? "pass" : "warn",
       detail: bodyLen >= 100 ? `${bodyLen} chars of instructions` : `Body too short (${bodyLen} chars) — add concrete instructions or examples`,
     });
 
-    // 5. No hardcoded secrets
     const secretMatch = text.match(/sk-[A-Za-z0-9]{10,}|ghp_[A-Za-z0-9]{10,}|AKIA[A-Z0-9]{10,}|api[_-]?key\s*[:=]\s*['"]?\S{8,}/i);
     checks.push({
-      id: "no-secrets",
-      label: "NO SECRETS",
+      id: "no-secrets", label: "NO SECRETS",
       status: secretMatch ? "error" : "pass",
       detail: secretMatch ? `Potential secret detected: ${secretMatch[0].slice(0, 12)}…` : "No credential patterns found",
     });
 
-    // 6. No overly broad permissions
     const broadMatch = text.match(/\bdo anything\b|\ball tools\b|\bno restrictions\b/i);
     checks.push({
-      id: "no-broad-perms",
-      label: "SCOPED PERMISSIONS",
+      id: "no-broad-perms", label: "SCOPED PERMISSIONS",
       status: broadMatch ? "warn" : "pass",
       detail: broadMatch ? `Broad permission phrase: "${broadMatch[0]}"` : "No overly broad permission phrases",
     });
 
-    // 7. Reasonable length
     const lenStatus: CheckStatus = len < 200 ? "warn" : len > 8000 ? "warn" : "pass";
     checks.push({
-      id: "reasonable-length",
-      label: "REASONABLE LENGTH",
+      id: "reasonable-length", label: "REASONABLE LENGTH",
       status: lenStatus,
       detail: len < 200 ? `${len} chars — too vague, add more detail` : len > 8000 ? `${len} chars — very long, may hurt injection efficiency` : `${len} chars — good`,
     });
 
-    // 8. Has a clear task scope (no overuse of "anything")
     const anythingCount = (text.match(/\banything\b/gi) ?? []).length;
     checks.push({
-      id: "clear-scope",
-      label: "CLEAR SCOPE",
+      id: "clear-scope", label: "CLEAR SCOPE",
       status: anythingCount > 2 ? "warn" : "pass",
       detail: anythingCount > 2 ? `"anything" used ${anythingCount}x — scope is too vague` : "Scope looks defined",
     });
@@ -716,7 +653,6 @@ export default function Agents() {
   const overallColor =
     hasErrors ? "var(--red)" : hasWarnings ? "var(--yellow)" : "var(--accent)";
 
-  // #56 — classify run failures when run ends in non-done state
   const failureClass = useMemo(() => {
     if (runStatus === "running" || runStatus === "idle") return null;
 
@@ -759,28 +695,23 @@ export default function Agents() {
     return null;
   }, [runStatus, output, loopDetected]);
 
-  // #42 — parse agent definition for governance metadata
   const govInfo = useMemo(() => {
     const content = selected?.content ?? "";
     if (!content) return null;
 
-    // Role: first heading or "You are..." sentence
     const headingMatch = content.match(/^#\s+(.+)/m);
     const roleMatch = content.match(/you are\s+([^.\n]{10,80})/i);
     const role = headingMatch?.[1] ?? roleMatch?.[1] ?? null;
 
-    // Risk class: keyword scan
     const lc = content.toLowerCase();
     const riskClass =
       /stripe|payment|billing|checkout|subscription/.test(lc) ? "HIGH" :
       /auth|jwt|session|clerk|oauth|login|password/.test(lc) && /database|prisma|sql|supabase/.test(lc) ? "MEDIUM" :
       "LOW";
 
-    // Tools mentioned (standard Claude tools)
     const toolNames = ["Bash", "Read", "Write", "Edit", "Glob", "Grep", "WebSearch", "WebFetch", "Agent", "MCP"];
     const tools = toolNames.filter((t) => new RegExp(`\\b${t}\\b`).test(content));
 
-    // Constraints: lines with hard rules
     const constraints = content
       .split("\n")
       .filter((l) => /\b(never|do not|must not|always|prohibited|forbidden)\b/i.test(l))
@@ -788,7 +719,6 @@ export default function Agents() {
       .filter((l) => l.length > 10 && l.length < 120)
       .slice(0, 6);
 
-    // Non-delegation markers
     const nonDelegation = content
       .split("\n")
       .filter((l) => /\b(do not delegate|never delegate|human approval|require confirmation|escalate)\b/i.test(l))
@@ -811,14 +741,12 @@ export default function Agents() {
 
   return (
     <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
-      {/* Agent list */}
       <div style={{
         flex: 1,
         overflow: "auto",
         padding: "28px",
         borderRight: selected ? "1px solid var(--border-dim)" : "none",
       }}>
-        {/* Header */}
         <div style={{ marginBottom: "20px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
           <div>
             <h1 style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: "4px" }}>
@@ -845,7 +773,6 @@ export default function Agents() {
           </div>
         </div>
 
-        {/* Security scan results */}
         {secFindings !== null && !secDismissed && (
           <div style={{
             background: secFindings.length === 0 ? "rgba(63,185,80,0.06)" : "rgba(248,81,73,0.06)",
@@ -903,7 +830,6 @@ export default function Agents() {
           </div>
         )}
 
-        {/* Filters + sort */}
         <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
           <input
             placeholder="Search agents..."
@@ -911,7 +837,6 @@ export default function Agents() {
             onChange={(e) => setSearch(e.target.value)}
             style={{ flex: "1", minWidth: "160px", maxWidth: "240px" }}
           />
-          {/* Department multi-select dropdown */}
           <div ref={deptDropdownRef} style={{ position: "relative" }}>
             <button
               onClick={() => setDeptDropdownOpen((v) => !v)}

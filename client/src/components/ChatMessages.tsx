@@ -5,6 +5,55 @@ import ToolCallSummary, { FileBadge, getReadFilePath, categorize } from "./chat/
 import ContextMenu, { type ContextMenuItem } from "./shared/ContextMenu";
 import ScrollToBottom from "./shared/ScrollToBottom";
 
+const CURSOR_STYLE: React.CSSProperties = {
+  display: "inline-block",
+  width: 7,
+  height: 13,
+  background: "var(--accent)",
+  verticalAlign: "text-bottom",
+  marginLeft: 2,
+  animation: "cursor-blink 1s step-end infinite",
+};
+
+const CODE_CONTAINER_STYLE: React.CSSProperties = {
+  position: "relative",
+  background: "var(--bg-3)",
+  border: "1px solid var(--border-dim)",
+  margin: "8px 0",
+  overflow: "hidden",
+};
+
+const CODE_ACTIONS_STYLE: React.CSSProperties = {
+  position: "absolute",
+  top: 6,
+  right: 8,
+  display: "flex",
+  gap: 6,
+  alignItems: "center",
+  zIndex: 1,
+};
+
+const LANG_BADGE_STYLE: React.CSSProperties = {
+  fontSize: "9px",
+  fontFamily: "var(--font)",
+  color: "var(--accent)",
+  background: "var(--bg-4)",
+  border: "1px solid var(--border-dim)",
+  padding: "1px 6px",
+  letterSpacing: "0.05em",
+  textTransform: "uppercase",
+  userSelect: "none",
+};
+
+const SECTION_HEADING_STYLE: React.CSSProperties = {
+  fontSize: 13,
+  fontWeight: 600,
+  color: "var(--text)",
+  fontFamily: "var(--font-ui)",
+  textTransform: "uppercase",
+  letterSpacing: "0.06em",
+};
+
 interface ContextMenuState {
   items: ContextMenuItem[];
   position: { x: number; y: number };
@@ -19,7 +68,6 @@ interface Message {
   created_at: number;
 }
 
-// Mixed content blocks for in-progress streaming messages
 export interface TextBlock {
   type: "text";
   text: string;
@@ -93,189 +141,54 @@ function renderInline(text: string): React.ReactNode {
 }
 
 function DiffLine({ line }: { line: string }) {
-  // Header lines: --- a/file, +++ b/file
-  if (line.startsWith("---") || line.startsWith("+++")) {
-    return (
-      <div style={{
-        color: "var(--text-dimmer)",
-        fontStyle: "italic",
-      }}>
-        {line}
-      </div>
-    );
-  }
-  // Hunk header: @@ -1,5 +1,7 @@
-  if (line.startsWith("@@")) {
-    return (
-      <div style={{ color: "var(--blue, #388bfd)" }}>
-        {line}
-      </div>
-    );
-  }
-  // Addition
-  if (line.startsWith("+")) {
-    return (
-      <div style={{
-        background: "var(--accent-bg, rgba(63,185,80,0.1))",
-        color: "var(--accent)",
-      }}>
-        {line}
-      </div>
-    );
-  }
-  // Deletion
-  if (line.startsWith("-")) {
-    return (
-      <div style={{
-        background: "var(--red-bg, rgba(248,81,73,0.1))",
-        color: "var(--red, #f85149)",
-      }}>
-        {line}
-      </div>
-    );
-  }
-  // Context line (no prefix or space prefix)
+  if (line.startsWith("---") || line.startsWith("+++"))
+    return <div style={{ color: "var(--text-dimmer)", fontStyle: "italic" }}>{line}</div>;
+  if (line.startsWith("@@"))
+    return <div style={{ color: "var(--blue, #388bfd)" }}>{line}</div>;
+  if (line.startsWith("+"))
+    return <div style={{ background: "var(--accent-bg, rgba(63,185,80,0.1))", color: "var(--accent)" }}>{line}</div>;
+  if (line.startsWith("-"))
+    return <div style={{ background: "var(--red-bg, rgba(248,81,73,0.1))", color: "var(--red, #f85149)" }}>{line}</div>;
   return <div style={{ color: "var(--text-dim)" }}>{line}</div>;
 }
 
-function DiffBlock({ code }: { code: string }) {
+function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
-  const lines = code.split("\n");
-
   const handleCopy = () => {
-    void navigator.clipboard.writeText(code);
+    void navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
-
   return (
-    <div style={{
-      position: "relative",
-      background: "var(--bg-3)",
-      border: "1px solid var(--border-dim)",
-      margin: "8px 0",
-      overflow: "hidden",
-    }}>
-      <div style={{
-        position: "absolute",
-        top: 6,
-        right: 8,
-        display: "flex",
-        gap: 6,
-        alignItems: "center",
-        zIndex: 1,
-      }}>
-        <span style={{
-          fontSize: "9px",
-          fontFamily: "var(--font)",
-          color: "var(--accent)",
-          background: "var(--bg-4)",
-          border: "1px solid var(--border-dim)",
-          padding: "1px 6px",
-          letterSpacing: "0.05em",
-          textTransform: "uppercase",
-          userSelect: "none",
-        }}>
-          DIFF
-        </span>
-        <button
-          onClick={handleCopy}
-          style={{
-            fontSize: "10px",
-            fontFamily: "var(--font-ui)",
-            color: copied ? "var(--accent)" : "var(--text-dim)",
-            background: "var(--bg-3)",
-            border: "1px solid var(--border-dim)",
-            padding: "1px 6px",
-            cursor: "pointer",
-            userSelect: "none",
-            lineHeight: 1.4,
-            transition: "background 0.1s, color 0.1s",
-          }}
-          onMouseEnter={e => { if (!copied) e.currentTarget.style.background = "var(--bg-4)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-3)"; }}
-        >
-          {copied ? "Copied!" : "Copy"}
-        </button>
-      </div>
-      <pre style={{
-        padding: "28px 12px 10px",
-        overflow: "auto",
-        fontSize: "11px",
-        lineHeight: "1.5",
-        margin: 0,
-        fontFamily: "var(--font)",
-      }}>
-        {lines.map((line, i) => (
-          <DiffLine key={i} line={line} />
-        ))}
-      </pre>
-    </div>
+    <button
+      onClick={handleCopy}
+      style={{
+        fontSize: "10px",
+        fontFamily: "var(--font-ui)",
+        color: copied ? "var(--accent)" : "var(--text-dim)",
+        background: "var(--bg-3)",
+        border: "1px solid var(--border-dim)",
+        padding: "1px 6px",
+        cursor: "pointer",
+        userSelect: "none",
+        lineHeight: 1.4,
+        transition: "background 0.1s, color 0.1s",
+      }}
+      onMouseEnter={e => { if (!copied) e.currentTarget.style.background = "var(--bg-4)"; }}
+      onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-3)"; }}
+    >
+      {copied ? "Copied!" : "Copy"}
+    </button>
   );
 }
 
 function CodeBlock({ lang, code }: { lang: string; code: string }) {
-  if (lang === "diff") return <DiffBlock code={code} />;
-
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    void navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
-
+  const isDiff = lang === "diff";
   return (
-    <div style={{
-      position: "relative",
-      background: "var(--bg-3)",
-      border: "1px solid var(--border-dim)",
-      margin: "8px 0",
-      overflow: "hidden",
-    }}>
-      <div style={{
-        position: "absolute",
-        top: 6,
-        right: 8,
-        display: "flex",
-        gap: 6,
-        alignItems: "center",
-        zIndex: 1,
-      }}>
-        {lang && (
-          <span style={{
-            fontSize: "9px",
-            fontFamily: "var(--font)",
-            color: "var(--accent)",
-            background: "var(--bg-4)",
-            border: "1px solid var(--border-dim)",
-            padding: "1px 6px",
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
-            userSelect: "none",
-          }}>
-            {lang}
-          </span>
-        )}
-        <button
-          onClick={handleCopy}
-          style={{
-            fontSize: "10px",
-            fontFamily: "var(--font-ui)",
-            color: copied ? "var(--accent)" : "var(--text-dim)",
-            background: "var(--bg-3)",
-            border: "1px solid var(--border-dim)",
-            padding: "1px 6px",
-            cursor: "pointer",
-            userSelect: "none",
-            lineHeight: 1.4,
-            transition: "background 0.1s, color 0.1s",
-          }}
-          onMouseEnter={e => { if (!copied) e.currentTarget.style.background = "var(--bg-4)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-3)"; }}
-        >
-          {copied ? "Copied!" : "Copy"}
-        </button>
+    <div style={CODE_CONTAINER_STYLE}>
+      <div style={CODE_ACTIONS_STYLE}>
+        {(lang || isDiff) && <span style={LANG_BADGE_STYLE}>{isDiff ? "DIFF" : lang}</span>}
+        <CopyButton text={code} />
       </div>
       <pre style={{
         padding: "28px 12px 10px",
@@ -283,8 +196,13 @@ function CodeBlock({ lang, code }: { lang: string; code: string }) {
         fontSize: "11px",
         lineHeight: "1.5",
         margin: 0,
+        fontFamily: isDiff ? "var(--font)" : undefined,
       }}>
-        <code style={{ color: "var(--text)", fontFamily: "var(--font)" }}>{code}</code>
+        {isDiff ? (
+          code.split("\n").map((line, i) => <DiffLine key={i} line={line} />)
+        ) : (
+          <code style={{ color: "var(--text)", fontFamily: "var(--font)" }}>{code}</code>
+        )}
       </pre>
     </div>
   );
@@ -351,7 +269,6 @@ export function AssistantContent({ text }: { text: string }) {
   return <>{nodes}</>;
 }
 
-// Returns the border-left color and label color for a given tool name
 function toolAccentColor(tool: string): string {
   const name = tool.toLowerCase();
   if (["write", "edit", "create", "multiedit"].includes(name)) return "var(--accent)";
@@ -360,20 +277,13 @@ function toolAccentColor(tool: string): string {
   return "var(--text-dimmer)";
 }
 
-// Extract the primary argument string from a tool input
 function primaryArg(tool: string, input: Record<string, unknown>): string {
   const name = tool.toLowerCase();
-  if (name === "bash" || name === "shell") {
-    const cmd = input.command ?? input.cmd ?? "";
-    return String(cmd);
-  }
+  if (name === "bash" || name === "shell") return String(input.command ?? input.cmd ?? "");
   if (name === "read") return String(input.file_path ?? input.path ?? "");
-  if (name === "glob") return String(input.pattern ?? "");
-  if (name === "grep") return String(input.pattern ?? "");
-  // Write / Edit / Create / MultiEdit
+  if (name === "glob" || name === "grep") return String(input.pattern ?? "");
   const path = input.file_path ?? input.path ?? input.new_file_path ?? "";
   if (path) return String(path);
-  // Fallback: first string value
   for (const v of Object.values(input)) {
     if (typeof v === "string") return v;
   }
@@ -442,6 +352,39 @@ function CostLine({ cost, usage, responseTime }: { cost?: number; usage?: { inpu
   );
 }
 
+const USER_AVATAR_STYLE: React.CSSProperties = {
+  width: 22,
+  height: 22,
+  borderRadius: "50%",
+  background: "var(--bg-4)",
+  border: "1px solid var(--border)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 9,
+  color: "var(--text-dim)",
+  flexShrink: 0,
+  fontFamily: "var(--font)",
+  fontWeight: 700,
+  letterSpacing: "0.05em",
+  marginTop: 2,
+};
+
+const ASSISTANT_CONTENT_STYLE: React.CSSProperties = {
+  paddingLeft: 12,
+  fontSize: 13,
+  color: "var(--text)",
+  lineHeight: 1.6,
+  fontFamily: "var(--font-ui)",
+};
+
+const TIMESTAMP_STYLE: React.CSSProperties = {
+  fontSize: 10,
+  color: "var(--text-dimmer)",
+  transition: "opacity 0.15s",
+  userSelect: "none",
+};
+
 function UserBubble({ msg, onContextMenu, showRetry, onRetry }: {
   msg: Message;
   onContextMenu: (e: React.MouseEvent) => void;
@@ -471,41 +414,14 @@ function UserBubble({ msg, onContextMenu, showRetry, onRetry }: {
             {msg.content}
           </div>
         </div>
-        {/* Avatar */}
-        <div style={{
-          width: 22,
-          height: 22,
-          borderRadius: "50%",
-          background: "var(--bg-4)",
-          border: "1px solid var(--border)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 9,
-          color: "var(--text-dim)",
-          flexShrink: 0,
-          fontFamily: "var(--font)",
-          fontWeight: 700,
-          letterSpacing: "0.05em",
-          marginTop: 2,
-        }}>
-          U
-        </div>
+        <div style={USER_AVATAR_STYLE}>U</div>
       </div>
       {showRetry && onRetry && (
         <div style={{ display: "flex", justifyContent: "flex-end", marginRight: 30, marginTop: 4 }}>
           <RetryButton onClick={onRetry} />
         </div>
       )}
-      <div style={{
-        fontSize: 10,
-        color: "var(--text-dimmer)",
-        marginTop: 3,
-        marginRight: 30,
-        opacity: hovered ? 1 : 0,
-        transition: "opacity 0.15s",
-        userSelect: "none",
-      }}>
+      <div style={{ ...TIMESTAMP_STYLE, marginTop: 3, marginRight: 30, opacity: hovered ? 1 : 0 }}>
         {fmtTime(msg.created_at)}
       </div>
     </div>
@@ -570,28 +486,14 @@ function AssistantBubble({ msg, onContextMenu, showRetry, onRetry, responseTime 
       onContextMenu={onContextMenu}
     >
       <div style={{
+        ...ASSISTANT_CONTENT_STYLE,
         borderLeft: `2px solid ${showRetry ? "var(--red, #f85149)" : "var(--accent)"}`,
-        paddingLeft: 12,
-        fontSize: 13,
-        color: "var(--text)",
-        lineHeight: 1.6,
-        fontFamily: "var(--font-ui)",
         animation: "fadeIn 0.2s ease forwards",
       }}>
         <AssistantContent text={msg.content} />
       </div>
       {showRetry && onRetry && <RetryButton onClick={onRetry} />}
-      <div style={{
-        display: "flex",
-        gap: 8,
-        fontSize: 10,
-        color: "var(--text-dimmer)",
-        marginTop: 3,
-        paddingLeft: 14,
-        opacity: hovered || responseTime != null ? 1 : 0,
-        transition: "opacity 0.15s",
-        userSelect: "none",
-      }}>
+      <div style={{ ...TIMESTAMP_STYLE, display: "flex", gap: 8, marginTop: 3, paddingLeft: 14, opacity: hovered || responseTime != null ? 1 : 0 }}>
         <span>{fmtTime(msg.created_at)}</span>
         {responseTime != null && (
           <span>{fmtDuration(responseTime)}</span>
@@ -603,6 +505,14 @@ function AssistantBubble({ msg, onContextMenu, showRetry, onRetry, responseTime 
     </div>
   );
 }
+
+const GATE_BTN_STYLE: React.CSSProperties = {
+  padding: "4px 12px",
+  fontSize: 12,
+  borderRadius: "var(--radius)",
+  cursor: "pointer",
+  fontFamily: "var(--font-ui)",
+};
 
 function PlanReviewGate({ planText }: { planText: string }) {
   const [mode, setMode] = useState<"idle" | "feedback" | "deny">("idle");
@@ -617,7 +527,6 @@ function PlanReviewGate({ planText }: { planText: string }) {
 
   const sendMessage = (text: string) => {
     window.dispatchEvent(new CustomEvent("studio:suggest", { detail: { text } }));
-    // Small delay to let input populate, then trigger send
     setTimeout(() => {
       const ta = document.querySelector("textarea") as HTMLTextAreaElement | null;
       if (ta) {
@@ -678,31 +587,17 @@ function PlanReviewGate({ planText }: { planText: string }) {
       <div style={{ display: "flex", gap: 8 }}>
         <button
           onClick={handleApprove}
-          style={{
-            padding: "4px 12px",
-            fontSize: 12,
-            fontWeight: 600,
-            background: "var(--accent)",
-            color: "var(--bg)",
-            border: "none",
-            borderRadius: "var(--radius)",
-            cursor: "pointer",
-            fontFamily: "var(--font-ui)",
-          }}
+          style={{ ...GATE_BTN_STYLE, fontWeight: 600, background: "var(--accent)", color: "var(--bg)", border: "none" }}
         >
           Approve & Execute
         </button>
         <button
           onClick={handleFeedback}
           style={{
-            padding: "4px 12px",
-            fontSize: 12,
+            ...GATE_BTN_STYLE,
             background: mode === "feedback" ? "var(--accent-bg)" : "var(--bg-3)",
             color: mode === "feedback" ? "var(--accent)" : "var(--text-dim)",
             border: mode === "feedback" ? "1px solid var(--accent)" : "1px solid var(--border)",
-            borderRadius: "var(--radius)",
-            cursor: "pointer",
-            fontFamily: "var(--font-ui)",
           }}
         >
           Give Feedback
@@ -710,21 +605,16 @@ function PlanReviewGate({ planText }: { planText: string }) {
         <button
           onClick={handleDeny}
           style={{
-            padding: "4px 12px",
-            fontSize: 12,
+            ...GATE_BTN_STYLE,
             background: mode === "deny" ? "var(--red-bg)" : "none",
             color: "var(--red)",
             border: mode === "deny" ? "1px solid var(--red)" : "1px solid var(--red-bg)",
-            borderRadius: "var(--radius)",
-            cursor: "pointer",
-            fontFamily: "var(--font-ui)",
           }}
         >
           Deny
         </button>
       </div>
 
-      {/* Feedback / deny reason input */}
       {(mode === "feedback" || mode === "deny") && (
         <div style={{ marginTop: 8 }}>
           <textarea
@@ -795,10 +685,6 @@ function MessageBubble({ msg, showPlanGate, onContextMenu, showRetry, onRetry, s
   );
 }
 
-// Group consecutive tool_use blocks into collapsible summaries, interleaving
-// text/thinking/progress blocks between them. Returns a flat list of
-// renderable segments: either a React node (text/thinking/progress) or a
-// { type: "tool_group", blocks: ... } that gets wrapped in ToolCallSummary.
 type StreamSegment =
   | { kind: "node"; key: number; node: React.ReactNode }
   | { kind: "tool_group"; key: number; blocks: ToolUseBlockData[]; startIdx: number };
@@ -811,7 +697,6 @@ function segmentBlocks(blocks: ContentBlock[]): StreamSegment[] {
   while (i < blocks.length) {
     const block = blocks[i];
 
-    // Accumulate consecutive tool_use blocks into a group
     if (block.type === "tool_use") {
       const startIdx = i;
       const toolBlocks: ToolUseBlockData[] = [];
@@ -878,12 +763,8 @@ function StreamingBubble({ state, legacyText, streamStartTime }: { state?: Strea
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
       <div style={{
+        ...ASSISTANT_CONTENT_STYLE,
         borderLeft: "2px solid var(--accent)",
-        paddingLeft: 12,
-        fontSize: 13,
-        color: "var(--text)",
-        lineHeight: 1.6,
-        fontFamily: "var(--font-ui)",
         width: "100%",
       }}>
         {hasBlocks ? (
@@ -892,7 +773,6 @@ function StreamingBubble({ state, legacyText, streamStartTime }: { state?: Strea
               if (seg.kind === "node") {
                 return <div key={seg.key}>{seg.node}</div>;
               }
-              // Tool group -- if only 1 tool call, render inline without collapse
               if (seg.blocks.length === 1) {
                 const b = seg.blocks[0];
                 const isRead = categorize(b.tool) === "Read";
@@ -908,7 +788,6 @@ function StreamingBubble({ state, legacyText, streamStartTime }: { state?: Strea
                   </div>
                 );
               }
-              // Multiple tool calls -- collapsible summary
               return (
                 <ToolCallSummary
                   key={seg.key}
@@ -919,29 +798,12 @@ function StreamingBubble({ state, legacyText, streamStartTime }: { state?: Strea
                 />
               );
             })}
-            {/* Blinking cursor after last block */}
-            <span style={{
-              display: "inline-block",
-              width: 7,
-              height: 13,
-              background: "var(--accent)",
-              verticalAlign: "text-bottom",
-              marginLeft: 2,
-              animation: "cursor-blink 1s step-end infinite",
-            }} />
+            <span style={CURSOR_STYLE} />
           </>
         ) : legacyText ? (
           <>
             <AssistantContent text={legacyText} />
-            <span style={{
-              display: "inline-block",
-              width: 7,
-              height: 13,
-              background: "var(--accent)",
-              verticalAlign: "text-bottom",
-              marginLeft: 2,
-              animation: "cursor-blink 1s step-end infinite",
-            }} />
+            <span style={CURSOR_STYLE} />
           </>
         ) : (
           <div style={{ display: "flex", gap: 4, alignItems: "center", paddingTop: 4 }}>
@@ -958,7 +820,6 @@ function StreamingBubble({ state, legacyText, streamStartTime }: { state?: Strea
         )}
       </div>
 
-      {/* Cost/usage from done event */}
       {state && (state.cost != null || state.usage != null) ? (
         <CostLine cost={state.cost} usage={state.usage} />
       ) : (
@@ -994,6 +855,18 @@ const SUGGESTIONS = [
   "Commit staged changes with a message",
 ];
 
+const LINK_BTN_STYLE: React.CSSProperties = {
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  fontSize: 13,
+  fontFamily: "var(--font-ui)",
+  color: "var(--blue, #388bfd)",
+};
+
+function underlineHover(e: React.MouseEvent) { (e.currentTarget as HTMLElement).style.textDecoration = "underline"; }
+function underlineUnhover(e: React.MouseEvent) { (e.currentTarget as HTMLElement).style.textDecoration = "none"; }
+
 interface Workspace {
   id: string;
   name: string;
@@ -1006,21 +879,9 @@ function WelcomeLink({ icon, label, onClick }: { icon: string; label: string; on
     <button
       onClick={onClick}
       className="welcome-link"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "4px 0",
-        background: "none",
-        border: "none",
-        cursor: "pointer",
-        fontSize: 13,
-        fontFamily: "var(--font-ui)",
-        color: "var(--blue, #388bfd)",
-        lineHeight: 1.6,
-      }}
-      onMouseEnter={e => { e.currentTarget.style.textDecoration = "underline"; }}
-      onMouseLeave={e => { e.currentTarget.style.textDecoration = "none"; }}
+      style={{ ...LINK_BTN_STYLE, display: "flex", alignItems: "center", gap: 8, padding: "4px 0", lineHeight: 1.6 }}
+      onMouseEnter={underlineHover}
+      onMouseLeave={underlineUnhover}
     >
       <span style={{ fontSize: 14, opacity: 0.7, width: 20, textAlign: "center", flexShrink: 0 }}>{icon}</span>
       {label}
@@ -1062,7 +923,6 @@ function EmptyState({ modelLabel }: { modelLabel: string }) {
         flexDirection: "column",
         gap: 0,
       }}>
-        {/* Branding */}
         <div style={{ marginBottom: 36 }}>
           <h1 style={{
             fontSize: 28,
@@ -1085,21 +945,9 @@ function EmptyState({ modelLabel }: { modelLabel: string }) {
           </div>
         </div>
 
-        {/* Two-column layout like VS Code */}
         <div style={{ display: "flex", gap: 48 }}>
-          {/* Left column: Start + Recent */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: "var(--text)",
-              fontFamily: "var(--font-ui)",
-              margin: "0 0 12px 0",
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-            }}>
-              Start
-            </h2>
+            <h2 style={{ ...SECTION_HEADING_STYLE, margin: "0 0 12px 0" }}>Start</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 28 }}>
               {START_LINKS.map(item => (
                 <WelcomeLink
@@ -1111,20 +959,9 @@ function EmptyState({ modelLabel }: { modelLabel: string }) {
               ))}
             </div>
 
-            {/* Recent workspaces */}
             {workspaces.length > 0 && (
               <>
-                <h2 style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "var(--text)",
-                  fontFamily: "var(--font-ui)",
-                  margin: "0 0 8px 0",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
-                }}>
-                  Recent
-                </h2>
+                <h2 style={{ ...SECTION_HEADING_STYLE, margin: "0 0 8px 0" }}>Recent</h2>
                 <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                   {workspaces.map(ws => (
                     <div
@@ -1145,12 +982,8 @@ function EmptyState({ modelLabel }: { modelLabel: string }) {
                           body: JSON.stringify({ id: ws.id }),
                         }).then(() => window.location.reload()).catch(() => {});
                       }}
-                      onMouseEnter={e => {
-                        (e.currentTarget.firstChild as HTMLElement).style.textDecoration = "underline";
-                      }}
-                      onMouseLeave={e => {
-                        (e.currentTarget.firstChild as HTMLElement).style.textDecoration = "none";
-                      }}
+                      onMouseEnter={e => { (e.currentTarget.firstChild as HTMLElement).style.textDecoration = "underline"; }}
+                      onMouseLeave={e => { (e.currentTarget.firstChild as HTMLElement).style.textDecoration = "none"; }}
                     >
                       <span style={{ color: "var(--blue, #388bfd)" }}>{ws.name}</span>
                       <span style={{
@@ -1172,49 +1005,22 @@ function EmptyState({ modelLabel }: { modelLabel: string }) {
             )}
           </div>
 
-          {/* Right column: Quick prompts */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: "var(--text)",
-              fontFamily: "var(--font-ui)",
-              margin: "0 0 12px 0",
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-            }}>
-              Quick Start
-            </h2>
+            <h2 style={{ ...SECTION_HEADING_STYLE, margin: "0 0 12px 0" }}>Quick Start</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
               {SUGGESTIONS.map(text => (
                 <button
                   key={text}
-                  onClick={() => {
-                    window.dispatchEvent(new CustomEvent("studio:suggest", { detail: { text } }));
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "5px 0",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    fontFamily: "var(--font-ui)",
-                    color: "var(--blue, #388bfd)",
-                    textAlign: "left",
-                    lineHeight: 1.5,
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.textDecoration = "underline"; }}
-                  onMouseLeave={e => { e.currentTarget.style.textDecoration = "none"; }}
+                  onClick={() => window.dispatchEvent(new CustomEvent("studio:suggest", { detail: { text } }))}
+                  style={{ ...LINK_BTN_STYLE, padding: "5px 0", textAlign: "left", lineHeight: 1.5 }}
+                  onMouseEnter={underlineHover}
+                  onMouseLeave={underlineUnhover}
                 >
                   {text}
                 </button>
               ))}
             </div>
 
-            {/* Model info */}
             <div style={{
               marginTop: 24,
               padding: "10px 12px",
@@ -1262,7 +1068,6 @@ function ResumedDivider({ timestamp }: { timestamp: number }) {
   );
 }
 
-// Sentinel IDs for virtual list rows
 const STREAMING_ID = "__streaming__";
 const RESUME_DIVIDER_ID = "__resume_divider__";
 
@@ -1271,18 +1076,9 @@ type VirtualItem =
   | { id: typeof STREAMING_ID; role: "assistant" }
   | { id: typeof RESUME_DIVIDER_ID; role: "divider"; timestamp: number };
 
-// Check if a message is the last assistant message in the list
-function isLastAssistantMessage(msgs: Message[], id: string): boolean {
+function isLastWithRole(msgs: Message[], role: Message["role"], id: string): boolean {
   for (let i = msgs.length - 1; i >= 0; i--) {
-    if (msgs[i].role === "assistant") return msgs[i].id === id;
-  }
-  return false;
-}
-
-// Check if a message is the last user message in the list
-function isLastUserMessage(msgs: Message[], id: string): boolean {
-  for (let i = msgs.length - 1; i >= 0; i--) {
-    if (msgs[i].role === "user") return msgs[i].id === id;
+    if (msgs[i].role === role) return msgs[i].id === id;
   }
   return false;
 }
@@ -1297,12 +1093,10 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
   const userScrolledUp = useRef(false);
   const prevScrollTop = useRef(0);
 
-  // Response time tracking
   const streamStartTime = useRef<number | null>(null);
   const [lastResponseTime, setLastResponseTime] = useState<number | null>(null);
   const lastResponseMsgId = useRef<string | null>(null);
 
-  // Track the count of messages loaded on initial fetch to detect resumed sessions
   const resumedAtCount = useRef<number>(0);
   const resumeTimestamp = useRef<number>(0);
 
@@ -1312,7 +1106,6 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
       const res = await fetch(`/api/sessions/${id}`);
       const data = await res.json() as { messages: Message[] };
       const msgs = data.messages ?? [];
-      // If session has existing messages, mark as resumed
       if (msgs.length > 0) {
         resumedAtCount.current = msgs.length;
         resumeTimestamp.current = Date.now();
@@ -1340,11 +1133,9 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
     }
   }, [streaming, sessionId, loadMessages]);
 
-  // Listen for stream failure events from ChatInputBar
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<{ lastUserMessage?: string }>).detail;
-      // Mark the last assistant message as failed
       if (messages.length > 0) {
         for (let i = messages.length - 1; i >= 0; i--) {
           if (messages[i].role === "assistant") {
@@ -1353,7 +1144,6 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
           }
         }
       }
-      // If no assistant message yet, store the user message for retry from empty state
       if (detail?.lastUserMessage && messages.every(m => m.role === "user")) {
         setFailedMsgId("__last_user__");
       }
@@ -1362,12 +1152,10 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
     return () => window.removeEventListener("studio:stream-failed", handler);
   }, [messages]);
 
-  // Clear failed state when streaming starts again
   useEffect(() => {
     if (streaming) setFailedMsgId(null);
   }, [streaming]);
 
-  // Track response time: record start when streaming begins, compute elapsed when it ends
   useEffect(() => {
     if (streaming) {
       streamStartTime.current = Date.now();
@@ -1380,7 +1168,6 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
     }
   }, [streaming]);
 
-  // After messages reload post-stream, tag the last assistant message with the response time
   useEffect(() => {
     if (lastResponseTime != null && lastResponseMsgId.current == null && messages.length > 0) {
       for (let i = messages.length - 1; i >= 0; i--) {
@@ -1392,7 +1179,6 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
     }
   }, [messages, lastResponseTime]);
 
-  // Find the last user message content for retry
   const findLastUserMessage = useCallback((): string | null => {
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === "user") return messages[i].content;
@@ -1407,8 +1193,6 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
     window.dispatchEvent(new CustomEvent("studio:retry-message", { detail: { text } }));
   }, [findLastUserMessage]);
 
-  // Build virtual list items, injecting a resume divider when a session with
-  // prior history receives new messages (streaming or completed new turns).
   const showResumeDivider = resumedAtCount.current > 0 && messages.length > resumedAtCount.current;
   const items: VirtualItem[] = [];
   for (let i = 0; i < messages.length; i++) {
@@ -1418,8 +1202,6 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
     }
   }
   if (streaming) {
-    // Show divider before first streaming message if session was resumed and no new
-    // persisted messages exist yet
     if (resumedAtCount.current > 0 && messages.length === resumedAtCount.current) {
       items.push({ id: RESUME_DIVIDER_ID, role: "divider", timestamp: resumeTimestamp.current });
     }
@@ -1434,13 +1216,11 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
     measureElement: (el) => el.getBoundingClientRect().height,
   });
 
-  // Scroll to bottom on new messages / stream updates
   useEffect(() => {
     if (items.length === 0) return;
     if (userScrolledUp.current) return;
     const el = parentRef.current;
     if (!el) return;
-    // Use native scroll during streaming to avoid virtualizer fight with re-measurement
     if (streaming) {
       el.scrollTop = el.scrollHeight;
     } else {
@@ -1448,7 +1228,6 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
     }
   }, [items.length, streamText, streamingState]);
 
-  // Detect manual scroll-up to suppress auto-scroll + drive ScrollToBottom visibility
   useEffect(() => {
     const el = parentRef.current;
     if (!el) return;
@@ -1524,38 +1303,20 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
                   <ResumedDivider timestamp={(item as { timestamp: number }).timestamp} />
                 ) : item.id === STREAMING_ID ? (
                   <StreamingBubble state={streamingState} legacyText={streamText} streamStartTime={streamStartTime.current ?? undefined} />
-                ) : (
-                  <MessageBubble
-                    msg={item as Message}
-                    showPlanGate={
-                      planMode &&
-                      !streaming &&
-                      (item as Message).role === "assistant" &&
-                      isLastAssistantMessage(messages, (item as Message).id)
-                    }
-                    onContextMenu={(e) => handleMessageContextMenu(e, item as Message)}
-                    showRetry={
-                      !streaming &&
-                      failedMsgId != null &&
-                      failedMsgId !== "__last_user__" &&
-                      (item as Message).role === "assistant" &&
-                      isLastAssistantMessage(messages, (item as Message).id)
-                    }
-                    showUserRetry={
-                      !streaming &&
-                      failedMsgId === "__last_user__" &&
-                      (item as Message).role === "user" &&
-                      isLastUserMessage(messages, (item as Message).id)
-                    }
-                    onRetry={handleRetry}
-                    responseTime={
-                      lastResponseTime != null &&
-                      lastResponseMsgId.current === (item as Message).id
-                        ? lastResponseTime
-                        : undefined
-                    }
-                  />
-                )}
+                ) : (() => {
+                  const msg = item as Message;
+                  return (
+                    <MessageBubble
+                      msg={msg}
+                      showPlanGate={planMode && !streaming && msg.role === "assistant" && isLastWithRole(messages, "assistant", msg.id)}
+                      onContextMenu={(e) => handleMessageContextMenu(e, msg)}
+                      showRetry={!streaming && failedMsgId != null && failedMsgId !== "__last_user__" && msg.role === "assistant" && isLastWithRole(messages, "assistant", msg.id)}
+                      showUserRetry={!streaming && failedMsgId === "__last_user__" && msg.role === "user" && isLastWithRole(messages, "user", msg.id)}
+                      onRetry={handleRetry}
+                      responseTime={lastResponseTime != null && lastResponseMsgId.current === msg.id ? lastResponseTime : undefined}
+                    />
+                  );
+                })()}
               </div>
             </div>
           );
@@ -1579,7 +1340,6 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
   );
 }
 
-// Strip markdown syntax for plain-text copy
 function stripMarkdown(text: string): string {
   return text
     .replace(/```[\s\S]*?```/g, (m) => m.replace(/```\w*\n?/g, "").replace(/```/g, ""))
@@ -1589,7 +1349,6 @@ function stripMarkdown(text: string): string {
     .replace(/^[-*]\s+/gm, "- ");
 }
 
-// Context menu item builders for chat messages
 function buildUserMenuItems(msg: Message): ContextMenuItem[] {
   return [
     {
@@ -1602,7 +1361,6 @@ function buildUserMenuItems(msg: Message): ContextMenuItem[] {
 }
 
 function buildAssistantMenuItems(msg: Message, messages: Message[]): ContextMenuItem[] {
-  // Find the last user message before this assistant message for retry
   const msgIndex = messages.findIndex((m) => m.id === msg.id);
   let lastUserMsg: Message | undefined;
   for (let i = msgIndex - 1; i >= 0; i--) {

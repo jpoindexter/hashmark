@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Skeleton, SkeletonCard } from "../components/shared/Skeleton.tsx";
 
-/* ─── types ─────────────────────────────────────────────────────────────── */
 interface InfoData {
   projectName: string;
   projectDir: string;
@@ -47,7 +46,6 @@ interface ScanConfig {
   autoRescan: boolean;
 }
 
-/* ─── nav sections ──────────────────────────────────────────────────────── */
 const SECTIONS = [
   { id: "appearance",   label: "Appearance",   group: "Studio" },
   { id: "chat",         label: "Chat",         group: "Studio" },
@@ -66,7 +64,6 @@ const SECTIONS = [
 
 const GROUPS = Array.from(new Set(SECTIONS.map(s => s.group)));
 
-/* ─── provider metadata ─────────────────────────────────────────────────── */
 const PROVIDER_ICONS: Record<string, string> = {
   claude:  "✸",
   openai:  "◎",
@@ -93,8 +90,6 @@ const ALL_FORMATS = [
   { id: "json",                  label: "JSON",                  desc: "Machine-readable output" },
 ];
 
-/* ─── persists ───────────────────────────────────────────────────────────── */
-// Use `studio:` prefix to match Shell.tsx -- both read/write the same keys
 function persist(key: string, val: unknown) {
   try { localStorage.setItem(`studio:${key}`, JSON.stringify(val)); } catch {}
 }
@@ -105,12 +100,10 @@ function restore<T>(key: string, fallback: T): T {
   } catch { return fallback; }
 }
 
-/** Notify other mounted components (Shell, ModelBar, etc.) that a setting changed */
 function dispatch(key: string, value: unknown) {
   window.dispatchEvent(new CustomEvent("studio:settings-change", { detail: { key, value } }));
 }
 
-/* ─── Toggle component ──────────────────────────────────────────────────── */
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
@@ -132,7 +125,6 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   );
 }
 
-/* ─── ProviderPanel ─────────────────────────────────────────────────────── */
 function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
   const [data, setData] = useState<ProvidersData | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -274,7 +266,6 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
               transition: "border-color 0.15s",
             }}
           >
-            {/* Row header */}
             <div
               onClick={() => toggleExpand(provider.id)}
               style={{
@@ -320,11 +311,9 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
               </span>
             </div>
 
-            {/* Expanded body */}
             {isExpanded && (
               <div style={{ borderTop: "1px solid var(--border-dim)", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 12 }}>
 
-                {/* API key input */}
                 {needsKey && (
                   <div>
                     <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
@@ -378,7 +367,6 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
                   </div>
                 )}
 
-                {/* Ollama base URL */}
                 {provider.id === "ollama" && (
                   <div>
                     <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
@@ -410,14 +398,12 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
                   </div>
                 )}
 
-                {/* Claude note */}
                 {provider.id === "claude" && (
                   <div style={{ fontSize: 11, color: "var(--text-dimmer)", lineHeight: 1.5 }}>
                     Uses CLI auth — no API key needed. Run <code style={{ color: "var(--accent)", fontFamily: "var(--font)" }}>claude auth</code> to authenticate.
                   </div>
                 )}
 
-                {/* Model list */}
                 {provModels.length > 0 && (
                   <div>
                     <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
@@ -449,7 +435,6 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
                   </div>
                 )}
 
-                {/* Action row */}
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {!isActive && (
                     <button
@@ -480,7 +465,6 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
   );
 }
 
-/* ─── ScanConfigPanel ────────────────────────────────────────────────────── */
 function ScanConfigPanel() {
   const [config, setConfig] = useState<ScanConfig | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -543,7 +527,6 @@ function ScanConfigPanel() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-      {/* Default formats */}
       <div style={{ padding: "14px 0", borderBottom: "1px solid var(--border-dim)" }}>
         <div style={{ fontSize: 13, color: "var(--text)", fontWeight: 500, marginBottom: 2 }}>Default Formats</div>
         <div style={{ fontSize: 11, color: "var(--text-dimmer)", marginBottom: 12 }}>Which output files to generate on each scan</div>
@@ -571,7 +554,6 @@ function ScanConfigPanel() {
         </div>
       </div>
 
-      {/* Max tokens */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         gap: 16, padding: "14px 0", borderBottom: "1px solid var(--border-dim)",
@@ -593,7 +575,6 @@ function ScanConfigPanel() {
         </div>
       </div>
 
-      {/* Watch debounce */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         gap: 16, padding: "14px 0", borderBottom: "1px solid var(--border-dim)",
@@ -615,7 +596,6 @@ function ScanConfigPanel() {
         </div>
       </div>
 
-      {/* Auto rescan */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         gap: 16, padding: "14px 0", borderBottom: "1px solid var(--border-dim)",
@@ -627,7 +607,6 @@ function ScanConfigPanel() {
         <Toggle checked={config.autoRescan} onChange={v => update({ autoRescan: v })} />
       </div>
 
-      {/* Save button */}
       <div style={{ paddingTop: 16, display: "flex", alignItems: "center", gap: 10 }}>
         <button
           onClick={() => void save()}
@@ -644,7 +623,6 @@ function ScanConfigPanel() {
   );
 }
 
-/* ─── main ───────────────────────────────────────────────────────────────── */
 export default function Settings() {
   const [active, setActive] = useState<string>(() => restore("settings_tab", "appearance"));
   const [navWidth, setNavWidth] = useState<number>(() => restore("settings_nav_w", 180));
@@ -674,30 +652,25 @@ export default function Settings() {
   const [detectedCLIs, setDetectedCLIs] = useState<DetectedCLI[]>([]);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
-  // Appearance
   const [theme,       setTheme]       = useState<"dark" | "light">(() => restore("theme", "dark"));
   const [fontSize,    setFontSize]    = useState<number>(() => restore("font_size", 13));
   const [uiDensity,   setUiDensity]   = useState<"comfortable" | "compact">(() => restore("ui_density", "comfortable"));
   const [showLineNums, setShowLineNums] = useState<boolean>(() => restore("line_nums", true));
 
-  // Chat
   const [defaultModel, setDefaultModel] = useState<string>(() => restore("selectedModel", "claude-sonnet-4-6"));
   const [thinkingMode, setThinkingMode] = useState<boolean>(() => restore("thinking", false));
   const [streamingUI,  setStreamingUI]  = useState<boolean>(() => restore("streaming_ui", true));
   const [systemPrompt, setSystemPrompt] = useState<string>(() => restore("system_prompt", ""));
   const [restoreSession, setRestoreSession] = useState<boolean>(() => restore("restoreSession", true));
 
-  // Git
   const [autoStage,    setAutoStage]    = useState<boolean>(() => restore("git_auto_stage", false));
   const [commitFormat, setCommitFormat] = useState<string>(() => restore("git_commit_fmt", "conventional"));
   const [showGitInNav, setShowGitInNav] = useState<boolean>(() => restore("git_in_nav", true));
 
-  // Experimental -- key must be "planMode" to match Shell.tsx
   const [planMode,      setPlanMode]      = useState<boolean>(() => restore("planMode", false));
   const [multiAgent,    setMultiAgent]    = useState<boolean>(() => restore("multi_agent", false));
   const [betaFeatures,  setBetaFeatures]  = useState<boolean>(() => restore("beta_features", false));
 
-  // Persist on change -- dispatch events so Shell picks up live changes
   useEffect(() => persist("settings_tab", active), [active]);
   useEffect(() => persist("settings_nav_w", navWidth), [navWidth]);
   useEffect(() => {
@@ -732,14 +705,13 @@ export default function Settings() {
     fetch("/api/info").then(r => r.json()).then(setInfo).catch(() => {
       window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load project info", type: "error" } }));
     });
-    fetch("/api/mcp/config").then(r => r.json()).then(setMcpConfig).catch(() => { /* non-critical */ });
-    fetch("/api/settings/env").then(r => r.json()).then((d: { vars: EnvVar[] }) => setEnvVars(d.vars ?? [])).catch(() => { /* non-critical */ });
+    fetch("/api/mcp/config").then(r => r.json()).then(setMcpConfig).catch(() => {});
+    fetch("/api/settings/env").then(r => r.json()).then((d: { vars: EnvVar[] }) => setEnvVars(d.vars ?? [])).catch(() => {});
     fetch("/api/providers/detect").then(r => r.json()).then((d: { providers: DetectedCLI[] }) => setDetectedCLIs(d.providers ?? [])).catch(() => {
       window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to detect providers", type: "error" } }));
     });
   }, []);
 
-  /* ── draggable nav ─────────────────────────────────────────────────────── */
   const dragging = useRef(false);
   const startX   = useRef(0);
   const startW   = useRef(0);
@@ -766,7 +738,6 @@ export default function Settings() {
   return (
     <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
 
-      {/* ── Left nav tray ────────────────────────────────────────────────── */}
       <nav style={{
         width: navWidth,
         minWidth: navWidth,
@@ -789,7 +760,6 @@ export default function Settings() {
           Settings
         </div>
 
-        {/* Search input */}
         <div style={{ padding: "0 8px 6px", position: "relative" }}>
           <input
             ref={searchRef}
@@ -898,7 +868,6 @@ export default function Settings() {
         </div>
       </nav>
 
-      {/* ── Drag handle ──────────────────────────────────────────────────── */}
       <div
         onMouseDown={onDragStart}
         style={{
@@ -913,7 +882,6 @@ export default function Settings() {
         onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
       />
 
-      {/* ── Content area ─────────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: "auto", padding: "28px 36px", minWidth: 0 }}>
         {active === "appearance" && (
           <SectionView title="Appearance" description="Customize how the studio looks and feels.">
@@ -1219,7 +1187,6 @@ export default function Settings() {
             <ReadonlyField label="Runtime" value="Electron + Vite + React" />
             <ReadonlyField label="Node Version" value={info?.nodeVersion ?? "..."} mono />
 
-            {/* Detected AI CLIs */}
             {detectedCLIs.length > 0 && (
               <div style={{ marginTop: 24 }}>
                 <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
@@ -1256,7 +1223,6 @@ export default function Settings() {
               </div>
             )}
 
-            {/* Links */}
             <div style={{ marginTop: 24 }}>
               <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
                 Links
@@ -1280,7 +1246,6 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* Advanced (collapsible) */}
             <div style={{ marginTop: 24 }}>
               <button
                 onClick={() => setAdvancedOpen(v => !v)}
@@ -1329,8 +1294,6 @@ export default function Settings() {
     </div>
   );
 }
-
-/* ─── sub-components ─────────────────────────────────────────────────────── */
 
 function SectionView({
   title, description, children,
