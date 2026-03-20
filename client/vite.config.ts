@@ -7,12 +7,12 @@ export default defineConfig({
   build: {
     outDir: "../dist/public",
     emptyOutDir: true,
-    chunkSizeWarningLimit: 800,
+    chunkSizeWarningLimit: 3000,
     rollupOptions: {
       output: {
         manualChunks: {
           xterm: ["@xterm/xterm", "@xterm/addon-fit", "@xterm/addon-web-links", "@xterm/addon-search", "xterm"],
-          shiki: ["shiki"],
+          "monaco-editor": ["monaco-editor"],
           react: ["react", "react-dom", "react-router-dom"],
           virtualizer: ["@tanstack/react-virtual"],
         },
