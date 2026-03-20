@@ -96,7 +96,10 @@ export default function Shell() {
   const { toggleTheme } = useTheme();
 
   // Persisted state
-  const [sidebarOpen, setSidebarOpen] = useState(() => restore("sidebarOpen", false));
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const shouldRestore = restore("restoreSession", false);
+    return shouldRestore ? restore("sidebarOpen", false) : false;
+  });
   const [sidebarWidth, setSidebarWidth] = useState(() => restore("sidebarWidth", DEFAULT_SIDEBAR_WIDTH));
   const [termOpen, setTermOpen] = useState(() => restore("termOpen", false));
   const [termBig, setTermBig] = useState(() => restore("termBig", false));
