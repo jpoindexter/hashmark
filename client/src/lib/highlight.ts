@@ -17,10 +17,18 @@ async function getHighlighter(): Promise<Highlighter> {
     });
   }
   loading = true;
-  highlighter = await createHighlighter({
-    themes: ["one-dark-pro", "github-light-default"],
-    langs: [...SUPPORTED_LANGS],
-  });
+  try {
+    highlighter = await createHighlighter({
+      themes: ["one-dark-pro", "github-light-default"],
+      langs: [...SUPPORTED_LANGS],
+    });
+  } catch {
+    // Fallback if preferred themes aren't available
+    highlighter = await createHighlighter({
+      themes: ["github-dark", "github-light"],
+      langs: [...SUPPORTED_LANGS],
+    });
+  }
   loading = false;
   queue.forEach((fn) => fn());
   queue.length = 0;
@@ -58,14 +66,21 @@ export async function highlightCode(
 ): Promise<string> {
   const h = await getHighlighter();
   const resolvedLang = LANG_MAP[lang] ?? "text";
-  const themeName = theme === "light" ? "github-light-default" : "one-dark-pro";
+  const loadedThemes = h.getLoadedThemes();
+  const darkTheme = loadedThemes.includes("one-dark-pro") ? "one-dark-pro" : loadedThemes[0] ?? "github-dark";
+  const lightTheme = loadedThemes.includes("github-light-default") ? "github-light-default" : loadedThemes.find(t => t.includes("light")) ?? darkTheme;
+  const themeName = theme === "light" ? lightTheme : darkTheme;
   try {
     return h.codeToHtml(code, {
       lang: resolvedLang,
       theme: themeName,
     });
   } catch {
-    return h.codeToHtml(code, { lang: "text", theme: themeName });
+    try {
+      return h.codeToHtml(code, { lang: "text", theme: themeName });
+    } catch {
+      return "";
+    }
   }
 }
 
