@@ -1,0 +1,17 @@
+{
+  "version": "0.2",
+  "words": [
+    "hashmark",
+    "pgrep",
+    "pids",
+    "unmaximize",
+    "togglefullscreen"
+  ],
+  "ignorePaths": [
+    "node_modules",
+    "dist",
+    "client/dist",
+    ".hashmark",
+    "*.lock"
+  ]
+}
