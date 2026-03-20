@@ -238,7 +238,7 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
       wsRef.current     = null;
       searchRef.current = null;
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [containerReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update font size when prop changes
   useEffect(() => {
