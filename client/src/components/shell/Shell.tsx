@@ -8,7 +8,7 @@ import SidebarResize from "./SidebarResize";
 import StatusBar from "./StatusBar";
 import ModelBar from "./ModelBar";
 import TerminalPanel from "./TerminalPanel";
-import ChatMessages from "../ChatMessages";
+import ChatMessages, { type StreamingState } from "../ChatMessages";
 import ChatInputBar from "../ChatInputBar";
 
 import ResizableDrawer from "../ResizableDrawer";
@@ -119,6 +119,7 @@ export default function Shell() {
   // Ephemeral state
   const [activeTab, setActiveTab] = useState<"TERMINAL" | "OUTPUT">("TERMINAL");
   const [streamText, setStreamText] = useState("");
+  const [streamingState, setStreamingState] = useState<StreamingState | null>(null);
   const [streaming, setStreaming] = useState(false);
   const [chatHasMessages, setChatHasMessages] = useState(false);
   const [contextPercent, setContextPercent] = useState<number | null>(null);
@@ -167,12 +168,14 @@ export default function Shell() {
   // exists in the DB (SQLite persists across server restarts). If the session
   // was deleted or the DB was reset, fall through to creating a new one.
   const sessionValidated = useRef(false);
+  const sessionRetryCount = useRef(0);
   useEffect(() => {
     const shouldRestore = restore("restoreSession", false);
     if (!shouldRestore && !activeSessionId) return;
 
     if (activeSessionId && !sessionValidated.current) {
       sessionValidated.current = true;
+      sessionRetryCount.current = 0;
       setSessionError(false);
       fetch(`/api/sessions/${activeSessionId}`)
         .then(r => {
@@ -195,12 +198,25 @@ export default function Shell() {
     if (!activeSessionId) {
       sessionValidated.current = false;
       setSessionError(false);
-      createSession()
-        .then((id) => {
-          sessionValidated.current = true;
-          setActiveSessionId(id);
-        })
-        .catch(() => setSessionError(true));
+
+      const attemptCreate = () => {
+        createSession()
+          .then((id) => {
+            sessionValidated.current = true;
+            sessionRetryCount.current = 0;
+            setActiveSessionId(id);
+          })
+          .catch(() => {
+            sessionRetryCount.current += 1;
+            if (sessionRetryCount.current < 3) {
+              setTimeout(attemptCreate, 2000);
+            } else {
+              sessionRetryCount.current = 0;
+              setSessionError(true);
+            }
+          });
+      };
+      attemptCreate();
     }
   }, [activeSessionId]);
 
@@ -267,7 +283,9 @@ export default function Shell() {
   // Command palette + slash command events
   const handleNewSessionRef = useCallback(() => {
     setChatHasMessages(false);
-    createSession().then(setActiveSessionId).catch(() => {});
+    createSession().then(setActiveSessionId).catch(() => {
+      window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to create session", type: "error" } }));
+    });
   }, []);
 
   useEffect(() => {
@@ -501,9 +519,21 @@ export default function Shell() {
               <button
                 onClick={() => {
                   setSessionError(false);
-                  createSession()
-                    .then(setActiveSessionId)
-                    .catch(() => setSessionError(true));
+                  sessionRetryCount.current = 0;
+                  const attemptCreate = () => {
+                    createSession()
+                      .then(setActiveSessionId)
+                      .catch(() => {
+                        sessionRetryCount.current += 1;
+                        if (sessionRetryCount.current < 3) {
+                          setTimeout(attemptCreate, 2000);
+                        } else {
+                          sessionRetryCount.current = 0;
+                          setSessionError(true);
+                        }
+                      });
+                  };
+                  attemptCreate();
                 }}
                 style={{
                   marginTop: 8, padding: "4px 12px",
@@ -527,7 +557,7 @@ export default function Shell() {
               minHeight: 0,
             }}>
               {isHome ? (
-                <ChatMessages sessionId={activeSessionId} streamText={streamText} streaming={streaming} modelLabel={modelLabel ?? "Sonnet 4.6"} planMode={planMode} />
+                <ChatMessages sessionId={activeSessionId} streamText={streamText} streaming={streaming} streamingState={streamingState ?? undefined} modelLabel={modelLabel ?? "Sonnet 4.6"} planMode={planMode} />
               ) : activeView === "files" || activeView === "search" ? (
                 <FileContentViewer />
               ) : (
@@ -561,6 +591,7 @@ export default function Shell() {
                 onNewSession={handleNewSession}
                 onSessionCreated={setActiveSessionId}
                 onStreamText={setStreamText}
+                onStreamingState={setStreamingState}
                 onStreamingChange={setStreaming}
                 streaming={streaming}
                 terminalCwd={terminalCwd || undefined}

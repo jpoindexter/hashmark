@@ -729,10 +729,14 @@ export default function Settings() {
   useEffect(() => { persist("beta_features", betaFeatures); dispatch("beta_features", betaFeatures); }, [betaFeatures]);
 
   useEffect(() => {
-    fetch("/api/info").then(r => r.json()).then(setInfo).catch(() => {});
-    fetch("/api/mcp/config").then(r => r.json()).then(setMcpConfig).catch(() => {});
-    fetch("/api/settings/env").then(r => r.json()).then((d: { vars: EnvVar[] }) => setEnvVars(d.vars ?? [])).catch(() => {});
-    fetch("/api/providers/detect").then(r => r.json()).then((d: { providers: DetectedCLI[] }) => setDetectedCLIs(d.providers ?? [])).catch(() => {});
+    fetch("/api/info").then(r => r.json()).then(setInfo).catch(() => {
+      window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load project info", type: "error" } }));
+    });
+    fetch("/api/mcp/config").then(r => r.json()).then(setMcpConfig).catch(() => { /* non-critical */ });
+    fetch("/api/settings/env").then(r => r.json()).then((d: { vars: EnvVar[] }) => setEnvVars(d.vars ?? [])).catch(() => { /* non-critical */ });
+    fetch("/api/providers/detect").then(r => r.json()).then((d: { providers: DetectedCLI[] }) => setDetectedCLIs(d.providers ?? [])).catch(() => {
+      window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to detect providers", type: "error" } }));
+    });
   }, []);
 
   /* ── draggable nav ─────────────────────────────────────────────────────── */

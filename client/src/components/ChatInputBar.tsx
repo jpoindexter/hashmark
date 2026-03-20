@@ -469,6 +469,7 @@ interface ChatInputBarProps {
   onNewSession: () => void;
   onSessionCreated?: (sessionId: string) => void;
   onStreamText: (text: string) => void;
+  onStreamingState?: (state: import("./ChatMessages").StreamingState | null) => void;
   onStreamingChange: (streaming: boolean) => void;
   streaming: boolean;
   terminalCwd?: string;
@@ -498,7 +499,7 @@ function resolveAutoModel(message: string): string {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ChatInputBar({
-  sessionId, hasMessages = false, onNewSession, onSessionCreated, onStreamText, onStreamingChange,
+  sessionId, hasMessages = false, onNewSession, onSessionCreated, onStreamText, onStreamingState, onStreamingChange,
   streaming, terminalCwd, currentFile,
   selectedModel = DEFAULT_MODEL, thinking = false, planMode = false,
 }: ChatInputBarProps) {
@@ -791,6 +792,7 @@ export default function ChatInputBar({
 
     onStreamingChange(true);
     onStreamText("");
+    onStreamingState?.(null);
 
     // Resolve auto-routing: pick model based on message complexity
     let resolvedModel = selectedModel;
@@ -857,6 +859,11 @@ export default function ChatInputBar({
       fetch(`/api/sessions/${sid}/interrupt`, { method: "POST" }).catch(() => {});
     };
 
+    // Structured blocks for real-time streaming state
+    type SBlock = import("./ChatMessages").ContentBlock;
+    const blocks: SBlock[] = [];
+    let activeThinkingIdx = -1;
+
     let streamCompleted = false;
     try {
       while (true) {
@@ -870,11 +877,47 @@ export default function ChatInputBar({
           const rawLine = line.slice(6).trim();
           if (!rawLine) continue;
           try {
-            const evt = JSON.parse(rawLine) as { type: string; text?: string };
-            if (evt.type === "text" && evt.text) {
-              assembled += evt.text;
+            const evt = JSON.parse(rawLine) as Record<string, unknown>;
+            const evtType = evt.type as string;
+
+            if (evtType === "text" && evt.text) {
+              assembled += evt.text as string;
               onStreamText(assembled);
+
+              // Append or merge into text block
+              const lastBlock = blocks[blocks.length - 1];
+              if (lastBlock && lastBlock.type === "text") {
+                (lastBlock as { text: string }).text += evt.text as string;
+              } else {
+                blocks.push({ type: "text", text: evt.text as string });
+              }
+              activeThinkingIdx = -1;
+            } else if (evtType === "thinking" || evtType === "thinking_delta") {
+              const content = (evt.content ?? evt.text ?? "") as string;
+              if (activeThinkingIdx >= 0 && blocks[activeThinkingIdx]?.type === "thinking") {
+                (blocks[activeThinkingIdx] as { content: string }).content += content;
+              } else {
+                activeThinkingIdx = blocks.length;
+                blocks.push({ type: "thinking", content, id: (evt.id as string) ?? undefined });
+              }
+            } else if (evtType === "tool_use" || evtType === "tool_call") {
+              activeThinkingIdx = -1;
+              blocks.push({
+                type: "tool_use",
+                tool: (evt.tool ?? evt.name ?? "unknown") as string,
+                input: (evt.input ?? {}) as Record<string, unknown>,
+              });
+            } else if (evtType === "progress") {
+              activeThinkingIdx = -1;
+              blocks.push({ type: "progress", text: (evt.text ?? "") as string });
             }
+
+            // Emit structured state on every event
+            onStreamingState?.({
+              blocks: [...blocks],
+              cost: evt.cost as number | undefined,
+              usage: evt.usage as { input_tokens: number; output_tokens: number } | undefined,
+            });
           } catch {
             console.warn("Failed to parse SSE event:", rawLine);
           }

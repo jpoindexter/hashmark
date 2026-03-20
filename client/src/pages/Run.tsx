@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { Search, Zap } from "lucide-react";
 import { DiffPanel } from "../components/DiffPanel.tsx";
 import AgentPicker from "../components/AgentPicker.tsx";
 import { toast } from "../hooks/useToast.ts";
@@ -140,7 +141,9 @@ export default function Run() {
     fetch("/api/company/agents")
       .then((r) => r.json())
       .then((d: { agents: AgentDef[] }) => setAgents(d.agents ?? []))
-      .catch(() => {});
+      .catch(() => {
+        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load agents", type: "error" } }));
+      });
     setRecentTasks(loadRecent());
   }, []);
 
@@ -510,8 +513,8 @@ export default function Run() {
               {/* Mode cards */}
               <div style={{ display: "flex", gap: 10, marginTop: 2 }}>
                 {([
-                  { value: "plan" as RunMode, icon: "🔍", label: "Explore", sub: "Read-only analysis, no file changes" },
-                  { value: "build" as RunMode, icon: "⚡", label: "Execute", sub: "Write files, commit changes" },
+                  { value: "plan" as RunMode, icon: <Search size={14} />, label: "Explore", sub: "Read-only analysis, no file changes" },
+                  { value: "build" as RunMode, icon: <Zap size={14} />, label: "Execute", sub: "Write files, commit changes" },
                 ] as const).map(({ value, icon, label, sub }) => (
                   <button
                     key={value}
@@ -527,8 +530,8 @@ export default function Run() {
                       transition: "border-color 0.12s, background 0.12s",
                     }}
                   >
-                    <div style={{ fontSize: 13, marginBottom: 3 }}>
-                      <span style={{ marginRight: 6 }}>{icon}</span>
+                    <div style={{ fontSize: 13, marginBottom: 3, display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ color: mode === value ? "var(--accent)" : "var(--text-dimmer)", display: "flex", alignItems: "center" }}>{icon}</span>
                       <span style={{
                         fontFamily: "var(--font-ui)",
                         fontWeight: 600,

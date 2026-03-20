@@ -263,7 +263,7 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
         overflow: "hidden",
       }}>
         {/* Tabs */}
-        <div style={{ display: "flex", alignItems: "stretch", flex: 1, overflow: "hidden", height: "100%" }}>
+        <div role="tablist" aria-label="Terminal tabs" style={{ display: "flex", alignItems: "stretch", flex: 1, overflow: "hidden", height: "100%" }}>
           {tabs.map(tab => (
             <TabItem
               key={tab.id}
@@ -655,7 +655,12 @@ function TabItem({
   return (
     <div
       ref={tabRef}
+      role="tab"
+      tabIndex={0}
+      aria-selected={active}
+      aria-label={`Terminal: ${tab.label}`}
       onClick={onSelect}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(); } }}
       onContextMenu={onContextMenu}
       onMouseEnter={() => { setHovered(true); onInfoEnter(); }}
       onMouseLeave={() => { setHovered(false); onInfoLeave(); }}

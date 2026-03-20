@@ -684,7 +684,9 @@ export default function Home() {
     fetch("/api/run/runs")
       .then((r) => r.json())
       .then((d) => setRuns(((d as { runs?: Run[] }).runs ?? []).slice(0, 5)))
-      .catch(() => {})
+      .catch(() => {
+        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load recent runs", type: "error" } }));
+      })
       .finally(() => setRunsLoading(false));
   }, []);
 

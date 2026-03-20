@@ -227,7 +227,9 @@ export default function FileTreeSidebar() {
         setTree(d.tree ?? []);
         if (d.root) setTreeRoot(d.root);
       })
-      .catch(() => {});
+      .catch(() => {
+        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to refresh file tree", type: "error" } }));
+      });
   }, []);
 
   useEffect(() => {
@@ -237,7 +239,9 @@ export default function FileTreeSidebar() {
         setTree(d.tree ?? []);
         if (d.root) setTreeRoot(d.root);
       })
-      .catch(() => {})
+      .catch(() => {
+        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load file tree", type: "error" } }));
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -249,7 +253,9 @@ export default function FileTreeSidebar() {
         for (const f of d.files ?? []) map[f.path] = f.status;
         setGitFiles(map);
       })
-      .catch(() => {});
+      .catch(() => {
+        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load git status", type: "error" } }));
+      });
   }, []);
 
   const fileCount = useMemo(() => countFiles(tree), [tree]);

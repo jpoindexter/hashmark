@@ -227,6 +227,77 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
     fitRef.current?.fit();
   }, [fontSize]);
 
+  // Adaptive terminal theme: sync with light/dark mode
+  useEffect(() => {
+    const applyTheme = () => {
+      if (!termRef.current) return;
+      const isLight = document.documentElement.getAttribute("data-theme") === "light";
+      termRef.current.options.theme = isLight
+        ? {
+            background: "#ffffff",
+            foreground: "#1f2328",
+            cursor: "#1a7f37",
+            cursorAccent: "#ffffff",
+            selectionBackground: "rgba(26, 127, 55, 0.2)",
+            black: "#1f2328",
+            red: "#cf222e",
+            green: "#1a7f37",
+            yellow: "#9a6700",
+            blue: "#0969da",
+            magenta: "#8250df",
+            cyan: "#0891b2",
+            white: "#656d76",
+            brightBlack: "#8b949e",
+            brightRed: "#a40e26",
+            brightGreen: "#116329",
+            brightYellow: "#7c4d00",
+            brightBlue: "#0550ae",
+            brightMagenta: "#6639ba",
+            brightCyan: "#067a8b",
+            brightWhite: "#1f2328",
+          }
+        : {
+            background: "#0d1117",
+            foreground: "#e6edf3",
+            cursor: "#3fb950",
+            cursorAccent: "#0d1117",
+            selectionBackground: "rgba(63, 185, 80, 0.2)",
+            black: "#21262d",
+            red: "#f85149",
+            green: "#3fb950",
+            yellow: "#d29922",
+            blue: "#388bfd",
+            magenta: "#bc8cff",
+            cyan: "#39c5cf",
+            white: "#b1bac4",
+            brightBlack: "#6e7681",
+            brightRed: "#ff7b72",
+            brightGreen: "#56d364",
+            brightYellow: "#e3b341",
+            brightBlue: "#79c0ff",
+            brightMagenta: "#d2a8ff",
+            brightCyan: "#56d4dd",
+            brightWhite: "#ffffff",
+          };
+    };
+
+    // Apply on mount
+    applyTheme();
+
+    // Listen for theme changes dispatched by the theme toggle
+    const handler = () => applyTheme();
+    window.addEventListener("studio:theme-change", handler);
+
+    // Also observe data-theme attribute changes on <html>
+    const observer = new MutationObserver(() => applyTheme());
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+    return () => {
+      window.removeEventListener("studio:theme-change", handler);
+      observer.disconnect();
+    };
+  }, []);
+
   // Cmd+F to open search, Escape to close
   useEffect(() => {
     const el = containerRef.current;

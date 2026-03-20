@@ -79,6 +79,9 @@ export default function ConfirmDialog({
       onClick={onCancel}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
         onClick={e => e.stopPropagation()}
         style={{
           background: "var(--bg-2)",

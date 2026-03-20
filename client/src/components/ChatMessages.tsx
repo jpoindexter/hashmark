@@ -57,7 +57,6 @@ interface ChatMessagesProps {
   streamingState?: StreamingState;
   modelLabel?: string;
   planMode?: boolean;
-  failedMessageId?: string | null;
 }
 
 function fmtTime(ts: number) {
@@ -1288,7 +1287,7 @@ function isLastUserMessage(msgs: Message[], id: string): boolean {
   return false;
 }
 
-export default function ChatMessages({ sessionId, streamText, streaming, streamingState, modelLabel = "Sonnet 4.6", planMode = false, failedMessageId }: ChatMessagesProps) {
+export default function ChatMessages({ sessionId, streamText, streaming, streamingState, modelLabel = "Sonnet 4.6", planMode = false }: ChatMessagesProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
@@ -1340,11 +1339,6 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
       if (sessionId) void loadMessages(sessionId);
     }
   }, [streaming, sessionId, loadMessages]);
-
-  // Track external failedMessageId prop
-  useEffect(() => {
-    setFailedMsgId(failedMessageId ?? null);
-  }, [failedMessageId]);
 
   // Listen for stream failure events from ChatInputBar
   useEffect(() => {

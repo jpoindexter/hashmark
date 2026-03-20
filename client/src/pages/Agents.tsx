@@ -145,6 +145,9 @@ export default function Agents() {
     fetch("/api/agents")
       .then((r) => r.json())
       .then((d) => setAgents(d.agents ?? []))
+      .catch(() => {
+        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load agents", type: "error" } }));
+      })
       .finally(() => setLoading(false));
   }, []);
 

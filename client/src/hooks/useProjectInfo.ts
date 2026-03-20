@@ -61,18 +61,22 @@ export function useProjectInfo(
     fetch("/api/info")
       .then(r => r.json())
       .then(setInfo)
-      .catch(() => {});
+      .catch(() => {
+        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load project info", type: "error" } }));
+      });
     fetch("/api/files/git")
       .then(r => r.json())
       .then(setGit)
-      .catch(() => {});
+      .catch(() => {
+        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load git status", type: "error" } }));
+      });
     fetch("/api/drift/check")
       .then(r => r.json())
       .then((d: DriftResponse) => {
         if (d.hasContextFile && d.driftLevel !== "none") setDrift(d);
         else setDrift(null);
       })
-      .catch(() => {});
+      .catch(() => { /* drift is non-critical */ });
   }, []);
 
   // Fetch info, git, and drift on mount

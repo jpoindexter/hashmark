@@ -486,6 +486,9 @@ export default function CommandPalette({ open, onClose, mode = "files" }: Props)
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
         onClick={e => e.stopPropagation()}
         style={{
           position: "fixed",
