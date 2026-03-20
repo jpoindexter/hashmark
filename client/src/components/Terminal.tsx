@@ -56,8 +56,28 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
     },
   }));
 
+  const [containerReady, setContainerReady] = useState(false);
+
+  // Wait for container to have dimensions before creating xterm
   useEffect(() => {
-    if (!containerRef.current || termRef.current) return;
+    const el = containerRef.current;
+    if (!el || containerReady) return;
+    if (el.offsetHeight > 0 && el.offsetWidth > 0) {
+      setContainerReady(true);
+      return;
+    }
+    const obs = new ResizeObserver(() => {
+      if (el.offsetHeight > 0 && el.offsetWidth > 0) {
+        obs.disconnect();
+        setContainerReady(true);
+      }
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [containerReady]);
+
+  useEffect(() => {
+    if (!containerRef.current || !containerReady || termRef.current) return;
 
     const term = new Terminal({
       allowProposedApi: true,
