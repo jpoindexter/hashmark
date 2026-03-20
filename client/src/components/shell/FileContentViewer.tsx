@@ -71,12 +71,49 @@ export default function FileContentViewer() {
 
       monacoRef.current = monaco;
 
+      // Define custom themes matching our app colors
+      monaco.editor.defineTheme("hashmark-dark", {
+        base: "vs-dark",
+        inherit: true,
+        rules: [],
+        colors: {
+          "editor.background": "#0d1117",
+          "editor.foreground": "#e6edf3",
+          "editorLineNumber.foreground": "#484f58",
+          "editorLineNumber.activeForeground": "#e6edf3",
+          "editor.selectionBackground": "#264f78",
+          "editor.lineHighlightBackground": "#161b22",
+          "editorIndentGuide.background1": "#21262d",
+          "editorIndentGuide.activeBackground1": "#30363d",
+          "minimap.background": "#0d1117",
+          "editorGutter.background": "#0d1117",
+          "scrollbarSlider.background": "rgba(110,118,129,0.3)",
+          "scrollbarSlider.hoverBackground": "rgba(110,118,129,0.5)",
+        },
+      });
+      monaco.editor.defineTheme("hashmark-light", {
+        base: "vs",
+        inherit: true,
+        rules: [],
+        colors: {
+          "editor.background": "#ffffff",
+          "editor.foreground": "#1f2328",
+          "editorLineNumber.foreground": "#8c959f",
+          "editor.selectionBackground": "#add6ff",
+          "editor.lineHighlightBackground": "#f6f8fa",
+          "editorIndentGuide.background1": "#d0d7de",
+          "minimap.background": "#ffffff",
+          "editorGutter.background": "#ffffff",
+        },
+      });
+
       const fontSize = restoreSetting<number>("font_size", 13);
+      const themeName = getThemeName() === "light" ? "hashmark-light" : "hashmark-dark";
 
       const editor = monaco.editor.create(containerRef.current!, {
         value: "",
         language: "plaintext",
-        theme: getThemeName(),
+        theme: themeName,
         readOnly: true,
         minimap: { enabled: true },
         lineNumbers: "on",
@@ -113,8 +150,7 @@ export default function FileContentViewer() {
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<string>).detail;
-      const theme = detail === "light" ? "vs" : "vs-dark";
-      monacoRef.current?.editor.setTheme(theme);
+      monacoRef.current?.editor.setTheme(detail === "light" ? "hashmark-light" : "hashmark-dark");
     };
     window.addEventListener("studio:theme-change", handler);
     return () => window.removeEventListener("studio:theme-change", handler);

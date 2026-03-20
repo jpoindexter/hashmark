@@ -7,7 +7,7 @@ export default defineConfig({
   build: {
     outDir: "../dist/public",
     emptyOutDir: true,
-    chunkSizeWarningLimit: 1500,
+    chunkSizeWarningLimit: 4000, // Monaco editor is ~3.8MB (lazy-loaded, desktop app)
     rollupOptions: {
       output: {
         manualChunks: {
