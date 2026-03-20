@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { FileCode } from "lucide-react";
-import * as monaco from "monaco-editor";
+import type * as MonacoTypes from "monaco-editor";
 
 const EXT_TO_LANG: Record<string, string> = {
   ts: "typescript",
@@ -42,11 +42,13 @@ function restoreSetting<T>(key: string, fallback: T): T {
 
 export default function FileContentViewer() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const editorRef = useRef<MonacoTypes.editor.IStandaloneCodeEditor | null>(null);
+  const monacoRef = useRef<typeof MonacoTypes | null>(null);
 
   const [filePath, setFilePath] = useState<string | null>(null);
   const [content, setContent] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [monacoLoading, setMonacoLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const getThemeName = useCallback((): string => {
@@ -54,49 +56,65 @@ export default function FileContentViewer() {
     return mode === "light" ? "vs" : "vs-dark";
   }, []);
 
-  // Create editor once
+  // Dynamically load Monaco and create editor on first file open
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !filePath) return;
+    if (editorRef.current) return; // already created
 
-    const fontSize = restoreSetting<number>("font_size", 13);
+    let cancelled = false;
+    setMonacoLoading(true);
 
-    const editor = monaco.editor.create(containerRef.current, {
-      value: "",
-      language: "plaintext",
-      theme: getThemeName(),
-      readOnly: true,
-      minimap: { enabled: true },
-      lineNumbers: "on",
-      guides: { indentation: true },
-      fontSize,
-      fontFamily: "var(--font)",
-      scrollBeyondLastLine: false,
-      automaticLayout: true,
-      renderLineHighlight: "none",
-      domReadOnly: true,
-      contextmenu: true,
-      smoothScrolling: true,
-      padding: { top: 8, bottom: 8 },
-      scrollbar: {
-        verticalScrollbarSize: 10,
-        horizontalScrollbarSize: 10,
-      },
-    });
+    (async () => {
+      await import("../../lib/monaco-setup");
+      const monaco = await import("monaco-editor");
+      if (cancelled) return;
 
-    editorRef.current = editor;
+      monacoRef.current = monaco;
+
+      const fontSize = restoreSetting<number>("font_size", 13);
+
+      const editor = monaco.editor.create(containerRef.current!, {
+        value: "",
+        language: "plaintext",
+        theme: getThemeName(),
+        readOnly: true,
+        minimap: { enabled: true },
+        lineNumbers: "on",
+        guides: { indentation: true },
+        fontSize,
+        fontFamily: "var(--font)",
+        scrollBeyondLastLine: false,
+        automaticLayout: true,
+        renderLineHighlight: "none",
+        domReadOnly: true,
+        contextmenu: true,
+        smoothScrolling: true,
+        padding: { top: 8, bottom: 8 },
+        scrollbar: {
+          verticalScrollbarSize: 10,
+          horizontalScrollbarSize: 10,
+        },
+      });
+
+      editorRef.current = editor;
+      setMonacoLoading(false);
+    })();
 
     return () => {
-      editor.dispose();
-      editorRef.current = null;
+      cancelled = true;
+      if (editorRef.current) {
+        editorRef.current.dispose();
+        editorRef.current = null;
+      }
     };
-  }, [getThemeName]);
+  }, [filePath, getThemeName]);
 
   // Theme sync
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<string>).detail;
       const theme = detail === "light" ? "vs" : "vs-dark";
-      monaco.editor.setTheme(theme);
+      monacoRef.current?.editor.setTheme(theme);
     };
     window.addEventListener("studio:theme-change", handler);
     return () => window.removeEventListener("studio:theme-change", handler);
@@ -160,7 +178,8 @@ export default function FileContentViewer() {
   // Push content + language into editor when they change
   useEffect(() => {
     const editor = editorRef.current;
-    if (!editor || !filePath) return;
+    const monaco = monacoRef.current;
+    if (!editor || !monaco || !filePath) return;
 
     const lang = getMonacoLanguage(filePath);
     const model = editor.getModel();
@@ -272,7 +291,7 @@ export default function FileContentViewer() {
 
       {/* Editor area */}
       <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
-        {loading && (
+        {(loading || monacoLoading) && (
           <div
             style={{
               position: "absolute",
@@ -286,7 +305,7 @@ export default function FileContentViewer() {
               background: "var(--bg)",
             }}
           >
-            Loading...
+            {monacoLoading ? "Loading editor..." : "Loading..."}
           </div>
         )}
         {error && (
@@ -311,7 +330,7 @@ export default function FileContentViewer() {
           style={{
             width: "100%",
             height: "100%",
-            visibility: loading || error ? "hidden" : "visible",
+            visibility: loading || monacoLoading || error ? "hidden" : "visible",
           }}
         />
       </div>

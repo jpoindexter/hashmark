@@ -5,7 +5,7 @@
 import { Hono } from "hono";
 import { spawn } from "child_process";
 import { mkdirSync, writeFileSync, existsSync } from "fs";
-import { join } from "path";
+import { join, resolve, dirname } from "path";
 
 interface GenerateRequest {
   companyType: string;
@@ -34,6 +34,13 @@ export function generateRoutes(projectDir: string) {
         };
 
         send({ type: "start", message: "Starting agent generation..." });
+
+        // Validate inputs don't start with - (flag injection)
+        if (body.companyType?.startsWith("-") || body.projectName?.startsWith("-")) {
+          send({ type: "error", message: "Invalid input" });
+          controller.close();
+          return;
+        }
 
         // Build the hashmark agents command args
         const args = [
@@ -136,14 +143,18 @@ export function generateRoutes(projectDir: string) {
     const body = await c.req.json<SaveRequest>();
     const agentsDir = join(projectDir, ".claude", "agents");
 
+    let written = 0;
     for (const agent of body.agents) {
-      const fullPath = join(agentsDir, agent.path);
-      const dir = fullPath.substring(0, fullPath.lastIndexOf("/"));
-      mkdirSync(dir, { recursive: true });
+      if (!agent.path || typeof agent.path !== "string") continue;
+      const fullPath = resolve(agentsDir, agent.path);
+      // Path traversal guard: must stay within agentsDir
+      if (!fullPath.startsWith(agentsDir + "/") && fullPath !== agentsDir) continue;
+      mkdirSync(dirname(fullPath), { recursive: true });
       writeFileSync(fullPath, agent.content, "utf-8");
+      written++;
     }
 
-    return c.json({ ok: true, count: body.agents.length });
+    return c.json({ ok: true, count: written });
   });
 
   return app;

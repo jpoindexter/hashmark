@@ -146,9 +146,8 @@ export function filesRoutes(projectDir: string) {
     try {
       if (body.paths?.length) {
         for (const p of body.paths) {
-          const fullPath = join(projectDir, p);
-          if (!fullPath.startsWith(projectDir)) continue;
-          await execAsync("git", ["add", p], { cwd: projectDir });
+          if (!safePath(p)) continue;
+          await execAsync("git", ["add", "--", p], { cwd: projectDir });
         }
       } else {
         await execAsync("git", ["add", "-A"], { cwd: projectDir });
@@ -164,9 +163,8 @@ export function filesRoutes(projectDir: string) {
     try {
       if (body.paths?.length) {
         for (const p of body.paths) {
-          const fullPath = join(projectDir, p);
-          if (!fullPath.startsWith(projectDir)) continue;
-          await execAsync("git", ["restore", "--staged", p], { cwd: projectDir });
+          if (!safePath(p)) continue;
+          await execAsync("git", ["restore", "--staged", "--", p], { cwd: projectDir });
         }
       } else {
         await execAsync("git", ["restore", "--staged", "."], { cwd: projectDir });
@@ -182,8 +180,7 @@ export function filesRoutes(projectDir: string) {
     if (!body.paths?.length) return c.json({ error: "paths required" }, 400);
     try {
       for (const p of body.paths) {
-        const fullPath = join(projectDir, p);
-        if (!fullPath.startsWith(projectDir)) continue;
+        if (!safePath(p)) continue;
         try {
           // Try checkout first (tracked files)
           await execAsync("git", ["checkout", "--", p], { cwd: projectDir });
@@ -438,6 +435,8 @@ export function filesRoutes(projectDir: string) {
     const branch = c.req.query("branch");
     if (!branch) return c.json({ error: "branch query param required" }, 400);
     const base = c.req.query("base") ?? "HEAD";
+    // Reject values starting with - to prevent flag injection in git commands
+    if (branch.startsWith("-") || base.startsWith("-")) return c.json({ error: "invalid ref name" }, 400);
     const report = analyzeImpact(projectDir, branch, base);
     return c.json(report);
   });
@@ -619,10 +618,14 @@ export function filesRoutes(projectDir: string) {
     const hash = c.req.query("hash");
     const file = c.req.query("file");
     if (!hash || !file) return c.json({ error: "hash and file required" }, 400);
+    // Validate hash is a hex string (short or full SHA)
+    if (!/^[0-9a-fA-F]{4,40}$/.test(hash)) return c.json({ error: "invalid hash" }, 400);
+    // Validate file path stays within project
+    if (!safePath(file)) return c.json({ error: "forbidden" }, 403);
     try {
       const { stdout } = await execAsync(
         "git",
-        ["show", "--format=", `${hash}`, "--", file],
+        ["show", "--format=", hash, "--", file],
         { cwd: projectDir, maxBuffer: 4 * 1024 * 1024 }
       );
       return c.json({ diff: stdout, file, hash });
@@ -647,10 +650,12 @@ export function filesRoutes(projectDir: string) {
 
   app.post("/git/branch", async (c) => {
     const body = await c.req.json<{ name: string }>().catch(() => ({ name: "" }));
-    if (!body.name?.trim()) return c.json({ error: "Branch name required" }, 400);
+    const name = body.name?.trim();
+    if (!name) return c.json({ error: "Branch name required" }, 400);
+    if (name.startsWith("-")) return c.json({ error: "Invalid branch name" }, 400);
     try {
-      await execAsync("git", ["checkout", "-b", body.name.trim()], { cwd: projectDir });
-      return c.json({ ok: true, branch: body.name.trim() });
+      await execAsync("git", ["checkout", "-b", "--", name], { cwd: projectDir });
+      return c.json({ ok: true, branch: name });
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
     }
@@ -658,9 +663,11 @@ export function filesRoutes(projectDir: string) {
 
   app.post("/git/checkout", async (c) => {
     const body = await c.req.json<{ branch: string }>().catch(() => ({ branch: "" }));
-    if (!body.branch?.trim()) return c.json({ error: "branch required" }, 400);
+    const branch = body.branch?.trim();
+    if (!branch) return c.json({ error: "branch required" }, 400);
+    if (branch.startsWith("-")) return c.json({ error: "Invalid branch name" }, 400);
     try {
-      await execAsync("git", ["checkout", body.branch], { cwd: projectDir });
+      await execAsync("git", ["checkout", "--", branch], { cwd: projectDir });
       return c.json({ success: true });
     } catch (err) {
       return c.json({ error: String(err) }, 500);

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
-import { join } from "path";
+import { join, resolve } from "path";
 import { spawn } from "child_process";
 
 interface WorkspaceConfig {
@@ -97,7 +97,12 @@ export function workspaceRoutes(projectDir: string) {
   // POST /api/workspace/detect — detect project framework from a given path
   app.post("/detect", async (c) => {
     const body = await c.req.json<{ path?: string }>().catch(() => ({}));
-    const dir = (body as { path?: string }).path?.trim() || projectDir;
+    const rawPath = (body as { path?: string }).path?.trim();
+    // If a path is provided, resolve it and ensure it stays within projectDir
+    const dir = rawPath ? resolve(projectDir, rawPath) : projectDir;
+    if (rawPath && !dir.startsWith(projectDir + "/") && dir !== projectDir) {
+      return c.json({ error: "forbidden" }, 403);
+    }
 
     if (!existsSync(dir)) return c.json({ error: "path not found" }, 400);
 
