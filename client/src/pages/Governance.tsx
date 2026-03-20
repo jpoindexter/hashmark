@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Shield, Activity, FileText } from "lucide-react";
-import { SkeletonLine, SkeletonBlock } from "../components/Skeleton";
+import { Skeleton, SkeletonCard } from "../components/shared/Skeleton";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -586,7 +586,7 @@ function PoliciesTab() {
             padding: "6px 10px", background: "var(--bg-3)",
             borderBottom: "1px solid var(--border-dim)",
           }}>
-            <SkeletonLine width={30} height={8} />
+            <Skeleton width={30} height={8} />
           </div>
           {[0, 1, 2].map(i => (
             <div key={i} style={{
@@ -595,15 +595,15 @@ function PoliciesTab() {
               borderBottom: i < 2 ? "1px solid var(--border-dim)" : "none",
             }}>
               <div>
-                <SkeletonLine height={11} width={`${50 + i * 20}%`} style={{ marginBottom: 5 }} />
-                <SkeletonLine height={9} width="70%" />
+                <Skeleton height={11} width={`${50 + i * 20}%`} style={{ marginBottom: 5 }} />
+                <Skeleton height={9} width="70%" />
               </div>
-              <SkeletonLine height={10} width={55} />
-              <SkeletonLine height={10} width={20} />
-              <SkeletonBlock width={32} height={18} />
-              <SkeletonBlock width={40} height={22} />
-              <SkeletonBlock width={60} height={22} />
-              <SkeletonLine height={10} width={14} />
+              <Skeleton height={10} width={55} />
+              <Skeleton height={10} width={20} />
+              <SkeletonCard width={32} height={18} />
+              <SkeletonCard width={40} height={22} />
+              <SkeletonCard width={60} height={22} />
+              <Skeleton height={10} width={14} />
             </div>
           ))}
         </div>
@@ -954,7 +954,7 @@ function ActionLogTab() {
             padding: "6px 10px", background: "var(--bg-3)",
             borderBottom: "1px solid var(--border-dim)",
           }}>
-            <SkeletonLine width={60} height={8} />
+            <Skeleton width={60} height={8} />
           </div>
           {[0, 1, 2, 3, 4].map(i => (
             <div key={i} style={{
@@ -962,11 +962,11 @@ function ActionLogTab() {
               alignItems: "center", padding: "9px 10px", gap: 8,
               borderBottom: i < 4 ? "1px solid var(--border-dim)" : "none",
             }}>
-              <SkeletonLine height={10} width={100} />
-              <SkeletonLine height={10} width={70} />
-              <SkeletonBlock width={60} height={18} />
-              <SkeletonLine height={10} width={`${40 + (i % 3) * 20}%`} />
-              <SkeletonBlock width={52} height={18} />
+              <Skeleton height={10} width={100} />
+              <Skeleton height={10} width={70} />
+              <SkeletonCard width={60} height={18} />
+              <Skeleton height={10} width={`${40 + (i % 3) * 20}%`} />
+              <SkeletonCard width={52} height={18} />
             </div>
           ))}
         </div>
@@ -1196,7 +1196,7 @@ function ActionJournalTab() {
             padding: "6px 10px", background: "var(--bg-3)",
             borderBottom: "1px solid var(--border-dim)",
           }}>
-            <SkeletonLine width={30} height={8} />
+            <Skeleton width={30} height={8} />
           </div>
           {[0, 1, 2, 3, 4].map(i => (
             <div key={i} style={{
@@ -1204,12 +1204,12 @@ function ActionJournalTab() {
               alignItems: "center", padding: "9px 10px", gap: 8,
               borderBottom: i < 4 ? "1px solid var(--border-dim)" : "none",
             }}>
-              <SkeletonLine height={10} width={50} />
-              <SkeletonLine height={10} width={70} />
-              <SkeletonLine height={10} width={60} />
-              <SkeletonBlock width={72} height={18} />
-              <SkeletonLine height={10} width={`${35 + (i % 4) * 15}%`} />
-              <SkeletonBlock width={52} height={18} />
+              <Skeleton height={10} width={50} />
+              <Skeleton height={10} width={70} />
+              <Skeleton height={10} width={60} />
+              <SkeletonCard width={72} height={18} />
+              <Skeleton height={10} width={`${35 + (i % 4) * 15}%`} />
+              <SkeletonCard width={52} height={18} />
             </div>
           ))}
         </div>

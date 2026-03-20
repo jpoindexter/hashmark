@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Clock } from "lucide-react";
 import { DiffPanel } from "../components/DiffPanel.tsx";
-import { SkeletonLine, SkeletonBlock } from "../components/Skeleton";
+import { Skeleton, SkeletonCard } from "../components/shared/Skeleton";
 
 interface AgentRun {
   id: string;
@@ -155,7 +155,7 @@ export default function History() {
               background: "var(--bg-3)",
               borderBottom: "1px solid var(--border-dim)",
             }}>
-              <SkeletonLine width={40} height={8} />
+              <Skeleton width={40} height={8} />
             </div>
             {[0, 1, 2, 3, 4].map(i => (
               <div
@@ -169,10 +169,10 @@ export default function History() {
                   borderBottom: i < 4 ? "1px solid var(--border-dim)" : "none",
                 }}
               >
-                <SkeletonLine height={10} width={`${60 + (i % 3) * 15}%`} />
-                <SkeletonLine height={10} width={80} />
-                <SkeletonBlock width={56} height={18} />
-                <SkeletonLine height={10} width={60} />
+                <Skeleton height={10} width={`${60 + (i % 3) * 15}%`} />
+                <Skeleton height={10} width={80} />
+                <SkeletonCard width={56} height={18} />
+                <Skeleton height={10} width={60} />
               </div>
             ))}
           </div>

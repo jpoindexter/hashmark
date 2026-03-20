@@ -55,6 +55,7 @@ function LayoutToggle({
   return (
     <button
       title={title}
+      aria-label={title}
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -237,7 +238,9 @@ export default function Titlebar({
       >
         {/* Drift badge */}
         {drift && drift.driftLevel !== "none" && (
-          <DriftBadge drift={drift} navigate={(to: string) => { window.location.href = to; }} />
+          <DriftBadge drift={drift} navigate={(to: string) => {
+            window.dispatchEvent(new CustomEvent("studio:navigate", { detail: to }));
+          }} />
         )}
 
         {/* Changes badge */}

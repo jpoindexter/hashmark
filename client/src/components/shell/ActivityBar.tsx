@@ -91,6 +91,7 @@ function ActivityItem({
         className="activity-item"
         onClick={onClick}
         style={style}
+        aria-label={item.label}
       >
         <Icon size={20} />
       </button>

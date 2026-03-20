@@ -564,7 +564,6 @@ export default function Shell() {
                 onStreamingChange={setStreaming}
                 streaming={streaming}
                 terminalCwd={terminalCwd || undefined}
-                modelName={selectedModel}
                 selectedModel={selectedModel}
                 thinking={thinking}
                 planMode={planMode}

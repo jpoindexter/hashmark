@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { GitBranch, CheckCircle } from "lucide-react";
 import { DiffViewer } from "./DiffViewer.tsx";
-import { SkeletonLine } from "./Skeleton.tsx";
+import { Skeleton } from "./shared/Skeleton.tsx";
 import ConfirmDialog from "./shared/ConfirmDialog.tsx";
 
 interface GitFile {
@@ -496,7 +496,7 @@ export default function SourceControlPage() {
 
           {/* Branch pill + ahead/behind */}
           {loading ? (
-            <SkeletonLine width="60%" height={18} />
+            <Skeleton width="60%" height={18} />
           ) : data?.branch && (
             <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
               <span style={{
@@ -520,9 +520,9 @@ export default function SourceControlPage() {
         <div style={{ flex: 1, overflowY: "auto" }}>
           {loading ? (
             <div style={{ padding: "12px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
-              <SkeletonLine width="80%" height={12} />
-              <SkeletonLine width="65%" height={12} />
-              <SkeletonLine width="72%" height={12} />
+              <Skeleton width="80%" height={12} />
+              <Skeleton width="65%" height={12} />
+              <Skeleton width="72%" height={12} />
             </div>
           ) : files.length === 0 ? (
             <div style={{ padding: "16px 12px", color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 11 }}>

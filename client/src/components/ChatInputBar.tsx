@@ -473,7 +473,6 @@ interface ChatInputBarProps {
   streaming: boolean;
   terminalCwd?: string;
   currentFile?: string;
-  modelName?: string;
   selectedModel?: string;
   thinking?: boolean;
   planMode?: boolean;

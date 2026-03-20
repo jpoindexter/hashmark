@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { SkeletonLine } from "../Skeleton.tsx";
+import { Skeleton } from "../shared/Skeleton.tsx";
 import IconButton from "../shared/IconButton.tsx";
 import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
 import ConfirmDialog from "../shared/ConfirmDialog.tsx";
@@ -195,9 +195,9 @@ export default function SessionsSidebar({ activeSessionId, onSessionSelect, info
           />
         ) : (
           <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
-            <SkeletonLine width="55%" height={11} />
-            <SkeletonLine width="70%" height={10} />
-            <SkeletonLine width="60%" height={10} />
+            <Skeleton width="55%" height={11} />
+            <Skeleton width="70%" height={10} />
+            <Skeleton width="60%" height={10} />
           </div>
         )}
       </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Zap, Play, GitBranch, History, Bot, Clock, CheckCircle, XCircle, Loader } from "lucide-react";
-import { SkeletonCard, SkeletonLine, SkeletonBlock } from "../components/Skeleton";
+import { Skeleton, SkeletonCard, SkeletonText } from "../components/shared/Skeleton";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -348,7 +348,7 @@ function FolderPickerSection({ info, onFolderChanged }: {
             marginBottom: "4px",
             lineHeight: 1.2,
           }}>
-            {info == null ? <SkeletonLine width={180} height={22} /> : (info.projectName || "Project")}
+            {info == null ? <Skeleton width={180} height={22} /> : (info.projectName || "Project")}
           </h1>
           {info && (
             <div style={{
@@ -590,8 +590,8 @@ function StatCards({
         </div>
         {loading ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <SkeletonLine width={60} height={22} />
-            <SkeletonLine width={80} height={11} />
+            <Skeleton width={60} height={22} />
+            <Skeleton width={80} height={11} />
           </div>
         ) : (
           <>
@@ -612,8 +612,8 @@ function StatCards({
         </div>
         {loading ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <SkeletonLine width={80} height={20} />
-            <SkeletonLine width={100} height={11} />
+            <Skeleton width={80} height={20} />
+            <Skeleton width={100} height={11} />
           </div>
         ) : (
           <>
@@ -634,8 +634,8 @@ function StatCards({
         </div>
         {loading ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <SkeletonLine width={100} height={20} />
-            <SkeletonLine width={80} height={11} />
+            <Skeleton width={100} height={20} />
+            <Skeleton width={80} height={11} />
           </div>
         ) : snapshot ? (
           <>
@@ -761,7 +761,7 @@ export default function Home() {
               {runsLoading ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {[0, 1, 2].map((i) => (
-                    <SkeletonBlock key={i} height={48} style={{ borderRadius: "var(--radius)" }} />
+                    <SkeletonCard key={i} height={48} style={{ borderRadius: "var(--radius)" }} />
                   ))}
                 </div>
               ) : runs.length === 0 ? (
@@ -826,10 +826,10 @@ export default function Home() {
       {loading && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
-            {[0, 1, 2].map((i) => <SkeletonBlock key={i} height={80} style={{ borderRadius: "var(--radius)" }} />)}
+            {[0, 1, 2].map((i) => <SkeletonCard key={i} height={80} style={{ borderRadius: "var(--radius)" }} />)}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            {[0, 1, 2, 3].map((i) => <SkeletonBlock key={i} height={32} style={{ borderRadius: "var(--radius)", width: 100 }} />)}
+            {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} height={32} style={{ borderRadius: "var(--radius)", width: 100 }} />)}
           </div>
         </div>
       )}

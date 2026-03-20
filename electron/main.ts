@@ -304,7 +304,6 @@ function buildMenu() {
         { type: "separator" },
         {
           label: "Open Project...",
-          accelerator: "Cmd+Shift+O",
           click: async () => {
             const result = await dialog.showOpenDialog({
               properties: ["openDirectory"],
@@ -418,7 +417,7 @@ function buildMenu() {
         },
         {
           label: "Source Control",
-          accelerator: "Cmd+Shift+G",
+          accelerator: "Cmd+Shift+H",
           click: () => sendToRenderer("menu:navigate", "/source-control"),
         },
         {

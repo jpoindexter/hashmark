@@ -317,7 +317,7 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
               background: "transparent",
               border: "none",
               outline: "none",
-              color: "#e6edf3",
+              color: "var(--text, #e6edf3)",
               fontSize: 12,
               fontFamily: "var(--font-ui, -apple-system, sans-serif)",
               width: 160,
@@ -346,7 +346,7 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
 const searchBtnStyle: React.CSSProperties = {
   background: "none",
   border: "none",
-  color: "#e6edf3",
+  color: "var(--text, #e6edf3)",
   cursor: "pointer",
   fontSize: 13,
   lineHeight: 1,

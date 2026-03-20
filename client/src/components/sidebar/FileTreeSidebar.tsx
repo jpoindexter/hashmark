@@ -203,6 +203,7 @@ type DialogState =
 
 export default function FileTreeSidebar() {
   const [tree, setTree] = useState<FileNode[]>([]);
+  const [treeRoot, setTreeRoot] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [lastSelectedPath, setLastSelectedPath] = useState<string | null>(null);
@@ -222,14 +223,20 @@ export default function FileTreeSidebar() {
   const refreshTree = useCallback(() => {
     fetch("/api/files/tree")
       .then((r) => r.json())
-      .then((d: { tree?: FileNode[] }) => setTree(d.tree ?? []))
+      .then((d: { tree?: FileNode[]; root?: string }) => {
+        setTree(d.tree ?? []);
+        if (d.root) setTreeRoot(d.root);
+      })
       .catch(() => {});
   }, []);
 
   useEffect(() => {
     fetch("/api/files/tree")
       .then((r) => r.json())
-      .then((d: { tree?: FileNode[] }) => setTree(d.tree ?? []))
+      .then((d: { tree?: FileNode[]; root?: string }) => {
+        setTree(d.tree ?? []);
+        if (d.root) setTreeRoot(d.root);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -489,7 +496,11 @@ export default function FileTreeSidebar() {
       label: "Copy Relative Path",
       icon: <Copy size={12} />,
       onClick: () => {
-        navigator.clipboard.writeText(node.path).catch(() => {});
+        const prefix = treeRoot.endsWith("/") ? treeRoot : treeRoot + "/";
+        const relative = node.path.startsWith(prefix)
+          ? node.path.slice(prefix.length)
+          : node.path;
+        navigator.clipboard.writeText(relative).catch(() => {});
       },
     });
 
@@ -503,7 +514,7 @@ export default function FileTreeSidebar() {
     }
 
     return items;
-  }, [ctxMenu, selectedPaths, handleBulkStage]);
+  }, [ctxMenu, selectedPaths, handleBulkStage, treeRoot]);
 
   const sorted = useMemo(
     () =>
