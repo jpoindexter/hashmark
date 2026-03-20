@@ -18,7 +18,7 @@ async function getHighlighter(): Promise<Highlighter> {
   }
   loading = true;
   highlighter = await createHighlighter({
-    themes: ["github-dark-default"],
+    themes: ["one-dark-pro", "github-light-default"],
     langs: [...SUPPORTED_LANGS],
   });
   loading = false;
@@ -54,16 +54,18 @@ const LANG_MAP: Record<string, string> = {
 export async function highlightCode(
   code: string,
   lang: string,
+  theme?: "dark" | "light",
 ): Promise<string> {
   const h = await getHighlighter();
   const resolvedLang = LANG_MAP[lang] ?? "text";
+  const themeName = theme === "light" ? "github-light-default" : "one-dark-pro";
   try {
     return h.codeToHtml(code, {
       lang: resolvedLang,
-      theme: "github-dark-default",
+      theme: themeName,
     });
   } catch {
-    return h.codeToHtml(code, { lang: "text", theme: "github-dark-default" });
+    return h.codeToHtml(code, { lang: "text", theme: themeName });
   }
 }
 

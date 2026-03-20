@@ -1,7 +1,21 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { FileCode, Copy, Terminal, ClipboardCopy, FolderOpen } from "lucide-react";
 import { highlightCode, getLanguageFromPath } from "../../lib/highlight";
 import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
+
+function useThemeMode(): "dark" | "light" {
+  const [mode, setMode] = useState<"dark" | "light">(
+    () => (document.documentElement.getAttribute("data-theme") as "dark" | "light") || "dark"
+  );
+  useEffect(() => {
+    const handler = (e: Event) => {
+      setMode((e as CustomEvent<string>).detail === "light" ? "light" : "dark");
+    };
+    window.addEventListener("studio:theme-change", handler);
+    return () => window.removeEventListener("studio:theme-change", handler);
+  }, []);
+  return mode;
+}
 
 function restoreSetting<T>(key: string, fallback: T): T {
   try {
@@ -11,6 +25,9 @@ function restoreSetting<T>(key: string, fallback: T): T {
 }
 
 export default function FileContentViewer() {
+  const themeMode = useThemeMode();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const minimapRef = useRef<HTMLDivElement>(null);
   const [filePath, setFilePath] = useState<string | null>(null);
   const [content, setContent] = useState<string>("");
   const [highlightedHtml, setHighlightedHtml] = useState<string>("");
@@ -137,7 +154,7 @@ export default function FileContentViewer() {
     if (!content || !filePath) return;
     let cancelled = false;
     const lang = getLanguageFromPath(filePath);
-    highlightCode(content, lang)
+    highlightCode(content, lang, themeMode)
       .then((html) => {
         if (!cancelled) setHighlightedHtml(html);
       })
@@ -147,7 +164,20 @@ export default function FileContentViewer() {
     return () => {
       cancelled = true;
     };
-  }, [content, filePath]);
+  }, [content, filePath, themeMode]);
+
+  // Minimap scroll sync
+  useEffect(() => {
+    const el = scrollRef.current;
+    const mm = minimapRef.current;
+    if (!el || !mm) return;
+    const onScroll = () => {
+      const ratio = el.scrollTop / (el.scrollHeight - el.clientHeight || 1);
+      mm.scrollTop = ratio * (mm.scrollHeight - mm.clientHeight || 1);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [highlightedHtml]);
 
   if (!filePath) {
     return (
@@ -219,8 +249,10 @@ export default function FileContentViewer() {
         })}
       </div>
 
-      {/* Content — Shiki HTML is generated from source code by a trusted library, safe to render */}
+      {/* Content + Minimap */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
       <div
+        ref={scrollRef}
         onContextMenu={handleContentContextMenu}
         style={{ flex: 1, overflow: "auto", padding: "8px 0" }}
       >
@@ -290,6 +322,36 @@ export default function FileContentViewer() {
             ))}
           </pre>
         )}
+      </div>
+
+      {/* Minimap */}
+      {highlightedHtml && content.split("\n").length > 40 && (
+        <div
+          ref={minimapRef}
+          style={{
+            width: 80,
+            flexShrink: 0,
+            overflow: "hidden",
+            borderLeft: "1px solid var(--border-dim)",
+            opacity: 0.6,
+            cursor: "default",
+            userSelect: "none",
+          }}
+        >
+          <div
+            dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+            style={{
+              transform: "scale(0.15)",
+              transformOrigin: "top left",
+              width: "666%",
+              fontSize: 13,
+              fontFamily: "var(--font)",
+              lineHeight: 1.5,
+              pointerEvents: "none",
+            }}
+          />
+        </div>
+      )}
       </div>
 
       <ContextMenu
