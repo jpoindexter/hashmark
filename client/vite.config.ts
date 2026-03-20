@@ -11,7 +11,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          xterm: ["@xterm/xterm", "@xterm/addon-fit", "@xterm/addon-web-links", "@xterm/addon-search", "xterm"],
+          xterm: ["@xterm/xterm", "@xterm/addon-fit", "@xterm/addon-web-links", "@xterm/addon-search"],
           react: ["react", "react-dom", "react-router-dom"],
           virtualizer: ["@tanstack/react-virtual"],
         },
