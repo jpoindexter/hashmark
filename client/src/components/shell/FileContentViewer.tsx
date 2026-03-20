@@ -156,9 +156,10 @@ export default function FileContentViewer() {
     const lang = getLanguageFromPath(filePath);
     highlightCode(content, lang, themeMode)
       .then((html) => {
-        if (!cancelled) setHighlightedHtml(html);
+        if (!cancelled) setHighlightedHtml(html || "");
       })
-      .catch(() => {
+      .catch((err) => {
+        console.warn("[shiki] highlight failed:", err);
         if (!cancelled) setHighlightedHtml("");
       });
     return () => {
