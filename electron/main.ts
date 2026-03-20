@@ -211,7 +211,7 @@ function createWindow() {
       responseHeaders: {
         ...details.responseHeaders,
         "Content-Security-Policy": [
-          "default-src 'self' http://localhost:*; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' http://localhost:* ws://localhost:*; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com",
+          "default-src 'self' http://localhost:*; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' http://localhost:* ws://localhost:*; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com",
         ],
       },
     });
