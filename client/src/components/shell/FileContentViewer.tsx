@@ -76,7 +76,27 @@ export default function FileContentViewer() {
           }
         },
       },
+      {
+        label: "Find All Occurrences",
+        onClick: () => {
+          const sel = document.getSelection()?.toString();
+          if (sel) {
+            window.dispatchEvent(new CustomEvent("studio:navigate", { detail: "/search" }));
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent("studio:search-query", { detail: sel }));
+            }, 100);
+          }
+        },
+      },
       { label: "", separator: true, onClick: () => {} },
+      {
+        label: "Add File to Chat",
+        onClick: () => {
+          window.dispatchEvent(new CustomEvent("studio:suggest", {
+            detail: { text: `@${relativePath} ` },
+          }));
+        },
+      },
       {
         label: "Open in Terminal",
         icon: <Terminal size={12} />,
