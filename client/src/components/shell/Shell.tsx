@@ -102,7 +102,7 @@ export default function Shell() {
   });
   const [sidebarWidth, setSidebarWidth] = useState(() => restore("sidebarWidth", DEFAULT_SIDEBAR_WIDTH));
   const [termOpen, setTermOpen] = useState(() => restore("termOpen", false));
-  const [termBig, setTermBig] = useState(() => restore("termBig", false));
+  const [termBig, setTermBig] = useState(false); // Never persist - always start normal
   const [splitOpen, setSplitOpen] = useState(() => restore("splitOpen", false));
   const [rightSidebarOpen, setRightSidebarOpen] = useState(() => restore("rightSidebarOpen", false));
   const [rightSidebarWidth, setRightSidebarWidth] = useState(() => restore("rightSidebarWidth", RIGHT_SIDEBAR_DEFAULT_WIDTH));
