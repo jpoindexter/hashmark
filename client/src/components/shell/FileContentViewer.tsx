@@ -87,8 +87,12 @@ export default function FileContentViewer() {
           "editorIndentGuide.activeBackground1": "#30363d",
           "minimap.background": "#0d1117",
           "editorGutter.background": "#0d1117",
-          "scrollbarSlider.background": "rgba(110,118,129,0.3)",
-          "scrollbarSlider.hoverBackground": "rgba(110,118,129,0.5)",
+          "scrollbarSlider.background": "rgba(63,185,80,0.15)",
+          "scrollbarSlider.hoverBackground": "rgba(63,185,80,0.3)",
+          "scrollbarSlider.activeBackground": "rgba(63,185,80,0.4)",
+          "minimapSlider.background": "rgba(63,185,80,0.1)",
+          "minimapSlider.hoverBackground": "rgba(63,185,80,0.2)",
+          "minimapSlider.activeBackground": "rgba(63,185,80,0.3)",
         },
       });
       monaco.editor.defineTheme("hashmark-light", {
