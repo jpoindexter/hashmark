@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback, type CSSProperties } from "react";
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
+import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu";
+import ConfirmDialog from "../shared/ConfirmDialog";
 
 interface ChatSession {
   id: string;
@@ -15,6 +17,11 @@ interface SessionsPanelProps {
   streamingSessionId: string | null;
 }
 
+interface CtxState {
+  items: ContextMenuItem[];
+  position: { x: number; y: number };
+}
+
 const AGENT_COLORS = ["var(--accent)", "var(--blue)", "var(--yellow)", "#c084fc"];
 
 function timeAgo(ts: number): string {
@@ -27,6 +34,26 @@ function timeAgo(ts: number): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+async function renameSession(id: string, title: string) {
+  await fetch(`/api/sessions/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title }),
+  });
+}
+
+async function deleteSession(id: string) {
+  await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+}
+
+async function archiveSession(id: string) {
+  await fetch(`/api/sessions/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ archived: true }),
+  });
+}
+
 export default function SessionsPanel({
   activeSessionId,
   onSessionSelect,
@@ -35,6 +62,11 @@ export default function SessionsPanel({
   streamingSessionId,
 }: SessionsPanelProps) {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [ctxMenu, setCtxMenu] = useState<CtxState | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<ChatSession | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const renameRef = useRef<HTMLInputElement>(null);
 
   const fetchSessions = useCallback(() => {
     fetch("/api/sessions")
@@ -52,6 +84,42 @@ export default function SessionsPanel({
   useEffect(() => {
     if (!streaming) fetchSessions();
   }, [streaming, fetchSessions]);
+
+  useEffect(() => {
+    if (renaming && renameRef.current) {
+      renameRef.current.focus();
+      renameRef.current.select();
+    }
+  }, [renaming]);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, session: ChatSession) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const items: ContextMenuItem[] = [
+      {
+        label: "Rename",
+        onClick: () => { setRenameValue(session.title || ""); setRenaming(session.id); },
+      },
+      {
+        label: "Archive",
+        onClick: () => archiveSession(session.id).then(fetchSessions).catch(() => {}),
+      },
+      { label: "", onClick: () => {}, separator: true },
+      {
+        label: "Delete",
+        danger: true,
+        onClick: () => setConfirmDelete(session),
+      },
+    ];
+    setCtxMenu({ items, position: { x: e.clientX, y: e.clientY } });
+  }, [fetchSessions]);
+
+  const commitRename = useCallback(() => {
+    if (!renaming) return;
+    const trimmed = renameValue.trim();
+    if (trimmed) renameSession(renaming, trimmed).then(fetchSessions).catch(() => {});
+    setRenaming(null);
+  }, [renaming, renameValue, fetchSessions]);
 
   const panel: CSSProperties = {
     width: 196,
@@ -100,10 +168,7 @@ export default function SessionsPanel({
       <div style={{ flex: 1, overflowY: "auto" }}>
         {sessions.length === 0 && (
           <div style={{ padding: "9px 14px", borderBottom: "0.5px solid var(--border-dim)" }}>
-            <div style={{
-              fontFamily: "var(--font)", fontSize: 12,
-              color: "var(--text-dimmer)",
-            }}>
+            <div style={{ fontFamily: "var(--font)", fontSize: 12, color: "var(--text-dimmer)" }}>
               — no active session —
             </div>
           </div>
@@ -113,11 +178,13 @@ export default function SessionsPanel({
           const active = s.id === activeSessionId;
           const isStreaming = s.id === streamingSessionId && streaming;
           const dotCount = Math.min(Math.max(s.message_count || 1, 1), 4);
+          const isRenaming = renaming === s.id;
 
           return (
             <div
               key={s.id}
-              onClick={() => onSessionSelect(s.id)}
+              onClick={() => !isRenaming && onSessionSelect(s.id)}
+              onContextMenu={(e) => handleContextMenu(e, s)}
               style={{
                 padding: "9px 14px",
                 paddingLeft: active ? 12 : 14,
@@ -131,22 +198,37 @@ export default function SessionsPanel({
                 transition: "background 0.1s",
               }}
             >
+              {isRenaming ? (
+                <input
+                  ref={renameRef}
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onBlur={commitRename}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commitRename();
+                    if (e.key === "Escape") setRenaming(null);
+                    e.stopPropagation();
+                  }}
+                  style={{
+                    fontFamily: "var(--font)", fontSize: 12,
+                    color: "var(--text)", background: "var(--bg-4)",
+                    border: "1px solid var(--accent)", borderRadius: "var(--radius-sm)",
+                    padding: "1px 4px", outline: "none", width: "100%",
+                  }}
+                />
+              ) : (
+                <div style={{
+                  fontFamily: "var(--font)", fontSize: 12,
+                  color: active ? "var(--text)" : "var(--text-dim)",
+                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                }}>
+                  {s.title || `session ${i + 1}`}
+                </div>
+              )}
+
               <div style={{
-                fontFamily: "var(--font)",
-                fontSize: 12,
-                color: active ? "var(--text)" : "var(--text-dim)",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}>
-                {s.title || `session ${i + 1}`}
-              </div>
-              <div style={{
-                fontSize: 10,
-                color: "var(--text-dimmer)",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
+                fontSize: 10, color: "var(--text-dimmer)",
+                display: "flex", alignItems: "center", gap: 6,
                 fontFamily: "var(--font)",
               }}>
                 <div style={{ display: "flex", gap: 3 }}>
@@ -154,8 +236,7 @@ export default function SessionsPanel({
                     <div
                       key={di}
                       style={{
-                        width: 5, height: 5,
-                        borderRadius: "50%",
+                        width: 5, height: 5, borderRadius: "50%",
                         background: AGENT_COLORS[di % AGENT_COLORS.length],
                         opacity: isStreaming ? 1 : 0.5,
                         animation: isStreaming && di === 0 ? "pdot 1.5s ease-in-out infinite" : "none",
@@ -169,6 +250,27 @@ export default function SessionsPanel({
           );
         })}
       </div>
+
+      <ContextMenu
+        items={ctxMenu?.items ?? []}
+        position={ctxMenu?.position ?? null}
+        onClose={() => setCtxMenu(null)}
+      />
+
+      {confirmDelete && (
+        <ConfirmDialog
+          open={true}
+          title="Delete session"
+          message={`Delete "${confirmDelete.title || "this session"}"? This can't be undone.`}
+          confirmLabel="Delete"
+          danger
+          onConfirm={() => {
+            deleteSession(confirmDelete.id).then(fetchSessions).catch(() => {});
+            setConfirmDelete(null);
+          }}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
     </div>
   );
 }
