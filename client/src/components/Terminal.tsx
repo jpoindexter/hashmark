@@ -19,15 +19,6 @@ interface TerminalProps {
   onShellIntegration?: () => void;
 }
 
-// OSC 633 sequence subtypes (VSCode shell integration)
-const enum Osc633 {
-  PromptStart  = "A",
-  PromptEnd    = "B",
-  CommandStart = "C",
-  CommandDone  = "D",
-  CommandLine  = "E",
-  Property     = "P",
-}
 
 const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function TerminalPane(
   { tabId, fontSize = 12, onCwdChange, onShellIntegration },
@@ -75,6 +66,34 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
     obs.observe(el);
     return () => obs.disconnect();
   }, [containerReady]);
+
+  // Process OSC 633 shell integration sequences ourselves before writing to xterm.
+  // This prevents xterm's built-in OSC 633 handler from calling registerDecoration
+  // (a proposed API) and throwing errors. We extract CWD and shell integration events
+  // from the raw data stream, then strip the sequences before passing to xterm.
+  const shellIntegrationFiredRef = useRef(false);
+  const processOsc633 = useRef((
+    data: string,
+    onCwdChange?: (cwd: string) => void,
+    onShellIntegration?: () => void,
+  ): string => {
+    return data.replace(/\x1b\]633;([^\x07\x1b]*?)(?:\x07|\x1b\\)/g, (_match, payload: string) => {
+      if (!shellIntegrationFiredRef.current) {
+        shellIntegrationFiredRef.current = true;
+        onShellIntegration?.();
+      }
+      const semi = payload.indexOf(";");
+      const subtype = semi === -1 ? payload : payload.slice(0, semi);
+      const content = semi === -1 ? "" : payload.slice(semi + 1);
+      if (subtype === "P") {
+        const eq = content.indexOf("=");
+        if (eq !== -1 && content.slice(0, eq) === "Cwd" && onCwdChange) {
+          onCwdChange(content.slice(eq + 1));
+        }
+      }
+      return "";
+    });
+  });
 
   useEffect(() => {
     if (!containerRef.current || !containerReady || termRef.current) return;
@@ -131,68 +150,6 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
     fitRef.current   = fit;
     searchRef.current = search;
 
-    // --- VSCode shell integration (OSC 633) ---
-    let commandStartMarker: ReturnType<Terminal["registerMarker"]> | null = null;
-    let shellIntegrationFired = false;
-
-    term.parser.registerOscHandler(633, (data: string) => {
-      if (!shellIntegrationFired) {
-        shellIntegrationFired = true;
-        onShellIntegration?.();
-      }
-      const semi = data.indexOf(";");
-      const subtype = semi === -1 ? data : data.slice(0, semi);
-      const payload = semi === -1 ? "" : data.slice(semi + 1);
-
-      switch (subtype) {
-        case Osc633.CommandStart: {
-          const marker = term.registerMarker(0);
-          if (marker) {
-            commandStartMarker = marker;
-            term.registerDecoration({
-              marker,
-              overviewRulerOptions: { color: "#388bfd88", position: "left" },
-            });
-          }
-          return true;
-        }
-
-        case Osc633.CommandDone: {
-          const exitCode = payload === "" ? 0 : parseInt(payload, 10);
-          const marker = term.registerMarker(0);
-          if (marker) {
-            const color = exitCode === 0 ? "#3fb95066" : "#f8514966";
-            term.registerDecoration({
-              marker,
-              overviewRulerOptions: { color, position: "right" },
-            });
-          }
-          commandStartMarker = null;
-          return true;
-        }
-
-        case Osc633.Property: {
-          const eq = payload.indexOf("=");
-          if (eq === -1) return true;
-          const key = payload.slice(0, eq);
-          const value = payload.slice(eq + 1);
-          if (key === "Cwd" && onCwdChange) {
-            onCwdChange(value);
-          }
-          return true;
-        }
-
-        case Osc633.PromptStart:
-        case Osc633.PromptEnd:
-        case Osc633.CommandLine:
-          return true;
-      }
-
-      return false;
-    });
-
-    void commandStartMarker;
-
     // --- WebSocket connection ---
     const wsUrl = tabId
       ? `ws://localhost:3200/api/terminal/ws?tab=${tabId}`
@@ -205,7 +162,12 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
     };
 
     ws.onmessage = (evt) => {
-      term.write(typeof evt.data === "string" ? evt.data : new Uint8Array(evt.data as ArrayBuffer));
+      if (typeof evt.data === "string") {
+        const filtered = processOsc633.current(evt.data, onCwdChange, onShellIntegration);
+        term.write(filtered);
+      } else {
+        term.write(new Uint8Array(evt.data as ArrayBuffer));
+      }
     };
 
     ws.onclose = () => {
