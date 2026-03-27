@@ -889,156 +889,76 @@ function WelcomeLink({ icon, label, onClick }: { icon: string; label: string; on
   );
 }
 
-function EmptyState({ modelLabel }: { modelLabel: string }) {
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+const DISPATCH_SUGGESTIONS = [
+  "scan this project for design violations",
+  "review recent changes and summarize what changed",
+  "run a full audit — violations, hierarchy, contrast",
+  "fix all spacing token mismatches",
+];
 
-  useEffect(() => {
-    fetch("/api/workspaces")
-      .then(r => r.json())
-      .then((d: { workspaces: Workspace[] }) => setWorkspaces((d.workspaces ?? []).slice(0, 5)))
-      .catch(() => {});
-  }, []);
-
-  const handleStartClick = (item: typeof START_LINKS[number]) => {
-    if (item.action === "new-chat") {
-      window.dispatchEvent(new CustomEvent("studio:suggest", { detail: { text: "" } }));
-    } else if (item.action === "navigate" && item.route) {
-      window.dispatchEvent(new CustomEvent("studio:navigate", { detail: item.route }));
-    }
-  };
-
+function EmptyState({ modelLabel: _modelLabel }: { modelLabel: string }) {
   return (
     <div style={{
       flex: 1,
       display: "flex",
+      flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
+      gap: 28,
+      padding: "0 40px",
       overflow: "auto",
     }}>
       <div style={{
-        width: "100%",
-        maxWidth: 700,
-        padding: "60px 40px",
+        fontFamily: "var(--font)",
+        fontSize: 14,
+        color: "var(--text-dimmer)",
+        letterSpacing: "0.02em",
+      }}>
+        what do you want to build?
+      </div>
+      <div style={{
         display: "flex",
         flexDirection: "column",
-        gap: 0,
+        gap: 5,
+        width: "100%",
+        maxWidth: 440,
       }}>
-        <div style={{ marginBottom: 36 }}>
-          <h1 style={{
-            fontSize: 28,
-            fontWeight: 300,
-            color: "var(--text)",
-            fontFamily: "var(--font-ui)",
-            letterSpacing: "-0.02em",
-            lineHeight: 1.2,
-            margin: 0,
-          }}>
-            hashmark studio
-          </h1>
-          <div style={{
-            fontSize: 13,
-            color: "var(--text-dimmer)",
-            fontFamily: "var(--font-ui)",
-            marginTop: 4,
-          }}>
-            Agent-first development environment
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 48 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 style={{ ...SECTION_HEADING_STYLE, margin: "0 0 12px 0" }}>Start</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 28 }}>
-              {START_LINKS.map(item => (
-                <WelcomeLink
-                  key={item.label}
-                  icon={item.icon}
-                  label={item.label}
-                  onClick={() => handleStartClick(item)}
-                />
-              ))}
-            </div>
-
-            {workspaces.length > 0 && (
-              <>
-                <h2 style={{ ...SECTION_HEADING_STYLE, margin: "0 0 8px 0" }}>Recent</h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                  {workspaces.map(ws => (
-                    <div
-                      key={ws.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "5px 0",
-                        fontSize: 13,
-                        fontFamily: "var(--font-ui)",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => {
-                        fetch("/api/workspaces/switch", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ id: ws.id }),
-                        }).then(() => window.location.reload()).catch(() => {});
-                      }}
-                      onMouseEnter={e => { (e.currentTarget.firstChild as HTMLElement).style.textDecoration = "underline"; }}
-                      onMouseLeave={e => { (e.currentTarget.firstChild as HTMLElement).style.textDecoration = "none"; }}
-                    >
-                      <span style={{ color: "var(--blue, #388bfd)" }}>{ws.name}</span>
-                      <span style={{
-                        fontSize: 11,
-                        color: "var(--text-dimmer)",
-                        fontFamily: "var(--font)",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        maxWidth: 200,
-                        marginLeft: 12,
-                      }}>
-                        {ws.path.replace(/^\/Users\/[^/]+/, "~")}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 style={{ ...SECTION_HEADING_STYLE, margin: "0 0 12px 0" }}>Quick Start</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-              {SUGGESTIONS.map(text => (
-                <button
-                  key={text}
-                  onClick={() => window.dispatchEvent(new CustomEvent("studio:suggest", { detail: { text } }))}
-                  style={{ ...LINK_BTN_STYLE, padding: "5px 0", textAlign: "left", lineHeight: 1.5 }}
-                  onMouseEnter={underlineHover}
-                  onMouseLeave={underlineUnhover}
-                >
-                  {text}
-                </button>
-              ))}
-            </div>
-
-            <div style={{
-              marginTop: 24,
-              padding: "10px 12px",
-              background: "var(--bg-2)",
-              border: "1px solid var(--border-dim)",
-              borderRadius: "var(--radius)",
-              fontSize: 11,
+        {DISPATCH_SUGGESTIONS.map(text => (
+          <button
+            key={text}
+            onClick={() => window.dispatchEvent(new CustomEvent("studio:suggest", { detail: { text } }))}
+            style={{
+              fontSize: 12.5,
               color: "var(--text-dimmer)",
-              fontFamily: "var(--font)",
+              padding: "9px 14px",
+              border: "0.5px solid var(--border-dim)",
+              borderRadius: 7,
+              cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              gap: 6,
-            }}>
-              <span style={{ color: "var(--accent)" }}>{"\u2726"}</span>
-              {modelLabel}
-            </div>
-          </div>
-        </div>
+              gap: 10,
+              transition: "all 0.12s",
+              background: "transparent",
+              fontFamily: "var(--font-ui)",
+              textAlign: "left",
+            }}
+            onMouseEnter={e => {
+              const el = e.currentTarget;
+              el.style.borderColor = "var(--border)";
+              el.style.color = "var(--text-dim)";
+              el.style.background = "var(--bg-2)";
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget;
+              el.style.borderColor = "var(--border-dim)";
+              el.style.color = "var(--text-dimmer)";
+              el.style.background = "transparent";
+            }}
+          >
+            <span style={{ color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 11, flexShrink: 0 }}>→</span>
+            {text}
+          </button>
+        ))}
       </div>
     </div>
   );
