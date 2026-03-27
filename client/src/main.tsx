@@ -3,6 +3,10 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App.tsx";
 import "./index.css";
+import { initTauriBridge } from "./lib/tauri-bridge";
+
+// Must run before window.studio is read below
+initTauriBridge();
 
 // Restore appearance settings before first paint (matches Settings.tsx `studio:` prefix)
 const savedTheme = localStorage.getItem("studio:theme");

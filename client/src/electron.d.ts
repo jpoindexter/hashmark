@@ -1,4 +1,6 @@
 interface Window {
+  // Present in Tauri webviews — used to detect the runtime
+  __TAURI_INTERNALS__?: unknown;
   studio?: {
     showInFinder: (path: string) => Promise<void>;
     openExternal: (url: string) => Promise<void>;
