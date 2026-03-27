@@ -18,7 +18,8 @@
     "electron": "lsof -ti :3200 | xargs kill -9 2>/dev/null; sleep 0.5; electron dist/electron/main.js",
     "electron:dev": "pkill -f 'electron dist/electron/main.js' 2>/dev/null; lsof -ti :3200 | xargs kill -9 2>/dev/null; lsof -ti :3201 | xargs kill -9 2>/dev/null; sleep 0.5; concurrently \"npm run dev:server\" \"npm run dev:electron\" \"npm run dev:client\" \"npx wait-on dist/electron/main.js dist/electron/preload.cjs dist/index.js http://localhost:3201 && NODE_ENV=development electron dist/electron/main.js\"",
     "typecheck": "tsc --noEmit",
-    "tauri:dev": "npm run dev:server & npm run dev:client & npx tauri dev",
+    "build:hono": "tsup bin.ts server/index.ts --format esm --out-dir dist --no-splitting",
+    "tauri:dev": "npm run build:hono && HASHMARK_NO_OPEN=1 node dist/bin.js & npm run dev:client & npx tauri dev",
     "tauri:build": "npm run build:client && npx tauri build",
     "dist": "npm run build && electron-builder",
     "dist:mac": "npm run build && electron-builder --mac"
