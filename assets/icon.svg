@@ -4,11 +4,11 @@
 
   <!-- Hash mark: flat, no glow, no grid -->
   <!-- Vertical bar left -->
-  <rect x="164" y="104" width="36" height="304" rx="3" fill="#10b981"/>
+  <rect x="164" y="104" width="36" height="304" rx="3" fill="#00e87a"/>
   <!-- Vertical bar right -->
-  <rect x="312" y="104" width="36" height="304" rx="3" fill="#10b981"/>
+  <rect x="312" y="104" width="36" height="304" rx="3" fill="#00e87a"/>
   <!-- Horizontal bar top -->
-  <rect x="116" y="186" width="280" height="36" rx="3" fill="#10b981"/>
+  <rect x="116" y="186" width="280" height="36" rx="3" fill="#00e87a"/>
   <!-- Horizontal bar bottom -->
-  <rect x="116" y="290" width="280" height="36" rx="3" fill="#10b981"/>
+  <rect x="116" y="290" width="280" height="36" rx="3" fill="#00e87a"/>
 </svg>

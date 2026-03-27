@@ -1,26 +1,26 @@
 /* Grove design tokens -- hashmark studio */
 
 :root {
-  /* Backgrounds -- neutral dark, no blue tint */
-  --bg:          #111111;
-  --bg-2:        #181818;
-  --bg-3:        #202020;
-  --bg-4:        #282828;
+  /* Backgrounds -- matching mockup palette */
+  --bg:          #0c0c0c;
+  --bg-2:        #111111;
+  --bg-3:        #161616;
+  --bg-4:        #1c1c1c;
 
-  /* Borders -- subtle hints, not hard lines */
-  --border:      rgba(255, 255, 255, 0.09);
-  --border-dim:  rgba(255, 255, 255, 0.05);
+  /* Borders -- subtle, slightly visible */
+  --border:      #252525;
+  --border-dim:  #1e1e1e;
 
-  /* Text -- neutral white, no blue cast */
-  --text:        #f0f0f0;
-  --text-dim:    #909090;
-  --text-dimmer: #505050;
+  /* Text -- warm neutral, matching mockup */
+  --text:        #e8e8e2;
+  --text-dim:    #666660;
+  --text-dimmer: #333330;
 
-  /* Brand (hashmark emerald) */
-  --accent:        #10b981;
-  --accent-dim:    #059669;
-  --accent-bg:     rgba(16, 185, 129, 0.08);
-  --accent-border: rgba(16, 185, 129, 0.2);
+  /* Brand (hashmark neon green -- matches mockup --ca) */
+  --accent:        #00e87a;
+  --accent-dim:    #009950;
+  --accent-bg:     rgba(0, 232, 122, 0.08);
+  --accent-border: rgba(0, 232, 122, 0.2);
 
   /* Color hierarchy:
      --accent (green): primary brand, active states, success, CTA buttons
@@ -93,10 +93,10 @@
   --text-dim:    #666666;
   --text-dimmer: #999999;
 
-  --accent:        #059669;
-  --accent-dim:    #047857;
-  --accent-bg:     rgba(5, 150, 105, 0.08);
-  --accent-border: rgba(5, 150, 105, 0.2);
+  --accent:        #00c463;
+  --accent-dim:    #007a3d;
+  --accent-bg:     rgba(0, 196, 99, 0.08);
+  --accent-border: rgba(0, 196, 99, 0.2);
 
   --blue:     #0969da;
   --blue-bg:  rgba(9, 105, 218, 0.08);
@@ -122,7 +122,7 @@
 
 /* Electron vibrancy -- semi-transparent sidebar/titlebar let macOS blur through */
 [data-electron="true"] {
-  --bg-2: rgba(24, 24, 24, 0.88);
+  --bg-2: rgba(17, 17, 17, 0.88);
 }
 [data-electron="true"][data-theme="light"] {
   --bg-2: rgba(243, 243, 243, 0.88);
