@@ -22,7 +22,6 @@ import SessionsSidebar from "../sidebar/SessionsSidebar";
 import { useProjectInfo } from "../../hooks/useProjectInfo";
 import { useKeyboardNav } from "../../hooks/useKeyboardNav";
 import { useTheme } from "../../hooks/useTheme";
-import FileContentViewer from "./FileContentViewer";
 import RightSidebar, { RightSidebarResize, RIGHT_SIDEBAR_DEFAULT_WIDTH } from "./RightSidebar";
 
 
@@ -36,7 +35,6 @@ function restore<T>(key: string, fallback: T): T {
   } catch { return fallback; }
 }
 
-// Model-to-label + provider mapping for StatusBar display
 const ALL_MODELS: Array<{ id: string; label: string; provider: string }> = [
   { id: "auto", label: "Auto", provider: "Smart Routing" },
   { id: "claude-opus-4-6", label: "Opus 4.6", provider: "Claude" },
@@ -54,6 +52,8 @@ const ALL_MODELS: Array<{ id: string; label: string; provider: string }> = [
 ];
 
 const DEFAULT_SIDEBAR_WIDTH = 240;
+// Width of the persistent chat panel when a page is open on the right
+const CHAT_PANEL_WIDTH = 400;
 
 async function createSession(): Promise<string> {
   const r = await fetch("/api/sessions", {
@@ -85,14 +85,14 @@ export default function Shell() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Derived from route
   const activeView = deriveActiveView(location.pathname);
+  // isHome: chat takes full width (no right panel)
   const isHome = location.pathname === "/" || location.pathname === "/sessions";
+  // showChatBar: chat column visible (hidden on settings/setup)
   const showChatBar =
     !location.pathname.startsWith("/settings") &&
     !location.pathname.startsWith("/setup");
 
-  // Theme -- applies data-theme attribute on <html>, syncs with Settings
   const { toggleTheme } = useTheme();
 
   // Persisted state
@@ -102,7 +102,7 @@ export default function Shell() {
   });
   const [sidebarWidth, setSidebarWidth] = useState(() => restore("sidebarWidth", DEFAULT_SIDEBAR_WIDTH));
   const [termOpen, setTermOpen] = useState(() => restore("termOpen", false));
-  const [termBig, setTermBig] = useState(false); // Never persist - always start normal
+  const [termBig, setTermBig] = useState(false);
   const [splitOpen, setSplitOpen] = useState(() => restore("splitOpen", false));
   const [rightSidebarOpen, setRightSidebarOpen] = useState(() => restore("rightSidebarOpen", false));
   const [rightSidebarWidth, setRightSidebarWidth] = useState(() => restore("rightSidebarWidth", RIGHT_SIDEBAR_DEFAULT_WIDTH));
@@ -116,7 +116,6 @@ export default function Shell() {
     },
   );
 
-  // Toast state
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type: string }>>([]);
 
   // Ephemeral state
@@ -136,7 +135,6 @@ export default function Shell() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [activityBarVisible, setActivityBarVisible] = useState(() => restore("activityBarVisible", true));
 
-  // Hooks
   const onDiffShouldOpen = useCallback(() => setDiffOpen(true), []);
   const { info, git, drift, changedFiles, refreshGit } = useProjectInfo(streaming, onDiffShouldOpen);
 
@@ -150,7 +148,7 @@ export default function Shell() {
     setSidebarOpen,
   });
 
-  // Persist each value independently to avoid writes on unrelated changes
+  // Persist values independently
   useEffect(() => { persist("sidebarOpen", sidebarOpen); }, [sidebarOpen]);
   useEffect(() => { persist("sidebarWidth", sidebarWidth); }, [sidebarWidth]);
   useEffect(() => { persist("termOpen", termOpen); }, [termOpen]);
@@ -166,10 +164,7 @@ export default function Shell() {
     else localStorage.removeItem("studio_active_session_id");
   }, [activeSessionId]);
 
-  // Restore or create session on mount.
-  // If we have a stored session ID from a previous app run, validate it still
-  // exists in the DB (SQLite persists across server restarts). If the session
-  // was deleted or the DB was reset, fall through to creating a new one.
+  // Session restore / create on mount
   const sessionValidated = useRef(false);
   const sessionRetryCount = useRef(0);
   useEffect(() => {
@@ -183,7 +178,6 @@ export default function Shell() {
       fetch(`/api/sessions/${activeSessionId}`)
         .then(r => {
           if (!r.ok) {
-            // Session gone -- clear stale ID, will trigger re-run with null
             setActiveSessionId(null);
             return;
           }
@@ -223,7 +217,7 @@ export default function Shell() {
     }
   }, [activeSessionId]);
 
-  // Session switching via custom event
+  // Session switching
   useEffect(() => {
     const handler = (e: Event) => {
       const id = (e as CustomEvent<string>).detail;
@@ -237,7 +231,7 @@ export default function Shell() {
     return () => window.removeEventListener("studio:switch-session", handler);
   }, []);
 
-  // Navigation via custom event (used by Titlebar PR button)
+  // Navigation via custom event
   useEffect(() => {
     const handler = (e: Event) => {
       const path = (e as CustomEvent<string>).detail;
@@ -247,7 +241,7 @@ export default function Shell() {
     return () => window.removeEventListener("studio:navigate", handler);
   }, [navigate]);
 
-  // Toast listener -- dispatched by git push/pull, agent runs, errors, etc.
+  // Toast listener
   useEffect(() => {
     const handler = (e: Event) => {
       const { message, type } = (e as CustomEvent<{ message: string; type?: string }>).detail;
@@ -259,13 +253,12 @@ export default function Shell() {
     return () => window.removeEventListener("studio:toast", handler);
   }, []);
 
-  // Agent open/run events -- dispatched by sidebar, command palette, etc.
+  // Agent open/run events
   useEffect(() => {
     const openHandler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       const id = typeof detail === "string" ? detail : detail?.id;
       if (!id) return;
-      // Only navigate if not already on agents page (avoids scroll reset)
       if (!location.pathname.startsWith("/agents")) {
         navigate(`/agents?agent=${id}`);
       }
@@ -283,7 +276,6 @@ export default function Shell() {
     };
   }, [navigate, location.pathname]);
 
-  // Command palette + slash command events
   const handleNewSessionRef = useCallback(() => {
     setChatHasMessages(false);
     createSession().then(setActiveSessionId).catch(() => {
@@ -307,7 +299,7 @@ export default function Shell() {
     return () => handlers.forEach(([event, handler]) => window.removeEventListener(event, handler));
   }, [refreshGit, handleNewSessionRef, toggleTheme, activeView]);
 
-  // Plan mode review checkpoint events
+  // Plan mode events
   useEffect(() => {
     const approve = () => {
       setPlanMode(false);
@@ -321,7 +313,6 @@ export default function Shell() {
       }));
     };
     const feedback = () => {
-      // Focus the chat input so user can type feedback
       const ta = document.querySelector("textarea") as HTMLTextAreaElement | null;
       if (ta) {
         ta.focus();
@@ -338,17 +329,18 @@ export default function Shell() {
     };
   }, []);
 
-  // Request notification permission on mount
+  // Request notification permission on first user interaction (browser requires a gesture)
   useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
+    if (!("Notification" in window) || Notification.permission !== "default") return;
+    const handler = () => {
+      Notification.requestPermission().catch(() => {});
+    };
+    window.addEventListener("click", handler, { capture: true, once: true });
+    return () => window.removeEventListener("click", handler, { capture: true });
   }, []);
 
-  // Dock badge: track unread completions while window is not focused
+  // Dock badge
   const unreadCount = useRef(0);
-
-  // Clear unread count + dock badge when window regains focus
   useEffect(() => {
     const unsub = window.studio?.onWindowFocus?.(() => {
       unreadCount.current = 0;
@@ -357,14 +349,13 @@ export default function Shell() {
     return () => { unsub?.(); };
   }, []);
 
-  // Fetch context usage after each chat response completes + OS notification + dock badge
+  // Context fetch + OS notification after streaming ends
   const prevStreaming = useRef(streaming);
   useEffect(() => {
     const wasStreaming = prevStreaming.current;
     prevStreaming.current = streaming;
     if (wasStreaming && !streaming) {
       setChatHasMessages(true);
-      // OS notification + dock badge when agent finishes while app is in background
       if (document.visibilityState !== "visible") {
         if ("Notification" in window && Notification.permission === "granted") {
           new Notification("hashmark studio", {
@@ -375,7 +366,6 @@ export default function Shell() {
         unreadCount.current += 1;
         window.studio?.setDockBadge?.(String(unreadCount.current));
       }
-      // Fetch context usage
       if (activeSessionId) {
         fetch(`/api/sessions/${activeSessionId}/tokens`)
           .then(r => r.json())
@@ -387,7 +377,7 @@ export default function Shell() {
     }
   }, [streaming, activeSessionId]);
 
-  // Sync settings changed from Settings page while Shell is mounted
+  // Settings page sync
   useEffect(() => {
     const handler = (e: Event) => {
       const { key, value } = (e as CustomEvent<{ key: string; value: unknown }>).detail;
@@ -399,7 +389,7 @@ export default function Shell() {
     return () => window.removeEventListener("studio:settings-change", handler);
   }, []);
 
-  // Electron menu events
+  // Native menu events
   useEffect(() => {
     if (typeof window.studio?.onMenu !== "function") return;
     const dispatch = (name: string, detail?: unknown) =>
@@ -423,11 +413,9 @@ export default function Shell() {
       window.studio.onMenu("menu:run-scan", () => navigate("/generate")),
       window.studio.onMenu("menu:start-agent", () => navigate("/run")),
       window.studio.onMenu("menu:stop-agent", () => dispatch("studio:stop-agent")),
-      // Edit menu: find/selection/line operations
       window.studio.onMenu("menu:find", () => setCmdOpen(true)),
       window.studio.onMenu("menu:find-next", () => dispatch("studio:find-next")),
       window.studio.onMenu("menu:find-prev", () => dispatch("studio:find-prev")),
-      // Selection menu: editor selection/line operations
       window.studio.onMenu("menu:expand-selection", () => dispatch("studio:expand-selection")),
       window.studio.onMenu("menu:shrink-selection", () => dispatch("studio:shrink-selection")),
       window.studio.onMenu("menu:copy-line-up", () => dispatch("studio:copy-line-up")),
@@ -435,7 +423,6 @@ export default function Shell() {
       window.studio.onMenu("menu:move-line-up", () => dispatch("studio:move-line-up")),
       window.studio.onMenu("menu:move-line-down", () => dispatch("studio:move-line-down")),
       window.studio.onMenu("menu:about", () => setAboutOpen(true)),
-      // Deep link navigation
       window.studio.onMenu("deep-link:navigate", (p: unknown) => { if (typeof p === "string") navigate(p); }),
       window.studio.onMenu("deep-link:open-project", (dir: unknown) => {
         if (typeof dir === "string") window.studio?.setProjectDir?.(dir);
@@ -451,7 +438,19 @@ export default function Shell() {
   const modelLabel = currentModelEntry?.label;
   const providerName = currentModelEntry?.provider;
 
-  // Render
+  // The chat column: always visible except on settings/setup.
+  // On home it takes full width; on other pages it's a fixed-width left panel.
+  const chatColumnStyle: CSSProperties = isHome
+    ? { display: "flex", flexDirection: "column", flex: 1, overflow: "hidden", minWidth: 0 }
+    : {
+        display: "flex",
+        flexDirection: "column",
+        width: CHAT_PANEL_WIDTH,
+        flexShrink: 0,
+        overflow: "hidden",
+        borderRight: "1px solid var(--border-dim)",
+      };
+
   return (
     <div style={rootStyle}>
       <Titlebar
@@ -469,6 +468,14 @@ export default function Shell() {
         onRefreshGit={refreshGit}
       />
 
+      {/* Drift banner spans full width above the content split */}
+      {drift && !driftDismissed && (
+        <DriftBanner
+          drift={drift}
+          onDismiss={() => { dismissFor24h(); setDriftDismissed(true); }}
+        />
+      )}
+
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
         {activityBarVisible && (
           <ActivityBar
@@ -478,8 +485,8 @@ export default function Shell() {
           />
         )}
 
-        {/* Sidebar shows for chat, files, search, agents (source-control uses full-page layout) */}
-        {["chat", "files", "search", "agents"].includes(activeView) && sidebarOpen && (
+        {/* Sessions sidebar — only when on chat view */}
+        {activeView === "chat" && sidebarOpen && (
           <>
             <SidebarPanel
               activeView={activeView}
@@ -496,7 +503,6 @@ export default function Shell() {
                 />
               }
             />
-
             <SidebarResize
               onResize={setSidebarWidth}
               onReset={handleSidebarReset}
@@ -505,116 +511,107 @@ export default function Shell() {
           </>
         )}
 
-        {/* Main content column */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0, paddingLeft: sidebarOpen ? 1 : 0 }}>
-          {/* Drift banner */}
-          {drift && !driftDismissed && (
-            <DriftBanner
-              drift={drift}
-              onDismiss={() => { dismissFor24h(); setDriftDismissed(true); }}
+        {/* Chat column — persistent left panel */}
+        {showChatBar && (
+          <div style={chatColumnStyle}>
+            {sessionError && (
+              <div style={{ padding: 20, textAlign: "center", color: "var(--red)" }}>
+                <div>Failed to create session</div>
+                <button
+                  onClick={() => {
+                    setSessionError(false);
+                    sessionRetryCount.current = 0;
+                    const attemptCreate = () => {
+                      createSession()
+                        .then(setActiveSessionId)
+                        .catch(() => {
+                          sessionRetryCount.current += 1;
+                          if (sessionRetryCount.current < 3) {
+                            setTimeout(attemptCreate, 2000);
+                          } else {
+                            sessionRetryCount.current = 0;
+                            setSessionError(true);
+                          }
+                        });
+                    };
+                    attemptCreate();
+                  }}
+                  style={{
+                    marginTop: 8, padding: "4px 12px",
+                    background: "var(--bg-3)", border: "1px solid var(--border)",
+                    borderRadius: "var(--radius)", color: "var(--text-dim)", cursor: "pointer",
+                    fontFamily: "var(--font-ui)", fontSize: 12,
+                  }}
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            <ErrorBoundary>
+              <div style={{
+                flex: termBig ? 0 : 1,
+                overflow: "hidden",
+                display: termBig ? "none" : "flex",
+                flexDirection: "column",
+                minHeight: 0,
+              }}>
+                <ChatMessages
+                  sessionId={activeSessionId}
+                  streamText={streamText}
+                  streaming={streaming}
+                  streamingState={streamingState ?? undefined}
+                  modelLabel={modelLabel ?? "Sonnet 4.6"}
+                  planMode={planMode}
+                />
+              </div>
+            </ErrorBoundary>
+
+            <ResizableDrawer open={termOpen} onToggle={() => setTermOpen(v => !v)} defaultHeight={280}>
+              <TerminalPanel
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                termBig={termBig}
+                onToggleBig={() => setTermBig(v => !v)}
+                onClose={() => setTermOpen(false)}
+                onCwdChange={setTerminalCwd}
+              />
+            </ResizableDrawer>
+
+            <ChatInputBar
+              sessionId={activeSessionId}
+              hasMessages={chatHasMessages}
+              onNewSession={handleNewSession}
+              onSessionCreated={setActiveSessionId}
+              onStreamText={setStreamText}
+              onStreamingState={setStreamingState}
+              onStreamingChange={setStreaming}
+              streaming={streaming}
+              terminalCwd={terminalCwd || undefined}
+              selectedModel={selectedModel}
+              thinking={thinking}
+              planMode={planMode}
             />
-          )}
+            <ModelBar
+              selectedModel={selectedModel}
+              onModelChange={setSelectedModel}
+              thinking={thinking}
+              onToggleThinking={() => setThinking(v => !v)}
+              planMode={planMode}
+              onTogglePlan={() => setPlanMode(v => !v)}
+            />
+          </div>
+        )}
 
-          {/* Session error state */}
-          {sessionError && (
-            <div style={{ padding: 20, textAlign: "center", color: "var(--red)" }}>
-              <div>Failed to create session</div>
-              <button
-                onClick={() => {
-                  setSessionError(false);
-                  sessionRetryCount.current = 0;
-                  const attemptCreate = () => {
-                    createSession()
-                      .then(setActiveSessionId)
-                      .catch(() => {
-                        sessionRetryCount.current += 1;
-                        if (sessionRetryCount.current < 3) {
-                          setTimeout(attemptCreate, 2000);
-                        } else {
-                          sessionRetryCount.current = 0;
-                          setSessionError(true);
-                        }
-                      });
-                  };
-                  attemptCreate();
-                }}
-                style={{
-                  marginTop: 8, padding: "4px 12px",
-                  background: "var(--bg-3)", border: "1px solid var(--border)",
-                  borderRadius: "var(--radius)", color: "var(--text-dim)", cursor: "pointer",
-                  fontFamily: "var(--font-ui)", fontSize: 12,
-                }}
-              >
-                Retry
-              </button>
-            </div>
-          )}
-
-          {/* Content area */}
+        {/* Page content — right panel when a sub-page is open */}
+        {!isHome && (
           <ErrorBoundary>
-            <div style={{
-              flex: termBig ? 0 : 1,
-              overflow: "hidden",
-              display: termBig ? "none" : "flex",
-              flexDirection: "column",
-              minHeight: 0,
-            }}>
-              {isHome ? (
-                <ChatMessages sessionId={activeSessionId} streamText={streamText} streaming={streaming} streamingState={streamingState ?? undefined} modelLabel={modelLabel ?? "Sonnet 4.6"} planMode={planMode} />
-              ) : activeView === "files" || activeView === "search" ? (
-                <FileContentViewer />
-              ) : (
-                <ErrorBoundary>
-                  <div style={{ flex: 1, overflow: "auto" }}>
-                    <Outlet />
-                  </div>
-                </ErrorBoundary>
-              )}
+            <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", minWidth: 0 }}>
+              <Outlet />
             </div>
           </ErrorBoundary>
+        )}
 
-          {/* Terminal drawer */}
-          <ResizableDrawer open={termOpen} onToggle={() => setTermOpen(v => !v)} defaultHeight={280}>
-            <TerminalPanel
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              termBig={termBig}
-              onToggleBig={() => setTermBig(v => !v)}
-              onClose={() => setTermOpen(false)}
-              onCwdChange={setTerminalCwd}
-            />
-          </ResizableDrawer>
-
-          {/* Chat bar -- hidden on settings/setup */}
-          {showChatBar && (
-            <>
-              <ChatInputBar
-                sessionId={activeSessionId}
-                hasMessages={chatHasMessages}
-                onNewSession={handleNewSession}
-                onSessionCreated={setActiveSessionId}
-                onStreamText={setStreamText}
-                onStreamingState={setStreamingState}
-                onStreamingChange={setStreaming}
-                streaming={streaming}
-                terminalCwd={terminalCwd || undefined}
-                selectedModel={selectedModel}
-                thinking={thinking}
-                planMode={planMode}
-              />
-              <ModelBar
-                selectedModel={selectedModel}
-                onModelChange={setSelectedModel}
-                thinking={thinking}
-                onToggleThinking={() => setThinking(v => !v)}
-                planMode={planMode}
-                onTogglePlan={() => setPlanMode(v => !v)}
-              />
-            </>
-          )}
-        </div>
-
-        {/* Right sidebar */}
         {rightSidebarOpen && (
           <>
             <RightSidebarResize
@@ -645,7 +642,6 @@ export default function Shell() {
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <DiffDrawer open={diffOpen && activeView !== "source-control"} onClose={() => setDiffOpen(false)} projectDir={info?.projectDir ?? ""} />
 
-      {/* Toast notifications -- positioned above status bar */}
       {toasts.length > 0 && (
         <div style={{
           position: "fixed", bottom: 30, right: 12, zIndex: 9999,

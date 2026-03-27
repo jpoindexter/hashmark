@@ -3,12 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   MessageSquare,
   FolderTree,
-  GitCompare,
-  Search,
   Bot,
-  Play,
-  Zap,
-  Shield,
   Settings,
 } from "lucide-react";
 
@@ -25,15 +20,11 @@ interface NavItem {
   shortcut?: string;
 }
 
+// Four primary nav items — everything else lives in command palette or chat commands
 const topItems: NavItem[] = [
   { path: "/", icon: MessageSquare, label: "Chat" },
-  { path: "/files", icon: FolderTree, label: "Explorer", shortcut: "\u2318\u21E7E" },
-  { path: "/source-control", icon: GitCompare, label: "Source Control", shortcut: "\u2318\u21E7G" },
-  { path: "/search", icon: Search, label: "Search", shortcut: "\u2318\u21E7F" },
   { path: "/agents", icon: Bot, label: "Agents", shortcut: "\u2318\u21E7A" },
-  { path: "/run", icon: Play, label: "Run" },
-  { path: "/generate", icon: Zap, label: "Generate" },
-  { path: "/governance", icon: Shield, label: "Governance" },
+  { path: "/files", icon: FolderTree, label: "Files", shortcut: "\u2318\u21E7E" },
 ];
 
 const bottomItems: NavItem[] = [
@@ -111,7 +102,6 @@ export default function ActivityBar({
   const handleClick = (path: string) => {
     const clickingSameView = isPathActive(path, location.pathname);
 
-    // Settings is a full-page route -- toggle back to chat on re-click
     if (path === "/settings") {
       if (clickingSameView) {
         navigate("/");
@@ -122,11 +112,9 @@ export default function ActivityBar({
     }
 
     if (clickingSameView && sidebarOpen) {
-      // Toggle sidebar closed when clicking the already-active icon
       onToggleSidebar();
     } else {
       navigate(path);
-      // Ensure sidebar is open when switching views
       if (!sidebarOpen) {
         onToggleSidebar();
       }
@@ -135,7 +123,6 @@ export default function ActivityBar({
 
   return (
     <div style={containerStyle}>
-      {/* Top navigation icons */}
       <div style={{ display: "flex", flexDirection: "column" }}>
         {topItems.map((item) => (
           <ActivityItem
@@ -147,7 +134,6 @@ export default function ActivityBar({
         ))}
       </div>
 
-      {/* Bottom utility icons */}
       <div style={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
         {bottomItems.map((item) => (
           <ActivityItem
