@@ -1,3 +1,12 @@
+/* Rail item hover */
+.rail-item:hover { color: var(--text-dim) !important; background: var(--bg-3) !important; }
+
+/* Mission bar pulse animation */
+@keyframes pdot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
 /* Sash resize handle */
 .sash { cursor: col-resize; position: relative; }
 .sash::before {
