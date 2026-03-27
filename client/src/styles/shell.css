@@ -16,7 +16,7 @@
 }
 
 /* Activity bar hover (can't be inline) */
-.activity-item:hover { color: var(--text-dim) !important; background: rgba(255,255,255,0.04); }
+.activity-item:hover { color: var(--text) !important; background: var(--bg-3); }
 
 /* Focus-visible ring for keyboard navigation */
 [role="button"]:focus-visible, [tabindex="0"]:focus-visible {
@@ -38,8 +38,8 @@ button:active:not(:disabled) { transform: scale(0.97); }
 
 /* Light theme overrides -- hover/active states need inverted alpha */
 [data-theme="light"] .activity-item:hover {
-  color: var(--text-dim) !important;
-  background: rgba(0, 0, 0, 0.04);
+  color: var(--text) !important;
+  background: var(--bg-3);
 }
 [data-theme="light"] .sash:hover::before,
 [data-theme="light"] .sash.active::before {

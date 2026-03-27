@@ -1,26 +1,26 @@
 /* Grove design tokens -- hashmark studio */
 
 :root {
-  /* Backgrounds -- darkest to lightest */
-  --bg:          #0d1117;
-  --bg-2:        #161b22;
-  --bg-3:        #1c2128;
-  --bg-4:        #21262d;
+  /* Backgrounds -- neutral dark, no blue tint */
+  --bg:          #111111;
+  --bg-2:        #181818;
+  --bg-3:        #202020;
+  --bg-4:        #282828;
 
-  /* Borders */
-  --border:      #30363d;
-  --border-dim:  #21262d;
+  /* Borders -- subtle hints, not hard lines */
+  --border:      rgba(255, 255, 255, 0.09);
+  --border-dim:  rgba(255, 255, 255, 0.05);
 
-  /* Text */
-  --text:        #e6edf3;
-  --text-dim:    #8b949e;
-  --text-dimmer: #484f58;
+  /* Text -- neutral white, no blue cast */
+  --text:        #f0f0f0;
+  --text-dim:    #909090;
+  --text-dimmer: #505050;
 
-  /* Brand (hashmark green) */
-  --accent:        #3fb950;
-  --accent-dim:    #2ea043;
-  --accent-bg:     rgba(63, 185, 80, 0.08);
-  --accent-border: rgba(63, 185, 80, 0.2);
+  /* Brand (hashmark emerald) */
+  --accent:        #10b981;
+  --accent-dim:    #059669;
+  --accent-bg:     rgba(16, 185, 129, 0.08);
+  --accent-border: rgba(16, 185, 129, 0.2);
 
   /* Color hierarchy:
      --accent (green): primary brand, active states, success, CTA buttons
@@ -52,7 +52,7 @@
 
   /* Spacing constants */
   --titlebar-height:       35px;
-  --activity-bar-width:    48px;
+  --activity-bar-width:    160px;
   --status-bar-height:     22px;
   --sidebar-default-width: 240px;
   --sidebar-min-width:     170px;
@@ -79,24 +79,24 @@
   --transition-status:  0.15s ease-out;
 }
 
-/* GitHub Light Default */
+/* Light */
 [data-theme="light"] {
-  --bg:          #ffffff;
-  --bg-2:        #f6f8fa;
-  --bg-3:        #eaeef2;
-  --bg-4:        #d0d7de;
+  --bg:          #fafafa;
+  --bg-2:        #f3f3f3;
+  --bg-3:        #ebebeb;
+  --bg-4:        #e0e0e0;
 
-  --border:      #d0d7de;
-  --border-dim:  #eaeef2;
+  --border:      rgba(0, 0, 0, 0.08);
+  --border-dim:  rgba(0, 0, 0, 0.04);
 
-  --text:        #1f2328;
-  --text-dim:    #656d76;
-  --text-dimmer: #8b949e;
+  --text:        #111111;
+  --text-dim:    #666666;
+  --text-dimmer: #999999;
 
-  --accent:        #1a7f37;
-  --accent-dim:    #116329;
-  --accent-bg:     rgba(26, 127, 55, 0.08);
-  --accent-border: rgba(26, 127, 55, 0.2);
+  --accent:        #059669;
+  --accent-dim:    #047857;
+  --accent-bg:     rgba(5, 150, 105, 0.08);
+  --accent-border: rgba(5, 150, 105, 0.2);
 
   --blue:     #0969da;
   --blue-bg:  rgba(9, 105, 218, 0.08);
@@ -122,10 +122,10 @@
 
 /* Electron vibrancy -- semi-transparent sidebar/titlebar let macOS blur through */
 [data-electron="true"] {
-  --bg-2: rgba(22, 27, 34, 0.85);
+  --bg-2: rgba(24, 24, 24, 0.88);
 }
 [data-electron="true"][data-theme="light"] {
-  --bg-2: rgba(246, 248, 250, 0.85);
+  --bg-2: rgba(243, 243, 243, 0.88);
 }
 
 /* Compact density overrides */
@@ -136,7 +136,7 @@
   --radius:             3px;
   --radius-sm:          2px;
   --radius-lg:          4px;
-  --activity-bar-width: 40px;
+  --activity-bar-width: 140px;
   --sidebar-default-width: 200px;
   --sidebar-min-width:  140px;
 }
