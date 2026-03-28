@@ -292,6 +292,103 @@ body.flavor-7 .statusbar-ops-logs { display: flex; }
 body.flavor-7 .status-item-briefing { display: none; }
 body.flavor-7 .ops-log-line { text-transform: lowercase; }
 
+/* ─── flavor 8: oxide void ────────────────────────────────────── */
+body.flavor-8 {
+  --bg: #080808;
+  --surface: #0e0e0e;
+  --surface-2: #141414;
+  --border: #1a1a1a;
+  --border-dim: #131313;
+  --text: #e0e0e0;
+  --text-dim: #555;
+  --text-dimmer: #333;
+  --accent: #00d497;
+  --accent-dim: rgba(0,212,151,0.12);
+  --accent-glow: rgba(0,212,151,0.22);
+  --purple: #c58cff;
+  --purple-dim: rgba(197,140,255,0.1);
+  --red: #ff6785;
+  --red-dim: rgba(255,103,133,0.1);
+  --yellow: #febb55;
+  --yellow-dim: rgba(254,187,85,0.1);
+  --rail-bg: #080808;
+  --statusbar-bg: #080808;
+  --running-color: #00d497;
+  --running-border: #00d497;
+  --done-color: #555;
+  --font: "GT America Mono", "JetBrains Mono", monospace;
+  --font-mono: "GT America Mono", "JetBrains Mono", monospace;
+  --radius: 2px;
+  --label-transform: lowercase;
+  --label-spacing: normal;
+  font-family: var(--font);
+}
+
+/* oxide void: teal running badge */
+body.flavor-8 .status-badge.running {
+  background: rgba(0,212,151,0.08);
+  color: #00d497;
+  border-color: rgba(0,212,151,0.2);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+/* oxide void: done badge — grey, square */
+body.flavor-8 .status-badge.done {
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+/* oxide void: running card teal bg ghost */
+body.flavor-8 .mission-card.running {
+  background: rgba(0,212,151,0.02);
+  border-color: rgba(0,212,151,0.12);
+}
+/* oxide void: primary btn — teal on black */
+body.flavor-8 .action-btn.primary {
+  background: rgba(0,212,151,0.08);
+  border-color: rgba(0,212,151,0.25);
+  color: #00d497;
+}
+body.flavor-8 .action-btn.primary:hover {
+  background: rgba(0,212,151,0.14);
+  border-color: rgba(0,212,151,0.4);
+}
+/* oxide void: filled btns — text is dark on teal */
+body.flavor-8 .new-mission-btn,
+body.flavor-8 .audit-btn.filled,
+body.flavor-8 .chat-send-btn { color: #000; }
+/* oxide void: audit finding highlights */
+body.flavor-8 .finding-row.amber .finding-label { color: #febb55; }
+body.flavor-8 .finding-row.red   .finding-label { color: #ff6785; }
+body.flavor-8 .finding-row.green .finding-label { color: #00d497; }
+body.flavor-8 .finding-row.amber .finding-icon { color: #febb55; }
+body.flavor-8 .finding-row.red   .finding-icon { color: #ff6785; }
+body.flavor-8 .finding-row.green .finding-icon { color: #00d497; }
+/* oxide void: structural density — same as void */
+body.flavor-8 .uuid-row { display: block; text-transform: lowercase; letter-spacing: 0.04em; }
+body.flavor-8 .ops-meta-grid { display: grid; }
+body.flavor-8 .ops-meta-item { text-transform: lowercase; letter-spacing: normal; font-size: 10px; }
+body.flavor-8 .ops-meta-val { color: #00d497; font-weight: 600; }
+body.flavor-8 .card-meta { display: none; }
+body.flavor-8 .card-name { text-transform: lowercase; font-size: 11px; letter-spacing: normal; font-weight: 500; }
+body.flavor-8 .session-name { text-transform: lowercase; }
+body.flavor-8 .chat-mission-name { text-transform: lowercase; }
+body.flavor-8 .chat-model-badge { text-transform: lowercase; }
+/* oxide void: ops log stream */
+body.flavor-8 .statusbar-ops-logs { display: flex; }
+body.flavor-8 .status-item-briefing { display: none; }
+body.flavor-8 .ops-log-line { text-transform: lowercase; }
+body.flavor-8 .ops-log-line.highlight { color: #00d497; }
+/* oxide void: rail logo teal */
+body.flavor-8 .rail-logo { color: #00d497; }
+/* oxide void: briefing chip accent */
+body.flavor-8 .briefing-chip { border-color: rgba(0,212,151,0.2); color: #00d497; }
+/* oxide void: terminal cursor teal */
+body.flavor-8 .terminal-line.cursor::after { color: #00d497; }
+
 /* ─── shell ──────────────────────────────────────────────────── */
 .shell {
   display: flex;
@@ -1932,6 +2029,7 @@ body[data-screen="audit"] .topbar-status-strip { display: none !important; }
               <option value="5">5 — GitHub Dark</option>
               <option value="6">6 — Oxide</option>
               <option value="7">7 — Void</option>
+              <option value="8">8 — Oxide Void</option>
             </select>
           </div>
         </div>
@@ -2619,7 +2717,7 @@ body[data-screen="audit"] .topbar-status-strip { display: none !important; }
 
     var isOps   = (n === '2');
     var isOxide = (n === '6');
-    var isVoid  = (n === '7');
+    var isVoid  = (n === '7' || n === '8');
 
     if (isOps || isOxide) {
       newLabel.textContent = '+ NEW MISSION';
