@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchApi } from "../../lib/api";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 interface DetectedCLI {
   id: string;
@@ -17,6 +18,8 @@ interface AboutInfo {
 
 export default function AboutDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [info, setInfo] = useState<AboutInfo | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open);
 
   useEffect(() => {
     if (!open) return;
@@ -93,6 +96,7 @@ export default function AboutDialog({ open, onClose }: { open: boolean; onClose:
       }}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="About hashmark studio"

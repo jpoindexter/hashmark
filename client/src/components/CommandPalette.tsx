@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import { useNavigate } from "react-router-dom";
 import { fetchApi } from "../lib/api";
 import {
@@ -330,6 +331,8 @@ export default function CommandPalette({ open, onClose, mode = "files" }: Props)
   const [symbols, setSymbols] = useState<SymbolItem[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open, true);
 
   // Detect special modes from prefix characters
   const isLineMode = !query.startsWith(">") && query.startsWith(":");
@@ -487,6 +490,7 @@ export default function CommandPalette({ open, onClose, mode = "files" }: Props)
       }}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"

@@ -23,7 +23,7 @@ interface CtxState {
   position: { x: number; y: number };
 }
 
-const AGENT_COLORS = ["var(--accent)", "var(--blue)", "var(--yellow)", "#c084fc"];
+const AGENT_COLORS = ["var(--accent)", "var(--blue)", "var(--yellow)", "var(--purple)"];
 
 function timeAgo(ts: number): string {
   const diff = Date.now() - ts * 1000;
@@ -192,7 +192,17 @@ export default function SessionsPanel({
           return (
             <div
               key={s.id}
+              role="button"
+              tabIndex={0}
+              aria-current={active ? "true" : undefined}
+              aria-label={s.title || `session ${i + 1}`}
               onClick={() => !isRenaming && onSessionSelect(s.id)}
+              onKeyDown={(e) => {
+                if (!isRenaming && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault();
+                  onSessionSelect(s.id);
+                }
+              }}
               onContextMenu={(e) => handleContextMenu(e, s)}
               style={{
                 padding: "9px 14px",
