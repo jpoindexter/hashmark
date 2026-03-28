@@ -800,7 +800,10 @@ export default function Agents() {
                 {secFindings.map((f, i) => (
                   <div
                     key={i}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => { const a = agents.find((ag) => ag.id === f.agentId); if (a) openAgent(a); }}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const a = agents.find((ag) => ag.id === f.agentId); if (a) openAgent(a); } }}
                     style={{
                       padding: "8px 12px",
                       borderBottom: i < secFindings.length - 1 ? "1px solid var(--border-dim)" : "none",

@@ -1016,7 +1016,11 @@ function SessionListItem({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-current={isActive ? "true" : undefined}
       onClick={onSelect}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(); } }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{

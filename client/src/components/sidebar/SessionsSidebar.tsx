@@ -52,23 +52,16 @@ interface SessionsSidebarProps {
   streamingSessionId?: string | null;
 }
 
-// Avatar background colors keyed by first letter
-// Low opacity (0.15) so they read on both dark and light backgrounds
-const AVATAR_COLORS: Record<string, string> = {
-  a: "rgba(139,92,246,0.15)", b: "rgba(59,130,246,0.15)", c: "rgba(16,185,129,0.15)",
-  d: "rgba(245,158,11,0.15)", e: "rgba(239,68,68,0.15)", f: "rgba(6,182,212,0.15)",
-  g: "rgba(236,72,153,0.15)", h: "rgba(139,92,246,0.15)", i: "rgba(59,130,246,0.15)",
-  j: "rgba(16,185,129,0.15)", k: "rgba(245,158,11,0.15)", l: "rgba(239,68,68,0.15)",
-  m: "rgba(6,182,212,0.15)", n: "rgba(236,72,153,0.15)", o: "rgba(139,92,246,0.15)",
-  p: "rgba(59,130,246,0.15)", q: "rgba(16,185,129,0.15)", r: "rgba(245,158,11,0.15)",
-  s: "rgba(239,68,68,0.15)", t: "rgba(6,182,212,0.15)", u: "rgba(236,72,153,0.15)",
-  v: "rgba(139,92,246,0.15)", w: "rgba(59,130,246,0.15)", x: "rgba(16,185,129,0.15)",
-  y: "rgba(245,158,11,0.15)", z: "rgba(239,68,68,0.15)",
-};
+// 4 neutral grey avatar backgrounds using design tokens (theme-safe)
+const AVATAR_BG_VARIANTS = [
+  "var(--surface-muted)",
+  "var(--surface-subtle)",
+  "var(--surface-dim)",
+  "var(--surface-input)",
+];
 
 function avatarBg(name: string): string {
-  const key = name.charAt(0).toLowerCase();
-  return AVATAR_COLORS[key] ?? "var(--avatar-fallback-bg)";
+  return AVATAR_BG_VARIANTS[name.charCodeAt(0) % 4];
 }
 
 function avatarColor(): string {
@@ -271,7 +264,11 @@ function WorkspaceGroup({
   return (
     <div>
       <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
         onClick={() => setExpanded(v => !v)}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(v => !v); } }}
         onContextMenu={onWorkspaceContextMenu}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
@@ -408,7 +405,11 @@ function SessionRow({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-current={active ? "true" : undefined}
       onClick={onClick}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
       onContextMenu={onContextMenu}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}

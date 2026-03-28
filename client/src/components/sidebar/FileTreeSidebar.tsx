@@ -103,7 +103,11 @@ function TreeRow({ node, depth, selectedPaths, gitFiles, onSelect, onContextMenu
   return (
     <>
       <div
+        role="button"
+        tabIndex={0}
+        aria-label={node.name}
         onClick={handleClick}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }}
         onContextMenu={(e) => { e.preventDefault(); onContextMenu(e, node); }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
