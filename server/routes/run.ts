@@ -15,6 +15,7 @@ import { logAgentAction, parseActionsFromOutput } from "../lib/action-log.js";
 import { getDb, getStudioSetting } from "../db.js";
 import { findClaudeBin, buildClaudeArgs } from "../lib/bin-resolver.js";
 import { z } from "zod";
+import { checkUsage, recordInvocation, getUsageStats } from "../lib/claude-usage.js";
 import type { WorkspaceCtx } from "./workspaces.js";
 
 const execFile = promisify(execFileCb);
@@ -81,6 +82,8 @@ export function runRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
 
   app.get("/status", (c) => c.json({ active: activeRun }));
+
+  app.get("/usage", (c) => c.json(getUsageStats()));
 
   // DELETE /api/run — cancel an active run and kill the subprocess
   app.delete("/", (c) => {
@@ -184,6 +187,11 @@ export function runRoutes(ctx: WorkspaceCtx) {
       return c.json({ error: "A run is already in progress" }, 409);
     }
 
+    const usage = checkUsage();
+    if (!usage.allowed) {
+      return c.json({ error: usage.reason, usage: { invocationsThisHour: usage.invocationsThisHour, limit: usage.limit } }, 429);
+    }
+
     const parsed = RunBodySchema.safeParse(await c.req.json().catch(() => ({})));
     if (!parsed.success) {
       return c.json({ error: parsed.error.issues[0]?.message ?? "invalid input" }, 400);
@@ -252,6 +260,7 @@ export function runRoutes(ctx: WorkspaceCtx) {
           if (skipPerms) runEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
 
           let fullOutput = "";
+          recordInvocation();
           await new Promise<void>((resolve) => {
             const proc = spawn(claudeBin, buildClaudeArgs(prompt), {
               cwd: worktreeDir,
