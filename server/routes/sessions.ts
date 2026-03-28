@@ -243,8 +243,8 @@ export function sessionsRoutes(projectDir: string) {
 
     db.prepare(`
       INSERT INTO sessions (id, title, agent_id, agent_name, model, status, total_input_tokens, total_output_tokens, created_at, updated_at)
-      VALUES (?, ?, ?, ?, 'claude', 'idle', 0, 0, ?, ?)
-    `).run(id, body.title ?? "New Session", body.agentId ?? null, body.agentName ?? null, now, now);
+      VALUES (?, ?, ?, ?, ?, 'idle', 0, 0, ?, ?)
+    `).run(id, body.title ?? "New Session", body.agentId ?? null, body.agentName ?? null, body.model ?? '', now, now);
 
     const session = db.prepare("SELECT * FROM sessions WHERE id = ?").get(id);
     return c.json({ session }, 201);
@@ -458,8 +458,10 @@ export function sessionsRoutes(projectDir: string) {
               sessionLastActivity.delete(sessionId);
               markMessagesSent();
               const savedText = fullText.trim() || "[no response]";
-              const msgInputEstimate = Math.ceil(body.message.length / 4);
-              const msgOutputEstimate = Math.ceil(savedText.length / 4);
+              // ~3.5 chars/token is more accurate than /4, especially for code
+              const msgInputEstimate = Math.ceil(body.message.length / 3.5);
+              const msgOutputEstimate = Math.ceil(savedText.length / 3.5);
+              const actualModel = body.model || providersStore.model || "claude";
 
               db.prepare(`
                 INSERT INTO session_messages (id, session_id, role, content, input_tokens, output_tokens, created_at, sent_at)
@@ -469,11 +471,12 @@ export function sessionsRoutes(projectDir: string) {
               db.prepare(`
                 UPDATE sessions
                 SET status = 'idle',
+                    model = ?,
                     total_input_tokens = total_input_tokens + ?,
                     total_output_tokens = total_output_tokens + ?,
                     updated_at = ?
                 WHERE id = ?
-              `).run(msgInputEstimate, msgOutputEstimate, Date.now(), sessionId);
+              `).run(actualModel, msgInputEstimate, msgOutputEstimate, Date.now(), sessionId);
 
               send({ type: "done", success: true });
               controller.close();
