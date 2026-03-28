@@ -3,6 +3,7 @@ import { GitBranch, CheckCircle } from "lucide-react";
 import { DiffViewer } from "./DiffViewer.tsx";
 import { Skeleton } from "./shared/Skeleton.tsx";
 import ConfirmDialog from "./shared/ConfirmDialog.tsx";
+import { fetchApi } from "../lib/api";
 
 interface GitFile {
   status: string;
@@ -246,7 +247,7 @@ export default function SourceControlPage() {
 
   const load = () => {
     setLoading(true);
-    fetch("/api/files/git")
+    fetchApi("/api/files/git")
       .then(r => r.json())
       .then((d: GitData) => {
         setData(d);
@@ -291,7 +292,7 @@ export default function SourceControlPage() {
     setStaging(true);
     setStatusMsg(null);
     try {
-      const r = await fetch("/api/files/stage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      const r = await fetchApi("/api/files/stage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
       const d = await r.json() as { ok?: boolean; error?: string };
       if (d.ok) { showStatus("Staged all changes."); load(); }
       else showStatus(d.error ?? "Stage failed.");
@@ -306,7 +307,7 @@ export default function SourceControlPage() {
     e.stopPropagation();
     setFileLoading(file);
     try {
-      const r = await fetch("/api/files/stage", {
+      const r = await fetchApi("/api/files/stage", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paths: [file] }),
       });
@@ -324,7 +325,7 @@ export default function SourceControlPage() {
     e.stopPropagation();
     setFileLoading(file);
     try {
-      const r = await fetch("/api/files/unstage", {
+      const r = await fetchApi("/api/files/unstage", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paths: [file] }),
       });
@@ -346,7 +347,7 @@ export default function SourceControlPage() {
   const doDiscard = async (file: string, isUntracked: boolean) => {
     setFileLoading(file);
     try {
-      const r = await fetch("/api/files/discard", {
+      const r = await fetchApi("/api/files/discard", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paths: [file] }),
       });
@@ -369,7 +370,7 @@ export default function SourceControlPage() {
     setCommitting(true);
     setStatusMsg(null);
     try {
-      const r = await fetch("/api/files/commit", {
+      const r = await fetchApi("/api/files/commit", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: commitMsg.trim() }),
       });
@@ -393,7 +394,7 @@ export default function SourceControlPage() {
     setPushing(true);
     setStatusMsg(null);
     try {
-      const r = await fetch("/api/files/push", { method: "POST" });
+      const r = await fetchApi("/api/files/push", { method: "POST" });
       const d = await r.json() as { ok?: boolean; error?: string };
       if (d.ok) { showStatus("Pushed!"); load(); }
       else showStatus(d.error ?? "Push failed.");
@@ -408,7 +409,7 @@ export default function SourceControlPage() {
     setPulling(true);
     setStatusMsg(null);
     try {
-      const r = await fetch("/api/files/pull", { method: "POST" });
+      const r = await fetchApi("/api/files/pull", { method: "POST" });
       const d = await r.json() as { ok?: boolean; error?: string };
       if (d.ok) { showStatus("Pulled!"); load(); }
       else showStatus(d.error ?? "Pull failed.");
@@ -423,7 +424,7 @@ export default function SourceControlPage() {
     setFetching(true);
     setStatusMsg(null);
     try {
-      const r = await fetch("/api/files/fetch", { method: "POST" });
+      const r = await fetchApi("/api/files/fetch", { method: "POST" });
       const d = await r.json() as { ok?: boolean; error?: string };
       if (d.ok) { showStatus("Fetched."); load(); }
       else showStatus(d.error ?? "Fetch failed.");
@@ -540,7 +541,7 @@ export default function SourceControlPage() {
                     onToggle={() => setStagedExpanded(v => !v)}
                     onAction={async () => {
                       try {
-                        await fetch("/api/files/unstage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+                        await fetchApi("/api/files/unstage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
                         load();
                       } catch { /* noop */ }
                     }}
@@ -606,7 +607,7 @@ export default function SourceControlPage() {
                     expanded={untrackedExpanded}
                     onToggle={() => setUntrackedExpanded(v => !v)}
                     onAction={() => {
-                      fetch("/api/files/stage", {
+                      fetchApi("/api/files/stage", {
                         method: "POST", headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ paths: untrackedFiles.map(f => f.file) }),
                       }).then(() => load()).catch(() => {});

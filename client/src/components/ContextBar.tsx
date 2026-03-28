@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ChevronUp, ChevronDown, Zap, AlertTriangle } from "lucide-react";
+import { fetchApi } from "../lib/api";
 
 type LoopStatus = "clean" | "watch" | "loop";
 
@@ -56,11 +57,11 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
 
   useEffect(() => {
     if (!sessionId || streaming) return;
-    fetch(`/api/sessions/${sessionId}/tokens`)
+    fetchApi(`/api/sessions/${sessionId}/tokens`)
       .then(r => r.json())
       .then((d: TokenInfo) => setInfo(d))
       .catch(() => {});
-    fetch(`/api/sessions/${sessionId}/loop-analysis`)
+    fetchApi(`/api/sessions/${sessionId}/loop-analysis`)
       .then(r => r.json())
       .then((d: LoopAnalysis) => setLoopAnalysis(d))
       .catch(() => {});

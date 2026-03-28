@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Clock, Plus, RotateCcw, X, GitBranch, Trash2, Eye, EyeOff } from "lucide-react";
 import { DiffPanel } from "./DiffPanel";
 import ConfirmDialog from "./shared/ConfirmDialog.tsx";
+import { fetchApi } from "../lib/api";
 
 interface Checkpoint {
   id: string;
@@ -77,7 +78,7 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
   };
 
   const load = useCallback(() => {
-    fetch("/api/checkpoints")
+    fetchApi("/api/checkpoints")
       .then((r) => r.json())
       .then((d: { checkpoints: Checkpoint[] }) => setCheckpoints(d.checkpoints ?? []))
       .catch(() => {});
@@ -89,7 +90,7 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
     if (saving) return;
     setSaving(true);
     try {
-      const r = await fetch("/api/checkpoints", {
+      const r = await fetchApi("/api/checkpoints", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ label: label.trim() || undefined }),
@@ -111,7 +112,7 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
   const doRestore = async (cp: Checkpoint) => {
     setRestoringId(cp.id);
     try {
-      const r = await fetch(`/api/checkpoints/${encodeURIComponent(cp.id)}/restore`, {
+      const r = await fetchApi(`/api/checkpoints/${encodeURIComponent(cp.id)}/restore`, {
         method: "POST",
       });
       const data = await r.json() as { ok?: boolean; branch?: string; error?: string };
@@ -133,7 +134,7 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
     }
     setLoadingDiffId(cp.id);
     try {
-      const r = await fetch(`/api/checkpoints/${encodeURIComponent(cp.id)}/diff`);
+      const r = await fetchApi(`/api/checkpoints/${encodeURIComponent(cp.id)}/diff`);
       const data = await r.json() as { diff?: string };
       setDiffFor({ id: cp.id, label: cp.label, diff: data.diff ?? "" });
     } catch {
@@ -144,7 +145,7 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
 
   const handleDelete = async (cp: Checkpoint) => {
     try {
-      await fetch(`/api/checkpoints/${encodeURIComponent(cp.id)}`, { method: "DELETE" });
+      await fetchApi(`/api/checkpoints/${encodeURIComponent(cp.id)}`, { method: "DELETE" });
       if (diffFor?.id === cp.id) setDiffFor(null);
       load();
     } catch {}
@@ -157,7 +158,7 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
   const doPrune = async () => {
     setPruning(true);
     try {
-      const r = await fetch("/api/checkpoints/prune", { method: "DELETE" });
+      const r = await fetchApi("/api/checkpoints/prune", { method: "DELETE" });
       const data = await r.json() as { pruned?: number };
       showToast(`Pruned ${data.pruned ?? 0} checkpoint(s)`);
       load();

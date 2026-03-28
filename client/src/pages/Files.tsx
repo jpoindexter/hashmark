@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { CodeViewer } from "../components/CodeViewer";
 import ContextMenu, { type ContextMenuItem } from "../components/shared/ContextMenu.tsx";
+import { fetchApi } from "../lib/api";
 
 interface FileNode {
   name: string;
@@ -249,9 +250,9 @@ export default function FilesPage() {
   const [projectDir, setProjectDir] = useState<string>("");
 
   useEffect(() => {
-    fetch("/api/info").then(r => r.json()).then((d: { projectDir?: string }) => setProjectDir(d.projectDir ?? "")).catch(() => {});
-    fetch("/api/files/tree").then(r => r.json()).then(d => setTree(d.tree ?? [])).catch(() => {});
-    fetch("/api/files/complexity").then(r => r.json()).then(d => {
+    fetchApi("/api/info").then(r => r.json()).then((d: { projectDir?: string }) => setProjectDir(d.projectDir ?? "")).catch(() => {});
+    fetchApi("/api/files/tree").then(r => r.json()).then(d => setTree(d.tree ?? [])).catch(() => {});
+    fetchApi("/api/files/complexity").then(r => r.json()).then(d => {
       if (!d.data) return;
       // data may be an array of FileASTComplexity or a map by path
       const entries: FileComplexity[] = Array.isArray(d.data) ? d.data : Object.values(d.data);
@@ -266,7 +267,7 @@ export default function FilesPage() {
     if (type === "file") {
       setLoading(true);
       setContent(null);
-      fetch(`/api/files/read?path=${encodeURIComponent(path)}`)
+      fetchApi(`/api/files/read?path=${encodeURIComponent(path)}`)
         .then(r => r.json())
         .then(d => setContent(d.content ?? ""))
         .catch(() => setContent("Error loading file."))

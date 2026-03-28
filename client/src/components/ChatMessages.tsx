@@ -4,6 +4,7 @@ import ThinkingBlock from "./chat/ThinkingBlock";
 import ToolCallSummary, { FileBadge, getReadFilePath, categorize } from "./chat/ToolSummary";
 import ContextMenu, { type ContextMenuItem } from "./shared/ContextMenu";
 import ScrollToBottom from "./shared/ScrollToBottom";
+import { fetchApi } from "../lib/api";
 
 const CURSOR_STYLE: React.CSSProperties = {
   display: "inline-block",
@@ -1023,7 +1024,7 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
   const loadMessages = useCallback(async (id: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/sessions/${id}`);
+      const res = await fetchApi(`/api/sessions/${id}`);
       const data = await res.json() as { messages: Message[] };
       const msgs = data.messages ?? [];
       if (msgs.length > 0) {

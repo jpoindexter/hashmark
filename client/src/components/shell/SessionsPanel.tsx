@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
 import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu";
 import ConfirmDialog from "../shared/ConfirmDialog";
+import { fetchApi } from "../../lib/api";
 
 interface ChatSession {
   id: string;
@@ -35,7 +36,7 @@ function timeAgo(ts: number): string {
 }
 
 async function renameSession(id: string, title: string) {
-  await fetch(`/api/sessions/${id}`, {
+  await fetchApi(`/api/sessions/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ title }),
@@ -43,11 +44,11 @@ async function renameSession(id: string, title: string) {
 }
 
 async function deleteSession(id: string) {
-  await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+  await fetchApi(`/api/sessions/${id}`, { method: "DELETE" });
 }
 
 async function archiveSession(id: string) {
-  await fetch(`/api/sessions/${id}`, {
+  await fetchApi(`/api/sessions/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ archived: true }),
@@ -69,7 +70,7 @@ export default function SessionsPanel({
   const renameRef = useRef<HTMLInputElement>(null);
 
   const fetchSessions = useCallback(() => {
-    fetch("/api/sessions")
+    fetchApi("/api/sessions")
       .then((r) => r.json())
       .then((d: { sessions?: ChatSession[] }) => setSessions(d.sessions ?? []))
       .catch(() => {});

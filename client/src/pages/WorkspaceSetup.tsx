@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { fetchApi } from "../lib/api";
 
 interface RecentProject {
   path: string;
@@ -112,7 +113,7 @@ export default function WorkspaceSetup() {
   useEffect(() => {
     if (step !== 3) return;
     const check = () => {
-      fetch("/api/health").then(r => { if (r.ok) setMcpReady(true); }).catch(() => {});
+      fetchApi("/api/health").then(r => { if (r.ok) setMcpReady(true); }).catch(() => {});
     };
     check();
     const id = setInterval(check, 3000);
@@ -122,7 +123,7 @@ export default function WorkspaceSetup() {
   // Check for generated context file when on step 3
   useEffect(() => {
     if (step !== 3) return;
-    fetch("/api/info")
+    fetchApi("/api/info")
       .then(r => r.json())
       .then((d: { configured?: boolean }) => { if (d.configured) setContextGenerated(true); })
       .catch(() => {});
@@ -132,7 +133,7 @@ export default function WorkspaceSetup() {
     setDetecting(true);
     const fallbackName = dirPath.split("/").filter(Boolean).pop() ?? "project";
     try {
-      const res = await fetch("/api/workspace/detect", {
+      const res = await fetchApi("/api/workspace/detect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path: dirPath }),
@@ -165,7 +166,7 @@ export default function WorkspaceSetup() {
 
     // Validate via server
     try {
-      const res = await fetch("/api/workspaces", {
+      const res = await fetchApi("/api/workspaces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path: trimmed }),
@@ -239,11 +240,11 @@ export default function WorkspaceSetup() {
 
     // Activate workspace on the server
     try {
-      const listRes = await fetch("/api/workspaces");
+      const listRes = await fetchApi("/api/workspaces");
       const listData = await listRes.json() as { workspaces: Array<{ id: string; path: string }> };
       const ws = listData.workspaces.find(w => w.path === path);
       if (ws) {
-        await fetch(`/api/workspaces/${ws.id}/activate`, { method: "POST" });
+        await fetchApi(`/api/workspaces/${ws.id}/activate`, { method: "POST" });
       }
     } catch {}
 

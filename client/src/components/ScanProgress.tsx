@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { fetchApi } from "../lib/api";
 
 export interface ScanDeltaEntry {
   prev: number;
@@ -39,7 +40,7 @@ export default function ScanProgress({ onComplete, onError, onCancel }: ScanProg
     const run = async () => {
       let res: Response;
       try {
-        res = await fetch("/api/scan", { method: "POST" });
+        res = await fetchApi("/api/scan", { method: "POST" });
       } catch (e) {
         onError(e instanceof Error ? e.message : "Failed to connect");
         return;

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { DiffPanel } from "../components/DiffPanel.tsx";
+import { fetchApi } from "../lib/api";
 
 interface CommitEntry {
   hash: string;
@@ -266,8 +267,8 @@ export default function GitPage() {
   const load = useCallback(() => {
     setLoading(true);
     Promise.all([
-      fetch("/api/files/git/log").then(r => r.json() as Promise<LogData>),
-      fetch("/api/files/git").then(r => r.json() as Promise<BranchInfo>),
+      fetchApi("/api/files/git/log").then(r => r.json() as Promise<LogData>),
+      fetchApi("/api/files/git").then(r => r.json() as Promise<BranchInfo>),
     ])
       .then(([log, branch]) => {
         setLogData(log);
@@ -297,7 +298,7 @@ export default function GitPage() {
     }
     setActiveDiff({ hash, file, diff: "", loading: true });
     try {
-      const res = await fetch(`/api/files/git/commit-diff?hash=${encodeURIComponent(hash)}&file=${encodeURIComponent(file)}`);
+      const res = await fetchApi(`/api/files/git/commit-diff?hash=${encodeURIComponent(hash)}&file=${encodeURIComponent(file)}`);
       const data = await res.json() as { diff: string; error?: string };
       setActiveDiff({ hash, file, diff: data.diff ?? "", loading: false });
     } catch {

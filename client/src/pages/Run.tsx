@@ -4,6 +4,7 @@ import { DiffPanel } from "../components/DiffPanel.tsx";
 import AgentPicker from "../components/AgentPicker.tsx";
 import { toast } from "../hooks/useToast.ts";
 import { PageShell } from "../components/shared/PageShell.tsx";
+import { fetchApi } from "../lib/api";
 
 interface AgentDef {
   id: string;
@@ -139,7 +140,7 @@ export default function Run() {
   useEffect(() => { resultRef.current = result; }, [result]);
 
   useEffect(() => {
-    fetch("/api/company/agents")
+    fetchApi("/api/company/agents")
       .then((r) => r.json())
       .then((d: { agents: AgentDef[] }) => setAgents(d.agents ?? []))
       .catch(() => {
@@ -189,7 +190,7 @@ export default function Run() {
     setDiff("");
 
     try {
-      const res = await fetch("/api/run", {
+      const res = await fetchApi("/api/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task, agentId: agentId || undefined, mode }),
@@ -296,7 +297,7 @@ export default function Run() {
     setDiffLoading(true);
     setShowDiff(true);
     try {
-      const res = await fetch(`/api/run/runs/${rid}/diff`);
+      const res = await fetchApi(`/api/run/runs/${rid}/diff`);
       const data = await res.json() as { diff: string };
       setDiff(data.diff ?? "");
     } catch {
@@ -308,7 +309,7 @@ export default function Run() {
 
   async function handleCancel() {
     try {
-      await fetch("/api/run", { method: "DELETE" });
+      await fetchApi("/api/run", { method: "DELETE" });
     } catch {}
     setPhase("done");
     setStatus("Cancelled");

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { basename } from "../lib/path.js";
+import { fetchApi } from "../lib/api";
 
 declare global {
   interface Window {
@@ -174,7 +175,7 @@ async function openWorkspace(dir: string): Promise<void> {
   // updates HASHMARK_PROJECT_DIR, and triggers a webContents reload.
   if (typeof window.studio?.setProjectDir === "function") {
     // Register the workspace in the server DB first so the activate flow works
-    const res = await fetch("/api/workspaces", {
+    const res = await fetchApi("/api/workspaces", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path: dir }),
@@ -182,7 +183,7 @@ async function openWorkspace(dir: string): Promise<void> {
     const data = await res.json() as { workspace?: { id: string }; error?: string };
     if (!res.ok) throw new Error(data.error ?? "Failed to open workspace");
     const id = data.workspace!.id;
-    const activateRes = await fetch(`/api/workspaces/${id}/activate`, { method: "POST" });
+    const activateRes = await fetchApi(`/api/workspaces/${id}/activate`, { method: "POST" });
     if (!activateRes.ok) throw new Error("Failed to activate workspace");
 
     // Persist in Electron config and trigger reload from main process
@@ -191,7 +192,7 @@ async function openWorkspace(dir: string): Promise<void> {
   }
 
   // Web mode: register, activate, and reload
-  const res = await fetch("/api/workspaces", {
+  const res = await fetchApi("/api/workspaces", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ path: dir }),
@@ -199,7 +200,7 @@ async function openWorkspace(dir: string): Promise<void> {
   const data = await res.json() as { workspace?: { id: string }; error?: string };
   if (!res.ok) throw new Error(data.error ?? "Failed to open workspace");
   const id = data.workspace!.id;
-  const activateRes = await fetch(`/api/workspaces/${id}/activate`, { method: "POST" });
+  const activateRes = await fetchApi(`/api/workspaces/${id}/activate`, { method: "POST" });
   if (!activateRes.ok) throw new Error("Failed to activate workspace");
   window.location.reload();
 }
@@ -705,7 +706,7 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const loadWorkspaces = useCallback(() => {
-    fetch("/api/workspaces")
+    fetchApi("/api/workspaces")
       .then((r) => r.json())
       .then((d: { workspaces: Workspace[] }) => setWorkspaces(d.workspaces ?? []))
       .catch(() => {});
@@ -754,7 +755,7 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
     setSwitching(id);
     setError(null);
     try {
-      const res = await fetch(`/api/workspaces/${id}/activate`, { method: "POST" });
+      const res = await fetchApi(`/api/workspaces/${id}/activate`, { method: "POST" });
       const d = await res.json() as { ok?: boolean; path?: string; error?: string };
       if (!res.ok) {
         setError(d.error ?? "Failed to switch");
@@ -778,7 +779,7 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
     if (!p) return;
     setError(null);
     try {
-      const res = await fetch("/api/workspaces", {
+      const res = await fetchApi("/api/workspaces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path: p }),
@@ -793,7 +794,7 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
 
   const removeWorkspace = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    await fetch(`/api/workspaces/${id}`, { method: "DELETE" });
+    await fetchApi(`/api/workspaces/${id}`, { method: "DELETE" });
     setWorkspaces((ws) => ws.filter((w) => w.id !== id));
   };
 

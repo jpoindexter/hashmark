@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useReducer, useCallback } from "r
 import { useNavigate } from "react-router-dom";
 import AgentCard from "../components/AgentCard.tsx";
 import ConfirmDialog from "../components/shared/ConfirmDialog.tsx";
+import { fetchApi } from "../lib/api";
 
 type RunStatus = "idle" | "starting" | "running" | "done" | "error" | "stopped" | "interrupted";
 
@@ -109,7 +110,7 @@ export default function Agents() {
     setSecScanRunning(true);
     setSecDismissed(false);
     try {
-      const r = await fetch("/api/agents/security-scan");
+      const r = await fetchApi("/api/agents/security-scan");
       const d = await r.json() as { findings: SecurityFinding[] };
       setSecFindings(d.findings);
     } catch {
@@ -120,7 +121,7 @@ export default function Agents() {
   }
 
   useEffect(() => {
-    fetch("/api/agents")
+    fetchApi("/api/agents")
       .then((r) => r.json())
       .then((d) => setAgents(d.agents ?? []))
       .catch(() => {
@@ -131,7 +132,7 @@ export default function Agents() {
 
   useEffect(() => {
     if (agents.length === 0) return;
-    fetch("/api/agents/effectiveness")
+    fetchApi("/api/agents/effectiveness")
       .then((r) => r.json())
       .then((d: { stats: Array<{ agentId: string; totalRuns: number; successRate: number; lastRun: number | null }> }) => {
         const map: Record<string, AgentStats> = {};
@@ -148,7 +149,7 @@ export default function Agents() {
     setCreating(true);
     const frontmatter = `---\nname: ${createName.trim()}\ndescription: ${createDesc.trim()}\n---\n\n${createTask.trim()}`;
     try {
-      const res = await fetch("/api/agents", {
+      const res = await fetchApi("/api/agents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -165,7 +166,7 @@ export default function Agents() {
     } catch {}
     setShowCreate(false);
     setCreateName(""); setCreateDesc(""); setCreateDept("engineering"); setCreateTask("");
-    fetch("/api/agents")
+    fetchApi("/api/agents")
       .then((r) => r.json())
       .then((d) => setAgents(d.agents ?? []))
       .catch(() => {});
@@ -268,13 +269,13 @@ export default function Agents() {
     if (!pendingDelete) return;
     const agent = pendingDelete;
     setPendingDelete(null);
-    await fetch(`/api/agents/${agent.id}`, { method: "DELETE" }).catch(() => {});
+    await fetchApi(`/api/agents/${agent.id}`, { method: "DELETE" }).catch(() => {});
     setAgents(prev => prev.filter(a => a.id !== agent.id));
     if (selected?.id === agent.id) setSelected(null);
   }
 
   async function duplicateAgent(agent: Agent) {
-    const res = await fetch("/api/agents", {
+    const res = await fetchApi("/api/agents", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -304,7 +305,7 @@ export default function Agents() {
     if (!selected) return;
     setSaving(true);
     try {
-      await fetch(`/api/agents/${selected.id}`, {
+      await fetchApi(`/api/agents/${selected.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: editContent }),
@@ -340,7 +341,7 @@ export default function Agents() {
     setRunMeta({ startedAt });
 
     try {
-      const sessRes = await fetch("/api/sessions", {
+      const sessRes = await fetchApi("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
@@ -348,7 +349,7 @@ export default function Agents() {
       const sessData = await sessRes.json() as { session: { id: string } };
       const sid = sessData.session.id;
 
-      const chatRes = await fetch(`/api/sessions/${sid}/chat`, {
+      const chatRes = await fetchApi(`/api/sessions/${sid}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -562,7 +563,7 @@ export default function Agents() {
   useEffect(() => {
     if (!selected) return;
     setEffectiveness(null);
-    fetch(`/api/agents/${selected.id}/effectiveness`)
+    fetchApi(`/api/agents/${selected.id}/effectiveness`)
       .then(r => r.json())
       .then(d => setEffectiveness(d as EffectivenessData))
       .catch(() => {});

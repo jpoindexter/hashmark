@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Search, X, Trash2, Plus, Download, Archive, Check, Edit2 } from "lucide-react";
 import XTerminal from "../components/XTerminal";
 import { ContextHeatmap } from "../components/ContextHeatmap.tsx";
+import { fetchApi } from "../lib/api";
 
 interface Session {
   id: string;
@@ -241,7 +242,7 @@ export default function Sessions() {
     setSearchLoading(true);
     searchTimerRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/sessions/search?q=${encodeURIComponent(q.trim())}`);
+        const res = await fetchApi(`/api/sessions/search?q=${encodeURIComponent(q.trim())}`);
         const data = await res.json() as { results: SearchResult[] };
         setSearchResults(data.results ?? []);
       } catch {
@@ -288,7 +289,7 @@ export default function Sessions() {
   }, [showArchived]);
 
   useEffect(() => {
-    fetch("/api/sessions/config")
+    fetchApi("/api/sessions/config")
       .then((r) => r.json())
       .then((d: { claudeAvailable: boolean }) => setClaudeAvailable(d.claudeAvailable))
       .catch(() => setClaudeAvailable(false));
@@ -329,7 +330,7 @@ export default function Sessions() {
   }, [editingTitle]);
 
   const loadSession = useCallback(async (id: string) => {
-    const res = await fetch(`/api/sessions/${id}`);
+    const res = await fetchApi(`/api/sessions/${id}`);
     const data = await res.json() as { session: Session; messages: Message[] };
     setActiveSession(data.session);
     setMessages(data.messages ?? []);
@@ -339,7 +340,7 @@ export default function Sessions() {
   }, []);
 
   const createSession = async () => {
-    const res = await fetch("/api/sessions", {
+    const res = await fetchApi("/api/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ model: newModel }),
@@ -350,7 +351,7 @@ export default function Sessions() {
   };
 
   const deleteSession = async (id: string) => {
-    await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+    await fetchApi(`/api/sessions/${id}`, { method: "DELETE" });
     setSessions((prev) => prev.filter((s) => s.id !== id));
     if (activeId === id) {
       setActiveId(null);
@@ -361,7 +362,7 @@ export default function Sessions() {
   };
 
   const archiveSession = async (id: string) => {
-    await fetch(`/api/sessions/${id}`, {
+    await fetchApi(`/api/sessions/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ archived: true }),
@@ -380,7 +381,7 @@ export default function Sessions() {
       return;
     }
     const newTitle = titleDraft.trim();
-    await fetch(`/api/sessions/${activeId}`, {
+    await fetchApi(`/api/sessions/${activeId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: newTitle }),
@@ -445,7 +446,7 @@ export default function Sessions() {
 
     let res: Response;
     try {
-      res = await fetch(`/api/sessions/${activeId}/chat`, {
+      res = await fetchApi(`/api/sessions/${activeId}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -481,7 +482,7 @@ export default function Sessions() {
 
     abortRef.current = () => {
       reader.cancel().catch(() => {});
-      fetch(`/api/sessions/${activeId}/interrupt`, { method: "POST" }).catch(() => {});
+      fetchApi(`/api/sessions/${activeId}/interrupt`, { method: "POST" }).catch(() => {});
     };
 
     try {

@@ -36,6 +36,8 @@ import { workspacesRoutes, type WorkspaceCtx } from "./routes/workspaces.js";
 import { configRoutes } from "./routes/config.js";
 import { sandboxRoutes } from "./routes/sandbox.js";
 import { getDb } from "./db.js";
+import { getStudioToken } from "./lib/studio-token.js";
+import { studioAuthMiddleware } from "./lib/auth-middleware.js";
 
 export interface ServerOptions {
   projectDir: string;
@@ -95,6 +97,12 @@ export function createServer(opts: ServerOptions) {
     c.header("X-Frame-Options", "DENY");
     c.header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; img-src 'self' data: blob:; font-src 'self' data:");
   });
+
+  // Auth token — generated once, persisted to .hashmark/studio.token
+  const studioToken = getStudioToken(ctx.dataDir);
+
+  // Auth middleware — protects all /api/* except /api/health and /api/info
+  app.use("/api/*", studioAuthMiddleware(studioToken));
 
   // Health check — verifies DB write access and claude binary exists
   app.get("/api/health", (c) => {
@@ -198,11 +206,15 @@ export function createServer(opts: ServerOptions) {
     serveStatic({ root: opts.staticDir })
   );
 
-  // SPA fallback
+  // SPA fallback — inject auth token so the client can authenticate API calls
   app.get("*", (c) => {
     const indexPath = join(opts.staticDir, "index.html");
     if (existsSync(indexPath)) {
-      const html = readFileSync(indexPath, "utf-8");
+      const raw = readFileSync(indexPath, "utf-8");
+      const tokenScript = `<script>window.__STUDIO_TOKEN__="${studioToken}"</script>`;
+      const html = raw.includes("</head>")
+        ? raw.replace("</head>", `${tokenScript}</head>`)
+        : tokenScript + raw;
       return c.html(html);
     }
     return c.html(`

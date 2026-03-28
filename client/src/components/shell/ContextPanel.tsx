@@ -1,4 +1,5 @@
 import { useState, useEffect, type CSSProperties } from "react";
+import { fetchApi } from "../../lib/api";
 
 interface Session {
   id: string;
@@ -33,7 +34,7 @@ export default function ContextPanel({ streaming, model = "sonnet 4.6", branch, 
     let cancelled = false;
 
     const load = () => {
-      fetch("/api/sessions")
+      fetchApi("/api/sessions")
         .then(r => r.ok ? r.json() as Promise<{ sessions: Session[] }> : Promise.reject())
         .then(d => { if (!cancelled) setSessions(d.sessions ?? []); })
         .catch(() => {});

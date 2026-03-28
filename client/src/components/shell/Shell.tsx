@@ -17,6 +17,7 @@ import AboutDialog from "../shared/AboutDialog";
 import { useProjectInfo } from "../../hooks/useProjectInfo";
 import { useKeyboardNav } from "../../hooks/useKeyboardNav";
 import { useTheme } from "../../hooks/useTheme";
+import { fetchApi } from "../../lib/api";
 
 function persist(key: string, val: unknown) {
   try { localStorage.setItem(`studio:${key}`, JSON.stringify(val)); } catch { /* noop */ }
@@ -40,7 +41,7 @@ const ALL_MODELS: Array<{ id: string; label: string; provider: string }> = [
 ];
 
 async function createSession(): Promise<string> {
-  const r = await fetch("/api/sessions", {
+  const r = await fetchApi("/api/sessions", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({}),
@@ -113,7 +114,7 @@ export default function Shell() {
       sessionValidated.current = true;
       sessionRetryCount.current = 0;
       setSessionError(false);
-      fetch(`/api/sessions/${activeSessionId}`)
+      fetchApi(`/api/sessions/${activeSessionId}`)
         .then((r) => { if (!r.ok) { setActiveSessionId(null); return; } return r.json(); })
         .then((data: { messages?: unknown[] } | undefined) => {
           if (data?.messages && data.messages.length > 0) setChatHasMessages(true);
@@ -274,7 +275,7 @@ export default function Shell() {
         window.studio?.setDockBadge?.(String(unreadCount.current));
       }
       if (activeSessionId) {
-        fetch(`/api/sessions/${activeSessionId}/tokens`)
+        fetchApi(`/api/sessions/${activeSessionId}/tokens`)
           .then((r) => r.json())
           .then((data: { pct?: number }) => { if (typeof data.pct === "number") setContextPercent(data.pct); })
           .catch(() => {});

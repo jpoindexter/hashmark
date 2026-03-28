@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Shield, Activity, FileText } from "lucide-react";
 import { PageShell } from "../components/shared/PageShell.tsx";
 import { Skeleton, SkeletonCard } from "../components/shared/Skeleton";
+import { fetchApi } from "../lib/api";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -288,13 +289,13 @@ function PolicyDrawer({ policy, onSave, onClose }: PolicyDrawerProps) {
     if (!rules) return;
     setSaving(true);
     if (isEdit) {
-      await fetch(`/api/governance/policies/${policy.id}`, {
+      await fetchApi(`/api/governance/policies/${policy.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, description, scope, rules, enabled }),
       });
     } else {
-      await fetch("/api/governance/policies", {
+      await fetchApi("/api/governance/policies", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, description, scope, rules, enabled }),
@@ -522,7 +523,7 @@ function PoliciesTab() {
 
   const load = useCallback(() => {
     setLoading(true);
-    fetch("/api/governance/policies")
+    fetchApi("/api/governance/policies")
       .then(r => r.json())
       .then((d: { policies: Policy[] }) => setPolicies(d.policies))
       .catch(() => {})
@@ -545,7 +546,7 @@ function PoliciesTab() {
 
   const toggleEnabled = async (p: Policy) => {
     setTogglingId(p.id);
-    await fetch(`/api/governance/policies/${p.id}`, {
+    await fetchApi(`/api/governance/policies/${p.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ enabled: p.enabled === 0 }),
@@ -555,7 +556,7 @@ function PoliciesTab() {
   };
 
   const deletePolicy = async (id: string) => {
-    await fetch(`/api/governance/policies/${id}`, { method: "DELETE" });
+    await fetchApi(`/api/governance/policies/${id}`, { method: "DELETE" });
     load();
   };
 
@@ -757,7 +758,7 @@ function ActionLogTab() {
   const LIMIT = 100;
 
   const loadSummary = useCallback(() => {
-    fetch("/api/governance/summary")
+    fetchApi("/api/governance/summary")
       .then(r => r.json())
       .then((d: Summary) => setSummary(d))
       .catch(() => {});
@@ -767,7 +768,7 @@ function ActionLogTab() {
     setLoading(true);
     const params = new URLSearchParams({ limit: String(LIMIT), offset: String(off) });
     if (outcome) params.set("outcome", outcome);
-    fetch(`/api/governance/actions?${params}`)
+    fetchApi(`/api/governance/actions?${params}`)
       .then(r => r.json())
       .then((d: { actions: AgentAction[]; total: number }) => {
         if (off === 0) setActions(d.actions);
@@ -1160,7 +1161,7 @@ function ActionJournalTab() {
 
   const load = useCallback((off: number) => {
     setLoading(true);
-    fetch(`/api/governance/action-log?limit=${LIMIT}&offset=${off}`)
+    fetchApi(`/api/governance/action-log?limit=${LIMIT}&offset=${off}`)
       .then(r => r.json())
       .then((d: { events: JournalEvent[]; total: number }) => {
         if (off === 0) setEvents(d.events);

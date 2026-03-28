@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { fetchApi } from "../lib/api";
 
 export interface ProjectInfo {
   projectName: string;
@@ -58,19 +59,19 @@ export function useProjectInfo(
   const [drift, setDrift] = useState<DriftResult | null>(null);
 
   const fetchAll = useCallback(() => {
-    fetch("/api/info")
+    fetchApi("/api/info")
       .then(r => r.json())
       .then(setInfo)
       .catch(() => {
         window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load project info", type: "error" } }));
       });
-    fetch("/api/files/git")
+    fetchApi("/api/files/git")
       .then(r => r.json())
       .then(setGit)
       .catch(() => {
         window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load git status", type: "error" } }));
       });
-    fetch("/api/drift/check")
+    fetchApi("/api/drift/check")
       .then(r => r.json())
       .then((d: DriftResponse) => {
         if (d.hasContextFile && d.driftLevel !== "none") setDrift(d);
@@ -93,7 +94,7 @@ export function useProjectInfo(
   const prevStreamingRef = useRef(false);
   useEffect(() => {
     if (!streaming) {
-      fetch("/api/files/git")
+      fetchApi("/api/files/git")
         .then(r => r.json())
         .then((data: GitStatus) => {
           setGit(data);
@@ -107,7 +108,7 @@ export function useProjectInfo(
     }
     prevStreamingRef.current = true;
     const id = setInterval(() => {
-      fetch("/api/files/git")
+      fetchApi("/api/files/git")
         .then(r => r.json())
         .then((data: GitStatus) => setGit(data))
         .catch(() => {});
@@ -116,7 +117,7 @@ export function useProjectInfo(
   }, [streaming, onDiffShouldOpen]);
 
   const refreshGit = useCallback(() => {
-    fetch("/api/files/git")
+    fetchApi("/api/files/git")
       .then(r => r.json())
       .then(setGit)
       .catch(() => {});

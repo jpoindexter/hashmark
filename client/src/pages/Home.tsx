@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { fetchApi } from "../lib/api";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -187,7 +188,7 @@ function DispatchModal({ onClose, onDispatched }: {
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch("/api/sessions", {
+      const r = await fetchApi("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: title.trim() || undefined }),
@@ -356,7 +357,7 @@ function ProjectHeader({ info }: { info: ProjectInfo | null }) {
     void s.pickFolder().then((dir) => {
       if (!dir) return; // user cancelled
       // Register workspace on server so ctx.projectDir updates before the reload
-      void fetch("/api/workspaces", {
+      void fetchApi("/api/workspaces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path: dir }),
@@ -364,7 +365,7 @@ function ProjectHeader({ info }: { info: ProjectInfo | null }) {
         .then((r) => r.json() as Promise<{ workspace?: { id: string } }>)
         .then(({ workspace }) => {
           if (workspace?.id) {
-            return fetch(`/api/workspaces/${workspace.id}/activate`, { method: "POST" });
+            return fetchApi(`/api/workspaces/${workspace.id}/activate`, { method: "POST" });
           }
         })
         .catch(() => {})
@@ -455,14 +456,14 @@ export default function Home() {
   const [projectInfo, setProjectInfo] = useState<ProjectInfo | null>(null);
 
   useEffect(() => {
-    fetch("/api/info")
+    fetchApi("/api/info")
       .then((r) => r.json())
       .then((d: ProjectInfo) => setProjectInfo(d))
       .catch(() => {});
   }, []);
 
   const fetchMissions = useCallback(() => {
-    fetch("/api/sessions")
+    fetchApi("/api/sessions")
       .then((r) => r.json())
       .then((d: { sessions?: Mission[] }) => {
         setMissions((d.sessions ?? []).filter((s) => s.message_count > 0));
@@ -492,7 +493,7 @@ export default function Home() {
   };
 
   const stopMission = (sessionId: string) => {
-    fetch(`/api/sessions/${sessionId}/interrupt`, { method: "POST" }).catch(() => {});
+    fetchApi(`/api/sessions/${sessionId}/interrupt`, { method: "POST" }).catch(() => {});
     setRunningId(null);
   };
 

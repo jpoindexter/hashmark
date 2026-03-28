@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+import { fetchApi } from "../lib/api";
   Home, FolderTree, GitBranch, Bot, Settings,
   Plus, TerminalSquare, FolderOpen, Sun,
   Play, FileText, Shield, Brain, Layout, RefreshCw, Columns,
@@ -266,7 +267,7 @@ let fileFetchPromise: Promise<FileItem[]> | null = null;
 function fetchFileList(): Promise<FileItem[]> {
   if (fileCache) return Promise.resolve(fileCache);
   if (fileFetchPromise) return fileFetchPromise;
-  fileFetchPromise = fetch("/api/files/list")
+  fileFetchPromise = fetchApi("/api/files/list")
     .then(r => r.json())
     .then((d: { files?: FileItem[] }) => {
       fileCache = d.files ?? [];
@@ -294,7 +295,7 @@ let symbolCache: Map<string, SymbolItem[]> = new Map();
 
 function fetchSymbols(filepath: string): Promise<SymbolItem[]> {
   if (symbolCache.has(filepath)) return Promise.resolve(symbolCache.get(filepath)!);
-  return fetch(`/api/files/symbols?path=${encodeURIComponent(filepath)}`)
+  return fetchApi(`/api/files/symbols?path=${encodeURIComponent(filepath)}`)
     .then(r => r.json())
     .then((d: { symbols?: SymbolItem[] }) => {
       const syms = d.symbols ?? [];

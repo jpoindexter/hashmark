@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import ScanProgress, { type ScanResult, type ScanDelta } from "../components/ScanProgress.tsx";
 import { toast } from "../hooks/useToast.ts";
 import { PageShell } from "../components/shared/PageShell.tsx";
+import { fetchApi } from "../lib/api";
 
 const ALL_FORMATS = [
   { id: "CLAUDE.md",            label: "CLAUDE.md",            hint: "Anthropic Claude" },
@@ -107,10 +108,10 @@ export default function Generate() {
   // Load all initial data in parallel
   useEffect(() => {
     void Promise.all([
-      fetch("/api/info").then(r => r.json() as Promise<ProjectInfo>).then(setInfo).catch(() => {}),
-      fetch("/api/scan/staleness").then(r => r.json() as Promise<StalenessInfo>).then(setStaleness).catch(() => {}),
-      fetch("/api/scan/history").then(r => r.json() as Promise<ScanHistory>).then(setHistory).catch(() => {}),
-      fetch("/api/config").then(r => r.json() as Promise<ScanConfig>).then(cfg => {
+      fetchApi("/api/info").then(r => r.json() as Promise<ProjectInfo>).then(setInfo).catch(() => {}),
+      fetchApi("/api/scan/staleness").then(r => r.json() as Promise<StalenessInfo>).then(setStaleness).catch(() => {}),
+      fetchApi("/api/scan/history").then(r => r.json() as Promise<ScanHistory>).then(setHistory).catch(() => {}),
+      fetchApi("/api/config").then(r => r.json() as Promise<ScanConfig>).then(cfg => {
         setConfig(cfg);
         if (cfg.formats?.length) setSelectedFormats(new Set(cfg.formats));
         if (cfg.maxTokens && cfg.maxTokens !== 100000) setMaxTokens(String(cfg.maxTokens));
@@ -155,8 +156,8 @@ export default function Generate() {
     setScanDelta(delta);
     setPageState("done");
     // Re-fetch freshness + history
-    void fetch("/api/scan/staleness").then(r => r.json() as Promise<StalenessInfo>).then(setStaleness).catch(() => {});
-    void fetch("/api/scan/history").then(r => r.json() as Promise<ScanHistory>).then(setHistory).catch(() => {});
+    void fetchApi("/api/scan/staleness").then(r => r.json() as Promise<StalenessInfo>).then(setStaleness).catch(() => {});
+    void fetchApi("/api/scan/history").then(r => r.json() as Promise<ScanHistory>).then(setHistory).catch(() => {});
 
     const generated = result.generatedFiles as Array<{ fileName?: string; tokenCount?: number }> | undefined;
     const totalTokens = Array.isArray(generated)

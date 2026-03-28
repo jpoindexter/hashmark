@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowUp, Square, Plus, X, Mic } from "lucide-react";
+import { fetchApi } from "../lib/api";
 
 const PICKER_CONTAINER_STYLE: React.CSSProperties = {
   position: "absolute",
@@ -157,7 +158,7 @@ function useSlashCommands(onNewSession: () => void, onTogglePlan: () => void, on
   const [customCmds, setCustomCmds] = useState<SlashCommand[]>([]);
 
   useEffect(() => {
-    fetch("/api/agents")
+    fetchApi("/api/agents")
       .then(r => r.json())
       .then((d: { agents?: Array<{ id: string; name: string; description: string }> }) => {
         const agents = d.agents ?? [];
@@ -266,7 +267,7 @@ interface FileEntry {
 function useMentionFiles() {
   const [files, setFiles] = useState<FileEntry[]>([]);
   useEffect(() => {
-    fetch("/api/files/list")
+    fetchApi("/api/files/list")
       .then(r => r.json())
       .then((d: { files?: FileEntry[] }) => setFiles(d.files ?? []))
       .catch(() => {});
@@ -362,7 +363,7 @@ function useAgentSuggestion(query: string, currentFile?: string) {
     timerRef.current = setTimeout(() => {
       const params = new URLSearchParams({ q: trimmed });
       if (currentFile) params.set("file", currentFile);
-      fetch(`/api/agents/route?${params}`)
+      fetchApi(`/api/agents/route?${params}`)
         .then(r => { if (!r.ok) return; return r.json(); })
         .then((d: { suggestions?: AgentSuggestion[] } | undefined) => {
           if (!d) return;
@@ -518,7 +519,7 @@ export default function ChatInputBar({
       }
     } catch { /* noop */ }
 
-    fetch(`/api/sessions/${sessionId}/pending`)
+    fetchApi(`/api/sessions/${sessionId}/pending`)
       .then(r => r.json())
       .then((d: { hasPending: boolean; message: string | null }) => {
         setPendingMessage(d.hasPending ? d.message : null);
@@ -734,7 +735,7 @@ export default function ChatInputBar({
     let sid = sessionId;
     if (!sid) {
       try {
-        const res = await fetch("/api/sessions", {
+        const res = await fetchApi("/api/sessions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({}),
@@ -766,7 +767,7 @@ export default function ChatInputBar({
 
     let res: Response;
     try {
-      res = await fetch(`/api/sessions/${sid}/chat`, {
+      res = await fetchApi(`/api/sessions/${sid}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -808,7 +809,7 @@ export default function ChatInputBar({
 
     abortRef.current = () => {
       reader.cancel().catch(() => {});
-      fetch(`/api/sessions/${sid}/interrupt`, { method: "POST" }).catch(() => {});
+      fetchApi(`/api/sessions/${sid}/interrupt`, { method: "POST" }).catch(() => {});
     };
 
     type SBlock = import("./ChatMessages").ContentBlock;

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Skeleton, SkeletonCard } from "../components/shared/Skeleton.tsx";
+import { fetchApi } from "../lib/api";
 
 interface InfoData {
   projectName: string;
@@ -136,7 +137,7 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
   const [saving, setSaving] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/providers")
+    fetchApi("/api/providers")
       .then(r => r.json())
       .then((d: ProvidersData) => setData(d))
       .catch(() => {});
@@ -144,7 +145,7 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
 
   function loadModels(id: string) {
     if (models[id]) return;
-    fetch(`/api/providers/models/${id}`)
+    fetchApi(`/api/providers/models/${id}`)
       .then(r => r.json())
       .then((d: { models: string[] }) => setModels(prev => ({ ...prev, [id]: d.models ?? [] })))
       .catch(() => {});
@@ -160,7 +161,7 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
     const key = keyInputs[providerId] ?? "";
     setSaving(providerId);
     try {
-      await fetch(`/api/providers/${providerId}/key`, {
+      await fetchApi(`/api/providers/${providerId}/key`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ apiKey: key }),
@@ -185,7 +186,7 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
     if (!url) return;
     setSaving(providerId);
     try {
-      await fetch(`/api/providers/${providerId}/baseUrl`, {
+      await fetchApi(`/api/providers/${providerId}/baseUrl`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ baseUrl: url }),
@@ -208,7 +209,7 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
     if (!data) return;
     const provModels = models[providerId] ?? [];
     const chosenModel = model ?? provModels[0] ?? data.model;
-    await fetch("/api/providers/active", {
+    await fetchApi("/api/providers/active", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ providerId, model: chosenModel }),
@@ -219,7 +220,7 @@ function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
   async function testConnection(providerId: string) {
     setTestStatus(prev => ({ ...prev, [providerId]: "testing" }));
     try {
-      const res = await fetch(`/api/providers/models/${providerId}`);
+      const res = await fetchApi(`/api/providers/models/${providerId}`);
       const d = await res.json() as { models?: string[]; error?: string };
       if (d.models && d.models.length > 0) {
         setModels(prev => ({ ...prev, [providerId]: d.models! }));
@@ -472,7 +473,7 @@ function ScanConfigPanel() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    fetch("/api/config")
+    fetchApi("/api/config")
       .then(r => r.json())
       .then((d: ScanConfig) => setConfig(d))
       .catch(() => {});
@@ -496,7 +497,7 @@ function ScanConfigPanel() {
     if (!config) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/config", {
+      const res = await fetchApi("/api/config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),
@@ -702,12 +703,12 @@ export default function Settings() {
   useEffect(() => { persist("beta_features", betaFeatures); dispatch("beta_features", betaFeatures); }, [betaFeatures]);
 
   useEffect(() => {
-    fetch("/api/info").then(r => r.json()).then(setInfo).catch(() => {
+    fetchApi("/api/info").then(r => r.json()).then(setInfo).catch(() => {
       window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load project info", type: "error" } }));
     });
-    fetch("/api/mcp/config").then(r => r.json()).then(setMcpConfig).catch(() => {});
-    fetch("/api/settings/env").then(r => r.json()).then((d: { vars: EnvVar[] }) => setEnvVars(d.vars ?? [])).catch(() => {});
-    fetch("/api/providers/detect").then(r => r.json()).then((d: { providers: DetectedCLI[] }) => setDetectedCLIs(d.providers ?? [])).catch(() => {
+    fetchApi("/api/mcp/config").then(r => r.json()).then(setMcpConfig).catch(() => {});
+    fetchApi("/api/settings/env").then(r => r.json()).then((d: { vars: EnvVar[] }) => setEnvVars(d.vars ?? [])).catch(() => {});
+    fetchApi("/api/providers/detect").then(r => r.json()).then((d: { providers: DetectedCLI[] }) => setDetectedCLIs(d.providers ?? [])).catch(() => {
       window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to detect providers", type: "error" } }));
     });
   }, []);

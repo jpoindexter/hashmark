@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Bot, Play, FileText } from "lucide-react";
+import { fetchApi } from "../../lib/api";
 
 interface AgentDetail {
   id: string;
@@ -22,7 +23,7 @@ export default function AgentDetailViewer() {
       if (id) {
         setAgentId(id);
         setLoading(true);
-        fetch(`/api/agents/${encodeURIComponent(id)}`)
+        fetchApi(`/api/agents/${encodeURIComponent(id)}`)
           .then(r => r.json())
           .then((d: { agent?: AgentDetail }) => { setAgent(d.agent ?? null); setLoading(false); })
           .catch(() => setLoading(false));

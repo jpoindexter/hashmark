@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { toast } from "../hooks/useToast.ts";
 import { PageShell } from "../components/shared/PageShell.tsx";
+import { fetchApi, apiUrl } from "../lib/api";
 
 interface AgentDef {
   id: string;
@@ -57,7 +58,7 @@ export default function Swarm() {
   const esRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    fetch("/api/company/agents")
+    fetchApi("/api/company/agents")
       .then((r) => r.json())
       .then((d: { agents: AgentDef[] }) => setAvailableAgents(d.agents ?? []))
       .catch(() => {});
@@ -72,7 +73,7 @@ export default function Swarm() {
   }, [agents, phase]);
 
   const connectStream = useCallback((id: string) => {
-    const es = new EventSource(`/api/swarm/${id}/stream`);
+    const es = new EventSource(apiUrl(`/api/swarm/${id}/stream`));
     esRef.current = es;
 
     es.onmessage = (ev) => {
@@ -137,7 +138,7 @@ export default function Swarm() {
     setAgents([]);
 
     try {
-      const res = await fetch("/api/swarm", {
+      const res = await fetchApi("/api/swarm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -182,7 +183,7 @@ export default function Swarm() {
   async function handleCancel() {
     if (!swarmId) return;
     try {
-      await fetch(`/api/swarm/${swarmId}`, { method: "DELETE" });
+      await fetchApi(`/api/swarm/${swarmId}`, { method: "DELETE" });
     } catch {}
     esRef.current?.close();
     setPhase("done");

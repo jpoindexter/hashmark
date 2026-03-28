@@ -7,6 +7,7 @@ import {
 import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
 import ConfirmDialog from "../shared/ConfirmDialog.tsx";
 import { Skeleton } from "../shared/Skeleton.tsx";
+import { fetchApi } from "../../lib/api";
 
 interface FileNode {
   name: string;
@@ -221,7 +222,7 @@ export default function FileTreeSidebar() {
   }, [tree]);
 
   const refreshTree = useCallback(() => {
-    fetch("/api/files/tree")
+    fetchApi("/api/files/tree")
       .then((r) => r.json())
       .then((d: { tree?: FileNode[]; root?: string }) => {
         setTree(d.tree ?? []);
@@ -233,7 +234,7 @@ export default function FileTreeSidebar() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/files/tree")
+    fetchApi("/api/files/tree")
       .then((r) => r.json())
       .then((d: { tree?: FileNode[]; root?: string }) => {
         setTree(d.tree ?? []);
@@ -246,7 +247,7 @@ export default function FileTreeSidebar() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/files/git")
+    fetchApi("/api/files/git")
       .then((r) => r.json())
       .then((d: { files?: Array<{ path: string; status: string }> }) => {
         const map: Record<string, string> = {};
@@ -318,7 +319,7 @@ export default function FileTreeSidebar() {
     if (!dialog || dialog.kind !== "new-file") return;
     const path = dialog.dir ? `${dialog.dir}/${name}` : name;
     try {
-      const res = await fetch("/api/files/create", {
+      const res = await fetchApi("/api/files/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path, type: "file" }),
@@ -339,7 +340,7 @@ export default function FileTreeSidebar() {
     if (!dialog || dialog.kind !== "new-folder") return;
     const path = dialog.dir ? `${dialog.dir}/${name}` : name;
     try {
-      const res = await fetch("/api/files/create", {
+      const res = await fetchApi("/api/files/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path, type: "dir" }),
@@ -355,7 +356,7 @@ export default function FileTreeSidebar() {
     parts[parts.length - 1] = newName;
     const newPath = parts.join("/");
     try {
-      const res = await fetch("/api/files/rename", {
+      const res = await fetchApi("/api/files/rename", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ oldPath: dialog.oldPath, newPath }),
@@ -369,7 +370,7 @@ export default function FileTreeSidebar() {
     if (!dialog) return;
     if (dialog.kind === "delete") {
       try {
-        const res = await fetch(`/api/files/delete?path=${encodeURIComponent(dialog.path)}`, {
+        const res = await fetchApi(`/api/files/delete?path=${encodeURIComponent(dialog.path)}`, {
           method: "DELETE",
         });
         if (res.ok) {
@@ -384,7 +385,7 @@ export default function FileTreeSidebar() {
     } else if (dialog.kind === "delete-bulk") {
       for (const p of dialog.paths) {
         try {
-          await fetch(`/api/files/delete?path=${encodeURIComponent(p)}`, {
+          await fetchApi(`/api/files/delete?path=${encodeURIComponent(p)}`, {
             method: "DELETE",
           });
         } catch { /* ignore */ }
@@ -398,7 +399,7 @@ export default function FileTreeSidebar() {
 
   const handleBulkStage = useCallback(async (paths: string[]) => {
     try {
-      await fetch("/api/git/stage", {
+      await fetchApi("/api/git/stage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ files: paths }),

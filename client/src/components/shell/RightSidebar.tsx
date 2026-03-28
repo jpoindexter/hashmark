@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef, type CSSProperties } from "react";
 import {
+import { fetchApi } from "../../lib/api";
   FolderTree, GitCompare, ShieldCheck,
   ChevronRight, ChevronDown, Folder, FileCode, FileText,
   CheckCircle,
@@ -160,7 +161,7 @@ function FilesTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/files/tree")
+    fetchApi("/api/files/tree")
       .then((r) => r.json())
       .then((d: { tree?: FileNode[] }) => setTree(d.tree ?? []))
       .catch(() => {})

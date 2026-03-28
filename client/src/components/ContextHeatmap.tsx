@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { fetchApi } from "../lib/api";
 
 interface SectionHit {
   heading: string;
@@ -24,7 +25,7 @@ export function ContextHeatmap({ sessionId, streaming }: ContextHeatmapProps) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchAnalytics = (id: string) => {
-    fetch(`/api/sessions/${id}/analytics`)
+    fetchApi(`/api/sessions/${id}/analytics`)
       .then((r) => r.json())
       .then((d: SessionAnalytics) => {
         if (d.sectionHits && d.sectionHits.length > 0) {

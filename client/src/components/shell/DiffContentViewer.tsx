@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { GitCompare } from "lucide-react";
+import { fetchApi } from "../../lib/api";
 
 export default function DiffContentViewer() {
   const [filePath, setFilePath] = useState<string | null>(null);
@@ -15,7 +16,7 @@ export default function DiffContentViewer() {
         setFilePath(path);
         setLoading(true);
         setFileStatus(null);
-        fetch(`/api/files/diff?path=${encodeURIComponent(path)}`)
+        fetchApi(`/api/files/diff?path=${encodeURIComponent(path)}`)
           .then(r => r.json())
           .then((d: { diff?: string; status?: string }) => {
             setDiff(d.diff ?? "");

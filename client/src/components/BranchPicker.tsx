@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { GitBranch, ChevronDown, Plus } from "lucide-react";
+import { fetchApi } from "../lib/api";
 
 export default function BranchPicker({ currentBranch }: { currentBranch: string }) {
   const [open, setOpen] = useState(false);
@@ -18,7 +19,7 @@ export default function BranchPicker({ currentBranch }: { currentBranch: string 
   const loadBranches = async () => {
     setLoading(true);
     try {
-      const r = await fetch("/api/files/git/branches");
+      const r = await fetchApi("/api/files/git/branches");
       const d = await r.json() as { branches?: string[] };
       setBranches(d.branches ?? []);
     } finally {
@@ -32,7 +33,7 @@ export default function BranchPicker({ currentBranch }: { currentBranch: string 
     setSwitching(true);
     setCreateError("");
     try {
-      const res = await fetch("/api/files/git/branch", {
+      const res = await fetchApi("/api/files/git/branch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
@@ -81,7 +82,7 @@ export default function BranchPicker({ currentBranch }: { currentBranch: string 
     if (branch === currentBranch) { setOpen(false); return; }
     setSwitching(true);
     try {
-      await fetch("/api/files/git/checkout", {
+      await fetchApi("/api/files/git/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ branch }),

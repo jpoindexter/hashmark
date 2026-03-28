@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { fetchApi } from "../lib/api";
 
 interface ProviderInfo {
   id: string;
@@ -37,7 +38,7 @@ export default function ProviderSelector() {
   }, []);
 
   function loadProviders() {
-    fetch("/api/providers")
+    fetchApi("/api/providers")
       .then(r => r.json())
       .then((d: ProvidersData) => {
         setData(d);
@@ -47,7 +48,7 @@ export default function ProviderSelector() {
   }
 
   function fetchModels(providerId: string): Promise<void> {
-    return fetch(`/api/providers/models/${providerId}`)
+    return fetchApi(`/api/providers/models/${providerId}`)
       .then(r => r.json())
       .then((d: { models: string[] }) => setModels(d.models ?? []))
       .catch(() => {});
@@ -78,7 +79,7 @@ export default function ProviderSelector() {
 
     await fetchModels(providerId);
     // Pick the first model for the new provider
-    const newModels = await fetch(`/api/providers/models/${providerId}`)
+    const newModels = await fetchApi(`/api/providers/models/${providerId}`)
       .then(r => r.json())
       .then((d: { models: string[] }) => d.models ?? [])
       .catch(() => [] as string[]);
@@ -91,7 +92,7 @@ export default function ProviderSelector() {
     if (!data) return;
     setSaving(true);
     try {
-      await fetch("/api/providers/active", {
+      await fetchApi("/api/providers/active", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ providerId, model }),
@@ -106,7 +107,7 @@ export default function ProviderSelector() {
     if (!data) return;
     setSaving(true);
     try {
-      await fetch("/api/providers/active", {
+      await fetchApi("/api/providers/active", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ providerId: data.active, model }),
@@ -121,14 +122,14 @@ export default function ProviderSelector() {
     if (!keyInput || !data) return;
     setSaving(true);
     try {
-      await fetch(`/api/providers/${keyInput.providerId}/key`, {
+      await fetchApi(`/api/providers/${keyInput.providerId}/key`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ apiKey: keyInput.value }),
       });
       setKeyInput(null);
       // Now switch to the provider
-      const newModels = await fetch(`/api/providers/models/${keyInput.providerId}`)
+      const newModels = await fetchApi(`/api/providers/models/${keyInput.providerId}`)
         .then(r => r.json())
         .then((d: { models: string[] }) => d.models ?? [])
         .catch(() => [] as string[]);
@@ -146,7 +147,7 @@ export default function ProviderSelector() {
     if (!ollamaProvider) return;
     setSaving(true);
     try {
-      await fetch("/api/providers/ollama/baseUrl", {
+      await fetchApi("/api/providers/ollama/baseUrl", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ baseUrl: baseUrlInput }),

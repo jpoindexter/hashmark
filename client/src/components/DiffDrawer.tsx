@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { Copy, Plus, Minus, Undo2 } from "lucide-react";
 import ContextMenu, { type ContextMenuItem } from "./shared/ContextMenu.tsx";
 import ConfirmDialog from "./shared/ConfirmDialog.tsx";
+import { fetchApi } from "../lib/api";
 
 interface DiffFile { path: string; added: number; removed: number; status: string; }
 
@@ -26,7 +27,7 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
 
   useEffect(() => {
     if (!selectedFile) return;
-    fetch(`/api/files/diff?path=${encodeURIComponent(selectedFile)}`)
+    fetchApi(`/api/files/diff?path=${encodeURIComponent(selectedFile)}`)
       .then(r => r.json())
       .then((d: { diff?: string }) => setDiff(d.diff ?? ''))
       .catch(() => {});
@@ -46,7 +47,7 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
   }, [selectedFile]);
 
   const stageFile = useCallback(async (path: string) => {
-    await fetch("/api/files/stage", {
+    await fetchApi("/api/files/stage", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ paths: [path] }),
@@ -55,7 +56,7 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
   }, [reload]);
 
   const unstageFile = useCallback(async (path: string) => {
-    await fetch("/api/files/unstage", {
+    await fetchApi("/api/files/unstage", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ paths: [path] }),
@@ -64,7 +65,7 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
   }, [reload]);
 
   const discardFile = useCallback(async (path: string) => {
-    await fetch("/api/files/discard", {
+    await fetchApi("/api/files/discard", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ paths: [path] }),

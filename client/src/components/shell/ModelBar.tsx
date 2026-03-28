@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, type CSSProperties } from "react";
 import {
+import { fetchApi } from "../../lib/api";
   Sparkles,
   Brain,
   ClipboardList,
@@ -583,7 +584,7 @@ export default function ModelBar({
   ]);
 
   useEffect(() => {
-    fetch("/api/providers/detect")
+    fetchApi("/api/providers/detect")
       .then((r) => r.json())
       .then((data: { providers: DetectedProvider[] }) => {
         setGroups(buildGroups(data.providers));

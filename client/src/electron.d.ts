@@ -1,4 +1,6 @@
 interface Window {
+  // Auth token injected by the server into the SPA HTML
+  __STUDIO_TOKEN__?: string;
   // Present in Tauri webviews — used to detect the runtime
   __TAURI_INTERNALS__?: unknown;
   studio?: {

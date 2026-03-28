@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { fetchApi } from "../../lib/api";
 
 interface DetectedCLI {
   id: string;
@@ -23,8 +24,8 @@ export default function AboutDialog({ open, onClose }: { open: boolean; onClose:
 
     const load = async () => {
       const [infoRes, cliRes] = await Promise.allSettled([
-        fetch("/api/info").then(r => r.json()),
-        fetch("/api/providers/detect").then(r => r.json()),
+        fetchApi("/api/info").then(r => r.json()),
+        fetchApi("/api/providers/detect").then(r => r.json()),
       ]);
 
       if (cancelled) return;

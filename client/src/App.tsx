@@ -4,6 +4,7 @@ import Shell from "./components/shell/Shell.tsx";
 import ProjectPicker from "./components/ProjectPicker.tsx";
 import { ToastContainer } from "./components/Toasts.tsx";
 import { PageTransition } from "./components/PageTransition.tsx";
+import { fetchApi } from "./lib/api";
 
 // Lazy-load all pages — keeps initial bundle lean, each page loads on demand
 const Home = lazy(() => import("./pages/Home.tsx"));
@@ -36,7 +37,7 @@ function AppShell() {
   const [configured, setConfigured] = useState<boolean | null>(null);
 
   useEffect(() => {
-    fetch("/api/info")
+    fetchApi("/api/info")
       .then((r) => r.json())
       .then((d: InfoResponse) => setConfigured(d.configured))
       .catch(() => setConfigured(true));

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { FileCode } from "lucide-react";
 import type * as MonacoTypes from "monaco-editor";
+import { fetchApi } from "../../lib/api";
 
 const EXT_TO_LANG: Record<string, string> = {
   ts: "typescript",
@@ -181,7 +182,7 @@ export default function FileContentViewer() {
         setFilePath(path);
         setLoading(true);
         setError(null);
-        fetch(`/api/files/read?path=${encodeURIComponent(path)}`)
+        fetchApi(`/api/files/read?path=${encodeURIComponent(path)}`)
           .then((r) => {
             if (!r.ok) throw new Error("Failed to load file");
             return r.json();

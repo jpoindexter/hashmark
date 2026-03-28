@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { fetchApi } from "../../lib/api";
 
 interface GitFile {
   status: string;
@@ -621,7 +622,7 @@ function CreatePrDialog({
     setBody("");
     setError("");
     setCreating(false);
-    fetch("/api/files/git/branches")
+    fetchApi("/api/files/git/branches")
       .then((r) => r.json())
       .then((d: { branches?: string[] }) => {
         const all = d.branches ?? [];
@@ -657,7 +658,7 @@ function CreatePrDialog({
     setCreating(true);
     setError("");
     try {
-      const r = await fetch("/api/files/git/create-pr", {
+      const r = await fetchApi("/api/files/git/create-pr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -830,7 +831,7 @@ export default function GitSidebar() {
 
   const load = useCallback(() => {
     setLoading(true);
-    fetch("/api/files/git")
+    fetchApi("/api/files/git")
       .then((r) => r.json())
       .then((d: GitData) => setData(d))
       .catch(() => {
@@ -846,7 +847,7 @@ export default function GitSidebar() {
   }, []);
 
   const loadOutgoing = useCallback(() => {
-    fetch("/api/files/git/outgoing")
+    fetchApi("/api/files/git/outgoing")
       .then((r) => r.json())
       .then((d: { commits: OutgoingCommit[]; count: number }) => {
         setOutgoing(d.commits ?? []);
@@ -865,7 +866,7 @@ export default function GitSidebar() {
   }, [load, loadOutgoing]);
 
   useEffect(() => {
-    fetch("/api/files/git/gh-available")
+    fetchApi("/api/files/git/gh-available")
       .then((r) => r.json())
       .then((d: { available?: boolean }) => {
         setGhAvailable(d.available === true);
@@ -895,7 +896,7 @@ export default function GitSidebar() {
     e.stopPropagation();
     setFileLoading(file);
     try {
-      const r = await fetch("/api/files/stage", {
+      const r = await fetchApi("/api/files/stage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paths: [file] }),
@@ -914,7 +915,7 @@ export default function GitSidebar() {
     e.stopPropagation();
     setFileLoading(file);
     try {
-      const r = await fetch("/api/files/unstage", {
+      const r = await fetchApi("/api/files/unstage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paths: [file] }),
@@ -933,7 +934,7 @@ export default function GitSidebar() {
     e.stopPropagation();
     setFileLoading(file);
     try {
-      const r = await fetch("/api/files/discard", {
+      const r = await fetchApi("/api/files/discard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paths: [file] }),
@@ -953,7 +954,7 @@ export default function GitSidebar() {
 
   const stageAll = async () => {
     try {
-      const r = await fetch("/api/files/stage", {
+      const r = await fetchApi("/api/files/stage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
@@ -968,7 +969,7 @@ export default function GitSidebar() {
 
   const unstageAll = async () => {
     try {
-      const r = await fetch("/api/files/unstage", {
+      const r = await fetchApi("/api/files/unstage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
@@ -985,7 +986,7 @@ export default function GitSidebar() {
     const unstaged = files.filter((f) => !f.isStaged && !f.isUntracked);
     if (unstaged.length === 0) return;
     try {
-      const r = await fetch("/api/files/discard", {
+      const r = await fetchApi("/api/files/discard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paths: unstaged.map((f) => f.file) }),
@@ -1003,7 +1004,7 @@ export default function GitSidebar() {
     setCommitting(true);
     setStatusMsg(null);
     try {
-      const r = await fetch("/api/files/commit", {
+      const r = await fetchApi("/api/files/commit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: commitMsg.trim() }),
@@ -1026,7 +1027,7 @@ export default function GitSidebar() {
   const push = async () => {
     setPushing(true);
     try {
-      const r = await fetch("/api/files/push", { method: "POST" });
+      const r = await fetchApi("/api/files/push", { method: "POST" });
       const d = (await r.json()) as { ok?: boolean; error?: string };
       if (d.ok) {
         toast("Pushed to remote.", "info");
@@ -1044,7 +1045,7 @@ export default function GitSidebar() {
   const pull = async () => {
     setPulling(true);
     try {
-      const r = await fetch("/api/files/pull", { method: "POST" });
+      const r = await fetchApi("/api/files/pull", { method: "POST" });
       const d = (await r.json()) as { ok?: boolean; error?: string };
       if (d.ok) {
         toast("Pulled from remote.", "info");
@@ -1251,7 +1252,7 @@ export default function GitSidebar() {
                     <HeaderIconBtn
                       title="Stage all untracked"
                       onClick={() => {
-                        fetch("/api/files/stage", {
+                        fetchApi("/api/files/stage", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ paths: untrackedFiles.map((f) => f.file) }),

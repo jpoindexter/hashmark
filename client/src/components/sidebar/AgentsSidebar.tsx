@@ -3,6 +3,7 @@ import { Play, Eye, Copy, Pencil, Trash2 } from "lucide-react";
 import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
 import ConfirmDialog from "../shared/ConfirmDialog.tsx";
 import { Skeleton, SkeletonAvatar } from "../shared/Skeleton.tsx";
+import { fetchApi } from "../../lib/api";
 
 interface Agent {
   id: string;
@@ -187,7 +188,7 @@ export default function AgentsSidebar() {
   const closeDialog = useCallback(() => setDialog(null), []);
 
   const refreshAgents = useCallback(() => {
-    fetch("/api/agents")
+    fetchApi("/api/agents")
       .then((r) => r.json())
       .then((d: { agents?: Agent[] }) => setAgents(d.agents ?? []))
       .catch(() => {});
@@ -195,7 +196,7 @@ export default function AgentsSidebar() {
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/agents")
+    fetchApi("/api/agents")
       .then((r) => r.json())
       .then((d: { agents?: Agent[] }) => setAgents(d.agents ?? []))
       .catch(() => {})
@@ -268,7 +269,7 @@ export default function AgentsSidebar() {
             confirmLabel: "Delete",
             danger: true,
             onConfirm: () => {
-              fetch(`/api/agents/${agent.id}`, { method: "DELETE" })
+              fetchApi(`/api/agents/${agent.id}`, { method: "DELETE" })
                 .then(() => { refreshAgents(); setDialog(null); })
                 .catch(() => setDialog(null));
             },

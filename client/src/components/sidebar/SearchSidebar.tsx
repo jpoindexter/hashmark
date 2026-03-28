@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, File, X } from "lucide-react";
+import { fetchApi } from "../../lib/api";
 
 interface SearchResult {
   file: string;
@@ -28,7 +29,7 @@ export default function SearchSidebar() {
     setSearching(true);
     const params = new URLSearchParams({ q: q.trim() });
     if (g.trim()) params.set("glob", g.trim());
-    fetch(`/api/files/search?${params}`)
+    fetchApi(`/api/files/search?${params}`)
       .then(r => r.json())
       .then((d: { results: SearchResult[]; matchCount: number }) => {
         setResults(d.results ?? []);

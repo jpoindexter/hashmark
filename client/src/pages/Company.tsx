@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import DependencyGraph from "../components/DependencyGraph.tsx";
 import { PageShell } from "../components/shared/PageShell.tsx";
+import { fetchApi } from "../lib/api";
 
 interface AgentDef {
   id: string;
@@ -531,7 +532,7 @@ export default function Company() {
 
   // Load available agents for preview
   useEffect(() => {
-    fetch("/api/company/agents")
+    fetchApi("/api/company/agents")
       .then(r => r.json())
       .then((d: { agents: AgentDef[] }) => setAvailableAgents(d.agents ?? []))
       .catch(() => {});
@@ -611,7 +612,7 @@ export default function Company() {
 
     setConflictLoading(true);
     try {
-      const res = await fetch("/api/company/conflicts", {
+      const res = await fetchApi("/api/company/conflicts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ agents: agentsWithFiles }),
@@ -643,7 +644,7 @@ export default function Company() {
     setMergeResult(null);
 
     try {
-      const res = await fetch("/api/company/plan", {
+      const res = await fetchApi("/api/company/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task }),
@@ -679,7 +680,7 @@ export default function Company() {
     setExpandedIds(new Set(plan.map(s => s.id)));
 
     try {
-      const res = await fetch("/api/company/run", {
+      const res = await fetchApi("/api/company/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task, plan }),
@@ -1192,7 +1193,7 @@ export default function Company() {
                     <button
                       onClick={e => {
                         e.stopPropagation();
-                        fetch(`/api/company/runs/${run.id}`, { method: 'DELETE' })
+                        fetchApi(`/api/company/runs/${run.id}`, { method: 'DELETE' })
                           .then(() => loadRuns())
                           .catch(() => {});
                       }}

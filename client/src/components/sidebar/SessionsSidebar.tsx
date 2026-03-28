@@ -5,6 +5,7 @@ import { Skeleton } from "../shared/Skeleton.tsx";
 import IconButton from "../shared/IconButton.tsx";
 import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
 import ConfirmDialog from "../shared/ConfirmDialog.tsx";
+import { fetchApi } from "../../lib/api";
 
 interface ContextMenuState {
   items: ContextMenuItem[];
@@ -101,7 +102,7 @@ export default function SessionsSidebar({ activeSessionId, onSessionSelect, info
   }, []);
 
   const refreshSessions = useCallback(() => {
-    fetch("/api/sessions")
+    fetchApi("/api/sessions")
       .then(r => r.json())
       .then((d: { sessions: ChatSession[] }) => setSessions((d.sessions ?? []).slice(0, 9)))
       .catch(() => {});
@@ -493,7 +494,7 @@ function buildSessionMenuItems(
           onConfirm: () => {},
           onConfirmWithValue: (newTitle: string) => {
             if (!newTitle.trim()) return;
-            fetch(`/api/sessions/${session.id}`, {
+            fetchApi(`/api/sessions/${session.id}`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ title: newTitle.trim() }),
@@ -505,7 +506,7 @@ function buildSessionMenuItems(
     {
       label: "Duplicate",
       onClick: () => {
-        fetch("/api/sessions", {
+        fetchApi("/api/sessions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ title: `${session.title || "Untitled"} (copy)` }),
@@ -524,7 +525,7 @@ function buildSessionMenuItems(
           confirmLabel: "Delete",
           danger: true,
           onConfirm: () => {
-            fetch(`/api/sessions/${session.id}`, { method: "DELETE" })
+            fetchApi(`/api/sessions/${session.id}`, { method: "DELETE" })
               .then(() => { onRefresh(); setDialog(null); })
               .catch(() => setDialog(null));
           },

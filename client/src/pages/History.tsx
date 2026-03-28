@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Clock } from "lucide-react";
 import { DiffPanel } from "../components/DiffPanel.tsx";
 import { Skeleton, SkeletonCard } from "../components/shared/Skeleton";
+import { fetchApi } from "../lib/api";
 
 interface AgentRun {
   id: string;
@@ -70,7 +71,7 @@ export default function History() {
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetch("/api/run/runs")
+    fetchApi("/api/run/runs")
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json() as Promise<RunsResponse>;
@@ -92,7 +93,7 @@ export default function History() {
     setDiffLoading(true);
     setDiffFilename(run.worktree_branch ?? run.task.slice(0, 40));
 
-    fetch(`/api/run/runs/${run.id}/diff`)
+    fetchApi(`/api/run/runs/${run.id}/diff`)
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json() as Promise<DiffResponse>;
