@@ -210,7 +210,7 @@ body.flavor-6 {
 }
 
 /* ─── flavor 7: void ─────────────────────────────────────────── */
-/* black/grey base — color only where it carries meaning */
+/* pure black and white — zero hue, no color anywhere */
 body.flavor-7 {
   --bg:            #080808;
   --surface:       #0e0e0e;
@@ -218,14 +218,14 @@ body.flavor-7 {
   --border:        #1e1e1e;
   --border-dim:    #161616;
   --text:          #e0e0e0;
-  --text-dim:      #666;
-  --text-dimmer:   #333;
-  --accent:        #6b9e82;   /* muted green — running/active only */
-  --accent-dim:    #4e7a63;
-  --accent-bg:     rgba(107,158,130,0.08);
-  --accent-border: rgba(107,158,130,0.22);
-  --red:           #9e5a5a;   /* muted red — security findings */
-  --yellow:        #9a7a32;   /* muted amber — warnings */
+  --text-dim:      #555;
+  --text-dimmer:   #2e2e2e;
+  --accent:        #c0c0c0;   /* grey — no hue */
+  --accent-dim:    #888;
+  --accent-bg:     rgba(255,255,255,0.05);
+  --accent-border: rgba(255,255,255,0.12);
+  --red:           #888;      /* no red — just grey */
+  --yellow:        #888;      /* no yellow — just grey */
   --rail-bg:       #050505;
   --topbar-bg:     #0a0a0a;
   --statusbar-bg:  #050505;
@@ -233,7 +233,7 @@ body.flavor-7 {
   --radius-card:   2px;
   --font:          "JetBrains Mono", "Fira Code", Menlo, monospace;
   --font-mono:     "JetBrains Mono", "Fira Code", Menlo, monospace;
-  --running-border: #6b9e82;
+  --running-border: rgba(255,255,255,0.15);
   --done-border:   #1e1e1e;
   --card-shadow:   none;
   --btn-radius:    2px;
@@ -242,40 +242,44 @@ body.flavor-7 {
   font-family: var(--font);
 }
 
-/* void: running badge — muted green, square */
+/* void: running badge — white-grey, no hue */
 body.flavor-7 .status-badge.running {
-  background: rgba(107,158,130,0.1);
-  color: #8abda0;
-  border-color: rgba(107,158,130,0.25);
+  background: rgba(255,255,255,0.05);
+  color: #999;
+  border-color: rgba(255,255,255,0.1);
   border-radius: 2px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
+  letter-spacing: 0.06em;
 }
-/* void: done badge — plain grey, square */
+/* void: done badge — dimmer grey, square */
 body.flavor-7 .status-badge.done {
+  color: #444;
   border-radius: 2px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
+  letter-spacing: 0.06em;
 }
-/* void: running card — barely-there green bg */
+/* void: running card — barely-there white bg */
 body.flavor-7 .mission-card.running {
-  background: rgba(107,158,130,0.03);
+  background: rgba(255,255,255,0.015);
+  border-color: rgba(255,255,255,0.08);
 }
-/* void: primary btn — muted green, not inverted white */
+/* void: primary btn — white border, grey text */
 body.flavor-7 .action-btn.primary {
-  background: rgba(107,158,130,0.1);
-  border-color: rgba(107,158,130,0.28);
-  color: #8abda0;
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.15);
+  color: #c0c0c0;
 }
 body.flavor-7 .action-btn.primary:hover {
-  background: rgba(107,158,130,0.16);
-  border-color: rgba(107,158,130,0.45);
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.25);
 }
-/* void: new mission / send / approve — green on black */
+/* void: filled btns — white bg, black text */
 body.flavor-7 .new-mission-btn,
 body.flavor-7 .audit-btn.filled,
 body.flavor-7 .chat-send-btn { color: #000; }
-/* void: oxide-level structural density — show uuid row + stats grid */
+/* void: structural density */
 body.flavor-7 .uuid-row { display: block; text-transform: lowercase; letter-spacing: 0.04em; }
 body.flavor-7 .ops-meta-grid { display: grid; }
 body.flavor-7 .ops-meta-item { text-transform: lowercase; letter-spacing: normal; font-size: 10px; }
@@ -285,9 +289,7 @@ body.flavor-7 .card-name { text-transform: lowercase; font-size: 11px; letter-sp
 body.flavor-7 .session-name { text-transform: lowercase; }
 body.flavor-7 .chat-mission-name { text-transform: lowercase; }
 body.flavor-7 .chat-model-badge { text-transform: lowercase; }
-body.flavor-7 .status-badge.running { font-size: 9px; letter-spacing: 0.06em; }
-body.flavor-7 .status-badge.done   { font-size: 9px; letter-spacing: 0.06em; }
-/* void: ops log stream in statusbar */
+/* void: ops log stream */
 body.flavor-7 .statusbar-ops-logs { display: flex; }
 body.flavor-7 .status-item-briefing { display: none; }
 body.flavor-7 .ops-log-line { text-transform: lowercase; }
