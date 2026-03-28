@@ -210,7 +210,7 @@ body.flavor-6 {
 }
 
 /* ─── flavor 7: void ─────────────────────────────────────────── */
-/* original pure black/grey base + muted contextual green for running */
+/* pure monochrome — white is the only accent, black is everything else */
 body.flavor-7 {
   --bg:            #080808;
   --surface:       #0e0e0e;
@@ -220,12 +220,12 @@ body.flavor-7 {
   --text:          #e0e0e0;
   --text-dim:      #666;
   --text-dimmer:   #333;
-  --accent:        #5a8a70;   /* muted sage — running/active states only */
-  --accent-dim:    #3d6b54;
-  --accent-bg:     rgba(90,138,112,0.08);
-  --accent-border: rgba(90,138,112,0.2);
-  --red:           #8a4f4f;   /* muted — security findings only */
-  --yellow:        #7a6428;   /* muted — warnings only */
+  --accent:        #ffffff;
+  --accent-dim:    #cccccc;
+  --accent-bg:     rgba(255,255,255,0.06);
+  --accent-border: rgba(255,255,255,0.18);
+  --red:           #888;
+  --yellow:        #888;
   --rail-bg:       #050505;
   --topbar-bg:     #0a0a0a;
   --statusbar-bg:  #050505;
@@ -233,7 +233,7 @@ body.flavor-7 {
   --radius-card:   2px;
   --font:          "JetBrains Mono", "Fira Code", Menlo, monospace;
   --font-mono:     "JetBrains Mono", "Fira Code", Menlo, monospace;
-  --running-border: #5a8a70;
+  --running-border: #ffffff;
   --done-border:   #1e1e1e;
   --card-shadow:   none;
   --btn-radius:    2px;
@@ -242,11 +242,11 @@ body.flavor-7 {
   font-family: var(--font);
 }
 
-/* void: running badge — muted sage, not bright */
+/* void: running badge inverted — white bg, black text */
 body.flavor-7 .status-badge.running {
-  background: rgba(90,138,112,0.12);
-  color: #7ab898;
-  border-color: rgba(90,138,112,0.25);
+  background: #ffffff;
+  color: #000;
+  border-color: #ffffff;
   border-radius: 2px;
   font-family: var(--font-mono);
   font-size: 10px;
@@ -256,21 +256,20 @@ body.flavor-7 .status-badge.done {
   font-family: var(--font-mono);
   font-size: 10px;
 }
-/* void: running card — subtle sage left border, barely-there bg */
+/* void: running card — barely-there white bg */
 body.flavor-7 .mission-card.running {
-  background: rgba(90,138,112,0.03);
+  background: rgba(255,255,255,0.02);
 }
-/* void: primary button — muted sage */
+/* void: primary button inverted */
 body.flavor-7 .action-btn.primary {
-  background: rgba(90,138,112,0.1);
-  border-color: rgba(90,138,112,0.25);
-  color: #7ab898;
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #000;
 }
 body.flavor-7 .action-btn.primary:hover {
-  background: rgba(90,138,112,0.16);
-  border-color: rgba(90,138,112,0.4);
+  background: #d0d0d0;
+  border-color: #d0d0d0;
 }
-/* void: new mission btn — muted sage */
 body.flavor-7 .new-mission-btn { color: #000; }
 body.flavor-7 .audit-btn.filled { color: #000; }
 body.flavor-7 .chat-send-btn    { color: #000; }
