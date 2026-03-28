@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect, useCallback, type CSSProperties } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 
 import Titlebar from "./Titlebar";
 import Rail from "./Rail";
@@ -11,14 +11,14 @@ import ResizableDrawer from "../ResizableDrawer";
 import CommandPalette from "../CommandPalette";
 import DiffDrawer from "../DiffDrawer";
 import { DriftBanner, isDismissed, dismissFor24h } from "../DriftIndicator";
-import { toast } from "../Toasts";
 import ErrorBoundary from "../ErrorBoundary";
 import ShortcutsHelp from "../ShortcutsHelp";
 import AboutDialog from "../shared/AboutDialog";
 import { useProjectInfo } from "../../hooks/useProjectInfo";
 import { useKeyboardNav } from "../../hooks/useKeyboardNav";
 import { useTheme } from "../../hooks/useTheme";
-import { fetchApi } from "../../lib/api";
+import { useSessionManager } from "../../hooks/useSessionManager";
+import { useStudioEvents } from "../../hooks/useStudioEvents";
 
 function persist(key: string, val: unknown) {
   try { localStorage.setItem(`studio:${key}`, JSON.stringify(val)); } catch { /* noop */ }
@@ -41,16 +41,6 @@ const ALL_MODELS: Array<{ id: string; label: string; provider: string }> = [
   { id: "amp-default", label: "Default", provider: "Amp" },
 ];
 
-async function createSession(): Promise<string> {
-  const r = await fetchApi("/api/sessions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({}),
-  });
-  const d: { session: { id: string } } = await r.json();
-  return d.session.id;
-}
-
 const rootStyle: CSSProperties = {
   display: "flex",
   flexDirection: "column",
@@ -62,29 +52,22 @@ const rootStyle: CSSProperties = {
 
 export default function Shell() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
   const isHome = location.pathname === "/" || location.pathname === "/sessions";
 
-  const [boardView, setBoardView] = useState(true);
   const [termOpen, setTermOpen] = useState(() => restore("termOpen", false));
   const [termBig, setTermBig] = useState(false);
   const [activeTab, setActiveTab] = useState<"TERMINAL" | "OUTPUT">("TERMINAL");
   const [selectedModel, setSelectedModel] = useState(() => restore("selectedModel", "claude-sonnet-4-6"));
   const [thinking, setThinking] = useState(() => restore("thinking", false));
   const [planMode, setPlanMode] = useState(() => restore("planMode", false));
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(
-    () => localStorage.getItem("studio_active_session_id") ?? null
-  );
 
   const [streamText, setStreamText] = useState("");
   const [streamingState, setStreamingState] = useState<StreamingState | null>(null);
   const [streaming, setStreaming] = useState(false);
-  const [chatHasMessages, setChatHasMessages] = useState(false);
   const [contextPercent, setContextPercent] = useState<number | null>(null);
   const [terminalCwd, setTerminalCwd] = useState("");
-  const [sessionError, setSessionError] = useState(false);
   const [diffOpen, setDiffOpen] = useState(false);
   const [driftDismissed, setDriftDismissed] = useState<boolean>(isDismissed);
   const [cmdOpen, setCmdOpen] = useState(false);
@@ -92,245 +75,56 @@ export default function Shell() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
 
+  // Session lifecycle
+  const {
+    activeSessionId,
+    sessionError,
+    chatHasMessages,
+    setChatHasMessages,
+    boardView,
+    setBoardView,
+    handleNewSession,
+    handleSessionSelect,
+    handleRetry,
+  } = useSessionManager();
+
   const onDiffShouldOpen = useCallback(() => setDiffOpen(true), []);
   const { info, git, drift, changedFiles, refreshGit } = useProjectInfo(streaming, onDiffShouldOpen);
 
-  useKeyboardNav({ navigate, setCmdOpen, setPaletteMode, shortcutsOpen, setShortcutsOpen, setTermOpen, setSidebarOpen: () => {} });
+  useKeyboardNav({ navigate: () => {}, setCmdOpen, setPaletteMode, shortcutsOpen, setShortcutsOpen, setTermOpen, setSidebarOpen: () => {} });
 
   useEffect(() => { persist("termOpen", termOpen); }, [termOpen]);
   useEffect(() => { persist("selectedModel", selectedModel); }, [selectedModel]);
   useEffect(() => { persist("thinking", thinking); }, [thinking]);
   useEffect(() => { persist("planMode", planMode); }, [planMode]);
-  useEffect(() => {
-    if (activeSessionId) localStorage.setItem("studio_active_session_id", activeSessionId);
-    else localStorage.removeItem("studio_active_session_id");
-  }, [activeSessionId]);
 
-  // Session restore / create on mount
-  const sessionValidated = useRef(false);
-  const sessionRetryCount = useRef(0);
-  useEffect(() => {
-    if (activeSessionId && !sessionValidated.current) {
-      sessionValidated.current = true;
-      sessionRetryCount.current = 0;
-      setSessionError(false);
-      fetchApi(`/api/sessions/${activeSessionId}`)
-        .then((r) => { if (!r.ok) { setActiveSessionId(null); return; } return r.json(); })
-        .then((data: { messages?: unknown[] } | undefined) => {
-          if (data?.messages && data.messages.length > 0) setChatHasMessages(true);
-        })
-        .catch(() => setActiveSessionId(null));
-      return;
-    }
+  // All studio custom events + side effects
+  useStudioEvents({
+    streaming,
+    activeSessionId,
+    setChatHasMessages,
+    setContextPercent,
+    setThinking,
+    setPlanMode,
+    setTermOpen,
+    setSelectedModel,
+    setCmdOpen,
+    setPaletteMode,
+    setAboutOpen,
+    refreshGit,
+    handleNewSession,
+    toggleTheme,
+  });
 
-    if (!activeSessionId) {
-      sessionValidated.current = false;
-      setSessionError(false);
-      const attemptCreate = () => {
-        createSession()
-          .then((id) => { sessionValidated.current = true; sessionRetryCount.current = 0; setActiveSessionId(id); })
-          .catch(() => {
-            sessionRetryCount.current += 1;
-            if (sessionRetryCount.current < 3) setTimeout(attemptCreate, 2000);
-            else { sessionRetryCount.current = 0; setSessionError(true); }
-          });
-      };
-      attemptCreate();
-    }
-  }, [activeSessionId]);
-
-  // Session switching
+  // studio:open-diff needs local diffOpen setter
   useEffect(() => {
-    const handler = (e: Event) => {
-      const id = (e as CustomEvent<string>).detail;
-      if (id) { sessionValidated.current = false; setChatHasMessages(true); setActiveSessionId(id); }
-    };
-    window.addEventListener("studio:switch-session", handler);
-    return () => window.removeEventListener("studio:switch-session", handler);
+    const handler = () => setDiffOpen(true);
+    window.addEventListener("studio:open-diff", handler);
+    return () => window.removeEventListener("studio:open-diff", handler);
   }, []);
-
-  // Mission board navigation
-  useEffect(() => {
-    const openHandler = (e: Event) => {
-      const { sessionId } = (e as CustomEvent<{ sessionId: string }>).detail;
-      sessionValidated.current = false;
-      setChatHasMessages(true);
-      setActiveSessionId(sessionId);
-      setBoardView(false);
-    };
-    const backHandler = () => setBoardView(true);
-    window.addEventListener("studio:open-mission", openHandler);
-    window.addEventListener("studio:back-to-board", backHandler);
-    return () => {
-      window.removeEventListener("studio:open-mission", openHandler);
-      window.removeEventListener("studio:back-to-board", backHandler);
-    };
-  }, []);
-
-  // Emit streaming state to board
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent("studio:streaming-change", {
-      detail: { streaming, sessionId: activeSessionId },
-    }));
-  }, [streaming, activeSessionId]);
-
-  // Navigation events
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const path = (e as CustomEvent<string>).detail;
-      if (typeof path === "string") navigate(path);
-    };
-    window.addEventListener("studio:navigate", handler);
-    return () => window.removeEventListener("studio:navigate", handler);
-  }, [navigate]);
-
-  // Bridge studio:toast custom events into the unified ToastContainer
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const { message, type } = (e as CustomEvent<{ message: string; type?: string }>).detail;
-      const variant = type === "error" ? "error" : type === "success" ? "success" : type === "warning" ? "warning" : "info";
-      toast(message, { variant });
-    };
-    window.addEventListener("studio:toast", handler);
-    return () => window.removeEventListener("studio:toast", handler);
-  }, []);
-
-  // Agent nav events
-  useEffect(() => {
-    const openHandler = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      const id = typeof detail === "string" ? detail : detail?.id;
-      if (id && !location.pathname.startsWith("/agents")) navigate(`/agents?agent=${id}`);
-    };
-    const runHandler = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      const id = typeof detail === "string" ? detail : detail?.id;
-      if (id) navigate(`/run?agent=${id}`);
-    };
-    window.addEventListener("studio:open-agent", openHandler);
-    window.addEventListener("studio:run-agent", runHandler);
-    return () => { window.removeEventListener("studio:open-agent", openHandler); window.removeEventListener("studio:run-agent", runHandler); };
-  }, [navigate, location.pathname]);
-
-  const handleNewSession = useCallback(() => {
-    setChatHasMessages(false);
-    createSession().then(setActiveSessionId).catch(() => {
-      toast.error("Failed to create session");
-    });
-  }, []);
-
-  // Global studio events
-  useEffect(() => {
-    const handlers: Array<[string, () => void]> = [
-      ["studio:toggle-thinking", () => setThinking((v) => !v)],
-      ["studio:toggle-plan", () => setPlanMode((v) => !v)],
-      ["studio:toggle-sidebar", () => {}],
-      ["studio:toggle-terminal", () => setTermOpen((v) => !v)],
-      ["studio:refresh-git", refreshGit],
-      ["studio:open-diff", () => setDiffOpen(true)],
-      ["studio:new-session", handleNewSession],
-      ["studio:toggle-theme", toggleTheme],
-    ];
-    handlers.forEach(([event, handler]) => window.addEventListener(event, handler));
-    return () => handlers.forEach(([event, handler]) => window.removeEventListener(event, handler));
-  }, [refreshGit, handleNewSession, toggleTheme]);
-
-  // Plan mode
-  useEffect(() => {
-    const approve = () => { setPlanMode(false); toast.success("Plan approved -- executing..."); };
-    const deny = () => { toast.info("Plan denied"); };
-    window.addEventListener("studio:plan-approve", approve);
-    window.addEventListener("studio:plan-deny", deny);
-    return () => { window.removeEventListener("studio:plan-approve", approve); window.removeEventListener("studio:plan-deny", deny); };
-  }, []);
-
-  // Notification permission
-  useEffect(() => {
-    if (!("Notification" in window) || Notification.permission !== "default") return;
-    const handler = () => { Notification.requestPermission().catch(() => {}); };
-    window.addEventListener("click", handler, { capture: true, once: true });
-    return () => window.removeEventListener("click", handler, { capture: true });
-  }, []);
-
-  // Dock badge
-  const unreadCount = useRef(0);
-  useEffect(() => {
-    const unsub = window.studio?.onWindowFocus?.(() => { unreadCount.current = 0; window.studio?.setDockBadge?.(""); });
-    return () => { unsub?.(); };
-  }, []);
-
-  // Post-stream: context + notification
-  const prevStreaming = useRef(streaming);
-  useEffect(() => {
-    const wasStreaming = prevStreaming.current;
-    prevStreaming.current = streaming;
-    if (wasStreaming && !streaming) {
-      setChatHasMessages(true);
-      if (document.visibilityState !== "visible") {
-        if ("Notification" in window && Notification.permission === "granted") {
-          new Notification("hashmark studio", { body: "Agent finished working", icon: "/assets/icon.png" });
-        }
-        unreadCount.current += 1;
-        window.studio?.setDockBadge?.(String(unreadCount.current));
-      }
-      if (activeSessionId) {
-        fetchApi(`/api/sessions/${activeSessionId}/tokens`)
-          .then((r) => r.json())
-          .then((data: { pct?: number }) => { if (typeof data.pct === "number") setContextPercent(data.pct); })
-          .catch(() => {});
-      }
-    }
-  }, [streaming, activeSessionId]);
-
-  // Settings sync
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const { key, value } = (e as CustomEvent<{ key: string; value: unknown }>).detail;
-      if (key === "selectedModel" && typeof value === "string") setSelectedModel(value);
-      if (key === "thinking" && typeof value === "boolean") setThinking(value);
-      if (key === "planMode" && typeof value === "boolean") setPlanMode(value);
-    };
-    window.addEventListener("studio:settings-change", handler);
-    return () => window.removeEventListener("studio:settings-change", handler);
-  }, []);
-
-  // Native menu
-  useEffect(() => {
-    if (typeof window.studio?.onMenu !== "function") return;
-    const dispatch = (name: string, detail?: unknown) =>
-      window.dispatchEvent(new CustomEvent(name, detail !== undefined ? { detail } : undefined));
-    const subs = [
-      window.studio.onMenu("menu:navigate", (p: unknown) => { if (typeof p === "string") navigate(p); }),
-      window.studio.onMenu("menu:new-session", () => handleNewSession()),
-      window.studio.onMenu("menu:toggle-terminal", () => setTermOpen((v) => !v)),
-      window.studio.onMenu("menu:new-terminal", () => { setTermOpen(true); dispatch("studio:new-terminal"); }),
-      window.studio.onMenu("menu:split-terminal", () => { setTermOpen(true); dispatch("studio:split-terminal"); }),
-      window.studio.onMenu("menu:kill-terminal", () => dispatch("studio:kill-terminal")),
-      window.studio.onMenu("menu:kill-all-terminals", () => dispatch("studio:kill-all-terminals")),
-      window.studio.onMenu("menu:clear-terminal", () => dispatch("studio:clear-terminal")),
-      window.studio.onMenu("menu:command-palette", () => { setPaletteMode("commands"); setCmdOpen(true); }),
-      window.studio.onMenu("menu:go-to-file", () => { setPaletteMode("files"); setCmdOpen(true); }),
-      window.studio.onMenu("menu:run-scan", () => navigate("/generate")),
-      window.studio.onMenu("menu:start-agent", () => navigate("/run")),
-      window.studio.onMenu("menu:stop-agent", () => dispatch("studio:stop-agent")),
-      window.studio.onMenu("menu:find", () => setCmdOpen(true)),
-      window.studio.onMenu("menu:about", () => setAboutOpen(true)),
-      window.studio.onMenu("deep-link:navigate", (p: unknown) => { if (typeof p === "string") navigate(p); }),
-      window.studio.onMenu("deep-link:open-project", (dir: unknown) => {
-        if (typeof dir === "string") window.studio?.setProjectDir?.(dir);
-      }),
-    ];
-    return () => subs.forEach((unsub) => unsub?.());
-  }, [navigate, handleNewSession]);
 
   const currentModelEntry = ALL_MODELS.find((m) => m.id === selectedModel);
   const modelLabel = currentModelEntry?.label ?? "Sonnet 4.6";
-
-  const handleSessionSelect = useCallback((id: string) => {
-    sessionValidated.current = false;
-    setChatHasMessages(true);
-    setActiveSessionId(id);
-  }, []);
 
   return (
     <div style={rootStyle}>
@@ -401,7 +195,7 @@ export default function Shell() {
                   <div style={{ padding: 20, textAlign: "center", color: "var(--red)" }}>
                     <div>Failed to create session</div>
                     <button
-                      onClick={() => { setSessionError(false); sessionRetryCount.current = 0; handleNewSession(); }}
+                      onClick={handleRetry}
                       style={{
                         marginTop: 8, padding: "4px 12px",
                         background: "var(--bg-3)", border: "1px solid var(--border)",
@@ -447,7 +241,7 @@ export default function Shell() {
                   sessionId={activeSessionId}
                   hasMessages={chatHasMessages}
                   onNewSession={handleNewSession}
-                  onSessionCreated={setActiveSessionId}
+                  onSessionCreated={() => {}}
                   onStreamText={setStreamText}
                   onStreamingState={setStreamingState}
                   onStreamingChange={setStreaming}

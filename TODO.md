@@ -12,7 +12,7 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 - [x] **[sonnet]** Fix CORS — replace `cors({ origin: "*" })` with `origin: "http://localhost:3200"` in `server/index.ts`
 - [x] **[sonnet]** Fix shell injection in `server/lib/providers.ts:85` — replace `execSync` template string with `spawnSync` + explicit args array
 - [x] **[sonnet]** Fix governance route wrong directory — `governanceRoutes(opts.projectDir)` → `governanceRoutes(ctx.dataDir)` in `server/index.ts:156`
-- [ ] **[opus]** Fix duplicate swarm tables — merge `swarm_workers` and `swarm_agents` into one schema with proper FK relationships, add migration versioning (`server/db.ts`, `server/routes/swarm.ts`)
+- [x] **[opus]** Fix duplicate swarm tables — merge `swarm_workers` and `swarm_agents` into one schema with proper FK relationships, add migration versioning (`server/db.ts`, `server/routes/swarm.ts`)
 - [x] **[sonnet]** Fix `activeRun` race condition — atomically set flag before `await`, use a mutex or set flag synchronously before the async call
 - [x] **[sonnet]** Fix DELETE `/api/run` — actually kill the running child process on cancel, don't just set `activeRun = false`
 - [x] **[sonnet]** Add process timeout for spawned AI agents — 10-minute `setTimeout` sends SIGTERM to prevent indefinite hung sessions
