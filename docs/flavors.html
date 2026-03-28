@@ -145,34 +145,34 @@ body.flavor-4 {
   font-family: var(--font);
 }
 
-/* ─── flavor 5: void ─────────────────────────────────────────── */
+/* ─── flavor 5: github dark ──────────────────────────────────── */
 body.flavor-5 {
-  --bg:            #080808;
-  --surface:       #0e0e0e;
-  --surface-2:     #141414;
-  --border:        #1e1e1e;
-  --border-dim:    #161616;
-  --text:          #e0e0e0;
-  --text-dim:      #666;
-  --text-dimmer:   #333;
-  --accent:        #ffffff;
-  --accent-dim:    #cccccc;
-  --accent-bg:     rgba(255,255,255,0.04);
-  --accent-border: rgba(255,255,255,0.12);
-  --red:           #888;
-  --yellow:        #888;
-  --rail-bg:       #050505;
-  --topbar-bg:     #0a0a0a;
-  --statusbar-bg:  #080808;
-  --radius:        2px;
-  --radius-card:   2px;
-  --font:          "JetBrains Mono", "Fira Code", Menlo, monospace;
+  --bg:            #0d1117;
+  --surface:       #161b22;
+  --surface-2:     #21262d;
+  --border:        #30363d;
+  --border-dim:    #21262d;
+  --text:          #e6edf3;
+  --text-dim:      #8b949e;
+  --text-dimmer:   #484f58;
+  --accent:        #58a6ff;
+  --accent-dim:    #388bfd;
+  --accent-bg:     rgba(88,166,255,0.1);
+  --accent-border: rgba(88,166,255,0.22);
+  --red:           #f85149;
+  --yellow:        #d29922;
+  --rail-bg:       #010409;
+  --topbar-bg:     #161b22;
+  --statusbar-bg:  #010409;
+  --radius:        6px;
+  --radius-card:   6px;
+  --font:          -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
   --font-mono:     "JetBrains Mono", "Fira Code", Menlo, monospace;
-  --running-border: #fff;
-  --done-border:   #1e1e1e;
+  --running-border: #58a6ff;
+  --done-border:   #30363d;
   --card-shadow:   none;
-  --btn-radius:    2px;
-  --label-transform: lowercase;
+  --btn-radius:    6px;
+  --label-transform: none;
   --label-spacing: normal;
   font-family: var(--font);
 }
@@ -281,18 +281,6 @@ body.flavor-6 {
 .rail-btn:hover  { color: var(--text-dim); background: var(--surface-2); }
 .rail-btn.active { color: var(--accent); background: var(--accent-bg); }
 
-/* void flavor: text labels */
-body.flavor-5 .rail { width: 80px; }
-body.flavor-5 .rail-logo { width: 80px; }
-body.flavor-5 .rail-btn {
-  width: 72px;
-  height: 28px;
-  font-size: 11px;
-  color: var(--text-dim);
-  justify-content: flex-start;
-  padding-left: 12px;
-}
-body.flavor-5 .rail-btn.active { color: var(--accent); background: transparent; }
 body.flavor-2 .rail-btn.active { color: var(--accent); filter: drop-shadow(0 0 4px var(--accent)); }
 
 /* ─── main area ──────────────────────────────────────────────── */
@@ -500,11 +488,7 @@ body.flavor-4 .status-item.standard { display: none; }
   justify-content: space-between;
   margin-bottom: 20px;
 }
-body.flavor-5 .canvas-header {
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 8px;
-  margin-bottom: 0;
-}
+
 
 .canvas-title {
   font-size: 11px;
@@ -522,7 +506,6 @@ body.flavor-4 .canvas-title {
   text-transform: none;
   color: var(--text-dim);
 }
-body.flavor-5 .canvas-title { font-size: 10px; color: var(--text-dimmer); text-transform: lowercase; }
 
 .canvas-count {
   font-size: 11px;
@@ -542,7 +525,6 @@ body.flavor-4 .canvas-count { font-family: var(--font); }
 }
 body.flavor-3 .section-label,
 body.flavor-4 .section-label { display: none; }
-body.flavor-5 .section-label { font-size: 9px; margin: 16px 0 4px; text-transform: lowercase; }
 
 .mission-grid {
   display: grid;
@@ -550,7 +532,6 @@ body.flavor-5 .section-label { font-size: 9px; margin: 16px 0 4px; text-transfor
   gap: 10px;
   margin-bottom: 16px;
 }
-body.flavor-5 .mission-grid { display: block; border-top: 1px solid var(--border); margin-bottom: 0; }
 
 /* mission card */
 .mission-card {
@@ -587,20 +568,6 @@ body.flavor-4 .mission-card:hover {
               0 0 0 1px rgba(167,139,250,0.08);
   transform: translateY(-1px);
 }
-body.flavor-5 .mission-card {
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid var(--border-dim);
-  border-radius: 0;
-  padding: 10px 4px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-shadow: none;
-  opacity: 1;
-}
-body.flavor-5 .mission-card.running { border-left: none; padding-left: 4px; }
-body.flavor-5 .mission-card.done    { border-left: none; padding-left: 4px; opacity: 0.6; }
 body.flavor-6 .mission-card {
   border-radius: var(--radius-card);
 }
@@ -616,7 +583,6 @@ body.flavor-6 .mission-card.running {
   margin-bottom: 10px;
   gap: 8px;
 }
-body.flavor-5 .card-header { flex: 1; margin-bottom: 0; align-items: center; }
 
 .card-name-wrap { display: flex; align-items: center; gap: 8px; }
 
@@ -631,7 +597,6 @@ body.flavor-5 .card-header { flex: 1; margin-bottom: 0; align-items: center; }
 body.flavor-2 .card-name { text-transform: uppercase; letter-spacing: 0.04em; font-size: 12px; }
 body.flavor-3 .card-name,
 body.flavor-4 .card-name { font-family: var(--font); font-size: 13px; font-weight: 600; word-break: normal; }
-body.flavor-5 .card-name { font-size: 12px; font-weight: 400; }
 body.flavor-6 .card-name { text-transform: uppercase; letter-spacing: 0.04em; font-size: 11px; }
 
 .status-badge {
@@ -670,15 +635,6 @@ body.flavor-4 .status-badge.running {
   border-color: rgba(167,139,250,0.25);
   box-shadow: 0 0 8px rgba(167,139,250,0.12);
 }
-body.flavor-5 .status-badge { background: transparent; border: none; padding: 0; gap: 0; }
-body.flavor-5 .status-badge .badge-text { display: none; }
-body.flavor-5 .status-badge .badge-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  flex-shrink: 0;
-}
-body.flavor-5 .status-badge.done .badge-dot { background: var(--text-dimmer); }
 
 .badge-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
 .status-badge.running .badge-dot {
@@ -747,8 +703,6 @@ body.flavor-4 .meta-row { font-family: var(--font); font-size: 12px; }
   text-transform: var(--label-transform, none);
   letter-spacing: var(--label-spacing, normal);
 }
-body.flavor-5 .card-meta { flex-direction: row; gap: 16px; margin-bottom: 0; flex: 1; }
-body.flavor-5 .card-meta .meta-row { font-size: 11px; color: var(--text-dimmer); }
 body.flavor-2 .card-meta,
 body.flavor-6 .card-meta { display: none; }
 
@@ -844,10 +798,6 @@ body.flavor-3 .action-btn.primary {
   font-weight: 600;
 }
 body.flavor-3 .action-btn.primary:hover { background: var(--accent-dim); border-color: var(--accent-dim); }
-body.flavor-5 .card-actions { gap: 12px; }
-body.flavor-5 .action-btn { background: transparent; border: none; padding: 0; color: var(--text-dim); font-size: 11px; }
-body.flavor-5 .action-btn:hover { color: var(--accent); background: transparent; border: none; }
-body.flavor-5 .action-btn.primary { background: transparent; border: none; color: var(--accent); }
 
 .new-mission-btn {
   position: fixed;
@@ -873,15 +823,6 @@ body.flavor-5 .action-btn.primary { background: transparent; border: none; color
 }
 body.flavor-2 .new-mission-btn { font-family: var(--font-mono); font-size: 11px; color: #000; box-shadow: 0 0 20px rgba(0,255,136,0.2); }
 body.flavor-4 .new-mission-btn { box-shadow: 0 4px 20px rgba(167,139,250,0.3); }
-body.flavor-5 .new-mission-btn {
-  background: transparent;
-  color: var(--accent);
-  border: 1px solid var(--border);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  box-shadow: none;
-  padding: 6px 12px;
-}
 body.flavor-6 .new-mission-btn {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -890,7 +831,6 @@ body.flavor-6 .new-mission-btn {
   box-shadow: 0 0 16px rgba(0,212,151,0.2);
 }
 .new-mission-btn:hover { background: var(--accent-dim); transform: translateY(-1px); }
-body.flavor-5 .new-mission-btn:hover { background: var(--surface); transform: none; }
 
 /* ═══════════════════════════════════════════════════════════════
    SCREEN 2: MISSION VIEW (chat)
@@ -907,7 +847,6 @@ body.flavor-5 .new-mission-btn:hover { background: var(--surface); transform: no
   flex-direction: column;
   overflow: hidden;
 }
-body.flavor-5 .session-sidebar { background: transparent; }
 
 .sidebar-header {
   padding: 10px 12px 8px;
@@ -1054,16 +993,6 @@ body.flavor-4 .msg-header { font-family: var(--font); }
 body.flavor-3 .msg-bubble.user,
 body.flavor-4 .msg-bubble.user {
   border-color: var(--border);
-}
-body.flavor-5 .msg-bubble {
-  background: transparent;
-  border: none;
-  border-left: 2px solid var(--border);
-  border-radius: 0;
-  padding: 4px 12px;
-}
-body.flavor-5 .msg-bubble.user {
-  border-left-color: var(--text-dimmer);
 }
 body.flavor-6 .msg-bubble {
   background: var(--surface);
@@ -1393,7 +1322,6 @@ body.flavor-4 .audit-summary-title {
   overflow: hidden;
   background: var(--surface);
 }
-body.flavor-5 .audit-report-panel { background: transparent; border-left: 1px solid var(--border); }
 
 .audit-report-header {
   padding: 14px 16px 12px;
@@ -1809,6 +1737,11 @@ body.flavor-4 .settings-select { font-family: var(--font); font-size: 13px; }
 body.flavor-3 .checkbox-label,
 body.flavor-4 .checkbox-label { font-family: var(--font); }
 
+/* ─── hide ops strip on non-agent screens ────────────────────── */
+body[data-screen="settings"] .topbar-status-strip,
+body[data-screen="new"] .topbar-status-strip,
+body[data-screen="audit"] .topbar-status-strip { display: none !important; }
+
 /* ─── svg helpers ────────────────────────────────────────────── */
 .icon-svg {
   display: block;
@@ -1913,7 +1846,7 @@ body.flavor-4 .checkbox-label { font-family: var(--font); }
               <option value="2">2 — Ops Terminal</option>
               <option value="3">3 — Clean Product</option>
               <option value="4">4 — Obsidian</option>
-              <option value="5">5 — Void</option>
+              <option value="5">5 — GitHub Dark</option>
               <option value="6">6 — Oxide</option>
             </select>
           </div>
@@ -2595,30 +2528,18 @@ body.flavor-4 .checkbox-label { font-family: var(--font); }
   };
 
   function setFlavor(n) {
-    body.className = body.className.replace(/\bflavor-\d+\b/g, '').trim();
+    // remove any existing flavor class but keep others
+    var classes = body.className.split(' ').filter(function(c) { return !/^flavor-\d+$/.test(c); });
+    body.className = classes.join(' ').trim();
     if (n !== '1') body.classList.add('flavor-' + n);
 
-    var isVoid = (n === '5');
-    var isOps  = (n === '2');
+    var isOps   = (n === '2');
     var isOxide = (n === '6');
-
-    var voidTexts = document.querySelectorAll('.void-text');
-    var iconOnlys = document.querySelectorAll('.icon-only');
-    for (var i = 0; i < voidTexts.length; i++) {
-      voidTexts[i].style.display = isVoid ? 'block' : 'none';
-    }
-    for (var j = 0; j < iconOnlys.length; j++) {
-      iconOnlys[j].style.display = isVoid ? 'none' : 'block';
-    }
 
     if (isOps || isOxide) {
       newLabel.textContent = '+ NEW MISSION';
       newIcon.style.display = 'none';
-      if (isOps) newBtn.style.color = '#000'; else newBtn.style.color = '';
-    } else if (isVoid) {
-      newLabel.textContent = '+ new mission';
-      newIcon.style.display = 'none';
-      newBtn.style.color = '';
+      newBtn.style.color = isOps ? '#000' : '';
     } else {
       newLabel.textContent = 'new mission';
       newIcon.style.display = 'block';
@@ -2636,6 +2557,7 @@ body.flavor-4 .checkbox-label { font-family: var(--font); }
     }
     breadcrumb.textContent = screenLabels[s] || s;
     newBtn.style.display = (s === 'board') ? 'flex' : 'none';
+    body.dataset.screen = s;
     try { localStorage.setItem('studio:screen', s); } catch(e) {}
     screenSelect.value = s;
   }
