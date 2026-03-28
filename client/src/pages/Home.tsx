@@ -336,7 +336,7 @@ function ProjectHeader({ info }: { info: ProjectInfo | null }) {
     const dir = await s.pickFolder();
     if (dir) {
       await s.setProjectDir(dir);
-      window.location.reload();
+      // Rust emits studio:reload after set_project_dir -- tauri-bridge handles the reload
     }
   };
 
