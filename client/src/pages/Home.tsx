@@ -203,7 +203,7 @@ function DispatchModal({ onClose, onDispatched }: {
       const d = await r.json() as { session: { id: string } };
       onDispatched(d.session.id, prompt.trim(), model, attachContext);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "failed to create session");
+      setError(err instanceof Error ? err.message : "failed to create mission");
       setLoading(false);
     }
   };

@@ -256,12 +256,12 @@ export default function Swarm() {
           )}
           {phase === "running" && (
             <button className="btn btn-sm" onClick={handleCancel} style={{ color: "var(--red)", borderColor: "var(--red)" }}>
-              Cancel
+              cancel
             </button>
           )}
           {(phase === "done" || phase === "idle") && agents.length > 0 && (
             <button className="btn btn-sm" onClick={handleReset}>
-              New swarm
+              new swarm
             </button>
           )}
         </div>
@@ -370,7 +370,7 @@ export default function Swarm() {
                 className="btn btn-sm"
                 onClick={addTask}
               >
-                + Add task
+                + add task
               </button>
             )}
 
@@ -410,7 +410,7 @@ export default function Swarm() {
               onClick={handleLaunch}
               disabled={validCount === 0}
             >
-              {`Launch Swarm (${validCount})`}
+              {`launch swarm (${validCount})`}
             </button>
           </div>
         </div>
