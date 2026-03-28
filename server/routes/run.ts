@@ -102,13 +102,6 @@ export function runRoutes(projectDir: string) {
   app.get("/runs", (c) => {
     try {
       const db = getDb(dataDir);
-      const cols = db.prepare("PRAGMA table_info(runs)").all() as { name: string }[];
-      if (!cols.some(col => col.name === "task")) {
-        db.exec("ALTER TABLE runs ADD COLUMN task TEXT NOT NULL DEFAULT ''");
-      }
-      if (!cols.some(col => col.name === "worktree_branch")) {
-        db.exec("ALTER TABLE runs ADD COLUMN worktree_branch TEXT");
-      }
       const rows = db
         .prepare(
           `SELECT id, task, status, started_at AS created_at, worktree_branch
@@ -199,9 +192,6 @@ export function runRoutes(projectDir: string) {
           // Persist run record to DB
           try {
             const db = getDb(dataDir);
-            const cols = db.prepare("PRAGMA table_info(runs)").all() as { name: string }[];
-            if (!cols.some(col => col.name === "task")) db.exec("ALTER TABLE runs ADD COLUMN task TEXT NOT NULL DEFAULT ''");
-            if (!cols.some(col => col.name === "worktree_branch")) db.exec("ALTER TABLE runs ADD COLUMN worktree_branch TEXT");
             db.prepare(
               `INSERT INTO runs (id, task, status, worktree_branch, started_at) VALUES (?, ?, 'running', ?, ?)`
             ).run(runId, body.task, branchName, Date.now());

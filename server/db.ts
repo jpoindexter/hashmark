@@ -58,6 +58,16 @@ function migrate(db: Database.Database) {
   `);
 
   // Additive migrations -- safe to run on existing DBs
+
+  // runs table columns (previously added inline in run.ts on every request)
+  const runCols = (db.pragma('table_info(runs)') as Array<{ name: string }>).map(r => r.name);
+  if (!runCols.includes('task')) {
+    db.exec('ALTER TABLE runs ADD COLUMN task TEXT NOT NULL DEFAULT ""');
+  }
+  if (!runCols.includes('worktree_branch')) {
+    db.exec('ALTER TABLE runs ADD COLUMN worktree_branch TEXT');
+  }
+
   const sessionCols = (db.pragma("table_info(sessions)") as Array<{ name: string }>).map(r => r.name);
   if (!sessionCols.includes("archived")) {
     db.exec("ALTER TABLE sessions ADD COLUMN archived INTEGER NOT NULL DEFAULT 0");
