@@ -11,6 +11,7 @@ import ResizableDrawer from "../ResizableDrawer";
 import CommandPalette from "../CommandPalette";
 import DiffDrawer from "../DiffDrawer";
 import { DriftBanner, isDismissed, dismissFor24h } from "../DriftIndicator";
+import { toast } from "../Toasts";
 import ErrorBoundary from "../ErrorBoundary";
 import ShortcutsHelp from "../ShortcutsHelp";
 import AboutDialog from "../shared/AboutDialog";
@@ -90,7 +91,6 @@ export default function Shell() {
   const [paletteMode, setPaletteMode] = useState<"commands" | "files">("files");
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
-  const [toasts, setToasts] = useState<Array<{ id: string; message: string; type: string }>>([]);
 
   const onDiffShouldOpen = useCallback(() => setDiffOpen(true), []);
   const { info, git, drift, changedFiles, refreshGit } = useProjectInfo(streaming, onDiffShouldOpen);
@@ -184,13 +184,12 @@ export default function Shell() {
     return () => window.removeEventListener("studio:navigate", handler);
   }, [navigate]);
 
-  // Toast listener
+  // Bridge studio:toast custom events into the unified ToastContainer
   useEffect(() => {
     const handler = (e: Event) => {
       const { message, type } = (e as CustomEvent<{ message: string; type?: string }>).detail;
-      const id = Date.now().toString();
-      setToasts((prev) => [...prev, { id, message, type: type || "info" }]);
-      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
+      const variant = type === "error" ? "error" : type === "success" ? "success" : type === "warning" ? "warning" : "info";
+      toast(message, { variant });
     };
     window.addEventListener("studio:toast", handler);
     return () => window.removeEventListener("studio:toast", handler);
@@ -216,7 +215,7 @@ export default function Shell() {
   const handleNewSession = useCallback(() => {
     setChatHasMessages(false);
     createSession().then(setActiveSessionId).catch(() => {
-      window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to create session", type: "error" } }));
+      toast.error("Failed to create session");
     });
   }, []);
 
@@ -238,8 +237,8 @@ export default function Shell() {
 
   // Plan mode
   useEffect(() => {
-    const approve = () => { setPlanMode(false); window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Plan approved -- executing...", type: "success" } })); };
-    const deny = () => { window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Plan denied", type: "info" } })); };
+    const approve = () => { setPlanMode(false); toast.success("Plan approved -- executing..."); };
+    const deny = () => { toast.info("Plan denied"); };
     window.addEventListener("studio:plan-approve", approve);
     window.addEventListener("studio:plan-deny", deny);
     return () => { window.removeEventListener("studio:plan-approve", approve); window.removeEventListener("studio:plan-deny", deny); };
@@ -478,23 +477,6 @@ export default function Shell() {
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <DiffDrawer open={diffOpen} onClose={() => setDiffOpen(false)} projectDir={info?.projectDir ?? ""} />
 
-      {toasts.length > 0 && (
-        <div style={{ position: "fixed", bottom: 30, right: 12, zIndex: 9999, display: "flex", flexDirection: "column", gap: 6 }}>
-          {toasts.map((t) => (
-            <div key={t.id} style={{
-              padding: "8px 16px", borderRadius: "var(--radius)", fontSize: 12,
-              fontFamily: "var(--font-ui)",
-              background: t.type === "error" ? "var(--red)" : t.type === "success" ? "var(--accent)" : "var(--bg-4)",
-              color: t.type === "error" || t.type === "success" ? "#fff" : "var(--text)",
-              border: "1px solid var(--border)",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-              animation: "fadeIn 0.2s ease",
-            }}>
-              {t.message}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
