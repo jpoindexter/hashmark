@@ -389,6 +389,89 @@ body.flavor-8 .briefing-chip { border-color: rgba(0,212,151,0.2); color: #00d497
 /* oxide void: terminal cursor teal */
 body.flavor-8 .terminal-line.cursor::after { color: #00d497; }
 
+/* ─── flavor 9: void teal ─────────────────────────────────────── */
+/* void's restraint + oxide's teal — same rules, different hue */
+body.flavor-9 {
+  --bg:            #080808;
+  --surface:       #0e0e0e;
+  --surface-2:     #141414;
+  --border:        #1e1e1e;
+  --border-dim:    #161616;
+  --text:          #e0e0e0;
+  --text-dim:      #666;
+  --text-dimmer:   #333;
+  --accent:        #00d497;   /* oxide teal — running/active only */
+  --accent-dim:    rgba(0,212,151,0.7);
+  --accent-bg:     rgba(0,212,151,0.06);
+  --accent-border: rgba(0,212,151,0.18);
+  --red:           #9e5a5a;   /* same muted red as void */
+  --yellow:        #9a7a32;   /* same muted amber as void */
+  --rail-bg:       #050505;
+  --topbar-bg:     #0a0a0a;
+  --statusbar-bg:  #050505;
+  --radius:        2px;
+  --radius-card:   2px;
+  --font:          "JetBrains Mono", "Fira Code", Menlo, monospace;
+  --font-mono:     "JetBrains Mono", "Fira Code", Menlo, monospace;
+  --running-border: rgba(0,212,151,0.3);
+  --done-border:   #1e1e1e;
+  --card-shadow:   none;
+  --btn-radius:    2px;
+  --label-transform: lowercase;
+  --label-spacing: normal;
+  font-family: var(--font);
+}
+
+/* void teal: running badge — oxide teal at void opacity */
+body.flavor-9 .status-badge.running {
+  background: rgba(0,212,151,0.07);
+  color: rgba(0,212,151,0.75);
+  border-color: rgba(0,212,151,0.18);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+/* void teal: done badge — plain grey, square */
+body.flavor-9 .status-badge.done {
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+/* void teal: running card — barely-there teal bg */
+body.flavor-9 .mission-card.running {
+  background: rgba(0,212,151,0.02);
+}
+/* void teal: primary btn — muted teal, void restraint */
+body.flavor-9 .action-btn.primary {
+  background: rgba(0,212,151,0.07);
+  border-color: rgba(0,212,151,0.2);
+  color: rgba(0,212,151,0.8);
+}
+body.flavor-9 .action-btn.primary:hover {
+  background: rgba(0,212,151,0.12);
+  border-color: rgba(0,212,151,0.35);
+}
+/* void teal: new mission / send / approve — teal bg, dark text */
+body.flavor-9 .new-mission-btn,
+body.flavor-9 .audit-btn.filled,
+body.flavor-9 .chat-send-btn { color: #000; }
+/* void teal: structural density — same as void */
+body.flavor-9 .uuid-row { display: block; text-transform: lowercase; letter-spacing: 0.04em; }
+body.flavor-9 .ops-meta-grid { display: grid; }
+body.flavor-9 .ops-meta-item { text-transform: lowercase; letter-spacing: normal; font-size: 10px; }
+body.flavor-9 .ops-meta-val { color: var(--text); font-weight: 600; }
+body.flavor-9 .card-meta { display: none; }
+body.flavor-9 .card-name { text-transform: lowercase; font-size: 11px; letter-spacing: normal; font-weight: 500; }
+body.flavor-9 .session-name { text-transform: lowercase; }
+body.flavor-9 .chat-mission-name { text-transform: lowercase; }
+body.flavor-9 .chat-model-badge { text-transform: lowercase; }
+/* void teal: ops log stream */
+body.flavor-9 .statusbar-ops-logs { display: flex; }
+body.flavor-9 .status-item-briefing { display: none; }
+body.flavor-9 .ops-log-line { text-transform: lowercase; }
+
 /* ─── shell ──────────────────────────────────────────────────── */
 .shell {
   display: flex;
@@ -2030,6 +2113,7 @@ body[data-screen="audit"] .topbar-status-strip { display: none !important; }
               <option value="6">6 — Oxide</option>
               <option value="7">7 — Void</option>
               <option value="8">8 — Oxide Void</option>
+              <option value="9">9 — Void Teal</option>
             </select>
           </div>
         </div>
@@ -2717,7 +2801,7 @@ body[data-screen="audit"] .topbar-status-strip { display: none !important; }
 
     var isOps   = (n === '2');
     var isOxide = (n === '6');
-    var isVoid  = (n === '7' || n === '8');
+    var isVoid  = (n === '7' || n === '8' || n === '9');
 
     if (isOps || isOxide) {
       newLabel.textContent = '+ NEW MISSION';
