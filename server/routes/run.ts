@@ -264,32 +264,77 @@ export function runRoutes(ctx: WorkspaceCtx) {
 
           let fullOutput = "";
           recordInvocation();
-          const agentTools = agentDef?.tools; // from agent frontmatter `tools:` field
+          const agentTools = agentDef?.tools;
+          const cliArgs = buildClaudeArgs(prompt, { mode, allowedTools: agentTools, outputFormat: "stream-json" });
+          // Remove --print from args since we use stdin + stream-json
+          const filteredArgs = cliArgs.filter(a => a !== "--print");
+          // Replace the prompt arg with stdin delivery
+          const promptIdx = filteredArgs.indexOf(prompt);
+          if (promptIdx !== -1) filteredArgs.splice(promptIdx, 1);
+
           await new Promise<void>((resolve) => {
-            const proc = spawn(claudeBin, buildClaudeArgs(prompt, { mode, allowedTools: agentTools }), {
+            const proc = spawn(claudeBin, filteredArgs, {
               cwd: worktreeDir,
-              stdio: ["ignore", "pipe", "pipe"],
+              stdio: ["pipe", "pipe", "pipe"],
               env: runEnv,
             });
             activeProc = proc;
+
+            // Send prompt via stdin
+            proc.stdin.write(prompt + "\n");
+            proc.stdin.end();
 
             const timeout = setTimeout(() => {
               send({ type: "error", error: "Run timed out after 10 minutes" });
               try { proc.kill("SIGTERM"); } catch {}
             }, RUN_TIMEOUT_MS);
 
+            let jsonBuffer = "";
             proc.stdout.on("data", (chunk: Buffer) => {
-              const text = chunk.toString();
-              fullOutput += text;
-              send({ type: "chunk", text });
+              jsonBuffer += chunk.toString();
+              const lines = jsonBuffer.split("\n");
+              jsonBuffer = lines.pop() ?? "";
+
+              for (const line of lines) {
+                if (!line.trim()) continue;
+                try {
+                  const event = JSON.parse(line) as {
+                    type: string;
+                    message?: { content?: Array<{ type: string; text?: string; name?: string; input?: unknown; content?: unknown }> };
+                  };
+
+                  if (event.type === "assistant" && event.message?.content) {
+                    for (const block of event.message.content) {
+                      if (block.type === "text" && block.text) {
+                        fullOutput += block.text;
+                        send({ type: "chunk", text: block.text });
+                      }
+                      if (block.type === "tool_use") {
+                        send({ type: "tool_use", tool: block.name, input: block.input });
+                      }
+                      if (block.type === "tool_result") {
+                        send({ type: "tool_result", content: block.content });
+                      }
+                    }
+                  }
+                } catch {
+                  // Not JSON -- plain text progress
+                  if (line.trim()) {
+                    fullOutput += line + "\n";
+                    send({ type: "chunk", text: line + "\n" });
+                  }
+                }
+              }
             });
 
-            proc.stderr.on("data", () => {});
+            proc.stderr.on("data", (chunk: Buffer) => {
+              const line = chunk.toString().trim();
+              if (line) send({ type: "progress", message: line });
+            });
 
             proc.on("close", (code: number | null, signal: string | null) => {
               clearTimeout(timeout);
               activeProc = null;
-              // Don't report error if killed intentionally (SIGTERM from cancel)
               if (code !== 0 && code !== null && signal !== "SIGTERM" && activeRun) {
                 send({ type: "error", error: `Claude exited with code ${code}` });
               }

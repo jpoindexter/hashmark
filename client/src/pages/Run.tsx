@@ -258,6 +258,23 @@ export default function Run() {
       case "chunk":
         setOutput((prev) => prev + (event.text as string));
         break;
+      case "tool_use": {
+        const tool = event.tool as string;
+        const input = event.input as Record<string, unknown> | undefined;
+        const summary = input?.command
+          ? `$ ${(input.command as string).slice(0, 120)}`
+          : input?.file_path
+            ? String(input.file_path).split("/").pop()
+            : "";
+        setOutput((prev) => prev + `\n[${tool}] ${summary}\n`);
+        setStatus(`${tool}...`);
+        break;
+      }
+      case "tool_result":
+        break;
+      case "progress":
+        setStatus(event.message as string);
+        break;
       case "committed":
         setStatus("Committed");
         break;
