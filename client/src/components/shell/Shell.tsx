@@ -61,7 +61,7 @@ const rootStyle: CSSProperties = {
 export default function Shell() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
 
   const isHome = location.pathname === "/" || location.pathname === "/sessions";
 
@@ -354,7 +354,7 @@ export default function Shell() {
       )}
 
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
-        <Rail />
+        <Rail theme={theme === "light" ? "light" : "dark"} />
 
         {/* Mission board: full canvas, no sidepanels */}
         {isHome && boardView && (

@@ -12,9 +12,9 @@
   --border-dim:  #141414;
 
   /* Text */
-  --text:        #e0e0e0;
-  --text-dim:    #555555;
-  --text-dimmer: #2e2e2e;
+  --text:        #e8e8e8;
+  --text-dim:    #888888;
+  --text-dimmer: #444444;
 
   /* Accent -- white/grey, no hue */
   --accent:        #c0c0c0;
@@ -71,31 +71,33 @@
   --transition-status:  0.15s ease-out;
 }
 
-/* Light */
+/* Light — Void inverted: near-white canvas, near-black ink, zero hue */
 [data-theme="light"] {
-  --bg:          #fafafa;
-  --bg-2:        #f3f3f3;
-  --bg-3:        #ebebeb;
-  --bg-4:        #e0e0e0;
+  --bg:          #f5f5f5;
+  --bg-2:        #eeeeee;
+  --bg-3:        #e6e6e6;
+  --bg-4:        #dcdcdc;
 
-  --border:      rgba(0, 0, 0, 0.08);
-  --border-dim:  rgba(0, 0, 0, 0.04);
+  --border:      #d0d0d0;
+  --border-dim:  #e0e0e0;
 
-  --text:        #111111;
+  --text:        #141414;
   --text-dim:    #666666;
-  --text-dimmer: #999999;
+  --text-dimmer: #aaaaaa;
 
-  --accent:        #00c463;
-  --accent-dim:    #007a3d;
-  --accent-bg:     rgba(0, 196, 99, 0.08);
-  --accent-border: rgba(0, 196, 99, 0.2);
+  /* Accent — near black on light, mirrors near-white on dark */
+  --accent:        #1a1a1a;
+  --accent-dim:    #444444;
+  --accent-bg:     rgba(0, 0, 0, 0.05);
+  --accent-border: rgba(0, 0, 0, 0.15);
 
-  --blue:     #0969da;
-  --blue-bg:  rgba(9, 105, 218, 0.08);
-  --red:      #cf222e;
-  --red-bg:   rgba(207, 34, 46, 0.08);
-  --yellow:   #9a6700;
-  --yellow-bg: rgba(154, 103, 0, 0.08);
+  /* Semantic — muted, no saturation */
+  --blue:      #666666;
+  --blue-bg:   rgba(0, 0, 0, 0.04);
+  --red:       #8b3a3a;
+  --red-bg:    rgba(139, 58, 58, 0.08);
+  --yellow:    #7a6020;
+  --yellow-bg: rgba(122, 96, 32, 0.08);
 
   --hover-bg:        rgba(0, 0, 0, 0.04);
   --hover-bg-strong: rgba(0, 0, 0, 0.08);
@@ -108,8 +110,8 @@
   --avatar-fallback-bg:   rgba(0, 0, 0, 0.08);
   --avatar-fallback-text: rgba(0, 0, 0, 0.5);
 
-  --cyan:    #0891b2;
-  --cyan-bg: rgba(8, 145, 178, 0.12);
+  --cyan:    #3a7a8a;
+  --cyan-bg: rgba(58, 122, 138, 0.10);
 }
 
 /* Tauri/Electron vibrancy */

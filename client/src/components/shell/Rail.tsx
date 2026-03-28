@@ -38,8 +38,26 @@ function IconUser() {
   );
 }
 
+function IconSun() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 14, height: 14 }}>
+      <circle cx="8" cy="8" r="3" />
+      <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.22 3.22l1.06 1.06M11.72 11.72l1.06 1.06M11.72 4.28l-1.06 1.06M4.28 11.72l-1.06 1.06" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconMoon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 14, height: 14 }}>
+      <path d="M13.5 10A6 6 0 0 1 6 2.5a6 6 0 1 0 7.5 7.5z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 interface RailProps {
   agentsBadge?: boolean;
+  theme?: "dark" | "light";
 }
 
 function isActive(path: string, current: string): boolean {
@@ -47,7 +65,7 @@ function isActive(path: string, current: string): boolean {
   return current.startsWith(path);
 }
 
-export default function Rail({ agentsBadge = false }: RailProps) {
+export default function Rail({ agentsBadge = false, theme = "dark" }: RailProps) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -115,6 +133,24 @@ export default function Rail({ agentsBadge = false }: RailProps) {
       })}
 
       <div style={{ flex: 1 }} />
+
+      {/* Theme toggle */}
+      <button
+        className="rail-item"
+        title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        style={{
+          width: 34, height: 34,
+          borderRadius: 7,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          cursor: "pointer",
+          color: "var(--text-dimmer)",
+          background: "transparent",
+          border: "none",
+        }}
+        onClick={() => window.dispatchEvent(new CustomEvent("studio:toggle-theme"))}
+      >
+        {theme === "dark" ? <IconSun /> : <IconMoon />}
+      </button>
 
       <button
         className="rail-item"
