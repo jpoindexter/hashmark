@@ -159,5 +159,17 @@ function migrate(db: Database.Database) {
       last_opened INTEGER NOT NULL,
       is_active INTEGER NOT NULL DEFAULT 0
     );
+
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      version INTEGER PRIMARY KEY,
+      applied_at INTEGER NOT NULL
+    );
+
+    -- Performance indexes
+    CREATE INDEX IF NOT EXISTS idx_sessions_archived_updated ON sessions(archived, updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_sessions_updated ON sessions(updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_agent_actions_created ON agent_actions(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_agent_actions_agent ON agent_actions(agent_id);
+    CREATE INDEX IF NOT EXISTS idx_runs_started ON runs(started_at DESC);
   `);
 }
