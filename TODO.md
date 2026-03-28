@@ -45,7 +45,7 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 - [x] **[sonnet]** Add `.env.example` — document all required environment variables for new contributors
 - [x] **[sonnet]** Fix `hashmark-scan.yml` — replace `npm install -g hashmark` with `npm install -g .` to use repo version, not published
 - [x] **[sonnet]** Add `"prepare": "husky"` to root `package.json` for automatic hook setup
-- [ ] **[sonnet]** Cut `studio/stable` tag from current shell redesign state — stop growing the gap to main (265+ commits)
+- [x] **[sonnet]** Cut `studio/stable` tag from current shell redesign state — stop growing the gap to main (265+ commits)
 - [ ] **[sonnet]** Clean up `studio/session/*` remote branches — run `git remote prune origin` + bulk delete noise branches
 - [x] **[sonnet]** Decide: Electron or Tauri — remove the unused target from `package.json` and native layer
 
