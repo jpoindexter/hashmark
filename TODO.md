@@ -33,7 +33,7 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 - [x] **[sonnet]** Add Agents page empty state — show helpful empty state when `agents.length === 0`
 - [x] **[sonnet]** Show output file path after Generate scan completes
 - [x] **[sonnet]** Add app-level error boundary — wrap `AppShell` in `<ErrorBoundary>` in `App.tsx`
-- [ ] **[sonnet]** Fix "attach codebase context" toggle — currently non-functional; wire to actual context injection
+- [x] **[sonnet]** Fix "attach codebase context" toggle — currently non-functional; wire to actual context injection
 
 ---
 
@@ -74,9 +74,9 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 - [x] **[sonnet]** Fix swarm stats — write `merged_count`, `conflict_count`, `skipped_count` to `swarm_runs` during execution (currently always 0)
 - [x] **[sonnet]** Fix token counting — parse `usage` field from `--output-format stream-json` response instead of `Math.ceil(length / 4)`
 - [x] **[sonnet]** Fix model persistence — save actual model name from `body.model` to `sessions.model` column (currently hardcoded as `'claude'`)
-- [ ] **[sonnet]** Add session duration tracking — add `started_at` + `ended_at` + `error_count` columns to sessions table
-- [ ] **[sonnet]** Add `GET /api/analytics/summary` endpoint — aggregate view for the app
-- [ ] **[sonnet]** Fix context analytics write frequency — debounce disk writes to flush on stream completion, not every chunk
+- [x] **[sonnet]** Add session duration tracking — add `started_at` + `ended_at` + `error_count` columns to sessions table
+- [x] **[sonnet]** Add `GET /api/analytics/summary` endpoint — aggregate view for the app
+- [x] **[sonnet]** Fix context analytics write frequency — debounce disk writes to flush on stream completion, not every chunk
 
 ---
 
@@ -84,14 +84,14 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 
 - [x] **[sonnet]** Add `--surface: var(--bg-2)` and `--surface-2` to `tokens.css` — 2-line fix, unbreaks Home.tsx mission cards
 - [x] **[sonnet]** Consolidate toast systems — remove inline toast array from `Shell.tsx` (lines 92, 480-496), route everything through `Toasts.tsx` event bus
-- [ ] **[sonnet]** Add `useFocusTrap` hook and apply to all modals — `ConfirmDialog`, `CommandPalette`, `ShortcutsHelp`, `AboutDialog`, `DispatchModal`
+- [x] **[sonnet]** Add `useFocusTrap` hook and apply to all modals — `ConfirmDialog`, `CommandPalette`, `ShortcutsHelp`, `AboutDialog`
 - [ ] **[sonnet]** Fix accessibility on interactive divs — add `role="button"`, `tabIndex={0}`, `onKeyDown` to `SessionsPanel` rows and any other `<div onClick>`
-- [ ] **[sonnet]** Wire XTerminal colors to CSS variables — currently hardcoded VS Code dark (`#1e1e1e`, `#cccccc`) in `client/src/components/XTerminal.tsx`
+- [x] **[sonnet]** Wire XTerminal colors to CSS variables — currently hardcoded VS Code dark (`#1e1e1e`, `#cccccc`) in `client/src/components/XTerminal.tsx`
 - [ ] **[sonnet]** Replace `useState(hovered)` with CSS `:hover` — 22+ components triggering re-renders on every mouse move
 - [ ] **[opus]** Decompose `Shell.tsx` (499 lines) — extract `useSessionManager`, `useStreamingSession`, `useStudioEvents` hooks
 - [x] **[sonnet]** Extract `findClaudeBin` to `server/lib/bin-resolver.ts` — currently duplicated across `runner.ts`, `run.ts`, `swarm.ts`, `sessions.ts` with inconsistent candidate lists
 - [x] **[sonnet]** Add Zod validation on top 5 routes — chat, run, swarm, session create, workspace switch
-- [ ] **[sonnet]** Fix `Skeleton.tsx` and `PageTransition.tsx` — remove direct DOM `<style>` injection, use CSS class or `styled-jsx`
+- [x] **[sonnet]** Fix `Skeleton.tsx` and `PageTransition.tsx` — remove direct DOM `<style>` injection, use CSS class or `styled-jsx`
 
 ---
 
@@ -107,7 +107,7 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 
 ## Phase 8 — Reliability (SRE)
 
-- [ ] **[sonnet]** Fix orphaned worktree cleanup — clean up `studio-run-*` and `swarm-*` dirs in `/tmp` on server start
+- [x] **[sonnet]** Fix orphaned worktree cleanup — clean up `studio-run-*` and `swarm-*` dirs in `/tmp` on server start
 - [x] **[sonnet]** Fix `activeRun` leak on crash — add `try/finally` to reset flag even if run throws
 - [x] **[sonnet]** Upgrade health check — verify DB write access and claude binary exists, not just `{ ok: true }`
 - [x] **[sonnet]** Add Hono `logger()` middleware — 3 lines, gives baseline audit trail of all route calls
@@ -130,8 +130,8 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 
 ## Phase 10 — UI Design & Brand
 
-- [ ] **[sonnet]** Fix light mode: `StatusBar.tsx:53` — `color: "rgba(0,0,0,0.8)"` on dark accent; add `--overlay-bg` token and replace all 6 modal backdrops using hardcoded `rgba(0,0,0,0.5)`
-- [ ] **[sonnet]** Fix light mode: replace 15+ hardcoded `boxShadow: "0 Npx Mpx rgba(0,0,0,X)"` values with CSS variable shadows
+- [x] **[sonnet]** Fix light mode: `StatusBar.tsx:53` — `color: "rgba(0,0,0,0.8)"` on dark accent; add `--overlay-bg` token and replace all 6 modal backdrops using hardcoded `rgba(0,0,0,0.5)`
+- [x] **[sonnet]** Fix light mode: replace 15+ hardcoded `boxShadow: "0 Npx Mpx rgba(0,0,0,X)"` values with CSS variable shadows
 - [x] **[sonnet]** Add `--orange` and `--purple` tokens to `tokens.css` — `ToolSummary.tsx` falls back to raw GitHub palette values
 - [ ] **[sonnet]** Replace `AVATAR_COLORS` rainbow table in `SessionsSidebar.tsx` — 52-entry rainbow contradicts the zero-hue Void system; replace with 3-4 grey variants
 - [ ] **[sonnet]** Replace `AGENT_COLORS` `#c084fc` raw purple in `SessionsPanel.tsx` with CSS variable
@@ -154,7 +154,7 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 
 ## Phase 12 — Growth & SEO (non-code)
 
-- [ ] **[sonnet]** Fix `public/robots.txt` — remove or update reference to non-existent `https://hashmark.md/sitemap.xml`
+- [x] **[sonnet]** Fix `public/robots.txt` — remove or update reference to non-existent `https://hashmark.md/sitemap.xml`
 - [ ] **[sonnet]** Update `packages/cli/package.json` — add `description`, `keywords`, `homepage` for npm search visibility
 - [ ] Add hashmark badge to generated READMEs on first GitHub Action run — `[![hashmark synced](https://img.shields.io/badge/hashmark-synced-green)](https://hashmark.md)`
 - [ ] Make GitHub repo public + submit to GitHub Marketplace

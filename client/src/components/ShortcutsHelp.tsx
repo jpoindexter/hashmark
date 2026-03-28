@@ -49,6 +49,9 @@ const SECTIONS: ShortcutSection[] = [
   },
 ];
 
+import { useRef } from "react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
+
 const cellKey: React.CSSProperties = {
   padding: "3px 16px 3px 0",
   color: "var(--accent)",
@@ -66,16 +69,20 @@ const sectionHeader: React.CSSProperties = {
 };
 
 export default function ShortcutsHelp({ onClose }: { onClose: () => void }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, true);
+
   return (
     <div
       onClick={onClose}
       style={{
         position: "fixed", inset: 0, zIndex: 10000,
-        background: "rgba(0,0,0,0.55)",
+        background: "var(--overlay-bg)",
         display: "flex", alignItems: "center", justifyContent: "center",
       }}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Keyboard shortcuts"
