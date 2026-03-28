@@ -330,14 +330,29 @@ function DispatchModal({ onClose, onDispatched }: {
 function ProjectHeader({ info }: { info: ProjectInfo | null }) {
   const [hovering, setHovering] = useState(false);
 
-  const openProject = async () => {
+  const openProject = () => {
     const s = window.studio;
     if (!s?.pickFolder) return;
-    const dir = await s.pickFolder();
-    if (dir) {
-      await s.setProjectDir(dir);
-      // Rust emits studio:reload after set_project_dir -- tauri-bridge handles the reload
-    }
+    void s.pickFolder().then((dir) => {
+      if (!dir) return; // user cancelled
+      // Register workspace on server so ctx.projectDir updates before the reload
+      void fetch("/api/workspaces", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: dir }),
+      })
+        .then((r) => r.json() as Promise<{ workspace?: { id: string } }>)
+        .then(({ workspace }) => {
+          if (workspace?.id) {
+            return fetch(`/api/workspaces/${workspace.id}/activate`, { method: "POST" });
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          // Rust persists the dir and emits studio:reload — server is already updated
+          void s.setProjectDir(dir);
+        });
+    });
   };
 
   // Shorten path: show last 2 segments
