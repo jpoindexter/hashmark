@@ -137,8 +137,8 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 - [x] **[sonnet]** Replace `AGENT_COLORS` `#c084fc` raw purple in `SessionsPanel.tsx` with CSS variable
 - [x] **[sonnet]** Fix `GitSidebar.tsx` status colors — replace GitHub palette (`#cca700`, `#2ea043`, `#f85149`, `#58a6ff`) with muted Void equivalents via tokens
 - [x] **[sonnet]** Add font size scale tokens — replace hardcoded `10`, `11`, `12`, `13` px values with `--font-size-xs`, `--font-size-sm`, etc.
-- [ ] **[sonnet]** Unify mission/session naming — audit all UI copy: use "mission" everywhere in the UI, keep `sessions` for internal API/DB. Files: `SessionsPanel.tsx`, `Sessions.tsx`, `DispatchModal.tsx`, `Home.tsx`
-- [ ] **[sonnet]** Standardize button casing — everything lowercase: `"Generate Context"` → `"generate context"`, `"Launch Swarm (3)"` → `"launch swarm (3)"` etc.
+- [x] **[sonnet]** Unify mission/session naming — audit all UI copy: use "mission" everywhere in the UI, keep `sessions` for internal API/DB. Files: `SessionsPanel.tsx`, `Sessions.tsx`, `DispatchModal.tsx`, `Home.tsx`
+- [x] **[sonnet]** Standardize button casing — everything lowercase: `"Generate Context"` → `"generate context"`, `"Launch Swarm (3)"` → `"launch swarm (3)"` etc.
 
 ---
 
