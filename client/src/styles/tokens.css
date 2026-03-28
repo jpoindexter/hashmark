@@ -1,51 +1,43 @@
-/* Grove design tokens -- hashmark studio */
+/* Void -- pure black, zero hue, monospace throughout */
 
 :root {
-  /* Backgrounds -- matching mockup palette */
-  --bg:          #0c0c0c;
-  --bg-2:        #111111;
-  --bg-3:        #161616;
-  --bg-4:        #1c1c1c;
+  /* Backgrounds */
+  --bg:          #080808;
+  --bg-2:        #0e0e0e;
+  --bg-3:        #141414;
+  --bg-4:        #1a1a1a;
 
-  /* Borders -- subtle, slightly visible */
-  --border:      #252525;
-  --border-dim:  #1e1e1e;
+  /* Borders */
+  --border:      #1e1e1e;
+  --border-dim:  #141414;
 
-  /* Text -- warm neutral, matching mockup */
-  --text:        #e8e8e2;
-  --text-dim:    #666660;
-  --text-dimmer: #333330;
+  /* Text */
+  --text:        #e0e0e0;
+  --text-dim:    #555555;
+  --text-dimmer: #2e2e2e;
 
-  /* Brand (hashmark neon green -- matches mockup --ca) */
-  --accent:        #00e87a;
-  --accent-dim:    #009950;
-  --accent-bg:     rgba(0, 232, 122, 0.08);
-  --accent-border: rgba(0, 232, 122, 0.2);
+  /* Accent -- white/grey, no hue */
+  --accent:        #c0c0c0;
+  --accent-dim:    #888888;
+  --accent-bg:     rgba(255, 255, 255, 0.05);
+  --accent-border: rgba(255, 255, 255, 0.12);
 
-  /* Color hierarchy:
-     --accent (green): primary brand, active states, success, CTA buttons
-     --blue: links only, focus outlines
-     --red: errors, deletions, danger buttons
-     --yellow: warnings, pending states
-     Context bar, status bar, and interactive highlights should all use --accent, not --blue
-  */
+  /* Semantic -- muted, no saturation */
+  --blue:      #888888;
+  --blue-bg:   rgba(255, 255, 255, 0.04);
+  --red:       #9e5a5a;
+  --red-bg:    rgba(158, 90, 90, 0.10);
+  --yellow:    #9a7a32;
+  --yellow-bg: rgba(154, 122, 50, 0.10);
 
-  /* Semantic */
-  --blue:      #388bfd;
-  --blue-bg:   rgba(56, 139, 253, 0.10);
-  --red:       #f85149;
-  --red-bg:    rgba(248, 81, 73, 0.10);
-  --yellow:    #d29922;
-  --yellow-bg: rgba(210, 153, 34, 0.10);
-
-  /* Typography */
+  /* Typography -- monospace throughout */
   --font:    'JetBrains Mono', 'Fira Code', Menlo, monospace;
-  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-ui: 'JetBrains Mono', 'Fira Code', Menlo, monospace;
 
-  /* Border radius */
-  --radius:    4px;
-  --radius-sm: 3px;
-  --radius-lg: 6px;
+  /* Border radius -- sharp */
+  --radius:    2px;
+  --radius-sm: 2px;
+  --radius-lg: 3px;
 
   /* Typography scale */
   --font-size-base: 13px;
@@ -120,11 +112,13 @@
   --cyan-bg: rgba(8, 145, 178, 0.12);
 }
 
-/* Electron vibrancy -- semi-transparent sidebar/titlebar let macOS blur through */
-[data-electron="true"] {
-  --bg-2: rgba(17, 17, 17, 0.88);
+/* Tauri/Electron vibrancy */
+[data-electron="true"],
+[data-tauri="true"] {
+  --bg-2: rgba(14, 14, 14, 0.92);
 }
-[data-electron="true"][data-theme="light"] {
+[data-electron="true"][data-theme="light"],
+[data-tauri="true"][data-theme="light"] {
   --bg-2: rgba(243, 243, 243, 0.88);
 }
 
