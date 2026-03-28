@@ -27,12 +27,12 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 
 - [x] **[sonnet]** Add Generate + Run to Rail navigation — currently hidden routes, 2 entries ~15 lines in `Shell.tsx` or Rail component
 - [x] **[sonnet]** Fix dispatch modal error state — show error message when `POST /api/sessions` fails instead of silently closing
-- [ ] **[sonnet]** Fix WorkspaceSetup MCP poll timeout — `setInterval` in Step 3 runs indefinitely; add a 60s timeout with clear error message (`client/src/pages/WorkspaceSetup.tsx`)
-- [ ] **[sonnet]** Fix blank initial load — add skeleton or logo during `configured === null` state in `AppShell`
+- [x] **[sonnet]** Fix WorkspaceSetup MCP poll timeout — `setInterval` in Step 3 runs indefinitely; add a 60s timeout with clear error message (`client/src/pages/WorkspaceSetup.tsx`)
+- [x] **[sonnet]** Fix blank initial load — add skeleton or logo during `configured === null` state in `AppShell`
 - [x] **[sonnet]** Wire ContextPanel to live data — replace 4 hardcoded fake agents ("scanner", "reviewer", "guard", "fixer") with real data from `/api/sessions` + `/api/agents/effectiveness` + `/api/info` (~80 lines)
 - [ ] **[sonnet]** Add Agents page empty state — show helpful empty state when `agents.length === 0`
 - [ ] **[sonnet]** Show output file path after Generate scan completes
-- [ ] **[sonnet]** Add app-level error boundary — wrap `AppShell` in `<ErrorBoundary>` in `App.tsx`
+- [x] **[sonnet]** Add app-level error boundary — wrap `AppShell` in `<ErrorBoundary>` in `App.tsx`
 - [ ] **[sonnet]** Fix "attach codebase context" toggle — currently non-functional; wire to actual context injection
 
 ---
@@ -41,9 +41,9 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 > Fix before merging to main
 
 - [x] **[sonnet]** Add `dist/` and `client/dist/` to `.gitignore` — cleans up 200+ noise files from every `git status`
-- [ ] **[sonnet]** Add `.github/workflows/ci.yml` — triggered on `pull_request`, runs lint + typecheck + test
-- [ ] **[sonnet]** Add `.env.example` — document all required environment variables for new contributors
-- [ ] **[sonnet]** Fix `hashmark-scan.yml` — replace `npm install -g hashmark` with `npm install -g .` to use repo version, not published
+- [x] **[sonnet]** Add `.github/workflows/ci.yml` — triggered on `pull_request`, runs lint + typecheck + test
+- [x] **[sonnet]** Add `.env.example` — document all required environment variables for new contributors
+- [x] **[sonnet]** Fix `hashmark-scan.yml` — replace `npm install -g hashmark` with `npm install -g .` to use repo version, not published
 - [ ] **[sonnet]** Add `"prepare": "husky"` to root `package.json` for automatic hook setup
 - [ ] **[sonnet]** Cut `studio/stable` tag from current shell redesign state — stop growing the gap to main (265+ commits)
 - [ ] **[sonnet]** Clean up `studio/session/*` remote branches — run `git remote prune origin` + bulk delete noise branches
@@ -71,8 +71,8 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 
 ## Phase 5 — Analytics (Broken Data)
 
-- [ ] **[sonnet]** Fix swarm stats — write `merged_count`, `conflict_count`, `skipped_count` to `swarm_runs` during execution (currently always 0)
-- [ ] **[sonnet]** Fix token counting — parse `usage` field from `--output-format stream-json` response instead of `Math.ceil(length / 4)`
+- [x] **[sonnet]** Fix swarm stats — write `merged_count`, `conflict_count`, `skipped_count` to `swarm_runs` during execution (currently always 0)
+- [x] **[sonnet]** Fix token counting — parse `usage` field from `--output-format stream-json` response instead of `Math.ceil(length / 4)`
 - [ ] **[sonnet]** Fix model persistence — save actual model name from `body.model` to `sessions.model` column (currently hardcoded as `'claude'`)
 - [ ] **[sonnet]** Add session duration tracking — add `started_at` + `ended_at` + `error_count` columns to sessions table
 - [ ] **[sonnet]** Add `GET /api/analytics/summary` endpoint — aggregate view for the app
@@ -82,7 +82,7 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 
 ## Phase 6 — Frontend Code Quality
 
-- [ ] **[sonnet]** Add `--surface: var(--bg-2)` and `--surface-2` to `tokens.css` — 2-line fix, unbreaks Home.tsx mission cards
+- [x] **[sonnet]** Add `--surface: var(--bg-2)` and `--surface-2` to `tokens.css` — 2-line fix, unbreaks Home.tsx mission cards
 - [ ] **[sonnet]** Consolidate toast systems — remove inline toast array from `Shell.tsx` (lines 92, 480-496), route everything through `Toasts.tsx` event bus
 - [ ] **[sonnet]** Add `useFocusTrap` hook and apply to all modals — `ConfirmDialog`, `CommandPalette`, `ShortcutsHelp`, `AboutDialog`, `DispatchModal`
 - [ ] **[sonnet]** Fix accessibility on interactive divs — add `role="button"`, `tabIndex={0}`, `onKeyDown` to `SessionsPanel` rows and any other `<div onClick>`
@@ -117,8 +117,8 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 
 ## Phase 9 — Testing
 
-- [ ] **[sonnet]** Fix root `vitest.config.ts` — targets `src/**` which doesn't exist; fix glob to match actual source structure (5-minute fix, unlocks all tests)
-- [ ] **[sonnet]** Fix `packages/cli/vitest.config.ts` — remove stray `import { Button }` that throws at config load time
+- [x] **[sonnet]** Fix root `vitest.config.ts` — targets `src/**` which doesn't exist; fix glob to match actual source structure (5-minute fix, unlocks all tests)
+- [x] **[sonnet]** Fix `packages/cli/vitest.config.ts` — remove stray `import { Button }` that throws at config load time
 - [ ] **[sonnet]** Move Playwright specs out of `.hashmark/snapshots/` — add `playwright.config.ts` and `test:e2e` script
 - [ ] **[sonnet]** Write auth token flow tests — highest blast radius, 0% coverage
 - [ ] **[sonnet]** Write session create + chat route tests — core user action, 0% coverage
