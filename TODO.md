@@ -63,7 +63,7 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 - [x] **[sonnet]** Add `schema_version` table and migration tracking — no way to know which migrations have run
 - [x] **[sonnet]** Move inline migrations out of route handlers — `runs` columns added in `run.ts:100-103` should be in `migrate()` in `db.ts`
 - [x] **[sonnet]** Add FTS5 virtual table for session search — replace `LIKE '%query%'` full table scan
-- [ ] **[sonnet]** Fix N+1 in checkpoint listing — replace per-checkpoint git invocations with single `git log` call (`server/routes/checkpoints.ts:38-96`)
+- [x] **[sonnet]** Fix N+1 in checkpoint listing — replace per-checkpoint git invocations with single `git log` call (`server/routes/checkpoints.ts:38-96`)
 - [x] **[sonnet]** Add pagination to `GET /api/sessions/:id` messages — no LIMIT means 1MB+ for long sessions
 - [ ] **[opus]** Pass DB instance through `WorkspaceCtx` instead of module-level singleton — prevents stale DB reference after workspace switch
 
@@ -120,8 +120,8 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 - [x] **[sonnet]** Fix root `vitest.config.ts` — targets `src/**` which doesn't exist; fix glob to match actual source structure (5-minute fix, unlocks all tests)
 - [x] **[sonnet]** Fix `packages/cli/vitest.config.ts` — remove stray `import { Button }` that throws at config load time
 - [ ] **[sonnet]** Move Playwright specs out of `.hashmark/snapshots/` — add `playwright.config.ts` and `test:e2e` script
-- [ ] **[sonnet]** Write auth token flow tests — highest blast radius, 0% coverage
-- [ ] **[sonnet]** Write session create + chat route tests — core user action, 0% coverage
+- [x] **[sonnet]** Write auth token flow tests — highest blast radius, 0% coverage
+- [x] **[sonnet]** Write session create + chat route tests — core user action, 0% coverage
 - [ ] **[sonnet]** Write `secrets.ts` scanner tests — false negatives are a security issue, 0% coverage
 - [ ] **[sonnet]** Write `generator.ts` output tests — primary CLI deliverable, 0% coverage
 - [ ] **[sonnet]** Remove `waitForTimeout` from Playwright specs — replace with `waitForSelector` / `waitForResponse`
