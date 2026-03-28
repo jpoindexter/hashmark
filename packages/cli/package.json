@@ -15,10 +15,11 @@
     "build:bin": "npm run build:bundle && pkg dist-ncc/cli.cjs --targets node20-macos-arm64,node20-macos-x64,node20-linux-x64,node20-win-x64 --output dist-bin/hashmark",
     "dev": "tsup src/cli.ts --format esm --watch",
     "start": "node dist/cli.js",
-    "test": "vitest run",
+    "test": "cd packages/cli && npm test",
     "typecheck": "tsc --noEmit",
     "sync-version": "./scripts/sync-version.sh",
-    "prebuild": "./scripts/sync-version.sh"
+    "prebuild": "./scripts/sync-version.sh",
+    "test:watch": "cd packages/cli && npx vitest"
   },
   "keywords": [
     "hashmark",
