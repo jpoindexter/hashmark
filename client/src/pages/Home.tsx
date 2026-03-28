@@ -9,6 +9,11 @@ interface Mission {
   updated_at: number; // unix seconds
 }
 
+interface ProjectInfo {
+  projectName: string;
+  projectDir: string;
+}
+
 const MODELS = [
   { id: "claude-sonnet-4-6", label: "Sonnet 4.6" },
   { id: "claude-opus-4-6", label: "Opus 4.6" },
@@ -320,12 +325,106 @@ function DispatchModal({ onClose, onDispatched }: {
   );
 }
 
+// ── Project header ───────────────────────────────────────────────────────────
+
+function ProjectHeader({ info }: { info: ProjectInfo | null }) {
+  const [hovering, setHovering] = useState(false);
+
+  const openProject = async () => {
+    const s = window.studio;
+    if (!s?.pickFolder) return;
+    const dir = await s.pickFolder();
+    if (dir) {
+      await s.setProjectDir(dir);
+      window.location.reload();
+    }
+  };
+
+  // Shorten path: show last 2 segments
+  const shortPath = (dir: string) => {
+    const parts = dir.replace(/\/$/, "").split("/");
+    if (parts.length <= 2) return dir;
+    return ".../" + parts.slice(-2).join("/");
+  };
+
+  const hasTauri = !!(window.studio?.pickFolder);
+
+  if (!info?.projectDir) {
+    return (
+      <div style={{
+        padding: "10px 28px",
+        borderBottom: "0.5px solid var(--border-dim)",
+        display: "flex", alignItems: "center", gap: 10,
+        background: "var(--bg)",
+      }}>
+        <span style={{ fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)", letterSpacing: "0.04em" }}>
+          no project open
+        </span>
+        {hasTauri && (
+          <button
+            onClick={() => void openProject()}
+            style={{
+              fontFamily: "var(--font)", fontSize: 10, padding: "4px 10px",
+              background: "var(--accent)", border: "none", borderRadius: "var(--radius)",
+              color: "#000", cursor: "pointer", letterSpacing: "0.04em",
+            }}
+          >
+            open project
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      padding: "10px 28px",
+      borderBottom: "0.5px solid var(--border-dim)",
+      display: "flex", alignItems: "center", gap: 10,
+      background: "var(--bg)",
+    }}>
+      <span style={{ fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)", letterSpacing: "0.04em", userSelect: "none" }}>
+        ▸
+      </span>
+      <span style={{ fontFamily: "var(--font)", fontSize: 11, color: "var(--text-dim)", letterSpacing: "0.02em" }}>
+        {shortPath(info.projectDir)}
+      </span>
+      {hasTauri && (
+        <button
+          onClick={() => void openProject()}
+          onMouseEnter={() => setHovering(true)}
+          onMouseLeave={() => setHovering(false)}
+          style={{
+            fontFamily: "var(--font)", fontSize: 10, padding: "3px 8px",
+            background: "transparent",
+            border: `1px solid ${hovering ? "var(--border)" : "transparent"}`,
+            borderRadius: "var(--radius)",
+            color: hovering ? "var(--text-dim)" : "var(--text-dimmer)",
+            cursor: "pointer", letterSpacing: "0.04em",
+            transition: "color 0.1s, border-color 0.1s",
+          }}
+        >
+          change
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ── Mission Board ────────────────────────────────────────────────────────────
 
 export default function Home() {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [showDispatch, setShowDispatch] = useState(false);
+  const [projectInfo, setProjectInfo] = useState<ProjectInfo | null>(null);
+
+  useEffect(() => {
+    fetch("/api/info")
+      .then((r) => r.json())
+      .then((d: ProjectInfo) => setProjectInfo(d))
+      .catch(() => {});
+  }, []);
 
   const fetchMissions = useCallback(() => {
     fetch("/api/sessions")
@@ -376,6 +475,8 @@ export default function Home() {
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--bg)" }}>
       <style>{`@keyframes pdot { 0%,100%{opacity:1} 50%{opacity:.15} }`}</style>
+
+      <ProjectHeader info={projectInfo} />
 
       <div style={{ flex: 1, overflowY: "auto", padding: "28px" }}>
 
