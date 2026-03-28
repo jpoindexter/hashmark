@@ -18,11 +18,13 @@ import { findClaudeBin } from "../lib/bin-resolver.js";
 import { z } from "zod";
 import type { WorkspaceCtx } from "./workspaces.js";
 
+const MAX_CONCURRENT_CLAUDE = 2;
+
 const SwarmBodySchema = z.object({
   tasks: z.array(z.object({
     task: z.string().min(1).max(8000),
     agentId: z.string().max(200).optional(),
-  })).min(1).max(8),
+  })).min(1).max(3),
   mode: z.enum(["plan", "build"]).optional(),
 });
 
@@ -382,9 +384,19 @@ export function swarmRoutes(ctx: WorkspaceCtx) {
     const agentDefs = loadAgents(ctx.projectDir);
     const agentMap = new Map(agentDefs.map((a) => [a.id, a]));
 
-    for (let i = 0; i < agents.length; i++) {
-      runAgent(swarm, i, ctx.projectDir, ctx.dataDir, claudeBin, agentMap).catch(() => {});
+    // Run agents in batches of MAX_CONCURRENT_CLAUDE to avoid spawning too many
+    // Claude processes at once. Each batch waits for all its agents to finish
+    // before the next batch starts.
+    async function runBatched() {
+      for (let i = 0; i < agents.length; i += MAX_CONCURRENT_CLAUDE) {
+        const batch = agents
+          .slice(i, i + MAX_CONCURRENT_CLAUDE)
+          .map((_, j) => runAgent(swarm, i + j, ctx.projectDir, ctx.dataDir, claudeBin, agentMap));
+        await Promise.allSettled(batch);
+        if (swarm.cancelled) break;
+      }
     }
+    runBatched().catch(() => {});
 
     return c.json(
       { swarmId, agents: agents.map(({ workerIndex, task, status }) => ({ id: workerIndex, task, status })) },

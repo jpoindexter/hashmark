@@ -18,7 +18,8 @@ import type { WorkspaceCtx } from "./workspaces.js";
 
 const execFile = promisify(execFileCb);
 
-const MAX_WORKERS = 5;
+const MAX_CONCURRENT_CLAUDE = 2;
+const MAX_WORKERS = 3;
 
 // ─── Agent loading ────────────────────────────────────────────────────────────
 
@@ -319,6 +320,10 @@ Work in the current directory. Make the necessary code changes, create or modify
           });
         }
 
+        if (body.plan.length > plan.length) {
+          send({ type: "warning", message: `Plan had ${body.plan.length} workers; capped to ${plan.length} (max ${MAX_WORKERS})` });
+        }
+
         async function orchestrate() {
           // Insert run + workers into DB
           try {
@@ -334,7 +339,13 @@ Work in the current directory. Make the necessary code changes, create or modify
             }
           } catch {}
 
-          const results = await Promise.allSettled(plan.map(runWorker));
+          // Run workers in batches of MAX_CONCURRENT_CLAUDE
+          const results: PromiseSettledResult<{ id: number; output: string; hasChanges: boolean; testPassed: boolean; testSkipped: boolean }>[] = [];
+          for (let i = 0; i < plan.length; i += MAX_CONCURRENT_CLAUDE) {
+            const batch = plan.slice(i, i + MAX_CONCURRENT_CLAUDE).map(runWorker);
+            const batchResults = await Promise.allSettled(batch);
+            results.push(...batchResults);
+          }
 
           send({ type: "phase", phase: "merging" });
 
