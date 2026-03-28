@@ -30,12 +30,12 @@ interface OutgoingCommit {
 // --- Status colors ---
 
 const STATUS_COLOR: Record<string, string> = {
-  M: "#cca700",
-  A: "#2ea043",
-  D: "#f85149",
-  "?": "#2ea043",
-  U: "#2ea043",
-  R: "#58a6ff",
+  M: "var(--yellow)",
+  A: "var(--green)",
+  D: "var(--red)",
+  "?": "var(--green)",
+  U: "var(--green)",
+  R: "var(--blue)",
   C: "var(--cyan)",
 };
 
@@ -460,10 +460,10 @@ function ChangedFileRow({
           }}
         >
           {f.added ? (
-            <span style={{ color: "#2ea043" }}>+{f.added}</span>
+            <span style={{ color: "var(--green)" }}>+{f.added}</span>
           ) : null}
           {f.removed ? (
-            <span style={{ color: "#f85149" }}>-{f.removed}</span>
+            <span style={{ color: "var(--red)" }}>-{f.removed}</span>
           ) : null}
         </span>
       ) : null}
@@ -482,7 +482,7 @@ function ChangedFileRow({
         {isStaged ? (
           <ActionBtn label={"\u2212"} title="Unstage file" color="var(--text-dim)" onClick={onUnstage} />
         ) : (
-          <ActionBtn label="+" title="Stage file" color="#2ea043" onClick={onStage} />
+          <ActionBtn label="+" title="Stage file" color="var(--green)" onClick={onStage} />
         )}
       </div>
       <StatusBadge status={displayStatus} />
@@ -531,7 +531,7 @@ function OutgoingCommitRow({ commit }: { commit: OutgoingCommit }) {
         width: 6,
         height: 6,
         borderRadius: "50%",
-        background: "#cca700",
+        background: "var(--yellow)",
         flexShrink: 0,
       }} />
       <span

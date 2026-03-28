@@ -53,28 +53,17 @@ interface SessionsSidebarProps {
 }
 
 // Avatar background colors keyed by first letter
+// Low opacity (0.15) so they read on both dark and light backgrounds
 const AVATAR_COLORS: Record<string, string> = {
-  a: "rgba(139,92,246,0.18)", b: "rgba(59,130,246,0.18)", c: "rgba(16,185,129,0.18)",
-  d: "rgba(245,158,11,0.18)", e: "rgba(239,68,68,0.18)", f: "rgba(6,182,212,0.18)",
-  g: "rgba(236,72,153,0.18)", h: "rgba(139,92,246,0.18)", i: "rgba(59,130,246,0.18)",
-  j: "rgba(16,185,129,0.18)", k: "rgba(245,158,11,0.18)", l: "rgba(239,68,68,0.18)",
-  m: "rgba(6,182,212,0.18)", n: "rgba(236,72,153,0.18)", o: "rgba(139,92,246,0.18)",
-  p: "rgba(59,130,246,0.18)", q: "rgba(16,185,129,0.18)", r: "rgba(245,158,11,0.18)",
-  s: "rgba(239,68,68,0.18)", t: "rgba(6,182,212,0.18)", u: "rgba(236,72,153,0.18)",
-  v: "rgba(139,92,246,0.18)", w: "rgba(59,130,246,0.18)", x: "rgba(16,185,129,0.18)",
-  y: "rgba(245,158,11,0.18)", z: "rgba(239,68,68,0.18)",
-};
-
-const AVATAR_TEXT_COLORS: Record<string, string> = {
-  a: "rgba(167,139,250,0.8)", b: "rgba(147,197,253,0.8)", c: "rgba(110,231,183,0.8)",
-  d: "rgba(252,211,77,0.8)", e: "rgba(252,165,165,0.8)", f: "rgba(103,232,249,0.8)",
-  g: "rgba(249,168,212,0.8)", h: "rgba(167,139,250,0.8)", i: "rgba(147,197,253,0.8)",
-  j: "rgba(110,231,183,0.8)", k: "rgba(252,211,77,0.8)", l: "rgba(252,165,165,0.8)",
-  m: "rgba(103,232,249,0.8)", n: "rgba(249,168,212,0.8)", o: "rgba(167,139,250,0.8)",
-  p: "rgba(147,197,253,0.8)", q: "rgba(110,231,183,0.8)", r: "rgba(252,211,77,0.8)",
-  s: "rgba(252,165,165,0.8)", t: "rgba(103,232,249,0.8)", u: "rgba(249,168,212,0.8)",
-  v: "rgba(167,139,250,0.8)", w: "rgba(147,197,253,0.8)", x: "rgba(110,231,183,0.8)",
-  y: "rgba(252,211,77,0.8)", z: "rgba(252,165,165,0.8)",
+  a: "rgba(139,92,246,0.15)", b: "rgba(59,130,246,0.15)", c: "rgba(16,185,129,0.15)",
+  d: "rgba(245,158,11,0.15)", e: "rgba(239,68,68,0.15)", f: "rgba(6,182,212,0.15)",
+  g: "rgba(236,72,153,0.15)", h: "rgba(139,92,246,0.15)", i: "rgba(59,130,246,0.15)",
+  j: "rgba(16,185,129,0.15)", k: "rgba(245,158,11,0.15)", l: "rgba(239,68,68,0.15)",
+  m: "rgba(6,182,212,0.15)", n: "rgba(236,72,153,0.15)", o: "rgba(139,92,246,0.15)",
+  p: "rgba(59,130,246,0.15)", q: "rgba(16,185,129,0.15)", r: "rgba(245,158,11,0.15)",
+  s: "rgba(239,68,68,0.15)", t: "rgba(6,182,212,0.15)", u: "rgba(236,72,153,0.15)",
+  v: "rgba(139,92,246,0.15)", w: "rgba(59,130,246,0.15)", x: "rgba(16,185,129,0.15)",
+  y: "rgba(245,158,11,0.15)", z: "rgba(239,68,68,0.15)",
 };
 
 function avatarBg(name: string): string {
@@ -82,9 +71,8 @@ function avatarBg(name: string): string {
   return AVATAR_COLORS[key] ?? "var(--avatar-fallback-bg)";
 }
 
-function avatarColor(name: string): string {
-  const key = name.charAt(0).toLowerCase();
-  return AVATAR_TEXT_COLORS[key] ?? "var(--avatar-fallback-text)";
+function avatarColor(): string {
+  return "var(--text)";
 }
 
 export default function SessionsSidebar({ activeSessionId, onSessionSelect, info, git, streaming, streamingSessionId }: SessionsSidebarProps) {
@@ -384,7 +372,7 @@ function LetterAvatar({ name }: { name: string }) {
       justifyContent: "center",
       fontSize: 9,
       fontWeight: 700,
-      color: avatarColor(name),
+      color: avatarColor(),
       flexShrink: 0,
     }}>
       {name.charAt(0).toUpperCase()}
