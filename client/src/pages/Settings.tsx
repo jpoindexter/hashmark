@@ -672,6 +672,8 @@ export default function Settings() {
   const [multiAgent,    setMultiAgent]    = useState<boolean>(() => restore("multi_agent", false));
   const [betaFeatures,  setBetaFeatures]  = useState<boolean>(() => restore("beta_features", false));
 
+  const [skipPerms, setSkipPerms] = useState<boolean>(false);
+
   useEffect(() => persist("settings_tab", active), [active]);
   useEffect(() => persist("settings_nav_w", navWidth), [navWidth]);
   useEffect(() => {
@@ -708,6 +710,9 @@ export default function Settings() {
     });
     fetchApi("/api/mcp/config").then(r => r.json()).then(setMcpConfig).catch(() => {});
     fetchApi("/api/settings/env").then(r => r.json()).then((d: { vars: EnvVar[] }) => setEnvVars(d.vars ?? [])).catch(() => {});
+    fetchApi("/api/settings/studio").then(r => r.json()).then((d: { dangerousSkipPermissions: boolean }) => {
+      setSkipPerms(d.dangerousSkipPermissions ?? false);
+    }).catch(() => {});
     fetchApi("/api/providers/detect").then(r => r.json()).then((d: { providers: DetectedCLI[] }) => setDetectedCLIs(d.providers ?? [])).catch(() => {
       window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to detect providers", type: "error" } }));
     });
@@ -1281,6 +1286,29 @@ export default function Settings() {
             <InfoNote variant="warning">
               Experimental features can break things. Use at your own risk.
             </InfoNote>
+            <SettingRow
+              label="Skip Permission Prompts"
+              hint="Sets CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS=1 on all Claude subprocesses. Applies to Chat, Run, Swarm, and Company modes."
+            >
+              <Toggle
+                checked={skipPerms}
+                onChange={(v) => {
+                  setSkipPerms(v);
+                  fetchApi("/api/settings/studio", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ dangerousSkipPermissions: v }),
+                  }).catch(() => {
+                    window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to save setting", type: "error" } }));
+                  });
+                }}
+              />
+            </SettingRow>
+            {skipPerms && (
+              <InfoNote variant="warning">
+                Permission prompts are disabled. Claude can read, write, and execute without asking. Only enable this if you understand the risks.
+              </InfoNote>
+            )}
             <SettingRow label="Plan Mode" hint="Chat responds with plans only — no code generation">
               <Toggle checked={planMode} onChange={setPlanMode} />
             </SettingRow>

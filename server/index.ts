@@ -35,7 +35,7 @@ import { governanceRoutes } from "./routes/governance.js";
 import { workspacesRoutes, type WorkspaceCtx } from "./routes/workspaces.js";
 import { configRoutes } from "./routes/config.js";
 import { sandboxRoutes } from "./routes/sandbox.js";
-import { getDb } from "./db.js";
+import { getDb, getStudioSetting, setStudioSetting } from "./db.js";
 import { getStudioToken } from "./lib/studio-token.js";
 import { studioAuthMiddleware } from "./lib/auth-middleware.js";
 import { rateLimitMiddleware } from "./lib/rate-limit.js";
@@ -151,6 +151,23 @@ export function createServer(opts: ServerOptions) {
       nodeVersion: process.versions.node,
       port: opts.port,
     });
+  });
+
+  // Studio settings — persisted per project in the DB
+  app.get("/api/settings/studio", (c) => {
+    const db = getDb(ctx.dataDir);
+    return c.json({
+      dangerousSkipPermissions: getStudioSetting(db, "dangerousSkipPermissions", "false") === "true",
+    });
+  });
+
+  app.put("/api/settings/studio", async (c) => {
+    const body = await c.req.json<{ dangerousSkipPermissions?: boolean }>();
+    const db = getDb(ctx.dataDir);
+    if (typeof body.dangerousSkipPermissions === "boolean") {
+      setStudioSetting(db, "dangerousSkipPermissions", body.dangerousSkipPermissions ? "true" : "false");
+    }
+    return c.json({ ok: true });
   });
 
   // Settings — env var keys (names only, never values)

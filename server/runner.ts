@@ -9,6 +9,7 @@ import { spawn, type ChildProcess } from "child_process";
 import { randomUUID } from "crypto";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
+import { getDb, getStudioSetting } from "./db.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -140,12 +141,14 @@ export function runTask(
     try { return !p.includes("node_modules") ? existsSync(p) : existsSync(p); } catch { return false; }
   }) ?? "claude";
 
+  const dataDir = join(projectDir, ".hashmark");
+  const skipPerms = getStudioSetting(getDb(dataDir), "dangerousSkipPermissions", "false") === "true";
+  const taskEnv: Record<string, string> = { ...process.env as Record<string, string> };
+  if (skipPerms) taskEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
+
   const proc = spawn(claudeBin, ["--print", fullPrompt], {
     cwd: projectDir,
-    env: {
-      ...process.env,
-      CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS: "1",
-    },
+    env: taskEnv,
   });
 
   taskStore.setProcess(taskId, proc);

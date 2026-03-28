@@ -24,3 +24,13 @@ export function findBin(name: string, projectDir: string): string {
 export function findClaudeBin(projectDir: string): string {
   return findBin("claude", projectDir);
 }
+
+export function buildClaudeArgs(
+  prompt: string,
+  opts?: { resume?: string; outputFormat?: string },
+): string[] {
+  const args: string[] = ["--print", prompt];
+  if (opts?.outputFormat) args.push("--output-format", opts.outputFormat);
+  if (opts?.resume) args.push("--resume", opts.resume);
+  return args;
+}

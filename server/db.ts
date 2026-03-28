@@ -221,6 +221,14 @@ function migrate(db: Database.Database) {
     db.exec('ALTER TABLE runs ADD COLUMN worktree_branch TEXT');
   }
 
+  // Studio settings key-value store
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS studio_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+  `);
+
   // FTS5 full-text search index for session messages
   // Only create + backfill once; subsequent startups skip via IF NOT EXISTS on table
   const ftsExists = (db.prepare(
@@ -244,4 +252,13 @@ function migrate(db: Database.Database) {
       END;
     `);
   }
+}
+
+export function getStudioSetting(db: Database.Database, key: string, defaultValue: string): string {
+  const row = db.prepare("SELECT value FROM studio_settings WHERE key = ?").get(key) as { value: string } | undefined;
+  return row?.value ?? defaultValue;
+}
+
+export function setStudioSetting(db: Database.Database, key: string, value: string): void {
+  db.prepare("INSERT OR REPLACE INTO studio_settings (key, value) VALUES (?, ?)").run(key, value);
 }

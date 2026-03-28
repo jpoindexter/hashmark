@@ -8,7 +8,7 @@ import { randomUUID } from "crypto";
 import { spawn } from "child_process";
 import { existsSync, readFileSync } from "fs";
 import { join, extname } from "path";
-import { getDb } from "../db.js";
+import { getDb, getStudioSetting } from "../db.js";
 import { loadScanContext } from "../context.js";
 import { analyzeSessionLoop } from "../lib/loop-detector.js";
 import { loadProviders } from "../lib/providers.js";
@@ -603,7 +603,9 @@ export function sessionsRoutes(ctx: WorkspaceCtx) {
             if (mcpConfigPath) {
               cliArgs.unshift("--mcp-config", mcpConfigPath);
             }
-            cliEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
+            if (getStudioSetting(getDb(ctx.dataDir), "dangerousSkipPermissions", "false") === "true") {
+              cliEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
+            }
           }
 
           const proc = spawn(cliBin, cliArgs, {

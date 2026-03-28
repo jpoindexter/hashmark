@@ -11,7 +11,7 @@ import { join, relative } from "path";
 import { randomUUID } from "crypto";
 import { promisify } from "util";
 import { tmpdir } from "os";
-import { getDb } from "../db.js";
+import { getDb, getStudioSetting } from "../db.js";
 import { logAgentAction, parseActionsFromOutput } from "../lib/action-log.js";
 import { findClaudeBin } from "../lib/bin-resolver.js";
 import type { WorkspaceCtx } from "./workspaces.js";
@@ -120,10 +120,14 @@ Rules:
 Respond with ONLY a JSON array, no markdown, no explanation:
 [{"id":1,"title":"short title under 50 chars","description":"detailed what to implement","agentId":"exact-agent-id-here"}]`;
 
+    const skipPerms = getStudioSetting(getDb(ctx.dataDir), "dangerousSkipPermissions", "false") === "true";
+    const planEnv: Record<string, string> = { ...process.env as Record<string, string> };
+    if (skipPerms) planEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
+
     try {
       const { stdout } = await execFile(claudeBin, ["--print", prompt], {
         cwd: ctx.projectDir,
-        env: { ...process.env, CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS: "1" },
+        env: planEnv,
         maxBuffer: 1024 * 1024,
       });
 
@@ -215,11 +219,15 @@ ${subtask.description}
 
 Work in the current directory. Make the necessary code changes, create or modify files as needed.`;
 
+          const workerSkipPerms = getStudioSetting(getDb(ctx.dataDir), "dangerousSkipPermissions", "false") === "true";
+          const workerEnv: Record<string, string> = { ...process.env as Record<string, string> };
+          if (workerSkipPerms) workerEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
+
           return new Promise((resolve, reject) => {
             const proc = spawn(claudeBin, ["--print", workerPrompt], {
               cwd: worktreeDir,
               stdio: ["ignore", "pipe", "pipe"],
-              env: { ...process.env, CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS: "1" },
+              env: workerEnv,
             });
 
             let fullOutput = "";
