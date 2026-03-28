@@ -195,7 +195,7 @@ export default function ProviderSelector() {
           position: "absolute", bottom: "calc(100% + 4px)", left: 0, zIndex: 400,
           background: "var(--bg-3)", border: "1px solid var(--border)",
           borderRadius: "var(--radius-lg)", minWidth: 260, maxWidth: 320,
-          boxShadow: "0 -4px 20px rgba(0,0,0,0.5)", overflow: "hidden",
+          boxShadow: "var(--shadow-md)", overflow: "hidden",
         }}>
 
           {/* Header */}

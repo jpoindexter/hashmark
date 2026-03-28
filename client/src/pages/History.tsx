@@ -368,7 +368,7 @@ export default function History() {
             width: "clamp(320px, 40vw, 680px)",
             display: "flex",
             flexDirection: "column",
-            boxShadow: "-4px 0 24px rgba(0,0,0,0.5)",
+            boxShadow: "var(--shadow-lg)",
           }}>
             {diffLoading ? (
               <div style={{

@@ -851,7 +851,7 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
           zIndex: 200,
           background: "var(--bg-2)",
           borderBottom: "1px solid var(--border)",
-          boxShadow: "0 6px 18px rgba(0,0,0,0.45)",
+          boxShadow: "var(--shadow-md)",
           animation: "fadeIn 0.1s ease forwards",
         }}>
           {workspaces.length > 0 && (

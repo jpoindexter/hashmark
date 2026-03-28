@@ -222,7 +222,7 @@ const XTerminal = forwardRef<XTerminalHandle, XTerminalProps>(function XTerminal
             borderRadius: 4,
             padding: "3px 5px",
             zIndex: 100,
-            boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
+            boxShadow: "var(--shadow-sm)",
           }}
         >
           <input

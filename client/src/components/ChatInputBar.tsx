@@ -10,7 +10,7 @@ const PICKER_CONTAINER_STYLE: React.CSSProperties = {
   background: "var(--bg-3)",
   border: "1px solid var(--border)",
   borderRadius: "var(--radius-lg)",
-  boxShadow: "0 -8px 32px rgba(0,0,0,0.6)",
+  boxShadow: "var(--shadow-lg)",
   zIndex: 500,
   overflow: "auto",
 };

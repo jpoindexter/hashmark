@@ -110,7 +110,7 @@ export default function AgentCard({ agent, stats, onClick, onRun, onDelete, onDu
         const el = e.currentTarget as HTMLDivElement;
         el.style.borderColor = "var(--accent)";
         el.style.background = "var(--accent-bg)";
-        el.style.boxShadow = "0 4px 16px rgba(0,0,0,0.3)";
+        el.style.boxShadow = "var(--shadow-md)";
         el.style.transform = "translateY(-1px)";
       }}
       onMouseLeave={(e) => {

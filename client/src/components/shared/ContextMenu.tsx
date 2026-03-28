@@ -28,7 +28,7 @@ const menuBase: CSSProperties = {
   borderRadius: "var(--radius-lg)",
   padding: "4px 0",
   minWidth: 160,
-  boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+  boxShadow: "var(--shadow-md)",
 };
 
 const itemBase: CSSProperties = {

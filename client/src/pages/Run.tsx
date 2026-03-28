@@ -367,7 +367,7 @@ export default function Run() {
         </div>
         {phase !== "idle" && (
           <button className="btn btn-sm" onClick={handleReset}>
-            {phase === "done" ? "Run another" : "Clear"}
+            {phase === "done" ? "run another" : "clear"}
           </button>
         )}
       </div>
@@ -431,7 +431,7 @@ export default function Run() {
                     borderRadius: "var(--radius)",
                     zIndex: 50,
                     overflow: "hidden",
-                    boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+                    boxShadow: "var(--shadow-md)",
                   }}>
                     <div style={{
                       padding: "4px 10px",
@@ -502,7 +502,7 @@ export default function Run() {
                   onClick={handleRun}
                   disabled={!task.trim()}
                 >
-                  {"Run agent"}
+                  {"run agent"}
                 </button>
               </div>
 
@@ -642,7 +642,7 @@ export default function Run() {
                       onClick={handleCancel}
                       style={{ color: "var(--red)", borderColor: "var(--red)" }}
                     >
-                      Cancel
+                      cancel
                     </button>
                   </>
                 )}
@@ -778,28 +778,28 @@ export default function Run() {
                     onClick={handleViewDiff}
                     disabled={diffLoading}
                   >
-                    {diffLoading ? "Loading..." : "View diff"}
+                    {diffLoading ? "loading..." : "view diff"}
                   </button>
                 )}
                 <button
                   className="btn btn-sm"
                   onClick={handleRunAgain}
                 >
-                  {"Run again"}
+                  {"run again"}
                 </button>
                 <button
                   className="btn btn-sm"
                   onClick={handleShare}
                   style={{ color: copied ? "var(--accent)" : undefined, borderColor: copied ? "var(--accent)" : undefined }}
                 >
-                  {copied ? "Copied!" : "Share"}
+                  {copied ? "copied!" : "share"}
                 </button>
                 <span style={{ flex: 1 }} />
                 <button
                   className="btn btn-sm"
                   onClick={handleReset}
                 >
-                  {"New run"}
+                  {"new run"}
                 </button>
               </div>
             </div>

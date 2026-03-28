@@ -270,7 +270,7 @@ function ToastCard({ item, onDismiss }: ToastCardProps) {
         border: "1px solid var(--border)",
         borderLeft: `3px solid ${accentColor}`,
         borderRadius: "var(--radius, 4px)",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        boxShadow: "var(--shadow-lg)",
         padding: "12px 14px",
         display: "flex",
         flexDirection: "column",

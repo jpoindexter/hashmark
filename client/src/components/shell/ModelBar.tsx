@@ -356,7 +356,7 @@ function ModelDropdown({
         minWidth: 220,
         maxHeight: 400,
         overflowY: "auto",
-        boxShadow: "0 -4px 20px rgba(0,0,0,0.5)",
+        boxShadow: "var(--shadow-md)",
       }}
     >
       {groups.map((group, gi) => (

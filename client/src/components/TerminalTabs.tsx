@@ -373,7 +373,7 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
                   padding: "4px 0",
                   minWidth: 140,
                   zIndex: 1000,
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+                  boxShadow: "var(--shadow-lg)",
                 }}
               >
                 <div style={{ padding: "3px 10px 5px", fontSize: 10, color: "var(--text-dimmer)", fontFamily: "var(--font-ui)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
@@ -437,7 +437,7 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
                   padding: "4px 0",
                   minWidth: 160,
                   zIndex: 1000,
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+                  boxShadow: "var(--shadow-lg)",
                 }}
               >
                 <MoreMenuItem
@@ -747,7 +747,7 @@ function TabItem({
             borderRadius: 6,
             padding: "8px 10px",
             zIndex: 1100,
-            boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+            boxShadow: "var(--shadow-md)",
             fontSize: 11,
             fontFamily: "var(--font-ui)",
             color: "var(--text)",

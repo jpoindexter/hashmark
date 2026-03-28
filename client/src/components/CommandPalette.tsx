@@ -505,7 +505,7 @@ export default function CommandPalette({ open, onClose, mode = "files" }: Props)
           background: "var(--bg-2)",
           border: "1px solid var(--border)",
           borderRadius: "var(--radius-lg)",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
+          boxShadow: "var(--shadow-lg)",
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",

@@ -763,13 +763,13 @@ export default function Agents() {
               onClick={() => void runSecurityScan()}
               disabled={secScanRunning}
             >
-              {secScanRunning ? "Scanning..." : "Security scan"}
+              {secScanRunning ? "scanning..." : "security scan"}
             </button>
             <button
               className="btn btn-primary btn-sm"
               onClick={() => setShowCreate(true)}
             >
-              + New Agent
+              + new agent
             </button>
           </div>
         </div>
@@ -888,7 +888,7 @@ export default function Agents() {
                   minWidth: 200,
                   maxHeight: 320,
                   overflowY: "auto",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+                  boxShadow: "var(--shadow-md)",
                 }}
               >
                 {/* Select All / Clear controls */}
@@ -917,7 +917,7 @@ export default function Agents() {
                     onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-dimmer)"; }}
                   >
-                    Select All
+                    select all
                   </button>
                   <button
                     onClick={() => setSelectedDepts(new Set())}
@@ -934,7 +934,7 @@ export default function Agents() {
                     onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-dimmer)"; }}
                   >
-                    Clear
+                    clear
                   </button>
                 </div>
                 {/* Department rows */}
@@ -1024,7 +1024,7 @@ export default function Agents() {
                   transition: "all 0.1s",
                 }}
               >
-                {k === "name" ? "Name" : k === "lastRun" ? "Last Run" : "Run Count"}
+                {k === "name" ? "name" : k === "lastRun" ? "last run" : "run count"}
               </button>
             ))}
           </div>
@@ -1033,8 +1033,49 @@ export default function Agents() {
         {/* Agent grid */}
         {loading ? (
           <div style={{ color: "var(--text-dimmer)", padding: "40px 0" }}>Loading...</div>
+        ) : agents.length === 0 ? (
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "64px 24px",
+            textAlign: "center",
+            gap: "16px",
+          }}>
+            <div style={{
+              width: 48,
+              height: 48,
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-lg)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "var(--text-dimmer)",
+              fontSize: "22px",
+              background: "var(--bg-2)",
+            }}>
+              ⬡
+            </div>
+            <div>
+              <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", marginBottom: "6px" }}>
+                No agents yet
+              </div>
+              <div style={{ fontSize: "12px", color: "var(--text-dimmer)", maxWidth: "320px", lineHeight: "1.6" }}>
+                Agents are reusable AI personas with defined skills, constraints, and tools. Create one to run it on any task.
+              </div>
+            </div>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => setShowCreate(true)}
+            >
+              + new agent
+            </button>
+          </div>
         ) : filtered.length === 0 ? (
-          <div style={{ color: "var(--text-dimmer)", padding: "40px 0" }}>No agents found.</div>
+          <div style={{ color: "var(--text-dimmer)", padding: "40px 0", fontSize: "12px" }}>
+            No agents match your search.
+          </div>
         ) : (
           Object.entries(grouped).sort().map(([dept, deptAgents]) => (
             <div key={dept} style={{ marginBottom: "24px" }}>
