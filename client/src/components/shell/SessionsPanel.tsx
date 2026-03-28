@@ -279,8 +279,8 @@ export default function SessionsPanel({
       {confirmDelete && (
         <ConfirmDialog
           open={true}
-          title="Delete session"
-          message={`Delete "${confirmDelete.title || "this session"}"? This can't be undone.`}
+          title="Delete mission"
+          message={`Delete "${confirmDelete.title || "this mission"}"? This can't be undone.`}
           confirmLabel="Delete"
           danger
           onConfirm={() => {

@@ -600,7 +600,7 @@ export default function Sessions() {
               <button
                 className="btn"
                 onClick={() => void createSession()}
-                title="New session (Cmd+N)"
+                title="New mission (Cmd+N)"
                 style={{ padding: "4px 8px", fontSize: "10px", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "4px" }}
               >
                 <Plus size={11} />
@@ -1080,7 +1080,7 @@ function SessionListItem({
         ) : (hovered || isActive) ? (
           <button
             onClick={onDeleteRequest}
-            title="Delete session"
+            title="Delete mission"
             style={{
               background: "none", border: "none", cursor: "pointer",
               color: "var(--text-dimmer)", display: "flex", alignItems: "center",

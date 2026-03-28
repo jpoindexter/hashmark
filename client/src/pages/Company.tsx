@@ -867,7 +867,7 @@ export default function Company() {
                   </button>
                 </span>
               )}
-              <button className="btn btn-sm" onClick={() => { cancelAutoClear(); handleClear(); }}>Clear</button>
+              <button className="btn btn-sm" onClick={() => { cancelAutoClear(); handleClear(); }}>clear</button>
             </div>
           )}
         </div>

@@ -1184,7 +1184,7 @@ export default function Agents() {
             </div>
 
             <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-              <button className="btn" onClick={() => setShowCreate(false)}>Cancel</button>
+              <button className="btn" onClick={() => setShowCreate(false)}>cancel</button>
               <button
                 className="btn btn-primary btn-sm"
                 onClick={() => void handleCreate()}

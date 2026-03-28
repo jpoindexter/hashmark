@@ -13,7 +13,7 @@ interface SidebarPanelProps {
 }
 
 const VIEW_TITLES: Record<string, string> = {
-  chat: "Sessions",
+  chat: "Missions",
   files: "Explorer",
   "source-control": "Source Control",
   search: "Search",

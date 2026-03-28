@@ -97,7 +97,7 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 
 ## Phase 7 — Performance
 
-- [ ] **[sonnet]** Restrict Shiki to used languages only — replace all-languages import with `createHighlighter({ langs: ['typescript', 'python', 'bash', 'json', 'css', 'html', 'markdown', 'yaml', 'go', 'rust', 'shell', 'diff', 'plaintext'] })`. Cuts 6.5MB bundle
+- [x] **[sonnet]** Restrict Shiki to used languages only — replace all-languages import with `createHighlighter({ langs: ['typescript', 'python', 'bash', 'json', 'css', 'html', 'markdown', 'yaml', 'go', 'rust', 'shell', 'diff', 'plaintext'] })`. Cuts 6.5MB bundle
 - [x] **[sonnet]** Fix N+1 git diff in Git panel — replace `Promise.all(files.map(f => execAsync("git diff --numstat " + f)))` with single `git diff --numstat HEAD`
 - [x] **[sonnet]** Cache CLAUDE.md in memory — currently read from disk 2x per chat turn; watch for changes with `fs.watch`
 - [x] **[sonnet]** Add `document.visibilitychange` guard to polling intervals — `Home.tsx` and `Company.tsx` `setInterval(8000)` should pause when tab is hidden
@@ -155,7 +155,7 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 ## Phase 12 — Growth & SEO (non-code)
 
 - [x] **[sonnet]** Fix `public/robots.txt` — remove or update reference to non-existent `https://hashmark.md/sitemap.xml`
-- [ ] **[sonnet]** Update `packages/cli/package.json` — add `description`, `keywords`, `homepage` for npm search visibility
+- [x] **[sonnet]** Update `packages/cli/package.json` — add `description`, `keywords`, `homepage` for npm search visibility
 - [ ] Add hashmark badge to generated READMEs on first GitHub Action run — `[![hashmark synced](https://img.shields.io/badge/hashmark-synced-green)](https://hashmark.md)`
 - [ ] Make GitHub repo public + submit to GitHub Marketplace
 - [ ] Publish "Stop Maintaining 7 AI Context Files" launch post simultaneously with hashmark.md launch

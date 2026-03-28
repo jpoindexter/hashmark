@@ -460,7 +460,7 @@ export default function Generate() {
               onClick={triggerScan}
               disabled={selectedFormats.size === 0}
             >
-              Generate Context
+              generate context
             </button>
             <span style={{ fontSize: "10px", color: "var(--text-dimmer)" }}>
               {selectedFormats.size === 0

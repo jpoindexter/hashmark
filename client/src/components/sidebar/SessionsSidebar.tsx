@@ -226,9 +226,9 @@ function SectionHeader({ onAdd }: { onAdd: () => void }) {
         textTransform: "uppercase",
         letterSpacing: "0.06em",
       }}>
-        Sessions
+        Missions
       </span>
-      <IconButton title="New session" onClick={onAdd}>
+      <IconButton title="New mission" onClick={onAdd}>
         <Plus size={14} />
       </IconButton>
     </div>
@@ -475,9 +475,9 @@ function buildSessionMenuItems(
       onClick: () => {
         setDialog({
           open: true,
-          title: "Rename session",
+          title: "Rename mission",
           inputMode: true,
-          inputPlaceholder: "Session name",
+          inputPlaceholder: "Mission name",
           inputDefaultValue: session.title || "Untitled",
           confirmLabel: "Rename",
           onConfirm: () => {},
@@ -510,7 +510,7 @@ function buildSessionMenuItems(
         setDialog({
           open: true,
           title: `Delete "${session.title || "Untitled"}"?`,
-          message: "This will permanently delete this session and all its messages.",
+          message: "This will permanently delete this mission and all its messages.",
           confirmLabel: "Delete",
           danger: true,
           onConfirm: () => {
