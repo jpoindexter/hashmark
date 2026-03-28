@@ -340,11 +340,11 @@ var require_windowsConoutConnection = __commonJS({
     "use strict";
     var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
-        return value instanceof P ? value : new P(function(resolve2) {
-          resolve2(value);
+        return value instanceof P ? value : new P(function(resolve5) {
+          resolve5(value);
         });
       }
-      return new (P || (P = Promise))(function(resolve2, reject) {
+      return new (P || (P = Promise))(function(resolve5, reject) {
         function fulfilled(value) {
           try {
             step(generator.next(value));
@@ -360,7 +360,7 @@ var require_windowsConoutConnection = __commonJS({
           }
         }
         function step(result) {
-          result.done ? resolve2(result.value) : adopt(result.value).then(fulfilled, rejected);
+          result.done ? resolve5(result.value) : adopt(result.value).then(fulfilled, rejected);
         }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
@@ -679,15 +679,15 @@ var require_windowsPtyAgent = __commonJS({
         };
         WindowsPtyAgent2.prototype._getConsoleProcessList = function() {
           var _this = this;
-          return new Promise(function(resolve2) {
+          return new Promise(function(resolve5) {
             var agent = child_process_1.fork(path.join(__dirname, "conpty_console_list_agent"), [_this._innerPid.toString()]);
             agent.on("message", function(message) {
               clearTimeout(timeout);
-              resolve2(message.consoleProcessList);
+              resolve5(message.consoleProcessList);
             });
             var timeout = setTimeout(function() {
               agent.kill();
-              resolve2([_this._innerPid]);
+              resolve5([_this._innerPid]);
             }, 5e3);
           });
         };
@@ -1326,13 +1326,18 @@ var require_lib = __commonJS({
       return new terminalCtor(file, args, opt);
     }
     exports.createTerminal = createTerminal;
-    function open2(options) {
+    function open(options) {
       return terminalCtor.open(options);
     }
-    exports.open = open2;
+    exports.open = open;
     exports.native = process.platform !== "win32" ? utils_1.loadNativeModule("pty").module : null;
   }
 });
+
+// bin.ts
+import { existsSync as existsSync22, readFileSync as readFileSync21 } from "fs";
+import { join as join28, resolve as resolve4 } from "path";
+import { fileURLToPath } from "url";
 
 // server/index.ts
 import { Hono as Hono19 } from "hono";
@@ -1788,7 +1793,7 @@ description: ${body.description?.trim() ?? ""}
 import { Hono as Hono2 } from "hono";
 import { spawn } from "child_process";
 import { mkdirSync as mkdirSync2, writeFileSync as writeFileSync2, existsSync as existsSync2 } from "fs";
-import { join as join3 } from "path";
+import { join as join3, resolve, dirname } from "path";
 function generateRoutes(projectDir) {
   const app = new Hono2();
   app.post("/", async (c) => {
@@ -1802,6 +1807,11 @@ function generateRoutes(projectDir) {
           controller.enqueue(new TextEncoder().encode(chunk));
         };
         send({ type: "start", message: "Starting agent generation..." });
+        if (body.companyType?.startsWith("-") || body.projectName?.startsWith("-")) {
+          send({ type: "error", message: "Invalid input" });
+          controller.close();
+          return;
+        }
         const args = [
           "agents",
           "--yes",
@@ -1812,8 +1822,15 @@ function generateRoutes(projectDir) {
         if (body.projectName) {
           args.push("--name", body.projectName);
         }
-        const cliPath = join3(projectDir, "node_modules", ".bin", "hashmark");
-        const bin = existsSync2(cliPath) ? cliPath : "hashmark";
+        const localBin = join3(projectDir, "node_modules", ".bin", "hashmark");
+        const monoBin = join3(projectDir, "packages", "cli", "dist", "cli.js");
+        const isMonorepo = !existsSync2(localBin) && existsSync2(monoBin);
+        const resolvedBin = existsSync2(localBin) ? localBin : isMonorepo ? "node" : "hashmark";
+        if (resolvedBin === "node") {
+          const agentsIdx = args.indexOf("agents");
+          args.splice(0, 0, monoBin);
+          args.splice(agentsIdx + 2, 0, projectDir);
+        }
         const env = { ...process.env };
         if (body.apiKey) {
           const keyMap = {
@@ -1828,7 +1845,8 @@ function generateRoutes(projectDir) {
           if (envVar) env[envVar] = body.apiKey;
           if (body.baseURL) env.OPENAI_BASE_URL = body.baseURL;
         }
-        const proc = spawn(bin, args, { cwd: projectDir, env });
+        const spawnCwd = isMonorepo ? join3(projectDir, "packages", "cli") : projectDir;
+        const proc = spawn(resolvedBin, args, { cwd: spawnCwd, env });
         let buffer = "";
         proc.stdout.on("data", (chunk) => {
           buffer += chunk.toString();
@@ -1871,13 +1889,16 @@ function generateRoutes(projectDir) {
   app.post("/save", async (c) => {
     const body = await c.req.json();
     const agentsDir = join3(projectDir, ".claude", "agents");
+    let written = 0;
     for (const agent of body.agents) {
-      const fullPath = join3(agentsDir, agent.path);
-      const dir = fullPath.substring(0, fullPath.lastIndexOf("/"));
-      mkdirSync2(dir, { recursive: true });
+      if (!agent.path || typeof agent.path !== "string") continue;
+      const fullPath = resolve(agentsDir, agent.path);
+      if (!fullPath.startsWith(agentsDir + "/") && fullPath !== agentsDir) continue;
+      mkdirSync2(dirname(fullPath), { recursive: true });
       writeFileSync2(fullPath, agent.content, "utf-8");
+      written++;
     }
-    return c.json({ ok: true, count: body.agents.length });
+    return c.json({ ok: true, count: written });
   });
   return app;
 }
@@ -2077,10 +2098,14 @@ function scanRoutes(projectDir) {
     const stream = new ReadableStream({
       start(controller) {
         controller.enqueue(send({ type: "start", message: "Starting scan..." }));
-        const cliPath = join5(projectDir, "node_modules", ".bin", "hashmark");
-        const bin = existsSync4(cliPath) ? cliPath : "hashmark";
-        const proc = spawn2(bin, ["--json", "--output", "/dev/stdout"], {
-          cwd: projectDir,
+        const localBin = join5(projectDir, "node_modules", ".bin", "hashmark");
+        const monoBin = join5(projectDir, "packages", "cli", "dist", "cli.js");
+        const isMonorepo = !existsSync4(localBin) && existsSync4(monoBin);
+        const bin = existsSync4(localBin) ? localBin : isMonorepo ? "node" : "hashmark";
+        const args = bin === "node" ? [monoBin, projectDir, "--json", "--output", "/dev/stdout"] : ["--json", "--output", "/dev/stdout"];
+        const spawnCwd = isMonorepo ? join5(projectDir, "packages", "cli") : projectDir;
+        const proc = spawn2(bin, args, {
+          cwd: spawnCwd,
           env: process.env
         });
         let stdout = "";
@@ -2925,7 +2950,7 @@ async function streamCodex(opts) {
   }) ?? "codex";
   const lastUser = [...opts.messages].reverse().find((m) => m.role === "user");
   const prompt = lastUser?.content ?? "";
-  return new Promise((resolve2, reject) => {
+  return new Promise((resolve5, reject) => {
     const args = ["--approval-mode", "full-auto", "-q", prompt];
     if (opts.model) args.unshift("--model", opts.model);
     const proc = spawn4(codexBin, args, {
@@ -2938,7 +2963,7 @@ async function streamCodex(opts) {
     proc.on("close", (code) => {
       if (code === 0 || code === null) {
         opts.onDone();
-        resolve2();
+        resolve5();
       } else {
         const e = new Error(`codex exited with code ${code}`);
         opts.onError(e);
@@ -4100,8 +4125,8 @@ Failed to start terminal: ${err}\r
 
 // server/routes/files.ts
 import { Hono as Hono6 } from "hono";
-import { readdir, stat, readFile } from "fs/promises";
-import { join as join15, relative as relative3, extname as extname3 } from "path";
+import { readdir, stat, readFile, writeFile, mkdir, rename, rm } from "fs/promises";
+import { join as join15, relative as relative3, extname as extname3, resolve as resolve2, dirname as dirname2 } from "path";
 import { execFile as execFile2 } from "child_process";
 import { promisify as promisify2 } from "util";
 import { existsSync as existsSync12 } from "fs";
@@ -4391,7 +4416,7 @@ function filesRoutes(projectDir) {
     const relPath = c.req.query("path");
     if (!relPath) return c.json({ error: "path required" }, 400);
     const fullPath = join15(projectDir, relPath);
-    if (!fullPath.startsWith(projectDir)) return c.json({ error: "forbidden" }, 403);
+    if (!fullPath.startsWith(projectDir + "/") && fullPath !== projectDir) return c.json({ error: "forbidden" }, 403);
     try {
       const content = await readFile(fullPath, "utf-8");
       return c.json({ content, path: relPath });
@@ -4403,7 +4428,7 @@ function filesRoutes(projectDir) {
     const relPath = c.req.query("path");
     if (!relPath) return c.json({ error: "path required" }, 400);
     const fullPath = join15(projectDir, relPath);
-    if (!fullPath.startsWith(projectDir)) return c.json({ error: "forbidden" }, 403);
+    if (!fullPath.startsWith(projectDir + "/") && fullPath !== projectDir) return c.json({ error: "forbidden" }, 403);
     const stagedParam = c.req.query("staged");
     const staged = stagedParam === "true" || stagedParam === "1";
     try {
@@ -4432,9 +4457,8 @@ ${lines}`;
     try {
       if (body.paths?.length) {
         for (const p of body.paths) {
-          const fullPath = join15(projectDir, p);
-          if (!fullPath.startsWith(projectDir)) continue;
-          await execAsync("git", ["add", p], { cwd: projectDir });
+          if (!safePath(p)) continue;
+          await execAsync("git", ["add", "--", p], { cwd: projectDir });
         }
       } else {
         await execAsync("git", ["add", "-A"], { cwd: projectDir });
@@ -4449,9 +4473,8 @@ ${lines}`;
     try {
       if (body.paths?.length) {
         for (const p of body.paths) {
-          const fullPath = join15(projectDir, p);
-          if (!fullPath.startsWith(projectDir)) continue;
-          await execAsync("git", ["restore", "--staged", p], { cwd: projectDir });
+          if (!safePath(p)) continue;
+          await execAsync("git", ["restore", "--staged", "--", p], { cwd: projectDir });
         }
       } else {
         await execAsync("git", ["restore", "--staged", "."], { cwd: projectDir });
@@ -4466,8 +4489,7 @@ ${lines}`;
     if (!body.paths?.length) return c.json({ error: "paths required" }, 400);
     try {
       for (const p of body.paths) {
-        const fullPath = join15(projectDir, p);
-        if (!fullPath.startsWith(projectDir)) continue;
+        if (!safePath(p)) continue;
         try {
           await execAsync("git", ["checkout", "--", p], { cwd: projectDir });
         } catch {
@@ -4513,12 +4535,280 @@ ${lines}`;
       return c.json({ error: err instanceof Error ? err.message : "Fetch failed" }, 500);
     }
   });
+  function safePath(relPath) {
+    const full = resolve2(projectDir, relPath);
+    if (!full.startsWith(projectDir + "/") && full !== projectDir) return null;
+    return full;
+  }
+  app.post("/create", async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const relPath = body.path;
+    if (!relPath || typeof relPath !== "string") return c.json({ error: "path required" }, 400);
+    const fullPath = safePath(relPath);
+    if (!fullPath) return c.json({ error: "forbidden" }, 403);
+    const isDir = body.type === "dir";
+    try {
+      if (isDir) {
+        await mkdir(fullPath, { recursive: true });
+      } else {
+        await mkdir(dirname2(fullPath), { recursive: true });
+        await writeFile(fullPath, body.content ?? "", "utf-8");
+      }
+      return c.json({ ok: true, path: relPath }, 201);
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    }
+  });
+  app.put("/rename", async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    if (!body.oldPath || !body.newPath) return c.json({ error: "oldPath and newPath required" }, 400);
+    const fullOld = safePath(body.oldPath);
+    const fullNew = safePath(body.newPath);
+    if (!fullOld || !fullNew) return c.json({ error: "forbidden" }, 403);
+    try {
+      await mkdir(dirname2(fullNew), { recursive: true });
+      await rename(fullOld, fullNew);
+      return c.json({ ok: true, oldPath: body.oldPath, newPath: body.newPath });
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    }
+  });
+  app.delete("/delete", async (c) => {
+    const relPath = c.req.query("path");
+    if (!relPath) return c.json({ error: "path required" }, 400);
+    const fullPath = safePath(relPath);
+    if (!fullPath) return c.json({ error: "forbidden" }, 403);
+    if (fullPath === projectDir) return c.json({ error: "cannot delete project root" }, 403);
+    try {
+      await rm(fullPath, { recursive: true });
+      return c.json({ ok: true, path: relPath });
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    }
+  });
+  app.get("/search", async (c) => {
+    const q = c.req.query("q") ?? "";
+    if (!q) return c.json({ results: [], matchCount: 0 });
+    const globPattern = c.req.query("glob") || void 0;
+    const maxResults = 200;
+    try {
+      const args = [
+        "--json",
+        "--max-count",
+        "50",
+        // max matches per file
+        "--max-filesize",
+        "1M",
+        "-n"
+        // line numbers
+      ];
+      if (globPattern) {
+        args.push("--glob", globPattern);
+      }
+      args.push("--", q, ".");
+      const { stdout } = await execAsync("rg", args, {
+        cwd: projectDir,
+        maxBuffer: 8 * 1024 * 1024
+      });
+      const matches = [];
+      for (const line of stdout.split("\n")) {
+        if (!line.trim()) continue;
+        try {
+          const obj = JSON.parse(line);
+          if (obj.type === "match" && obj.data) {
+            matches.push({
+              path: obj.data.path?.text ?? "",
+              line: obj.data.line_number ?? 0,
+              text: (obj.data.lines?.text ?? "").replace(/\n$/, "")
+            });
+          }
+        } catch {
+        }
+      }
+      const grouped = {};
+      for (const m of matches) {
+        const rel = m.path.startsWith("./") ? m.path.slice(2) : m.path;
+        if (!grouped[rel]) grouped[rel] = [];
+        grouped[rel].push({ line: m.line, text: m.text });
+      }
+      const results2 = Object.entries(grouped).slice(0, maxResults).map(([file, lines]) => ({
+        file,
+        matches: lines
+      }));
+      const matchCount2 = matches.length;
+      return c.json({ results: results2, matchCount: matchCount2 });
+    } catch {
+    }
+    const SEARCH_EXTS = /* @__PURE__ */ new Set([
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "mjs",
+      "cjs",
+      "py",
+      "go",
+      "rs",
+      "rb",
+      "java",
+      "c",
+      "cpp",
+      "h",
+      "cs",
+      "swift",
+      "kt",
+      "sh",
+      "bash",
+      "sql",
+      "json",
+      "yaml",
+      "yml",
+      "toml",
+      "md",
+      "txt",
+      "css",
+      "scss",
+      "html",
+      "xml",
+      "vue",
+      "svelte"
+    ]);
+    const results = [];
+    let matchCount = 0;
+    async function searchDir(dir, depth) {
+      if (depth > 5 || results.length >= maxResults) return;
+      let entries;
+      try {
+        entries = await readdir(dir);
+      } catch {
+        return;
+      }
+      for (const name of entries) {
+        if (results.length >= maxResults) break;
+        if (name.startsWith(".")) continue;
+        if (IGNORED.has(name)) continue;
+        const fullPath = join15(dir, name);
+        let s;
+        try {
+          s = await stat(fullPath);
+        } catch {
+          continue;
+        }
+        if (s.isDirectory()) {
+          await searchDir(fullPath, depth + 1);
+        } else if (s.isFile() && s.size < 1e6) {
+          const ext = extname3(name).slice(1).toLowerCase();
+          if (!SEARCH_EXTS.has(ext)) continue;
+          if (globPattern) {
+            const globExt = globPattern.replace("*.", "");
+            if (ext !== globExt) continue;
+          }
+          try {
+            const content = await readFile(fullPath, "utf-8");
+            const lines = content.split("\n");
+            const fileMatches = [];
+            for (let i = 0; i < lines.length; i++) {
+              if (lines[i].includes(q)) {
+                fileMatches.push({ line: i + 1, text: lines[i] });
+                matchCount++;
+              }
+            }
+            if (fileMatches.length > 0) {
+              results.push({ file: relative3(projectDir, fullPath), matches: fileMatches });
+            }
+          } catch {
+          }
+        }
+      }
+    }
+    await searchDir(projectDir, 0);
+    return c.json({ results, matchCount });
+  });
   app.get("/impact", (c) => {
     const branch = c.req.query("branch");
     if (!branch) return c.json({ error: "branch query param required" }, 400);
     const base = c.req.query("base") ?? "HEAD";
+    if (branch.startsWith("-") || base.startsWith("-")) return c.json({ error: "invalid ref name" }, 400);
     const report = analyzeImpact(projectDir, branch, base);
     return c.json(report);
+  });
+  app.get("/symbols", async (c) => {
+    const relPath = c.req.query("path");
+    if (!relPath) return c.json({ error: "path required" }, 400);
+    const fullPath = join15(projectDir, relPath);
+    if (!fullPath.startsWith(projectDir + "/") && fullPath !== projectDir) return c.json({ error: "forbidden" }, 403);
+    try {
+      const content = await readFile(fullPath, "utf-8");
+      const lines = content.split("\n");
+      const symbols = [];
+      const patterns = [
+        // function declarations: function foo(, async function foo(, export function foo(
+        { re: /^(?:export\s+)?(?:async\s+)?function\s+(\w+)/, kind: "function" },
+        // arrow/const functions: const foo = (, export const foo = (
+        { re: /^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\(/, kind: "function" },
+        // arrow/const assigned to arrow: const foo = async? (...) =>
+        { re: /^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[a-zA-Z_]\w*)\s*=>/, kind: "function" },
+        // class declarations
+        { re: /^(?:export\s+)?(?:abstract\s+)?class\s+(\w+)/, kind: "class" },
+        // interface declarations
+        { re: /^(?:export\s+)?interface\s+(\w+)/, kind: "interface" },
+        // type declarations
+        { re: /^(?:export\s+)?type\s+(\w+)\s*[=<]/, kind: "type" },
+        // const/let/var non-function
+        { re: /^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*[=:]/, kind: "const" },
+        // class methods
+        { re: /^\s+(?:(?:public|private|protected|static|async|readonly)\s+)*(\w+)\s*\(/, kind: "method" },
+        // Python: def foo(, class Foo:
+        { re: /^(?:async\s+)?def\s+(\w+)\s*\(/, kind: "function" },
+        { re: /^class\s+(\w+)\s*[:(]/, kind: "class" },
+        // Go: func Foo(, func (r Receiver) Foo(
+        { re: /^func\s+(?:\([^)]*\)\s+)?(\w+)\s*\(/, kind: "function" },
+        // Rust: fn foo(, pub fn foo(, struct Foo, trait Foo
+        { re: /^(?:pub\s+)?fn\s+(\w+)/, kind: "function" },
+        { re: /^(?:pub\s+)?struct\s+(\w+)/, kind: "class" },
+        { re: /^(?:pub\s+)?trait\s+(\w+)/, kind: "interface" }
+      ];
+      const skipNames = /* @__PURE__ */ new Set([
+        "if",
+        "else",
+        "for",
+        "while",
+        "switch",
+        "case",
+        "return",
+        "break",
+        "continue",
+        "try",
+        "catch",
+        "throw",
+        "new",
+        "get",
+        "set",
+        "of",
+        "in",
+        "do",
+        "it",
+        "to"
+      ]);
+      for (let i = 0; i < lines.length; i++) {
+        const trimmed = lines[i].trimStart();
+        if (!trimmed || trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*") || trimmed.startsWith("#")) continue;
+        for (const { re, kind } of patterns) {
+          const m = trimmed.match(re);
+          if (m && m[1] && m[1].length > 1 && !skipNames.has(m[1])) {
+            if (kind === "const") {
+              const already = symbols.some((s) => s.name === m[1] && s.line === i + 1);
+              if (already) break;
+            }
+            symbols.push({ name: m[1], kind, line: i + 1 });
+            break;
+          }
+        }
+      }
+      return c.json({ symbols });
+    } catch {
+      return c.json({ symbols: [] });
+    }
   });
   app.get("/complexity", async (c) => {
     const cachePath = join15(projectDir, ".hashmark", "complexity-cache.json");
@@ -4603,10 +4893,12 @@ ${lines}`;
     const hash = c.req.query("hash");
     const file = c.req.query("file");
     if (!hash || !file) return c.json({ error: "hash and file required" }, 400);
+    if (!/^[0-9a-fA-F]{4,40}$/.test(hash)) return c.json({ error: "invalid hash" }, 400);
+    if (!safePath(file)) return c.json({ error: "forbidden" }, 403);
     try {
       const { stdout } = await execAsync(
         "git",
-        ["show", "--format=", `${hash}`, "--", file],
+        ["show", "--format=", hash, "--", file],
         { cwd: projectDir, maxBuffer: 4 * 1024 * 1024 }
       );
       return c.json({ diff: stdout, file, hash });
@@ -4629,22 +4921,84 @@ ${lines}`;
   });
   app.post("/git/branch", async (c) => {
     const body = await c.req.json().catch(() => ({ name: "" }));
-    if (!body.name?.trim()) return c.json({ error: "Branch name required" }, 400);
+    const name = body.name?.trim();
+    if (!name) return c.json({ error: "Branch name required" }, 400);
+    if (name.startsWith("-")) return c.json({ error: "Invalid branch name" }, 400);
     try {
-      await execAsync("git", ["checkout", "-b", body.name.trim()], { cwd: projectDir });
-      return c.json({ ok: true, branch: body.name.trim() });
+      await execAsync("git", ["checkout", "-b", "--", name], { cwd: projectDir });
+      return c.json({ ok: true, branch: name });
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
     }
   });
   app.post("/git/checkout", async (c) => {
     const body = await c.req.json().catch(() => ({ branch: "" }));
-    if (!body.branch?.trim()) return c.json({ error: "branch required" }, 400);
+    const branch = body.branch?.trim();
+    if (!branch) return c.json({ error: "branch required" }, 400);
+    if (branch.startsWith("-")) return c.json({ error: "Invalid branch name" }, 400);
     try {
-      await execAsync("git", ["checkout", body.branch], { cwd: projectDir });
+      await execAsync("git", ["checkout", "--", branch], { cwd: projectDir });
       return c.json({ success: true });
     } catch (err) {
       return c.json({ error: String(err) }, 500);
+    }
+  });
+  app.get("/git/gh-available", async (c) => {
+    try {
+      await execAsync("which", ["gh"]);
+      await execAsync("gh", ["auth", "status"], { cwd: projectDir });
+      return c.json({ available: true });
+    } catch {
+      return c.json({ available: false });
+    }
+  });
+  app.post("/git/create-pr", async (c) => {
+    const body = await c.req.json().catch(() => ({ title: "", body: void 0, base: void 0 }));
+    if (!body.title?.trim()) return c.json({ error: "Title is required" }, 400);
+    try {
+      const args = ["pr", "create", "--title", body.title.trim()];
+      if (body.body?.trim()) {
+        args.push("--body", body.body.trim());
+      } else {
+        args.push("--body", "");
+      }
+      if (body.base?.trim()) {
+        args.push("--base", body.base.trim());
+      }
+      const { stdout } = await execAsync("gh", args, { cwd: projectDir, timeout: 3e4 });
+      const url = stdout.trim();
+      return c.json({ ok: true, url });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const stderrMatch = msg.match(/stderr:\s*([\s\S]*)/);
+      return c.json({ error: stderrMatch ? stderrMatch[1].trim() : msg }, 500);
+    }
+  });
+  app.get("/git/outgoing", async (c) => {
+    try {
+      const { stdout: branchRaw } = await execAsync(
+        "git",
+        ["rev-parse", "--abbrev-ref", "HEAD"],
+        { cwd: projectDir }
+      );
+      const branch = branchRaw.trim();
+      try {
+        await execAsync("git", ["rev-parse", "--abbrev-ref", `${branch}@{u}`], { cwd: projectDir });
+      } catch {
+        return c.json({ commits: [], count: 0 });
+      }
+      const { stdout } = await execAsync(
+        "git",
+        ["log", `origin/${branch}..HEAD`, "--format=%h|%s|%ai", "--", "."],
+        { cwd: projectDir, maxBuffer: 2 * 1024 * 1024 }
+      );
+      const commits = stdout.trim().split("\n").filter(Boolean).map((line) => {
+        const [hash, message, date] = line.split("|");
+        return { hash, message, date };
+      });
+      return c.json({ commits, count: commits.length });
+    } catch {
+      return c.json({ commits: [], count: 0 });
     }
   });
   app.get("/git", async (c) => {
@@ -4703,7 +5057,7 @@ ${lines}`;
 // server/routes/workspace.ts
 import { Hono as Hono7 } from "hono";
 import { existsSync as existsSync13, readFileSync as readFileSync11, writeFileSync as writeFileSync8, mkdirSync as mkdirSync7 } from "fs";
-import { join as join16 } from "path";
+import { join as join16, resolve as resolve3 } from "path";
 import { spawn as spawn6 } from "child_process";
 function getConfigPath(projectDir) {
   return join16(projectDir, ".hashmark", "workspace.json");
@@ -4776,6 +5130,46 @@ function streamCommand(name, command, cwd, env) {
 }
 function workspaceRoutes(projectDir) {
   const app = new Hono7();
+  app.post("/detect", async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const rawPath = body.path?.trim();
+    const dir = rawPath ? resolve3(projectDir, rawPath) : projectDir;
+    if (rawPath && !dir.startsWith(projectDir + "/") && dir !== projectDir) {
+      return c.json({ error: "forbidden" }, 403);
+    }
+    if (!existsSync13(dir)) return c.json({ error: "path not found" }, 400);
+    const name = (() => {
+      try {
+        const pkgPath = join16(dir, "package.json");
+        if (existsSync13(pkgPath)) {
+          const pkg = JSON.parse(readFileSync11(pkgPath, "utf-8"));
+          if (pkg.name) return pkg.name;
+        }
+      } catch {
+      }
+      return dir.split("/").filter(Boolean).pop() ?? "project";
+    })();
+    const checks = [
+      { file: "tsconfig.json", framework: "TypeScript" },
+      { file: "package.json", framework: "JavaScript" },
+      { file: "Cargo.toml", framework: "Rust" },
+      { file: "go.mod", framework: "Go" },
+      { file: "pyproject.toml", framework: "Python" },
+      { file: "setup.py", framework: "Python" },
+      { file: "requirements.txt", framework: "Python" },
+      { file: "Gemfile", framework: "Ruby" },
+      { file: "pom.xml", framework: "Java" },
+      { file: "build.gradle", framework: "Java" }
+    ];
+    let framework = "Unknown";
+    for (const check of checks) {
+      if (existsSync13(join16(dir, check.file))) {
+        framework = check.framework;
+        break;
+      }
+    }
+    return c.json({ framework, name });
+  });
   app.get("/config", (c) => {
     return c.json({ config: readConfig(projectDir) });
   });
@@ -5090,10 +5484,10 @@ function mcpRoutes(projectDir) {
     const hash = createHash2("md5").update(content).digest("hex");
     const tmpPath = join17(tmpdir2(), `studio-mcp-test-${hash}.json`);
     writeFileSync9(tmpPath, content, "utf-8");
-    return new Promise((resolve2) => {
+    return new Promise((resolve5) => {
       const timeout = setTimeout(() => {
         proc.kill("SIGTERM");
-        resolve2(c.json({ ok: false, error: "Timeout after 10s" }));
+        resolve5(c.json({ ok: false, error: "Timeout after 10s" }));
       }, 1e4);
       const proc = spawn7(
         "claude",
@@ -5115,14 +5509,14 @@ function mcpRoutes(projectDir) {
       proc.on("close", (code) => {
         clearTimeout(timeout);
         if (code === 0) {
-          resolve2(c.json({ ok: true, output: stdout.slice(0, 2e3) }));
+          resolve5(c.json({ ok: true, output: stdout.slice(0, 2e3) }));
         } else {
-          resolve2(c.json({ ok: false, error: stderr.slice(0, 1e3) || `Exit code ${code}` }));
+          resolve5(c.json({ ok: false, error: stderr.slice(0, 1e3) || `Exit code ${code}` }));
         }
       });
       proc.on("error", (err) => {
         clearTimeout(timeout);
-        resolve2(c.json({ ok: false, error: err.message }));
+        resolve5(c.json({ ok: false, error: err.message }));
       });
     });
   });
@@ -5433,7 +5827,7 @@ Your specific subtask: ${subtask.title}
 ${subtask.description}
 
 Work in the current directory. Make the necessary code changes, create or modify files as needed.`;
-          return new Promise((resolve2, reject) => {
+          return new Promise((resolve5, reject) => {
             const proc = spawn8(claudeBin, ["--print", workerPrompt], {
               cwd: worktreeDir,
               stdio: ["ignore", "pipe", "pipe"],
@@ -5516,7 +5910,7 @@ Work in the current directory. Make the necessary code changes, create or modify
               } catch {
               }
               send({ type: "worker_done", id: subtask.id, output: fullOutput, hasChanges });
-              resolve2({ id: subtask.id, output: fullOutput, hasChanges, testPassed: testResult.passed, testSkipped: testResult.skipped });
+              resolve5({ id: subtask.id, output: fullOutput, hasChanges, testPassed: testResult.passed, testSkipped: testResult.skipped });
             });
             proc.on("error", (err) => {
               send({ type: "worker_error", id: subtask.id, error: err.message });
@@ -5667,6 +6061,48 @@ Work in the current directory. Make the necessary code changes, create or modify
     const db = getDb(dataDir);
     db.prepare("DELETE FROM swarm_runs WHERE id=?").run(c.req.param("id"));
     return c.json({ ok: true });
+  });
+  app.post("/conflicts", async (c) => {
+    const body = await c.req.json();
+    if (!Array.isArray(body.agents) || body.agents.length < 2) {
+      return c.json({
+        hasConflicts: false,
+        conflicts: [],
+        summary: "Need at least 2 agents with file data to detect conflicts"
+      });
+    }
+    const fileToAgents = /* @__PURE__ */ new Map();
+    for (const agent of body.agents) {
+      for (const file of agent.files ?? []) {
+        const existing = fileToAgents.get(file) ?? [];
+        existing.push(agent.id);
+        fileToAgents.set(file, existing);
+      }
+    }
+    const HIGH_IMPACT = [
+      /package\.json$/,
+      /tsconfig.*\.json$/,
+      /\.env/,
+      /prisma\/schema/,
+      /schema\.(ts|js)$/,
+      /middleware\.(ts|js)$/
+    ];
+    const conflicts = [];
+    for (const [file, agentIds] of fileToAgents) {
+      if (agentIds.length > 1) {
+        let severity = "medium";
+        if (agentIds.length > 2) severity = "high";
+        else if (HIGH_IMPACT.some((p) => p.test(file))) severity = "high";
+        conflicts.push({ file, agents: agentIds, severity });
+      }
+    }
+    const order = { high: 0, medium: 1, low: 2 };
+    conflicts.sort((a, b) => order[a.severity] - order[b.severity]);
+    return c.json({
+      hasConflicts: conflicts.length > 0,
+      conflicts,
+      summary: conflicts.length === 0 ? "No conflicts detected" : `${conflicts.length} file(s) modified by multiple agents`
+    });
   });
   return app;
 }
@@ -5863,7 +6299,7 @@ ${agentDef.content}
 
 Work in the current directory. Make the necessary code changes, create or modify files as needed.`;
           let fullOutput = "";
-          await new Promise((resolve2) => {
+          await new Promise((resolve5) => {
             const proc = spawn9(claudeBin, ["--print", prompt], {
               cwd: worktreeDir,
               stdio: ["ignore", "pipe", "pipe"],
@@ -5880,11 +6316,11 @@ Work in the current directory. Make the necessary code changes, create or modify
               if (code !== 0 && code !== null) {
                 send({ type: "error", error: `Claude exited with code ${code}` });
               }
-              resolve2();
+              resolve5();
             });
             proc.on("error", (err) => {
               send({ type: "error", error: err.message });
-              resolve2();
+              resolve5();
             });
           });
           let hasChanges = false;
@@ -6128,9 +6564,9 @@ ${agentDef.content}
 
 Work in the current directory. Make the necessary code changes, create or modify files as needed.`;
   const ctrl = swarm.controllers[agentIndex];
-  await new Promise((resolve2) => {
+  await new Promise((resolve5) => {
     if (ctrl.signal.aborted) {
-      resolve2();
+      resolve5();
       return;
     }
     const proc = spawn10(claudeBin, ["--print", prompt], {
@@ -6159,13 +6595,13 @@ Work in the current directory. Make the necessary code changes, create or modify
 ${msg}`;
         emit(swarm, agentIndex, { type: "chunk", data: msg });
       }
-      resolve2();
+      resolve5();
     });
     proc.on("error", (err) => {
       agent.output += `
 [spawn error] ${err.message}`;
       emit(swarm, agentIndex, { type: "chunk", data: `[spawn error] ${err.message}` });
-      resolve2();
+      resolve5();
     });
   });
   if (swarm.cancelled || ctrl.signal.aborted) {
@@ -6600,9 +7036,12 @@ function providersRoutes(projectDir) {
   const app = new Hono14();
   app.get("/", (c) => {
     const store = loadProviders(dataDir);
+    const cliResults = detectCLIs(projectDir);
+    const cliInstalled = new Set(cliResults.filter((r) => r.installed).map((r) => r.id));
     const masked = store.providers.map(({ apiKey, ...rest }) => ({
       ...rest,
-      hasKey: Boolean(apiKey && apiKey.length > 0)
+      hasKey: Boolean(apiKey && apiKey.length > 0),
+      cliDetected: cliInstalled.has(rest.id)
     }));
     return c.json({ active: store.active, model: store.model, providers: masked });
   });
@@ -7111,7 +7550,9 @@ function createServer(opts) {
     return c.json({
       projectName,
       projectDir: ctx.projectDir,
-      configured: ctx.projectDir !== "__unset__"
+      configured: ctx.projectDir !== "__unset__",
+      nodeVersion: process.versions.node,
+      port: opts.port
     });
   });
   app.get("/api/settings/env", async (c) => {
@@ -7178,53 +7619,34 @@ function createServer(opts) {
       </html>
     `);
   });
-  const server2 = serve({ fetch: app.fetch, port: opts.port, hostname: "localhost" }, () => {
+  const server = serve({ fetch: app.fetch, port: opts.port, hostname: "localhost" }, () => {
   });
-  attachTerminalWS(server2, opts.projectDir);
-  return { app, server: server2 };
+  attachTerminalWS(server, opts.projectDir);
+  return { app, server };
 }
 
 // bin.ts
-import open from "open";
-import { resolve } from "path";
-import { fileURLToPath } from "url";
-import { readFileSync as readFileSync21, existsSync as existsSync22 } from "fs";
-var PORT = parseInt(process.env.STUDIO_PORT ?? "3200", 10);
 var PROJECT_DIR = process.env.HASHMARK_PROJECT_DIR ?? process.cwd();
+var PORT = parseInt(process.env.STUDIO_PORT ?? "3200", 10);
+var __dirname2 = fileURLToPath(new URL(".", import.meta.url));
+var STATIC_DIR = resolve4(join28(__dirname2, "public"));
 function loadEnvFile(path) {
   if (!existsSync22(path)) return;
   const lines = readFileSync21(path, "utf-8").split("\n");
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq < 0) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const val = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (key && !(key in process.env)) {
-      process.env[key] = val;
+    const eqIdx = trimmed.indexOf("=");
+    if (eqIdx < 0) continue;
+    const key = trimmed.slice(0, eqIdx).trim();
+    let val = trimmed.slice(eqIdx + 1).trim();
+    if (val.startsWith('"') && val.endsWith('"') || val.startsWith("'") && val.endsWith("'")) {
+      val = val.slice(1, -1);
     }
+    if (!process.env[key]) process.env[key] = val;
   }
 }
-loadEnvFile(`${PROJECT_DIR}/.env.local`);
-loadEnvFile(`${PROJECT_DIR}/.env`);
-var NO_OPEN = process.env.HASHMARK_NO_OPEN === "1";
-var __dirname2 = fileURLToPath(new URL(".", import.meta.url));
-var STATIC_DIR = resolve(__dirname2, "public");
-var { server } = createServer({ projectDir: PROJECT_DIR, staticDir: STATIC_DIR, port: PORT });
-server.listen(PORT, () => {
-  const url = `http://localhost:${PORT}`;
-  console.log(`
-  hashmark studio`);
-  console.log(`  \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500`);
-  console.log(`  Local:   ${url}`);
-  console.log(`  Project: ${PROJECT_DIR}`);
-  if (!NO_OPEN) {
-    console.log(`
-  Opening browser...`);
-    open(url);
-  }
-  console.log(`
-  Press Ctrl+C to stop
-`);
-});
+loadEnvFile(join28(PROJECT_DIR, ".env.local"));
+loadEnvFile(join28(PROJECT_DIR, ".env"));
+console.log(`[studio] starting on port ${PORT}, project: ${PROJECT_DIR}`);
+createServer({ projectDir: PROJECT_DIR, staticDir: STATIC_DIR, port: PORT });

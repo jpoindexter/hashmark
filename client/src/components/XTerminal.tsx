@@ -46,6 +46,7 @@ const XTerminal = forwardRef<XTerminalHandle, XTerminalProps>(function XTerminal
     if (!containerRef.current || termRef.current) return;
 
     const term = new Terminal({
+      allowProposedApi: true,
       fontFamily: "'Menlo', 'Monaco', 'Courier New', monospace",
       fontSize,
       lineHeight: 1.5,

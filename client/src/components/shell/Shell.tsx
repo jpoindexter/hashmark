@@ -73,10 +73,9 @@ export default function Shell() {
   const [selectedModel, setSelectedModel] = useState(() => restore("selectedModel", "claude-sonnet-4-6"));
   const [thinking, setThinking] = useState(() => restore("thinking", false));
   const [planMode, setPlanMode] = useState(() => restore("planMode", false));
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(() => {
-    const shouldRestore = restore("restoreSession", false);
-    return shouldRestore ? (localStorage.getItem("studio_active_session_id") ?? null) : null;
-  });
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(
+    () => localStorage.getItem("studio_active_session_id") ?? null
+  );
 
   const [streamText, setStreamText] = useState("");
   const [streamingState, setStreamingState] = useState<StreamingState | null>(null);
@@ -111,9 +110,6 @@ export default function Shell() {
   const sessionValidated = useRef(false);
   const sessionRetryCount = useRef(0);
   useEffect(() => {
-    const shouldRestore = restore("restoreSession", false);
-    if (!shouldRestore && !activeSessionId) return;
-
     if (activeSessionId && !sessionValidated.current) {
       sessionValidated.current = true;
       sessionRetryCount.current = 0;

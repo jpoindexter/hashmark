@@ -76,7 +76,6 @@ export default function Rail({ agentsBadge = false }: RailProps) {
   const items = [
     { path: "/", icon: <IconSessions />, badge: false },
     { path: "/agents", icon: <IconAgents />, badge: agentsBadge },
-    { path: "/generate", icon: <IconFindings />, badge: false },
   ];
 
   return (

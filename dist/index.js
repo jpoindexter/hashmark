@@ -1,1337 +1,4 @@
-var __create = Object.create;
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-}) : x)(function(x) {
-  if (typeof require !== "undefined") return require.apply(this, arguments);
-  throw Error('Dynamic require of "' + x + '" is not supported');
-});
-var __commonJS = (cb, mod) => function __require2() {
-  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
-
-// node_modules/node-pty/lib/utils.js
-var require_utils = __commonJS({
-  "node_modules/node-pty/lib/utils.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.loadNativeModule = exports.assign = void 0;
-    function assign(target) {
-      var sources = [];
-      for (var _i = 1; _i < arguments.length; _i++) {
-        sources[_i - 1] = arguments[_i];
-      }
-      sources.forEach(function(source) {
-        return Object.keys(source).forEach(function(key) {
-          return target[key] = source[key];
-        });
-      });
-      return target;
-    }
-    exports.assign = assign;
-    function loadNativeModule(name) {
-      var dirs = ["build/Release", "build/Debug", "prebuilds/" + process.platform + "-" + process.arch];
-      var relative8 = ["..", "."];
-      var lastError;
-      for (var _i = 0, dirs_1 = dirs; _i < dirs_1.length; _i++) {
-        var d = dirs_1[_i];
-        for (var _a = 0, relative_1 = relative8; _a < relative_1.length; _a++) {
-          var r = relative_1[_a];
-          var dir = r + "/" + d + "/";
-          try {
-            return { dir, module: __require(dir + "/" + name + ".node") };
-          } catch (e) {
-            lastError = e;
-          }
-        }
-      }
-      throw new Error("Failed to load native module: " + name + ".node, checked: " + dirs.join(", ") + ": " + lastError);
-    }
-    exports.loadNativeModule = loadNativeModule;
-  }
-});
-
-// node_modules/node-pty/lib/eventEmitter2.js
-var require_eventEmitter2 = __commonJS({
-  "node_modules/node-pty/lib/eventEmitter2.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.EventEmitter2 = void 0;
-    var EventEmitter2 = (
-      /** @class */
-      (function() {
-        function EventEmitter22() {
-          this._listeners = [];
-        }
-        Object.defineProperty(EventEmitter22.prototype, "event", {
-          get: function() {
-            var _this = this;
-            if (!this._event) {
-              this._event = function(listener) {
-                _this._listeners.push(listener);
-                var disposable = {
-                  dispose: function() {
-                    for (var i = 0; i < _this._listeners.length; i++) {
-                      if (_this._listeners[i] === listener) {
-                        _this._listeners.splice(i, 1);
-                        return;
-                      }
-                    }
-                  }
-                };
-                return disposable;
-              };
-            }
-            return this._event;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        EventEmitter22.prototype.fire = function(data) {
-          var queue = [];
-          for (var i = 0; i < this._listeners.length; i++) {
-            queue.push(this._listeners[i]);
-          }
-          for (var i = 0; i < queue.length; i++) {
-            queue[i].call(void 0, data);
-          }
-        };
-        return EventEmitter22;
-      })()
-    );
-    exports.EventEmitter2 = EventEmitter2;
-  }
-});
-
-// node_modules/node-pty/lib/terminal.js
-var require_terminal = __commonJS({
-  "node_modules/node-pty/lib/terminal.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.Terminal = exports.DEFAULT_ROWS = exports.DEFAULT_COLS = void 0;
-    var events_1 = __require("events");
-    var eventEmitter2_1 = require_eventEmitter2();
-    exports.DEFAULT_COLS = 80;
-    exports.DEFAULT_ROWS = 24;
-    var FLOW_CONTROL_PAUSE = "";
-    var FLOW_CONTROL_RESUME = "";
-    var Terminal = (
-      /** @class */
-      (function() {
-        function Terminal2(opt) {
-          this._pid = 0;
-          this._fd = 0;
-          this._cols = 0;
-          this._rows = 0;
-          this._readable = false;
-          this._writable = false;
-          this._onData = new eventEmitter2_1.EventEmitter2();
-          this._onExit = new eventEmitter2_1.EventEmitter2();
-          this._internalee = new events_1.EventEmitter();
-          this.handleFlowControl = !!(opt === null || opt === void 0 ? void 0 : opt.handleFlowControl);
-          this._flowControlPause = (opt === null || opt === void 0 ? void 0 : opt.flowControlPause) || FLOW_CONTROL_PAUSE;
-          this._flowControlResume = (opt === null || opt === void 0 ? void 0 : opt.flowControlResume) || FLOW_CONTROL_RESUME;
-          if (!opt) {
-            return;
-          }
-          this._checkType("name", opt.name ? opt.name : void 0, "string");
-          this._checkType("cols", opt.cols ? opt.cols : void 0, "number");
-          this._checkType("rows", opt.rows ? opt.rows : void 0, "number");
-          this._checkType("cwd", opt.cwd ? opt.cwd : void 0, "string");
-          this._checkType("env", opt.env ? opt.env : void 0, "object");
-          this._checkType("uid", opt.uid ? opt.uid : void 0, "number");
-          this._checkType("gid", opt.gid ? opt.gid : void 0, "number");
-          this._checkType("encoding", opt.encoding ? opt.encoding : void 0, "string");
-        }
-        Object.defineProperty(Terminal2.prototype, "onData", {
-          get: function() {
-            return this._onData.event;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        Object.defineProperty(Terminal2.prototype, "onExit", {
-          get: function() {
-            return this._onExit.event;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        Object.defineProperty(Terminal2.prototype, "pid", {
-          get: function() {
-            return this._pid;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        Object.defineProperty(Terminal2.prototype, "cols", {
-          get: function() {
-            return this._cols;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        Object.defineProperty(Terminal2.prototype, "rows", {
-          get: function() {
-            return this._rows;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        Terminal2.prototype.write = function(data) {
-          if (this.handleFlowControl) {
-            if (data === this._flowControlPause) {
-              this.pause();
-              return;
-            }
-            if (data === this._flowControlResume) {
-              this.resume();
-              return;
-            }
-          }
-          this._write(data);
-        };
-        Terminal2.prototype._forwardEvents = function() {
-          var _this = this;
-          this.on("data", function(e) {
-            return _this._onData.fire(e);
-          });
-          this.on("exit", function(exitCode, signal) {
-            return _this._onExit.fire({ exitCode, signal });
-          });
-        };
-        Terminal2.prototype._checkType = function(name, value, type, allowArray) {
-          if (allowArray === void 0) {
-            allowArray = false;
-          }
-          if (value === void 0) {
-            return;
-          }
-          if (allowArray) {
-            if (Array.isArray(value)) {
-              value.forEach(function(v, i) {
-                if (typeof v !== type) {
-                  throw new Error(name + "[" + i + "] must be a " + type + " (not a " + typeof v[i] + ")");
-                }
-              });
-              return;
-            }
-          }
-          if (typeof value !== type) {
-            throw new Error(name + " must be a " + type + " (not a " + typeof value + ")");
-          }
-        };
-        Terminal2.prototype.end = function(data) {
-          this._socket.end(data);
-        };
-        Terminal2.prototype.pipe = function(dest, options) {
-          return this._socket.pipe(dest, options);
-        };
-        Terminal2.prototype.pause = function() {
-          return this._socket.pause();
-        };
-        Terminal2.prototype.resume = function() {
-          return this._socket.resume();
-        };
-        Terminal2.prototype.setEncoding = function(encoding) {
-          if (this._socket._decoder) {
-            delete this._socket._decoder;
-          }
-          if (encoding) {
-            this._socket.setEncoding(encoding);
-          }
-        };
-        Terminal2.prototype.addListener = function(eventName, listener) {
-          this.on(eventName, listener);
-        };
-        Terminal2.prototype.on = function(eventName, listener) {
-          if (eventName === "close") {
-            this._internalee.on("close", listener);
-            return;
-          }
-          this._socket.on(eventName, listener);
-        };
-        Terminal2.prototype.emit = function(eventName) {
-          var args = [];
-          for (var _i = 1; _i < arguments.length; _i++) {
-            args[_i - 1] = arguments[_i];
-          }
-          if (eventName === "close") {
-            return this._internalee.emit.apply(this._internalee, arguments);
-          }
-          return this._socket.emit.apply(this._socket, arguments);
-        };
-        Terminal2.prototype.listeners = function(eventName) {
-          return this._socket.listeners(eventName);
-        };
-        Terminal2.prototype.removeListener = function(eventName, listener) {
-          this._socket.removeListener(eventName, listener);
-        };
-        Terminal2.prototype.removeAllListeners = function(eventName) {
-          this._socket.removeAllListeners(eventName);
-        };
-        Terminal2.prototype.once = function(eventName, listener) {
-          this._socket.once(eventName, listener);
-        };
-        Terminal2.prototype._close = function() {
-          this._socket.readable = false;
-          this.write = function() {
-          };
-          this.end = function() {
-          };
-          this._writable = false;
-          this._readable = false;
-        };
-        Terminal2.prototype._parseEnv = function(env) {
-          var keys = Object.keys(env || {});
-          var pairs = [];
-          for (var i = 0; i < keys.length; i++) {
-            if (keys[i] === void 0) {
-              continue;
-            }
-            pairs.push(keys[i] + "=" + env[keys[i]]);
-          }
-          return pairs;
-        };
-        return Terminal2;
-      })()
-    );
-    exports.Terminal = Terminal;
-  }
-});
-
-// node_modules/node-pty/lib/shared/conout.js
-var require_conout = __commonJS({
-  "node_modules/node-pty/lib/shared/conout.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getWorkerPipeName = void 0;
-    function getWorkerPipeName(conoutPipeName) {
-      return conoutPipeName + "-worker";
-    }
-    exports.getWorkerPipeName = getWorkerPipeName;
-  }
-});
-
-// node_modules/node-pty/lib/windowsConoutConnection.js
-var require_windowsConoutConnection = __commonJS({
-  "node_modules/node-pty/lib/windowsConoutConnection.js"(exports) {
-    "use strict";
-    var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
-      function adopt(value) {
-        return value instanceof P ? value : new P(function(resolve) {
-          resolve(value);
-        });
-      }
-      return new (P || (P = Promise))(function(resolve, reject) {
-        function fulfilled(value) {
-          try {
-            step(generator.next(value));
-          } catch (e) {
-            reject(e);
-          }
-        }
-        function rejected(value) {
-          try {
-            step(generator["throw"](value));
-          } catch (e) {
-            reject(e);
-          }
-        }
-        function step(result) {
-          result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-        }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-      });
-    };
-    var __generator = exports && exports.__generator || function(thisArg, body) {
-      var _ = { label: 0, sent: function() {
-        if (t[0] & 1) throw t[1];
-        return t[1];
-      }, trys: [], ops: [] }, f, y, t, g;
-      return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() {
-        return this;
-      }), g;
-      function verb(n) {
-        return function(v) {
-          return step([n, v]);
-        };
-      }
-      function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-          if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-          if (y = 0, t) op = [op[0] & 2, t.value];
-          switch (op[0]) {
-            case 0:
-            case 1:
-              t = op;
-              break;
-            case 4:
-              _.label++;
-              return { value: op[1], done: false };
-            case 5:
-              _.label++;
-              y = op[1];
-              op = [0];
-              continue;
-            case 7:
-              op = _.ops.pop();
-              _.trys.pop();
-              continue;
-            default:
-              if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) {
-                _ = 0;
-                continue;
-              }
-              if (op[0] === 3 && (!t || op[1] > t[0] && op[1] < t[3])) {
-                _.label = op[1];
-                break;
-              }
-              if (op[0] === 6 && _.label < t[1]) {
-                _.label = t[1];
-                t = op;
-                break;
-              }
-              if (t && _.label < t[2]) {
-                _.label = t[2];
-                _.ops.push(op);
-                break;
-              }
-              if (t[2]) _.ops.pop();
-              _.trys.pop();
-              continue;
-          }
-          op = body.call(thisArg, _);
-        } catch (e) {
-          op = [6, e];
-          y = 0;
-        } finally {
-          f = t = 0;
-        }
-        if (op[0] & 5) throw op[1];
-        return { value: op[0] ? op[1] : void 0, done: true };
-      }
-    };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.ConoutConnection = void 0;
-    var worker_threads_1 = __require("worker_threads");
-    var conout_1 = require_conout();
-    var path_1 = __require("path");
-    var eventEmitter2_1 = require_eventEmitter2();
-    var FLUSH_DATA_INTERVAL = 1e3;
-    var ConoutConnection = (
-      /** @class */
-      (function() {
-        function ConoutConnection2(_conoutPipeName, _useConptyDll) {
-          var _this = this;
-          this._conoutPipeName = _conoutPipeName;
-          this._useConptyDll = _useConptyDll;
-          this._isDisposed = false;
-          this._onReady = new eventEmitter2_1.EventEmitter2();
-          var workerData = {
-            conoutPipeName: _conoutPipeName
-          };
-          var scriptPath = __dirname.replace("node_modules.asar", "node_modules.asar.unpacked");
-          this._worker = new worker_threads_1.Worker(path_1.join(scriptPath, "worker/conoutSocketWorker.js"), { workerData });
-          this._worker.on("message", function(message) {
-            switch (message) {
-              case 1:
-                _this._onReady.fire();
-                return;
-              default:
-                console.warn("Unexpected ConoutWorkerMessage", message);
-            }
-          });
-        }
-        Object.defineProperty(ConoutConnection2.prototype, "onReady", {
-          get: function() {
-            return this._onReady.event;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        ConoutConnection2.prototype.dispose = function() {
-          if (!this._useConptyDll && this._isDisposed) {
-            return;
-          }
-          this._isDisposed = true;
-          this._drainDataAndClose();
-        };
-        ConoutConnection2.prototype.connectSocket = function(socket) {
-          socket.connect(conout_1.getWorkerPipeName(this._conoutPipeName));
-        };
-        ConoutConnection2.prototype._drainDataAndClose = function() {
-          var _this = this;
-          if (this._drainTimeout) {
-            clearTimeout(this._drainTimeout);
-          }
-          this._drainTimeout = setTimeout(function() {
-            return _this._destroySocket();
-          }, FLUSH_DATA_INTERVAL);
-        };
-        ConoutConnection2.prototype._destroySocket = function() {
-          return __awaiter(this, void 0, void 0, function() {
-            return __generator(this, function(_a) {
-              switch (_a.label) {
-                case 0:
-                  return [4, this._worker.terminate()];
-                case 1:
-                  _a.sent();
-                  return [
-                    2
-                    /*return*/
-                  ];
-              }
-            });
-          });
-        };
-        return ConoutConnection2;
-      })()
-    );
-    exports.ConoutConnection = ConoutConnection;
-  }
-});
-
-// node_modules/node-pty/lib/windowsPtyAgent.js
-var require_windowsPtyAgent = __commonJS({
-  "node_modules/node-pty/lib/windowsPtyAgent.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.argsToCommandLine = exports.WindowsPtyAgent = void 0;
-    var fs = __require("fs");
-    var os2 = __require("os");
-    var path = __require("path");
-    var child_process_1 = __require("child_process");
-    var net_1 = __require("net");
-    var windowsConoutConnection_1 = require_windowsConoutConnection();
-    var utils_1 = require_utils();
-    var conptyNative;
-    var winptyNative;
-    var FLUSH_DATA_INTERVAL = 1e3;
-    var WindowsPtyAgent = (
-      /** @class */
-      (function() {
-        function WindowsPtyAgent2(file, args, env, cwd, cols, rows, debug, _useConpty, _useConptyDll, conptyInheritCursor) {
-          var _this = this;
-          if (_useConptyDll === void 0) {
-            _useConptyDll = false;
-          }
-          if (conptyInheritCursor === void 0) {
-            conptyInheritCursor = false;
-          }
-          this._useConpty = _useConpty;
-          this._useConptyDll = _useConptyDll;
-          this._pid = 0;
-          this._innerPid = 0;
-          if (this._useConpty === void 0 || this._useConpty === true) {
-            this._useConpty = this._getWindowsBuildNumber() >= 18309;
-          }
-          if (this._useConpty) {
-            if (!conptyNative) {
-              conptyNative = utils_1.loadNativeModule("conpty").module;
-            }
-          } else {
-            if (!winptyNative) {
-              winptyNative = utils_1.loadNativeModule("pty").module;
-            }
-          }
-          this._ptyNative = this._useConpty ? conptyNative : winptyNative;
-          cwd = path.resolve(cwd);
-          var commandLine = argsToCommandLine(file, args);
-          var term;
-          if (this._useConpty) {
-            term = this._ptyNative.startProcess(file, cols, rows, debug, this._generatePipeName(), conptyInheritCursor, this._useConptyDll);
-          } else {
-            term = this._ptyNative.startProcess(file, commandLine, env, cwd, cols, rows, debug);
-            this._pid = term.pid;
-            this._innerPid = term.innerPid;
-          }
-          this._fd = term.fd;
-          this._pty = term.pty;
-          this._outSocket = new net_1.Socket();
-          this._outSocket.setEncoding("utf8");
-          this._conoutSocketWorker = new windowsConoutConnection_1.ConoutConnection(term.conout, this._useConptyDll);
-          this._conoutSocketWorker.onReady(function() {
-            _this._conoutSocketWorker.connectSocket(_this._outSocket);
-          });
-          this._outSocket.on("connect", function() {
-            _this._outSocket.emit("ready_datapipe");
-          });
-          var inSocketFD = fs.openSync(term.conin, "w");
-          this._inSocket = new net_1.Socket({
-            fd: inSocketFD,
-            readable: false,
-            writable: true
-          });
-          this._inSocket.setEncoding("utf8");
-          if (this._useConpty) {
-            var connect = this._ptyNative.connect(this._pty, commandLine, cwd, env, this._useConptyDll, function(c) {
-              return _this._$onProcessExit(c);
-            });
-            this._innerPid = connect.pid;
-          }
-        }
-        Object.defineProperty(WindowsPtyAgent2.prototype, "inSocket", {
-          get: function() {
-            return this._inSocket;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        Object.defineProperty(WindowsPtyAgent2.prototype, "outSocket", {
-          get: function() {
-            return this._outSocket;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        Object.defineProperty(WindowsPtyAgent2.prototype, "fd", {
-          get: function() {
-            return this._fd;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        Object.defineProperty(WindowsPtyAgent2.prototype, "innerPid", {
-          get: function() {
-            return this._innerPid;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        Object.defineProperty(WindowsPtyAgent2.prototype, "pty", {
-          get: function() {
-            return this._pty;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        WindowsPtyAgent2.prototype.resize = function(cols, rows) {
-          if (this._useConpty) {
-            if (this._exitCode !== void 0) {
-              throw new Error("Cannot resize a pty that has already exited");
-            }
-            this._ptyNative.resize(this._pty, cols, rows, this._useConptyDll);
-            return;
-          }
-          this._ptyNative.resize(this._pid, cols, rows);
-        };
-        WindowsPtyAgent2.prototype.clear = function() {
-          if (this._useConpty) {
-            this._ptyNative.clear(this._pty, this._useConptyDll);
-          }
-        };
-        WindowsPtyAgent2.prototype.kill = function() {
-          var _this = this;
-          if (this._useConpty) {
-            if (!this._useConptyDll) {
-              this._inSocket.readable = false;
-              this._outSocket.readable = false;
-              this._getConsoleProcessList().then(function(consoleProcessList) {
-                consoleProcessList.forEach(function(pid) {
-                  try {
-                    process.kill(pid);
-                  } catch (e) {
-                  }
-                });
-              });
-              this._ptyNative.kill(this._pty, this._useConptyDll);
-              this._conoutSocketWorker.dispose();
-            } else {
-              this._inSocket.destroy();
-              this._ptyNative.kill(this._pty, this._useConptyDll);
-              this._outSocket.on("data", function() {
-                _this._conoutSocketWorker.dispose();
-              });
-            }
-          } else {
-            var processList = this._ptyNative.getProcessList(this._pid);
-            this._ptyNative.kill(this._pid, this._innerPid);
-            processList.forEach(function(pid) {
-              try {
-                process.kill(pid);
-              } catch (e) {
-              }
-            });
-          }
-        };
-        WindowsPtyAgent2.prototype._getConsoleProcessList = function() {
-          var _this = this;
-          return new Promise(function(resolve) {
-            var agent = child_process_1.fork(path.join(__dirname, "conpty_console_list_agent"), [_this._innerPid.toString()]);
-            agent.on("message", function(message) {
-              clearTimeout(timeout);
-              resolve(message.consoleProcessList);
-            });
-            var timeout = setTimeout(function() {
-              agent.kill();
-              resolve([_this._innerPid]);
-            }, 5e3);
-          });
-        };
-        Object.defineProperty(WindowsPtyAgent2.prototype, "exitCode", {
-          get: function() {
-            if (this._useConpty) {
-              return this._exitCode;
-            }
-            var winptyExitCode = this._ptyNative.getExitCode(this._innerPid);
-            return winptyExitCode === -1 ? void 0 : winptyExitCode;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        WindowsPtyAgent2.prototype._getWindowsBuildNumber = function() {
-          var osVersion = /(\d+)\.(\d+)\.(\d+)/g.exec(os2.release());
-          var buildNumber = 0;
-          if (osVersion && osVersion.length === 4) {
-            buildNumber = parseInt(osVersion[3]);
-          }
-          return buildNumber;
-        };
-        WindowsPtyAgent2.prototype._generatePipeName = function() {
-          return "conpty-" + Math.random() * 1e7;
-        };
-        WindowsPtyAgent2.prototype._$onProcessExit = function(exitCode) {
-          var _this = this;
-          this._exitCode = exitCode;
-          if (!this._useConptyDll) {
-            this._flushDataAndCleanUp();
-            this._outSocket.on("data", function() {
-              return _this._flushDataAndCleanUp();
-            });
-          }
-        };
-        WindowsPtyAgent2.prototype._flushDataAndCleanUp = function() {
-          var _this = this;
-          if (this._useConptyDll) {
-            return;
-          }
-          if (this._closeTimeout) {
-            clearTimeout(this._closeTimeout);
-          }
-          this._closeTimeout = setTimeout(function() {
-            return _this._cleanUpProcess();
-          }, FLUSH_DATA_INTERVAL);
-        };
-        WindowsPtyAgent2.prototype._cleanUpProcess = function() {
-          if (this._useConptyDll) {
-            return;
-          }
-          this._inSocket.readable = false;
-          this._outSocket.readable = false;
-          this._outSocket.destroy();
-        };
-        return WindowsPtyAgent2;
-      })()
-    );
-    exports.WindowsPtyAgent = WindowsPtyAgent;
-    function argsToCommandLine(file, args) {
-      if (isCommandLine(args)) {
-        if (args.length === 0) {
-          return file;
-        }
-        return argsToCommandLine(file, []) + " " + args;
-      }
-      var argv = [file];
-      Array.prototype.push.apply(argv, args);
-      var result = "";
-      for (var argIndex = 0; argIndex < argv.length; argIndex++) {
-        if (argIndex > 0) {
-          result += " ";
-        }
-        var arg = argv[argIndex];
-        var hasLopsidedEnclosingQuote = xOr(arg[0] !== '"', arg[arg.length - 1] !== '"');
-        var hasNoEnclosingQuotes = arg[0] !== '"' && arg[arg.length - 1] !== '"';
-        var quote = arg === "" || (arg.indexOf(" ") !== -1 || arg.indexOf("	") !== -1) && (arg.length > 1 && (hasLopsidedEnclosingQuote || hasNoEnclosingQuotes));
-        if (quote) {
-          result += '"';
-        }
-        var bsCount = 0;
-        for (var i = 0; i < arg.length; i++) {
-          var p = arg[i];
-          if (p === "\\") {
-            bsCount++;
-          } else if (p === '"') {
-            result += repeatText("\\", bsCount * 2 + 1);
-            result += '"';
-            bsCount = 0;
-          } else {
-            result += repeatText("\\", bsCount);
-            bsCount = 0;
-            result += p;
-          }
-        }
-        if (quote) {
-          result += repeatText("\\", bsCount * 2);
-          result += '"';
-        } else {
-          result += repeatText("\\", bsCount);
-        }
-      }
-      return result;
-    }
-    exports.argsToCommandLine = argsToCommandLine;
-    function isCommandLine(args) {
-      return typeof args === "string";
-    }
-    function repeatText(text, count) {
-      var result = "";
-      for (var i = 0; i < count; i++) {
-        result += text;
-      }
-      return result;
-    }
-    function xOr(arg1, arg2) {
-      return arg1 && !arg2 || !arg1 && arg2;
-    }
-  }
-});
-
-// node_modules/node-pty/lib/windowsTerminal.js
-var require_windowsTerminal = __commonJS({
-  "node_modules/node-pty/lib/windowsTerminal.js"(exports) {
-    "use strict";
-    var __extends = exports && exports.__extends || /* @__PURE__ */ (function() {
-      var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
-          d2.__proto__ = b2;
-        } || function(d2, b2) {
-          for (var p in b2) if (b2.hasOwnProperty(p)) d2[p] = b2[p];
-        };
-        return extendStatics(d, b);
-      };
-      return function(d, b) {
-        extendStatics(d, b);
-        function __() {
-          this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-      };
-    })();
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.WindowsTerminal = void 0;
-    var terminal_1 = require_terminal();
-    var windowsPtyAgent_1 = require_windowsPtyAgent();
-    var utils_1 = require_utils();
-    var DEFAULT_FILE = "cmd.exe";
-    var DEFAULT_NAME = "Windows Shell";
-    var WindowsTerminal = (
-      /** @class */
-      (function(_super) {
-        __extends(WindowsTerminal2, _super);
-        function WindowsTerminal2(file, args, opt) {
-          var _this = _super.call(this, opt) || this;
-          _this._checkType("args", args, "string", true);
-          args = args || [];
-          file = file || DEFAULT_FILE;
-          opt = opt || {};
-          opt.env = opt.env || process.env;
-          if (opt.encoding) {
-            console.warn("Setting encoding on Windows is not supported");
-          }
-          var env = utils_1.assign({}, opt.env);
-          _this._cols = opt.cols || terminal_1.DEFAULT_COLS;
-          _this._rows = opt.rows || terminal_1.DEFAULT_ROWS;
-          var cwd = opt.cwd || process.cwd();
-          var name = opt.name || env.TERM || DEFAULT_NAME;
-          var parsedEnv = _this._parseEnv(env);
-          _this._isReady = false;
-          _this._deferreds = [];
-          _this._agent = new windowsPtyAgent_1.WindowsPtyAgent(file, args, parsedEnv, cwd, _this._cols, _this._rows, false, opt.useConpty, opt.useConptyDll, opt.conptyInheritCursor);
-          _this._socket = _this._agent.outSocket;
-          _this._pid = _this._agent.innerPid;
-          _this._fd = _this._agent.fd;
-          _this._pty = _this._agent.pty;
-          _this._socket.on("ready_datapipe", function() {
-            _this._socket.once("data", function() {
-              if (!_this._isReady) {
-                _this._isReady = true;
-                _this._deferreds.forEach(function(fn) {
-                  fn.run();
-                });
-                _this._deferreds = [];
-              }
-            });
-            _this._socket.on("error", function(err) {
-              _this._close();
-              if (err.code) {
-                if (~err.code.indexOf("errno 5") || ~err.code.indexOf("EIO"))
-                  return;
-              }
-              if (_this.listeners("error").length < 2) {
-                throw err;
-              }
-            });
-            _this._socket.on("close", function() {
-              _this.emit("exit", _this._agent.exitCode);
-              _this._close();
-            });
-          });
-          _this._file = file;
-          _this._name = name;
-          _this._readable = true;
-          _this._writable = true;
-          _this._forwardEvents();
-          return _this;
-        }
-        WindowsTerminal2.prototype._write = function(data) {
-          this._defer(this._doWrite, data);
-        };
-        WindowsTerminal2.prototype._doWrite = function(data) {
-          this._agent.inSocket.write(data);
-        };
-        WindowsTerminal2.open = function(options) {
-          throw new Error("open() not supported on windows, use Fork() instead.");
-        };
-        WindowsTerminal2.prototype.resize = function(cols, rows) {
-          var _this = this;
-          if (cols <= 0 || rows <= 0 || isNaN(cols) || isNaN(rows) || cols === Infinity || rows === Infinity) {
-            throw new Error("resizing must be done using positive cols and rows");
-          }
-          this._deferNoArgs(function() {
-            _this._agent.resize(cols, rows);
-            _this._cols = cols;
-            _this._rows = rows;
-          });
-        };
-        WindowsTerminal2.prototype.clear = function() {
-          var _this = this;
-          this._deferNoArgs(function() {
-            _this._agent.clear();
-          });
-        };
-        WindowsTerminal2.prototype.destroy = function() {
-          var _this = this;
-          this._deferNoArgs(function() {
-            _this.kill();
-          });
-        };
-        WindowsTerminal2.prototype.kill = function(signal) {
-          var _this = this;
-          this._deferNoArgs(function() {
-            if (signal) {
-              throw new Error("Signals not supported on windows.");
-            }
-            _this._close();
-            _this._agent.kill();
-          });
-        };
-        WindowsTerminal2.prototype._deferNoArgs = function(deferredFn) {
-          var _this = this;
-          if (this._isReady) {
-            deferredFn.call(this);
-            return;
-          }
-          this._deferreds.push({
-            run: function() {
-              return deferredFn.call(_this);
-            }
-          });
-        };
-        WindowsTerminal2.prototype._defer = function(deferredFn, arg) {
-          var _this = this;
-          if (this._isReady) {
-            deferredFn.call(this, arg);
-            return;
-          }
-          this._deferreds.push({
-            run: function() {
-              return deferredFn.call(_this, arg);
-            }
-          });
-        };
-        Object.defineProperty(WindowsTerminal2.prototype, "process", {
-          get: function() {
-            return this._name;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        Object.defineProperty(WindowsTerminal2.prototype, "master", {
-          get: function() {
-            throw new Error("master is not supported on Windows");
-          },
-          enumerable: false,
-          configurable: true
-        });
-        Object.defineProperty(WindowsTerminal2.prototype, "slave", {
-          get: function() {
-            throw new Error("slave is not supported on Windows");
-          },
-          enumerable: false,
-          configurable: true
-        });
-        return WindowsTerminal2;
-      })(terminal_1.Terminal)
-    );
-    exports.WindowsTerminal = WindowsTerminal;
-  }
-});
-
-// node_modules/node-pty/lib/unixTerminal.js
-var require_unixTerminal = __commonJS({
-  "node_modules/node-pty/lib/unixTerminal.js"(exports) {
-    "use strict";
-    var __extends = exports && exports.__extends || /* @__PURE__ */ (function() {
-      var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
-          d2.__proto__ = b2;
-        } || function(d2, b2) {
-          for (var p in b2) if (b2.hasOwnProperty(p)) d2[p] = b2[p];
-        };
-        return extendStatics(d, b);
-      };
-      return function(d, b) {
-        extendStatics(d, b);
-        function __() {
-          this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-      };
-    })();
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.UnixTerminal = void 0;
-    var fs = __require("fs");
-    var path = __require("path");
-    var tty = __require("tty");
-    var terminal_1 = require_terminal();
-    var utils_1 = require_utils();
-    var native = utils_1.loadNativeModule("pty");
-    var pty = native.module;
-    var helperPath = native.dir + "/spawn-helper";
-    helperPath = path.resolve(__dirname, helperPath);
-    helperPath = helperPath.replace("app.asar", "app.asar.unpacked");
-    helperPath = helperPath.replace("node_modules.asar", "node_modules.asar.unpacked");
-    var DEFAULT_FILE = "sh";
-    var DEFAULT_NAME = "xterm";
-    var DESTROY_SOCKET_TIMEOUT_MS = 200;
-    var UnixTerminal = (
-      /** @class */
-      (function(_super) {
-        __extends(UnixTerminal2, _super);
-        function UnixTerminal2(file, args, opt) {
-          var _a, _b;
-          var _this = _super.call(this, opt) || this;
-          _this._boundClose = false;
-          _this._emittedClose = false;
-          if (typeof args === "string") {
-            throw new Error("args as a string is not supported on unix.");
-          }
-          args = args || [];
-          file = file || DEFAULT_FILE;
-          opt = opt || {};
-          opt.env = opt.env || process.env;
-          _this._cols = opt.cols || terminal_1.DEFAULT_COLS;
-          _this._rows = opt.rows || terminal_1.DEFAULT_ROWS;
-          var uid = (_a = opt.uid) !== null && _a !== void 0 ? _a : -1;
-          var gid = (_b = opt.gid) !== null && _b !== void 0 ? _b : -1;
-          var env = utils_1.assign({}, opt.env);
-          if (opt.env === process.env) {
-            _this._sanitizeEnv(env);
-          }
-          var cwd = opt.cwd || process.cwd();
-          env.PWD = cwd;
-          var name = opt.name || env.TERM || DEFAULT_NAME;
-          env.TERM = name;
-          var parsedEnv = _this._parseEnv(env);
-          var encoding = opt.encoding === void 0 ? "utf8" : opt.encoding;
-          var onexit = function(code, signal) {
-            if (!_this._emittedClose) {
-              if (_this._boundClose) {
-                return;
-              }
-              _this._boundClose = true;
-              var timeout_1 = setTimeout(function() {
-                timeout_1 = null;
-                _this._socket.destroy();
-              }, DESTROY_SOCKET_TIMEOUT_MS);
-              _this.once("close", function() {
-                if (timeout_1 !== null) {
-                  clearTimeout(timeout_1);
-                }
-                _this.emit("exit", code, signal);
-              });
-              return;
-            }
-            _this.emit("exit", code, signal);
-          };
-          var term = pty.fork(file, args, parsedEnv, cwd, _this._cols, _this._rows, uid, gid, encoding === "utf8", helperPath, onexit);
-          _this._socket = new tty.ReadStream(term.fd);
-          if (encoding !== null) {
-            _this._socket.setEncoding(encoding);
-          }
-          _this._writeStream = new CustomWriteStream(term.fd, encoding || void 0);
-          _this._socket.on("error", function(err) {
-            if (err.code) {
-              if (~err.code.indexOf("EAGAIN")) {
-                return;
-              }
-            }
-            _this._close();
-            if (!_this._emittedClose) {
-              _this._emittedClose = true;
-              _this.emit("close");
-            }
-            if (err.code) {
-              if (~err.code.indexOf("errno 5") || ~err.code.indexOf("EIO")) {
-                return;
-              }
-            }
-            if (_this.listeners("error").length < 2) {
-              throw err;
-            }
-          });
-          _this._pid = term.pid;
-          _this._fd = term.fd;
-          _this._pty = term.pty;
-          _this._file = file;
-          _this._name = name;
-          _this._readable = true;
-          _this._writable = true;
-          _this._socket.on("close", function() {
-            if (_this._emittedClose) {
-              return;
-            }
-            _this._emittedClose = true;
-            _this._close();
-            _this.emit("close");
-          });
-          _this._forwardEvents();
-          return _this;
-        }
-        Object.defineProperty(UnixTerminal2.prototype, "master", {
-          get: function() {
-            return this._master;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        Object.defineProperty(UnixTerminal2.prototype, "slave", {
-          get: function() {
-            return this._slave;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        UnixTerminal2.prototype._write = function(data) {
-          this._writeStream.write(data);
-        };
-        Object.defineProperty(UnixTerminal2.prototype, "fd", {
-          /* Accessors */
-          get: function() {
-            return this._fd;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        Object.defineProperty(UnixTerminal2.prototype, "ptsName", {
-          get: function() {
-            return this._pty;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        UnixTerminal2.open = function(opt) {
-          var self = Object.create(UnixTerminal2.prototype);
-          opt = opt || {};
-          if (arguments.length > 1) {
-            opt = {
-              cols: arguments[1],
-              rows: arguments[2]
-            };
-          }
-          var cols = opt.cols || terminal_1.DEFAULT_COLS;
-          var rows = opt.rows || terminal_1.DEFAULT_ROWS;
-          var encoding = opt.encoding === void 0 ? "utf8" : opt.encoding;
-          var term = pty.open(cols, rows);
-          self._master = new tty.ReadStream(term.master);
-          if (encoding !== null) {
-            self._master.setEncoding(encoding);
-          }
-          self._master.resume();
-          self._slave = new tty.ReadStream(term.slave);
-          if (encoding !== null) {
-            self._slave.setEncoding(encoding);
-          }
-          self._slave.resume();
-          self._socket = self._master;
-          self._pid = -1;
-          self._fd = term.master;
-          self._pty = term.pty;
-          self._file = process.argv[0] || "node";
-          self._name = process.env.TERM || "";
-          self._readable = true;
-          self._writable = true;
-          self._socket.on("error", function(err) {
-            self._close();
-            if (self.listeners("error").length < 2) {
-              throw err;
-            }
-          });
-          self._socket.on("close", function() {
-            self._close();
-          });
-          return self;
-        };
-        UnixTerminal2.prototype.destroy = function() {
-          var _this = this;
-          this._close();
-          this._socket.once("close", function() {
-            _this.kill("SIGHUP");
-          });
-          this._socket.destroy();
-          this._writeStream.dispose();
-        };
-        UnixTerminal2.prototype.kill = function(signal) {
-          try {
-            process.kill(this.pid, signal || "SIGHUP");
-          } catch (e) {
-          }
-        };
-        Object.defineProperty(UnixTerminal2.prototype, "process", {
-          /**
-           * Gets the name of the process.
-           */
-          get: function() {
-            if (process.platform === "darwin") {
-              var title = pty.process(this._fd);
-              return title !== "kernel_task" ? title : this._file;
-            }
-            return pty.process(this._fd, this._pty) || this._file;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        UnixTerminal2.prototype.resize = function(cols, rows) {
-          if (cols <= 0 || rows <= 0 || isNaN(cols) || isNaN(rows) || cols === Infinity || rows === Infinity) {
-            throw new Error("resizing must be done using positive cols and rows");
-          }
-          pty.resize(this._fd, cols, rows);
-          this._cols = cols;
-          this._rows = rows;
-        };
-        UnixTerminal2.prototype.clear = function() {
-        };
-        UnixTerminal2.prototype._sanitizeEnv = function(env) {
-          delete env["TMUX"];
-          delete env["TMUX_PANE"];
-          delete env["STY"];
-          delete env["WINDOW"];
-          delete env["WINDOWID"];
-          delete env["TERMCAP"];
-          delete env["COLUMNS"];
-          delete env["LINES"];
-        };
-        return UnixTerminal2;
-      })(terminal_1.Terminal)
-    );
-    exports.UnixTerminal = UnixTerminal;
-    var CustomWriteStream = (
-      /** @class */
-      (function() {
-        function CustomWriteStream2(_fd, _encoding) {
-          this._fd = _fd;
-          this._encoding = _encoding;
-          this._writeQueue = [];
-        }
-        CustomWriteStream2.prototype.dispose = function() {
-          clearImmediate(this._writeImmediate);
-          this._writeImmediate = void 0;
-        };
-        CustomWriteStream2.prototype.write = function(data) {
-          var buffer = typeof data === "string" ? Buffer.from(data, this._encoding) : Buffer.from(data);
-          if (buffer.byteLength !== 0) {
-            this._writeQueue.push({ buffer, offset: 0 });
-            if (this._writeQueue.length === 1) {
-              this._processWriteQueue();
-            }
-          }
-        };
-        CustomWriteStream2.prototype._processWriteQueue = function() {
-          var _this = this;
-          this._writeImmediate = void 0;
-          if (this._writeQueue.length === 0) {
-            return;
-          }
-          var task = this._writeQueue[0];
-          fs.write(this._fd, task.buffer, task.offset, function(err, written) {
-            if (err) {
-              if ("code" in err && err.code === "EAGAIN") {
-                _this._writeImmediate = setImmediate(function() {
-                  return _this._processWriteQueue();
-                });
-              } else {
-                _this._writeQueue.length = 0;
-                console.error("Unhandled pty write error", err);
-              }
-              return;
-            }
-            task.offset += written;
-            if (task.offset >= task.buffer.byteLength) {
-              _this._writeQueue.shift();
-            }
-            _this._processWriteQueue();
-          });
-        };
-        return CustomWriteStream2;
-      })()
-    );
-  }
-});
-
-// node_modules/node-pty/lib/index.js
-var require_lib = __commonJS({
-  "node_modules/node-pty/lib/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.native = exports.open = exports.createTerminal = exports.fork = exports.spawn = void 0;
-    var utils_1 = require_utils();
-    var terminalCtor;
-    if (process.platform === "win32") {
-      terminalCtor = require_windowsTerminal().WindowsTerminal;
-    } else {
-      terminalCtor = require_unixTerminal().UnixTerminal;
-    }
-    function spawn11(file, args, opt) {
-      return new terminalCtor(file, args, opt);
-    }
-    exports.spawn = spawn11;
-    function fork(file, args, opt) {
-      return new terminalCtor(file, args, opt);
-    }
-    exports.fork = fork;
-    function createTerminal(file, args, opt) {
-      return new terminalCtor(file, args, opt);
-    }
-    exports.createTerminal = createTerminal;
-    function open(options) {
-      return terminalCtor.open(options);
-    }
-    exports.open = open;
-    exports.native = process.platform !== "win32" ? utils_1.loadNativeModule("pty").module : null;
-  }
-});
+import "./chunk-MCKGQKYU.js";
 
 // server/index.ts
 import { Hono as Hono19 } from "hono";
@@ -1787,7 +454,7 @@ description: ${body.description?.trim() ?? ""}
 import { Hono as Hono2 } from "hono";
 import { spawn } from "child_process";
 import { mkdirSync as mkdirSync2, writeFileSync as writeFileSync2, existsSync as existsSync2 } from "fs";
-import { join as join3 } from "path";
+import { join as join3, resolve, dirname } from "path";
 function generateRoutes(projectDir) {
   const app = new Hono2();
   app.post("/", async (c) => {
@@ -1801,6 +468,11 @@ function generateRoutes(projectDir) {
           controller.enqueue(new TextEncoder().encode(chunk));
         };
         send({ type: "start", message: "Starting agent generation..." });
+        if (body.companyType?.startsWith("-") || body.projectName?.startsWith("-")) {
+          send({ type: "error", message: "Invalid input" });
+          controller.close();
+          return;
+        }
         const args = [
           "agents",
           "--yes",
@@ -1811,8 +483,15 @@ function generateRoutes(projectDir) {
         if (body.projectName) {
           args.push("--name", body.projectName);
         }
-        const cliPath = join3(projectDir, "node_modules", ".bin", "hashmark");
-        const bin = existsSync2(cliPath) ? cliPath : "hashmark";
+        const localBin = join3(projectDir, "node_modules", ".bin", "hashmark");
+        const monoBin = join3(projectDir, "packages", "cli", "dist", "cli.js");
+        const isMonorepo = !existsSync2(localBin) && existsSync2(monoBin);
+        const resolvedBin = existsSync2(localBin) ? localBin : isMonorepo ? "node" : "hashmark";
+        if (resolvedBin === "node") {
+          const agentsIdx = args.indexOf("agents");
+          args.splice(0, 0, monoBin);
+          args.splice(agentsIdx + 2, 0, projectDir);
+        }
         const env = { ...process.env };
         if (body.apiKey) {
           const keyMap = {
@@ -1827,7 +506,8 @@ function generateRoutes(projectDir) {
           if (envVar) env[envVar] = body.apiKey;
           if (body.baseURL) env.OPENAI_BASE_URL = body.baseURL;
         }
-        const proc = spawn(bin, args, { cwd: projectDir, env });
+        const spawnCwd = isMonorepo ? join3(projectDir, "packages", "cli") : projectDir;
+        const proc = spawn(resolvedBin, args, { cwd: spawnCwd, env });
         let buffer = "";
         proc.stdout.on("data", (chunk) => {
           buffer += chunk.toString();
@@ -1870,13 +550,16 @@ function generateRoutes(projectDir) {
   app.post("/save", async (c) => {
     const body = await c.req.json();
     const agentsDir = join3(projectDir, ".claude", "agents");
+    let written = 0;
     for (const agent of body.agents) {
-      const fullPath = join3(agentsDir, agent.path);
-      const dir = fullPath.substring(0, fullPath.lastIndexOf("/"));
-      mkdirSync2(dir, { recursive: true });
+      if (!agent.path || typeof agent.path !== "string") continue;
+      const fullPath = resolve(agentsDir, agent.path);
+      if (!fullPath.startsWith(agentsDir + "/") && fullPath !== agentsDir) continue;
+      mkdirSync2(dirname(fullPath), { recursive: true });
       writeFileSync2(fullPath, agent.content, "utf-8");
+      written++;
     }
-    return c.json({ ok: true, count: body.agents.length });
+    return c.json({ ok: true, count: written });
   });
   return app;
 }
@@ -2076,10 +759,14 @@ function scanRoutes(projectDir) {
     const stream = new ReadableStream({
       start(controller) {
         controller.enqueue(send({ type: "start", message: "Starting scan..." }));
-        const cliPath = join5(projectDir, "node_modules", ".bin", "hashmark");
-        const bin = existsSync4(cliPath) ? cliPath : "hashmark";
-        const proc = spawn2(bin, ["--json", "--output", "/dev/stdout"], {
-          cwd: projectDir,
+        const localBin = join5(projectDir, "node_modules", ".bin", "hashmark");
+        const monoBin = join5(projectDir, "packages", "cli", "dist", "cli.js");
+        const isMonorepo = !existsSync4(localBin) && existsSync4(monoBin);
+        const bin = existsSync4(localBin) ? localBin : isMonorepo ? "node" : "hashmark";
+        const args = bin === "node" ? [monoBin, projectDir, "--json", "--output", "/dev/stdout"] : ["--json", "--output", "/dev/stdout"];
+        const spawnCwd = isMonorepo ? join5(projectDir, "packages", "cli") : projectDir;
+        const proc = spawn2(bin, args, {
+          cwd: spawnCwd,
           env: process.env
         });
         let stdout = "";
@@ -2924,7 +1611,7 @@ async function streamCodex(opts) {
   }) ?? "codex";
   const lastUser = [...opts.messages].reverse().find((m) => m.role === "user");
   const prompt = lastUser?.content ?? "";
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve4, reject) => {
     const args = ["--approval-mode", "full-auto", "-q", prompt];
     if (opts.model) args.unshift("--model", opts.model);
     const proc = spawn4(codexBin, args, {
@@ -2937,7 +1624,7 @@ async function streamCodex(opts) {
     proc.on("close", (code) => {
       if (code === 0 || code === null) {
         opts.onDone();
-        resolve();
+        resolve4();
       } else {
         const e = new Error(`codex exited with code ${code}`);
         opts.onError(e);
@@ -4035,7 +2722,7 @@ function setupShellIntegration(shell) {
 async function spawnPty(projectDir) {
   const shell = process.env.SHELL ?? (os.platform() === "win32" ? "cmd.exe" : "/bin/zsh");
   const { env, cleanup } = setupShellIntegration(shell);
-  const pty = await Promise.resolve().then(() => __toESM(require_lib(), 1));
+  const pty = await import("./lib-234R4XPR.js");
   const proc = pty.spawn(shell, [], {
     name: "xterm-color",
     cols: 80,
@@ -4109,8 +2796,8 @@ Failed to start terminal: ${err}\r
 
 // server/routes/files.ts
 import { Hono as Hono6 } from "hono";
-import { readdir, stat, readFile } from "fs/promises";
-import { join as join15, relative as relative3, extname as extname3 } from "path";
+import { readdir, stat, readFile, writeFile, mkdir, rename, rm } from "fs/promises";
+import { join as join15, relative as relative3, extname as extname3, resolve as resolve2, dirname as dirname2 } from "path";
 import { execFile as execFile2 } from "child_process";
 import { promisify as promisify2 } from "util";
 import { existsSync as existsSync12 } from "fs";
@@ -4400,7 +3087,7 @@ function filesRoutes(projectDir) {
     const relPath = c.req.query("path");
     if (!relPath) return c.json({ error: "path required" }, 400);
     const fullPath = join15(projectDir, relPath);
-    if (!fullPath.startsWith(projectDir)) return c.json({ error: "forbidden" }, 403);
+    if (!fullPath.startsWith(projectDir + "/") && fullPath !== projectDir) return c.json({ error: "forbidden" }, 403);
     try {
       const content = await readFile(fullPath, "utf-8");
       return c.json({ content, path: relPath });
@@ -4412,7 +3099,7 @@ function filesRoutes(projectDir) {
     const relPath = c.req.query("path");
     if (!relPath) return c.json({ error: "path required" }, 400);
     const fullPath = join15(projectDir, relPath);
-    if (!fullPath.startsWith(projectDir)) return c.json({ error: "forbidden" }, 403);
+    if (!fullPath.startsWith(projectDir + "/") && fullPath !== projectDir) return c.json({ error: "forbidden" }, 403);
     const stagedParam = c.req.query("staged");
     const staged = stagedParam === "true" || stagedParam === "1";
     try {
@@ -4441,9 +3128,8 @@ ${lines}`;
     try {
       if (body.paths?.length) {
         for (const p of body.paths) {
-          const fullPath = join15(projectDir, p);
-          if (!fullPath.startsWith(projectDir)) continue;
-          await execAsync("git", ["add", p], { cwd: projectDir });
+          if (!safePath(p)) continue;
+          await execAsync("git", ["add", "--", p], { cwd: projectDir });
         }
       } else {
         await execAsync("git", ["add", "-A"], { cwd: projectDir });
@@ -4458,9 +3144,8 @@ ${lines}`;
     try {
       if (body.paths?.length) {
         for (const p of body.paths) {
-          const fullPath = join15(projectDir, p);
-          if (!fullPath.startsWith(projectDir)) continue;
-          await execAsync("git", ["restore", "--staged", p], { cwd: projectDir });
+          if (!safePath(p)) continue;
+          await execAsync("git", ["restore", "--staged", "--", p], { cwd: projectDir });
         }
       } else {
         await execAsync("git", ["restore", "--staged", "."], { cwd: projectDir });
@@ -4475,8 +3160,7 @@ ${lines}`;
     if (!body.paths?.length) return c.json({ error: "paths required" }, 400);
     try {
       for (const p of body.paths) {
-        const fullPath = join15(projectDir, p);
-        if (!fullPath.startsWith(projectDir)) continue;
+        if (!safePath(p)) continue;
         try {
           await execAsync("git", ["checkout", "--", p], { cwd: projectDir });
         } catch {
@@ -4522,12 +3206,280 @@ ${lines}`;
       return c.json({ error: err instanceof Error ? err.message : "Fetch failed" }, 500);
     }
   });
+  function safePath(relPath) {
+    const full = resolve2(projectDir, relPath);
+    if (!full.startsWith(projectDir + "/") && full !== projectDir) return null;
+    return full;
+  }
+  app.post("/create", async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const relPath = body.path;
+    if (!relPath || typeof relPath !== "string") return c.json({ error: "path required" }, 400);
+    const fullPath = safePath(relPath);
+    if (!fullPath) return c.json({ error: "forbidden" }, 403);
+    const isDir = body.type === "dir";
+    try {
+      if (isDir) {
+        await mkdir(fullPath, { recursive: true });
+      } else {
+        await mkdir(dirname2(fullPath), { recursive: true });
+        await writeFile(fullPath, body.content ?? "", "utf-8");
+      }
+      return c.json({ ok: true, path: relPath }, 201);
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    }
+  });
+  app.put("/rename", async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    if (!body.oldPath || !body.newPath) return c.json({ error: "oldPath and newPath required" }, 400);
+    const fullOld = safePath(body.oldPath);
+    const fullNew = safePath(body.newPath);
+    if (!fullOld || !fullNew) return c.json({ error: "forbidden" }, 403);
+    try {
+      await mkdir(dirname2(fullNew), { recursive: true });
+      await rename(fullOld, fullNew);
+      return c.json({ ok: true, oldPath: body.oldPath, newPath: body.newPath });
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    }
+  });
+  app.delete("/delete", async (c) => {
+    const relPath = c.req.query("path");
+    if (!relPath) return c.json({ error: "path required" }, 400);
+    const fullPath = safePath(relPath);
+    if (!fullPath) return c.json({ error: "forbidden" }, 403);
+    if (fullPath === projectDir) return c.json({ error: "cannot delete project root" }, 403);
+    try {
+      await rm(fullPath, { recursive: true });
+      return c.json({ ok: true, path: relPath });
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    }
+  });
+  app.get("/search", async (c) => {
+    const q = c.req.query("q") ?? "";
+    if (!q) return c.json({ results: [], matchCount: 0 });
+    const globPattern = c.req.query("glob") || void 0;
+    const maxResults = 200;
+    try {
+      const args = [
+        "--json",
+        "--max-count",
+        "50",
+        // max matches per file
+        "--max-filesize",
+        "1M",
+        "-n"
+        // line numbers
+      ];
+      if (globPattern) {
+        args.push("--glob", globPattern);
+      }
+      args.push("--", q, ".");
+      const { stdout } = await execAsync("rg", args, {
+        cwd: projectDir,
+        maxBuffer: 8 * 1024 * 1024
+      });
+      const matches = [];
+      for (const line of stdout.split("\n")) {
+        if (!line.trim()) continue;
+        try {
+          const obj = JSON.parse(line);
+          if (obj.type === "match" && obj.data) {
+            matches.push({
+              path: obj.data.path?.text ?? "",
+              line: obj.data.line_number ?? 0,
+              text: (obj.data.lines?.text ?? "").replace(/\n$/, "")
+            });
+          }
+        } catch {
+        }
+      }
+      const grouped = {};
+      for (const m of matches) {
+        const rel = m.path.startsWith("./") ? m.path.slice(2) : m.path;
+        if (!grouped[rel]) grouped[rel] = [];
+        grouped[rel].push({ line: m.line, text: m.text });
+      }
+      const results2 = Object.entries(grouped).slice(0, maxResults).map(([file, lines]) => ({
+        file,
+        matches: lines
+      }));
+      const matchCount2 = matches.length;
+      return c.json({ results: results2, matchCount: matchCount2 });
+    } catch {
+    }
+    const SEARCH_EXTS = /* @__PURE__ */ new Set([
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "mjs",
+      "cjs",
+      "py",
+      "go",
+      "rs",
+      "rb",
+      "java",
+      "c",
+      "cpp",
+      "h",
+      "cs",
+      "swift",
+      "kt",
+      "sh",
+      "bash",
+      "sql",
+      "json",
+      "yaml",
+      "yml",
+      "toml",
+      "md",
+      "txt",
+      "css",
+      "scss",
+      "html",
+      "xml",
+      "vue",
+      "svelte"
+    ]);
+    const results = [];
+    let matchCount = 0;
+    async function searchDir(dir, depth) {
+      if (depth > 5 || results.length >= maxResults) return;
+      let entries;
+      try {
+        entries = await readdir(dir);
+      } catch {
+        return;
+      }
+      for (const name of entries) {
+        if (results.length >= maxResults) break;
+        if (name.startsWith(".")) continue;
+        if (IGNORED.has(name)) continue;
+        const fullPath = join15(dir, name);
+        let s;
+        try {
+          s = await stat(fullPath);
+        } catch {
+          continue;
+        }
+        if (s.isDirectory()) {
+          await searchDir(fullPath, depth + 1);
+        } else if (s.isFile() && s.size < 1e6) {
+          const ext = extname3(name).slice(1).toLowerCase();
+          if (!SEARCH_EXTS.has(ext)) continue;
+          if (globPattern) {
+            const globExt = globPattern.replace("*.", "");
+            if (ext !== globExt) continue;
+          }
+          try {
+            const content = await readFile(fullPath, "utf-8");
+            const lines = content.split("\n");
+            const fileMatches = [];
+            for (let i = 0; i < lines.length; i++) {
+              if (lines[i].includes(q)) {
+                fileMatches.push({ line: i + 1, text: lines[i] });
+                matchCount++;
+              }
+            }
+            if (fileMatches.length > 0) {
+              results.push({ file: relative3(projectDir, fullPath), matches: fileMatches });
+            }
+          } catch {
+          }
+        }
+      }
+    }
+    await searchDir(projectDir, 0);
+    return c.json({ results, matchCount });
+  });
   app.get("/impact", (c) => {
     const branch = c.req.query("branch");
     if (!branch) return c.json({ error: "branch query param required" }, 400);
     const base = c.req.query("base") ?? "HEAD";
+    if (branch.startsWith("-") || base.startsWith("-")) return c.json({ error: "invalid ref name" }, 400);
     const report = analyzeImpact(projectDir, branch, base);
     return c.json(report);
+  });
+  app.get("/symbols", async (c) => {
+    const relPath = c.req.query("path");
+    if (!relPath) return c.json({ error: "path required" }, 400);
+    const fullPath = join15(projectDir, relPath);
+    if (!fullPath.startsWith(projectDir + "/") && fullPath !== projectDir) return c.json({ error: "forbidden" }, 403);
+    try {
+      const content = await readFile(fullPath, "utf-8");
+      const lines = content.split("\n");
+      const symbols = [];
+      const patterns = [
+        // function declarations: function foo(, async function foo(, export function foo(
+        { re: /^(?:export\s+)?(?:async\s+)?function\s+(\w+)/, kind: "function" },
+        // arrow/const functions: const foo = (, export const foo = (
+        { re: /^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\(/, kind: "function" },
+        // arrow/const assigned to arrow: const foo = async? (...) =>
+        { re: /^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[a-zA-Z_]\w*)\s*=>/, kind: "function" },
+        // class declarations
+        { re: /^(?:export\s+)?(?:abstract\s+)?class\s+(\w+)/, kind: "class" },
+        // interface declarations
+        { re: /^(?:export\s+)?interface\s+(\w+)/, kind: "interface" },
+        // type declarations
+        { re: /^(?:export\s+)?type\s+(\w+)\s*[=<]/, kind: "type" },
+        // const/let/var non-function
+        { re: /^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*[=:]/, kind: "const" },
+        // class methods
+        { re: /^\s+(?:(?:public|private|protected|static|async|readonly)\s+)*(\w+)\s*\(/, kind: "method" },
+        // Python: def foo(, class Foo:
+        { re: /^(?:async\s+)?def\s+(\w+)\s*\(/, kind: "function" },
+        { re: /^class\s+(\w+)\s*[:(]/, kind: "class" },
+        // Go: func Foo(, func (r Receiver) Foo(
+        { re: /^func\s+(?:\([^)]*\)\s+)?(\w+)\s*\(/, kind: "function" },
+        // Rust: fn foo(, pub fn foo(, struct Foo, trait Foo
+        { re: /^(?:pub\s+)?fn\s+(\w+)/, kind: "function" },
+        { re: /^(?:pub\s+)?struct\s+(\w+)/, kind: "class" },
+        { re: /^(?:pub\s+)?trait\s+(\w+)/, kind: "interface" }
+      ];
+      const skipNames = /* @__PURE__ */ new Set([
+        "if",
+        "else",
+        "for",
+        "while",
+        "switch",
+        "case",
+        "return",
+        "break",
+        "continue",
+        "try",
+        "catch",
+        "throw",
+        "new",
+        "get",
+        "set",
+        "of",
+        "in",
+        "do",
+        "it",
+        "to"
+      ]);
+      for (let i = 0; i < lines.length; i++) {
+        const trimmed = lines[i].trimStart();
+        if (!trimmed || trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*") || trimmed.startsWith("#")) continue;
+        for (const { re, kind } of patterns) {
+          const m = trimmed.match(re);
+          if (m && m[1] && m[1].length > 1 && !skipNames.has(m[1])) {
+            if (kind === "const") {
+              const already = symbols.some((s) => s.name === m[1] && s.line === i + 1);
+              if (already) break;
+            }
+            symbols.push({ name: m[1], kind, line: i + 1 });
+            break;
+          }
+        }
+      }
+      return c.json({ symbols });
+    } catch {
+      return c.json({ symbols: [] });
+    }
   });
   app.get("/complexity", async (c) => {
     const cachePath = join15(projectDir, ".hashmark", "complexity-cache.json");
@@ -4612,10 +3564,12 @@ ${lines}`;
     const hash = c.req.query("hash");
     const file = c.req.query("file");
     if (!hash || !file) return c.json({ error: "hash and file required" }, 400);
+    if (!/^[0-9a-fA-F]{4,40}$/.test(hash)) return c.json({ error: "invalid hash" }, 400);
+    if (!safePath(file)) return c.json({ error: "forbidden" }, 403);
     try {
       const { stdout } = await execAsync(
         "git",
-        ["show", "--format=", `${hash}`, "--", file],
+        ["show", "--format=", hash, "--", file],
         { cwd: projectDir, maxBuffer: 4 * 1024 * 1024 }
       );
       return c.json({ diff: stdout, file, hash });
@@ -4638,22 +3592,84 @@ ${lines}`;
   });
   app.post("/git/branch", async (c) => {
     const body = await c.req.json().catch(() => ({ name: "" }));
-    if (!body.name?.trim()) return c.json({ error: "Branch name required" }, 400);
+    const name = body.name?.trim();
+    if (!name) return c.json({ error: "Branch name required" }, 400);
+    if (name.startsWith("-")) return c.json({ error: "Invalid branch name" }, 400);
     try {
-      await execAsync("git", ["checkout", "-b", body.name.trim()], { cwd: projectDir });
-      return c.json({ ok: true, branch: body.name.trim() });
+      await execAsync("git", ["checkout", "-b", "--", name], { cwd: projectDir });
+      return c.json({ ok: true, branch: name });
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
     }
   });
   app.post("/git/checkout", async (c) => {
     const body = await c.req.json().catch(() => ({ branch: "" }));
-    if (!body.branch?.trim()) return c.json({ error: "branch required" }, 400);
+    const branch = body.branch?.trim();
+    if (!branch) return c.json({ error: "branch required" }, 400);
+    if (branch.startsWith("-")) return c.json({ error: "Invalid branch name" }, 400);
     try {
-      await execAsync("git", ["checkout", body.branch], { cwd: projectDir });
+      await execAsync("git", ["checkout", "--", branch], { cwd: projectDir });
       return c.json({ success: true });
     } catch (err) {
       return c.json({ error: String(err) }, 500);
+    }
+  });
+  app.get("/git/gh-available", async (c) => {
+    try {
+      await execAsync("which", ["gh"]);
+      await execAsync("gh", ["auth", "status"], { cwd: projectDir });
+      return c.json({ available: true });
+    } catch {
+      return c.json({ available: false });
+    }
+  });
+  app.post("/git/create-pr", async (c) => {
+    const body = await c.req.json().catch(() => ({ title: "", body: void 0, base: void 0 }));
+    if (!body.title?.trim()) return c.json({ error: "Title is required" }, 400);
+    try {
+      const args = ["pr", "create", "--title", body.title.trim()];
+      if (body.body?.trim()) {
+        args.push("--body", body.body.trim());
+      } else {
+        args.push("--body", "");
+      }
+      if (body.base?.trim()) {
+        args.push("--base", body.base.trim());
+      }
+      const { stdout } = await execAsync("gh", args, { cwd: projectDir, timeout: 3e4 });
+      const url = stdout.trim();
+      return c.json({ ok: true, url });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const stderrMatch = msg.match(/stderr:\s*([\s\S]*)/);
+      return c.json({ error: stderrMatch ? stderrMatch[1].trim() : msg }, 500);
+    }
+  });
+  app.get("/git/outgoing", async (c) => {
+    try {
+      const { stdout: branchRaw } = await execAsync(
+        "git",
+        ["rev-parse", "--abbrev-ref", "HEAD"],
+        { cwd: projectDir }
+      );
+      const branch = branchRaw.trim();
+      try {
+        await execAsync("git", ["rev-parse", "--abbrev-ref", `${branch}@{u}`], { cwd: projectDir });
+      } catch {
+        return c.json({ commits: [], count: 0 });
+      }
+      const { stdout } = await execAsync(
+        "git",
+        ["log", `origin/${branch}..HEAD`, "--format=%h|%s|%ai", "--", "."],
+        { cwd: projectDir, maxBuffer: 2 * 1024 * 1024 }
+      );
+      const commits = stdout.trim().split("\n").filter(Boolean).map((line) => {
+        const [hash, message, date] = line.split("|");
+        return { hash, message, date };
+      });
+      return c.json({ commits, count: commits.length });
+    } catch {
+      return c.json({ commits: [], count: 0 });
     }
   });
   app.get("/git", async (c) => {
@@ -4712,7 +3728,7 @@ ${lines}`;
 // server/routes/workspace.ts
 import { Hono as Hono7 } from "hono";
 import { existsSync as existsSync13, readFileSync as readFileSync11, writeFileSync as writeFileSync8, mkdirSync as mkdirSync7 } from "fs";
-import { join as join16 } from "path";
+import { join as join16, resolve as resolve3 } from "path";
 import { spawn as spawn6 } from "child_process";
 function getConfigPath(projectDir) {
   return join16(projectDir, ".hashmark", "workspace.json");
@@ -4785,6 +3801,46 @@ function streamCommand(name, command, cwd, env) {
 }
 function workspaceRoutes(projectDir) {
   const app = new Hono7();
+  app.post("/detect", async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const rawPath = body.path?.trim();
+    const dir = rawPath ? resolve3(projectDir, rawPath) : projectDir;
+    if (rawPath && !dir.startsWith(projectDir + "/") && dir !== projectDir) {
+      return c.json({ error: "forbidden" }, 403);
+    }
+    if (!existsSync13(dir)) return c.json({ error: "path not found" }, 400);
+    const name = (() => {
+      try {
+        const pkgPath = join16(dir, "package.json");
+        if (existsSync13(pkgPath)) {
+          const pkg = JSON.parse(readFileSync11(pkgPath, "utf-8"));
+          if (pkg.name) return pkg.name;
+        }
+      } catch {
+      }
+      return dir.split("/").filter(Boolean).pop() ?? "project";
+    })();
+    const checks = [
+      { file: "tsconfig.json", framework: "TypeScript" },
+      { file: "package.json", framework: "JavaScript" },
+      { file: "Cargo.toml", framework: "Rust" },
+      { file: "go.mod", framework: "Go" },
+      { file: "pyproject.toml", framework: "Python" },
+      { file: "setup.py", framework: "Python" },
+      { file: "requirements.txt", framework: "Python" },
+      { file: "Gemfile", framework: "Ruby" },
+      { file: "pom.xml", framework: "Java" },
+      { file: "build.gradle", framework: "Java" }
+    ];
+    let framework = "Unknown";
+    for (const check of checks) {
+      if (existsSync13(join16(dir, check.file))) {
+        framework = check.framework;
+        break;
+      }
+    }
+    return c.json({ framework, name });
+  });
   app.get("/config", (c) => {
     return c.json({ config: readConfig(projectDir) });
   });
@@ -5099,10 +4155,10 @@ function mcpRoutes(projectDir) {
     const hash = createHash2("md5").update(content).digest("hex");
     const tmpPath = join17(tmpdir2(), `studio-mcp-test-${hash}.json`);
     writeFileSync9(tmpPath, content, "utf-8");
-    return new Promise((resolve) => {
+    return new Promise((resolve4) => {
       const timeout = setTimeout(() => {
         proc.kill("SIGTERM");
-        resolve(c.json({ ok: false, error: "Timeout after 10s" }));
+        resolve4(c.json({ ok: false, error: "Timeout after 10s" }));
       }, 1e4);
       const proc = spawn7(
         "claude",
@@ -5124,14 +4180,14 @@ function mcpRoutes(projectDir) {
       proc.on("close", (code) => {
         clearTimeout(timeout);
         if (code === 0) {
-          resolve(c.json({ ok: true, output: stdout.slice(0, 2e3) }));
+          resolve4(c.json({ ok: true, output: stdout.slice(0, 2e3) }));
         } else {
-          resolve(c.json({ ok: false, error: stderr.slice(0, 1e3) || `Exit code ${code}` }));
+          resolve4(c.json({ ok: false, error: stderr.slice(0, 1e3) || `Exit code ${code}` }));
         }
       });
       proc.on("error", (err) => {
         clearTimeout(timeout);
-        resolve(c.json({ ok: false, error: err.message }));
+        resolve4(c.json({ ok: false, error: err.message }));
       });
     });
   });
@@ -5442,7 +4498,7 @@ Your specific subtask: ${subtask.title}
 ${subtask.description}
 
 Work in the current directory. Make the necessary code changes, create or modify files as needed.`;
-          return new Promise((resolve, reject) => {
+          return new Promise((resolve4, reject) => {
             const proc = spawn8(claudeBin, ["--print", workerPrompt], {
               cwd: worktreeDir,
               stdio: ["ignore", "pipe", "pipe"],
@@ -5525,7 +4581,7 @@ Work in the current directory. Make the necessary code changes, create or modify
               } catch {
               }
               send({ type: "worker_done", id: subtask.id, output: fullOutput, hasChanges });
-              resolve({ id: subtask.id, output: fullOutput, hasChanges, testPassed: testResult.passed, testSkipped: testResult.skipped });
+              resolve4({ id: subtask.id, output: fullOutput, hasChanges, testPassed: testResult.passed, testSkipped: testResult.skipped });
             });
             proc.on("error", (err) => {
               send({ type: "worker_error", id: subtask.id, error: err.message });
@@ -5676,6 +4732,48 @@ Work in the current directory. Make the necessary code changes, create or modify
     const db = getDb(dataDir);
     db.prepare("DELETE FROM swarm_runs WHERE id=?").run(c.req.param("id"));
     return c.json({ ok: true });
+  });
+  app.post("/conflicts", async (c) => {
+    const body = await c.req.json();
+    if (!Array.isArray(body.agents) || body.agents.length < 2) {
+      return c.json({
+        hasConflicts: false,
+        conflicts: [],
+        summary: "Need at least 2 agents with file data to detect conflicts"
+      });
+    }
+    const fileToAgents = /* @__PURE__ */ new Map();
+    for (const agent of body.agents) {
+      for (const file of agent.files ?? []) {
+        const existing = fileToAgents.get(file) ?? [];
+        existing.push(agent.id);
+        fileToAgents.set(file, existing);
+      }
+    }
+    const HIGH_IMPACT = [
+      /package\.json$/,
+      /tsconfig.*\.json$/,
+      /\.env/,
+      /prisma\/schema/,
+      /schema\.(ts|js)$/,
+      /middleware\.(ts|js)$/
+    ];
+    const conflicts = [];
+    for (const [file, agentIds] of fileToAgents) {
+      if (agentIds.length > 1) {
+        let severity = "medium";
+        if (agentIds.length > 2) severity = "high";
+        else if (HIGH_IMPACT.some((p) => p.test(file))) severity = "high";
+        conflicts.push({ file, agents: agentIds, severity });
+      }
+    }
+    const order = { high: 0, medium: 1, low: 2 };
+    conflicts.sort((a, b) => order[a.severity] - order[b.severity]);
+    return c.json({
+      hasConflicts: conflicts.length > 0,
+      conflicts,
+      summary: conflicts.length === 0 ? "No conflicts detected" : `${conflicts.length} file(s) modified by multiple agents`
+    });
   });
   return app;
 }
@@ -5872,7 +4970,7 @@ ${agentDef.content}
 
 Work in the current directory. Make the necessary code changes, create or modify files as needed.`;
           let fullOutput = "";
-          await new Promise((resolve) => {
+          await new Promise((resolve4) => {
             const proc = spawn9(claudeBin, ["--print", prompt], {
               cwd: worktreeDir,
               stdio: ["ignore", "pipe", "pipe"],
@@ -5889,11 +4987,11 @@ Work in the current directory. Make the necessary code changes, create or modify
               if (code !== 0 && code !== null) {
                 send({ type: "error", error: `Claude exited with code ${code}` });
               }
-              resolve();
+              resolve4();
             });
             proc.on("error", (err) => {
               send({ type: "error", error: err.message });
-              resolve();
+              resolve4();
             });
           });
           let hasChanges = false;
@@ -6137,9 +5235,9 @@ ${agentDef.content}
 
 Work in the current directory. Make the necessary code changes, create or modify files as needed.`;
   const ctrl = swarm.controllers[agentIndex];
-  await new Promise((resolve) => {
+  await new Promise((resolve4) => {
     if (ctrl.signal.aborted) {
-      resolve();
+      resolve4();
       return;
     }
     const proc = spawn10(claudeBin, ["--print", prompt], {
@@ -6168,13 +5266,13 @@ Work in the current directory. Make the necessary code changes, create or modify
 ${msg}`;
         emit(swarm, agentIndex, { type: "chunk", data: msg });
       }
-      resolve();
+      resolve4();
     });
     proc.on("error", (err) => {
       agent.output += `
 [spawn error] ${err.message}`;
       emit(swarm, agentIndex, { type: "chunk", data: `[spawn error] ${err.message}` });
-      resolve();
+      resolve4();
     });
   });
   if (swarm.cancelled || ctrl.signal.aborted) {
@@ -6609,9 +5707,12 @@ function providersRoutes(projectDir) {
   const app = new Hono14();
   app.get("/", (c) => {
     const store = loadProviders(dataDir);
+    const cliResults = detectCLIs(projectDir);
+    const cliInstalled = new Set(cliResults.filter((r) => r.installed).map((r) => r.id));
     const masked = store.providers.map(({ apiKey, ...rest }) => ({
       ...rest,
-      hasKey: Boolean(apiKey && apiKey.length > 0)
+      hasKey: Boolean(apiKey && apiKey.length > 0),
+      cliDetected: cliInstalled.has(rest.id)
     }));
     return c.json({ active: store.active, model: store.model, providers: masked });
   });
@@ -7120,7 +6221,9 @@ function createServer(opts) {
     return c.json({
       projectName,
       projectDir: ctx.projectDir,
-      configured: ctx.projectDir !== "__unset__"
+      configured: ctx.projectDir !== "__unset__",
+      nodeVersion: process.versions.node,
+      port: opts.port
     });
   });
   app.get("/api/settings/env", async (c) => {
