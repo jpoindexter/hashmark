@@ -125,7 +125,8 @@ export function createServer(opts: ServerOptions) {
       checks.claude = false;
     }
 
-    const ok = Object.values(checks).every(Boolean);
+    // DB is required for startup; claude binary is optional (only needed for agent runs)
+    const ok = checks.db === true;
     return c.json({ ok, checks, timestamp: Date.now() }, ok ? 200 : 503);
   });
 
