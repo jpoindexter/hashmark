@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
-import { execSync } from "child_process";
+import { execSync, spawnSync } from "child_process";
 
 // ── CLI tool definitions for auto-detection ─────────────────────────────────
 
@@ -44,10 +44,20 @@ function tryExec(cmd: string): string | null {
   }
 }
 
+function trySpawn(bin: string, args: string[]): string | null {
+  try {
+    const result = spawnSync(bin, args, { stdio: "pipe", timeout: 2000, encoding: "utf-8" });
+    if (result.error || result.status !== 0) return null;
+    return result.stdout?.trim() ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Resolve the binary path for a tool -- checks $PATH then fallback directories */
 function resolveBinPath(bin: string, projectDir?: string): string | null {
-  // 1. `which` covers $PATH
-  const whichResult = tryExec(`which ${bin}`);
+  // 1. `which` covers $PATH -- use spawnSync to avoid shell injection
+  const whichResult = trySpawn("which", [bin]);
   if (whichResult) return whichResult;
 
   // 2. Project-local node_modules
@@ -82,7 +92,7 @@ export function detectCLIs(projectDir?: string): DetectedCLI[] {
       return { id: tool.id, name: tool.name, installed: false };
     }
 
-    const versionRaw = tryExec(`"${binPath}" ${tool.versionFlag}`);
+    const versionRaw = trySpawn(binPath, [tool.versionFlag]);
     const version = versionRaw ? extractVersion(versionRaw) : undefined;
 
     return { id: tool.id, name: tool.name, installed: true, version, path: binPath };
