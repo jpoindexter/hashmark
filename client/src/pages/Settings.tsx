@@ -883,6 +883,7 @@ export default function Settings() {
       />
 
       <div style={{ flex: 1, overflowY: "auto", padding: "28px 36px", minWidth: 0 }}>
+        <div style={{ maxWidth: 680, margin: "0 auto" }}>
         {active === "appearance" && (
           <SectionView title="Appearance" description="Customize how the studio looks and feels.">
             <SettingRow label="Theme" hint="Interface color scheme">
@@ -1290,6 +1291,7 @@ export default function Settings() {
             </SettingRow>
           </SectionView>
         )}
+        </div>{/* /maxWidth */}
       </div>
     </div>
   );

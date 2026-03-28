@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { toast } from "../hooks/useToast.ts";
+import { PageShell } from "../components/shared/PageShell.tsx";
 
 interface AgentDef {
   id: string;
@@ -226,7 +227,8 @@ export default function Swarm() {
   const cols = agents.length <= 1 ? 1 : agents.length <= 2 ? 2 : agents.length <= 4 ? 2 : Math.min(agents.length, 4);
 
   return (
-    <div style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+    <PageShell>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
@@ -586,5 +588,6 @@ export default function Swarm() {
       )}
 
     </div>
+    </PageShell>
   );
 }

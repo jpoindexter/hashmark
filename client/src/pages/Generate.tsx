@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import ScanProgress, { type ScanResult, type ScanDelta } from "../components/ScanProgress.tsx";
 import { toast } from "../hooks/useToast.ts";
+import { PageShell } from "../components/shared/PageShell.tsx";
 
 const ALL_FORMATS = [
   { id: "CLAUDE.md",            label: "CLAUDE.md",            hint: "Anthropic Claude" },
@@ -215,7 +216,8 @@ export default function Generate() {
   const void_ = config; // suppress unused warning
 
   return (
-    <div ref={containerRef} style={{ padding: "28px", maxWidth: "860px" }}>
+    <PageShell>
+    <div ref={containerRef}>
 
       {/* ── Header ─────────────────────────────────────────── */}
       <div style={{ marginBottom: "24px" }}>
@@ -608,5 +610,6 @@ export default function Generate() {
       {/* suppress unused var warning for config */}
       {void_ && null}
     </div>
+    </PageShell>
   );
 }

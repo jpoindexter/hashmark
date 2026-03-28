@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Shield, Activity, FileText } from "lucide-react";
+import { PageShell } from "../components/shared/PageShell.tsx";
 import { Skeleton, SkeletonCard } from "../components/shared/Skeleton";
 
 // ---------------------------------------------------------------------------
@@ -1337,7 +1338,8 @@ export default function Governance() {
   });
 
   return (
-    <div style={{ padding: "20px 24px", maxWidth: 1100, fontFamily: "var(--font-ui)" }}>
+    <PageShell maxWidth={1100}>
+    <div style={{ fontFamily: "var(--font-ui)" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
         <Shield size={16} style={{ color: "var(--accent)" }} />
@@ -1368,5 +1370,6 @@ export default function Governance() {
 
       {tab === "policies" ? <PoliciesTab /> : tab === "actions" ? <ActionLogTab /> : <ActionJournalTab />}
     </div>
+    </PageShell>
   );
 }
