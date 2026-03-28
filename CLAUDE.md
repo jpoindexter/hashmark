@@ -52,6 +52,17 @@ Bearer token generated at startup, stored in `.hashmark/studio.token`, injected 
 - Toasts: `import { toast } from "../Toasts"`, call `toast.success()` / `toast.error()`. No local toast arrays.
 - Navigation via custom DOM events prefixed `studio:` -- see Shell.tsx for the full list.
 
+## Claude Code safety rules -- non-negotiable
+
+**Never set CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS=1 unconditionally.**
+This flag is gated behind the `dangerousSkipPermissions` studio setting (default: off). Only set it in the spawn env if `getStudioSetting(db, "dangerousSkipPermissions", "false") === "true"`. The user must explicitly opt in via Settings.
+
+**Max 2 concurrent Claude processes.**
+Swarm and company routes use a semaphore pattern (`MAX_CONCURRENT_CLAUDE = 2`). Never fire all agents at once. Process in batches.
+
+**Never auto-merge Claude's output.**
+After Claude finishes on a worktree branch, emit a `ready_to_merge` SSE event. The user clicks "Review & Merge" to land changes. The `POST /api/run/runs/:id/merge` and `POST /api/swarm/:id/agents/:index/merge` endpoints handle the merge on demand.
+
 ## Known gotchas -- hard won, do not repeat
 
 **Always commit with `--no-verify`**
