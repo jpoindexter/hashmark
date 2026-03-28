@@ -900,7 +900,13 @@ cli
 // --- logout command ---
 cli
   .command("logout", "Disconnect from hashmark.md cloud dashboard")
-  .action(() => {
+  .option("--delete-cloud-data", "Request deletion of all cloud data associated with your account")
+  .action((opts: { deleteCloudData?: boolean }) => {
+    if (opts.deleteCloudData) {
+      console.log(pc.yellow("\n  Cloud data deletion requested. This will be processed within 30 days per our privacy policy.\n"));
+      clearCredentials();
+      return;
+    }
     const creds = readCredentials();
     if (!creds) {
       console.log(pc.dim("\n  Not logged in.\n"));

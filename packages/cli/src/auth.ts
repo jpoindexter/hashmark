@@ -174,6 +174,7 @@ export async function login(): Promise<Credentials> {
 
     server.listen(port, "127.0.0.1", () => {
       console.log(pc.cyan("\n  # hashmark login\n"));
+      console.log(pc.dim("  hashmark syncs project metadata (file names, structure, dependencies) to your account. No source code is stored. See https://hashmark.md/privacy\n"));
       console.log(`  Opening browser to complete authentication...`);
       console.log(pc.dim(`\n  If the browser didn't open, visit:\n  ${authUrl}\n`));
       openBrowser(authUrl);
