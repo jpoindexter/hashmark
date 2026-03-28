@@ -420,7 +420,7 @@ function ProjectHeader({ info }: { info: ProjectInfo | null }) {
             style={{
               fontFamily: "var(--font)", fontSize: 10, padding: "4px 10px",
               background: "var(--accent)", border: "none", borderRadius: "var(--radius)",
-              color: "#000", cursor: "pointer", letterSpacing: "0.04em",
+              color: "var(--bg)", cursor: "pointer", letterSpacing: "0.04em",
             }}
           >
             open project
@@ -561,7 +561,7 @@ export default function Home() {
                 display: "flex", alignItems: "center", gap: 6,
                 fontFamily: "var(--font)", fontSize: 11, padding: "8px 18px", fontWeight: 600,
                 background: "var(--accent)", border: "none",
-                color: "#000", borderRadius: "var(--radius)", cursor: "pointer",
+                color: "var(--bg)", borderRadius: "var(--radius)", cursor: "pointer",
               }}
             >
               + new mission
@@ -625,7 +625,7 @@ export default function Home() {
               display: "flex", alignItems: "center", gap: 6,
               fontFamily: "var(--font)", fontSize: 11, padding: "7px 16px", fontWeight: 600,
               background: "var(--accent)", border: "none",
-              color: "#000", borderRadius: "var(--radius)", cursor: "pointer",
+              color: "var(--bg)", borderRadius: "var(--radius)", cursor: "pointer",
             }}
           >
             + new mission

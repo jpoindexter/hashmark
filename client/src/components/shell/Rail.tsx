@@ -12,8 +12,10 @@ function IconSessions() {
 function IconAgents() {
   return (
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 15, height: 15 }}>
-      <circle cx="8" cy="8" r="2.5" />
-      <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.22 3.22l1.42 1.42M11.36 11.36l1.42 1.42M11.36 4.64l-1.42 1.42M4.64 11.36l-1.42 1.42" />
+      <rect x="3" y="5" width="10" height="8" rx="2" />
+      <circle cx="6" cy="9" r="1" fill="currentColor" stroke="none" />
+      <circle cx="10" cy="9" r="1" fill="currentColor" stroke="none" />
+      <path d="M8 2v3M5 2h6" strokeLinecap="round" />
     </svg>
   );
 }
@@ -71,9 +73,19 @@ function IconMoon() {
   );
 }
 
+function IconSystem() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 14, height: 14 }}>
+      <rect x="2" y="3" width="12" height="9" rx="1.5" />
+      <path d="M6 14h4M8 12v2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 interface RailProps {
   agentsBadge?: boolean;
   theme?: "dark" | "light";
+  themeSetting?: "dark" | "light" | "system";
 }
 
 function isActive(path: string, current: string): boolean {
@@ -81,7 +93,7 @@ function isActive(path: string, current: string): boolean {
   return current.startsWith(path);
 }
 
-export default function Rail({ agentsBadge = false, theme = "dark" }: RailProps) {
+export default function Rail({ agentsBadge = false, theme = "dark", themeSetting = "dark" }: RailProps) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -155,7 +167,7 @@ export default function Rail({ agentsBadge = false, theme = "dark" }: RailProps)
       {/* Theme toggle */}
       <button
         className="rail-item"
-        title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        title={themeSetting === "dark" ? "Switch to light" : themeSetting === "light" ? "Switch to system" : "Switch to dark"}
         style={{
           width: 34, height: 34,
           borderRadius: 7,
@@ -167,7 +179,7 @@ export default function Rail({ agentsBadge = false, theme = "dark" }: RailProps)
         }}
         onClick={() => window.dispatchEvent(new CustomEvent("studio:toggle-theme"))}
       >
-        {theme === "dark" ? <IconSun /> : <IconMoon />}
+        {themeSetting === "dark" ? <IconSun /> : themeSetting === "light" ? <IconSystem /> : <IconMoon />}
       </button>
 
       <button
