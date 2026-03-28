@@ -46,7 +46,7 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 - [x] **[sonnet]** Fix `hashmark-scan.yml` — replace `npm install -g hashmark` with `npm install -g .` to use repo version, not published
 - [x] **[sonnet]** Add `"prepare": "husky"` to root `package.json` for automatic hook setup
 - [x] **[sonnet]** Cut `studio/stable` tag from current shell redesign state — stop growing the gap to main (265+ commits)
-- [ ] **[sonnet]** Clean up `studio/session/*` remote branches — run `git remote prune origin` + bulk delete noise branches
+- [x] **[sonnet]** Clean up `studio/session/*` remote branches — run `git remote prune origin` + bulk delete noise branches
 - [x] **[sonnet]** Decide: Electron or Tauri — remove the unused target from `package.json` and native layer
 
 ---
@@ -144,11 +144,11 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 
 ## Phase 11 — Legal
 
-- [ ] **[sonnet]** Write and publish Privacy Policy at `hashmark.md/privacy`
-- [ ] **[sonnet]** Write and publish Terms of Service at `hashmark.md/terms`
-- [ ] **[sonnet]** Add EULA to Electron/Tauri installer
-- [ ] **[sonnet]** Add one-line privacy disclosure to `hashmark login` CLI flow before OAuth redirect
-- [ ] **[sonnet]** Add `hashmark logout --delete-cloud-data` command for GDPR Article 17 (right to erasure)
+- [x] **[sonnet]** Write and publish Privacy Policy at `hashmark.md/privacy`
+- [x] **[sonnet]** Write and publish Terms of Service at `hashmark.md/terms`
+- [x] **[sonnet]** Add EULA to Electron/Tauri installer
+- [x] **[sonnet]** Add one-line privacy disclosure to `hashmark login` CLI flow before OAuth redirect
+- [x] **[sonnet]** Add `hashmark logout --delete-cloud-data` command for GDPR Article 17 (right to erasure)
 
 ---
 
@@ -156,7 +156,7 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 
 - [x] **[sonnet]** Fix `public/robots.txt` — remove or update reference to non-existent `https://hashmark.md/sitemap.xml`
 - [x] **[sonnet]** Update `packages/cli/package.json` — add `description`, `keywords`, `homepage` for npm search visibility
-- [ ] Add hashmark badge to generated READMEs on first GitHub Action run — `[![hashmark synced](https://img.shields.io/badge/hashmark-synced-green)](https://hashmark.md)`
+- [x] Add hashmark badge to generated READMEs on first GitHub Action run — `[![hashmark synced](https://img.shields.io/badge/hashmark-synced-green)](https://hashmark.md)`
 - [ ] Make GitHub repo public + submit to GitHub Marketplace
 - [ ] Publish "Stop Maintaining 7 AI Context Files" launch post simultaneously with hashmark.md launch
 - [ ] Publish "The Complete Guide to AI Context Files" (SEO foundation)
