@@ -7,12 +7,39 @@
 import { Hono } from "hono";
 import { randomUUID } from "crypto";
 import { existsSync, readFileSync, statSync } from "fs";
-import { join, basename } from "path";
+import { join, basename, resolve, normalize } from "path";
+import { homedir } from "os";
 import { getDb, resetDb } from "../db.js";
 
 export interface WorkspaceCtx {
   projectDir: string;
   dataDir: string;
+}
+
+// Paths that must never be registered as workspaces
+const SENSITIVE_SUFFIXES = [
+  ".ssh", ".gnupg", ".aws", ".kube", ".azure", ".docker",
+  ".config/gcloud", ".config/op", ".password-store",
+];
+
+function validateWorkspacePath(rawPath: string): { valid: boolean; error?: string } {
+  const resolved = resolve(normalize(rawPath));
+  const home = homedir();
+
+  // Must be within the user's home directory — blocks /etc, /usr, /var, /root, etc.
+  if (resolved !== home && !resolved.startsWith(home + "/")) {
+    return { valid: false, error: "path must be within your home directory" };
+  }
+
+  // Block well-known credential directories
+  const rel = resolved.slice(home.length + 1); // relative to home
+  for (const suffix of SENSITIVE_SUFFIXES) {
+    if (rel === suffix || rel.startsWith(suffix + "/")) {
+      return { valid: false, error: "path not allowed" };
+    }
+  }
+
+  return { valid: true };
 }
 
 function readProjectName(projectDir: string): string {
@@ -44,15 +71,20 @@ export function workspacesRoutes(globalDataDir: string, ctx: WorkspaceCtx) {
     const rawPath = body?.path?.trim();
     if (!rawPath) return c.json({ error: "path required" }, 400);
 
+    const validation = validateWorkspacePath(rawPath);
+    if (!validation.valid) return c.json({ error: validation.error }, 403);
+
+    const resolvedPath = resolve(normalize(rawPath));
+
     let stat;
-    try { stat = statSync(rawPath); } catch {
+    try { stat = statSync(resolvedPath); } catch {
       return c.json({ error: "path does not exist" }, 400);
     }
     if (!stat.isDirectory()) return c.json({ error: "path must be a directory" }, 400);
 
-    const name = readProjectName(rawPath);
+    const name = readProjectName(resolvedPath);
     const db = getDb(globalDataDir);
-    const existing = db.prepare("SELECT id FROM workspaces WHERE path = ?").get(rawPath) as { id: string } | undefined;
+    const existing = db.prepare("SELECT id FROM workspaces WHERE path = ?").get(resolvedPath) as { id: string } | undefined;
 
     if (existing) {
       db.prepare("UPDATE workspaces SET name = ?, last_opened = ? WHERE id = ?")
@@ -63,7 +95,7 @@ export function workspacesRoutes(globalDataDir: string, ctx: WorkspaceCtx) {
 
     const id = randomUUID();
     db.prepare("INSERT INTO workspaces (id, name, path, last_opened, is_active) VALUES (?, ?, ?, ?, 0)")
-      .run(id, name, rawPath, Date.now());
+      .run(id, name, resolvedPath, Date.now());
     const created = db.prepare("SELECT * FROM workspaces WHERE id = ?").get(id);
     return c.json({ workspace: created }, 201);
   });

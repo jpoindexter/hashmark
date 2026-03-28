@@ -235,6 +235,7 @@ export function sessionsRoutes(projectDir: string) {
       agentId?: string | null;
       agentName?: string | null;
       systemPrompt?: string | null;
+      model?: string;
     }>();
 
     const db = getDb(dataDir);

@@ -38,6 +38,7 @@ import { sandboxRoutes } from "./routes/sandbox.js";
 import { getDb } from "./db.js";
 import { getStudioToken } from "./lib/studio-token.js";
 import { studioAuthMiddleware } from "./lib/auth-middleware.js";
+import { rateLimitMiddleware } from "./lib/rate-limit.js";
 
 export interface ServerOptions {
   projectDir: string;
@@ -179,6 +180,11 @@ export function createServer(opts: ServerOptions) {
 
     return c.json({ vars });
   });
+
+  // Rate limiting for AI-heavy routes — 10 requests/min per IP
+  app.use("/api/sessions", rateLimitMiddleware(10, 60_000, "chat"));
+  app.use("/api/sessions/*", rateLimitMiddleware(10, 60_000, "chat"));
+  app.use("/api/run", rateLimitMiddleware(10, 60_000, "run"));
 
   // API routes
   app.route("/api/scan", scanRoutes(opts.projectDir));
