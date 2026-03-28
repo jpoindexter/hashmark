@@ -6,56 +6,20 @@
   "bin": {
     "hashmark-studio": "dist/bin.js"
   },
-  "main": "dist/electron/main.js",
   "scripts": {
-    "build:server": "tsup bin.ts server/index.ts --format esm --out-dir dist --no-splitting && tsup electron/main.ts --format esm --out-dir dist/electron --no-splitting --external electron --external better-sqlite3 --external node-pty && tsup electron/preload.ts --format cjs --out-dir dist/electron --no-splitting --external electron",
+    "build:server": "tsup bin.ts server/index.ts --format esm --out-dir dist --no-splitting",
     "build:client": "vite build client",
     "build": "npm run build:server && npm run build:client",
+    "build:hono": "tsup bin.ts server/index.ts --format esm --out-dir dist --no-splitting",
     "dev:server": "tsup bin.ts server/index.ts --format esm --out-dir dist --watch --onSuccess \"node dist/bin.js\"",
-    "dev:electron": "tsup electron/main.ts --format esm --out-dir dist/electron --no-splitting --external electron --external better-sqlite3 --external node-pty --watch & tsup electron/preload.ts --format cjs --out-dir dist/electron --no-splitting --external electron --watch",
     "dev:client": "vite client",
     "dev": "lsof -ti :3200 | xargs kill -9 2>/dev/null; npm run build:hono && HASHMARK_NO_OPEN=1 node dist/bin.js & npx wait-on -t 30000 http-get://localhost:3200/api/health && npm run dev:client",
-    "electron": "lsof -ti :3200 | xargs kill -9 2>/dev/null; sleep 0.5; electron dist/electron/main.js",
-    "electron:dev": "pkill -f 'electron dist/electron/main.js' 2>/dev/null; lsof -ti :3200 | xargs kill -9 2>/dev/null; lsof -ti :3201 | xargs kill -9 2>/dev/null; sleep 0.5; concurrently \"npm run dev:server\" \"npm run dev:electron\" \"npm run dev:client\" \"npx wait-on dist/electron/main.js dist/electron/preload.cjs dist/index.js http://localhost:3201 && NODE_ENV=development electron dist/electron/main.js\"",
-    "typecheck": "tsc --noEmit",
-    "build:hono": "tsup bin.ts server/index.ts --format esm --out-dir dist --no-splitting",
     "tauri:dev": "lsof -ti :3200 | xargs kill -9 2>/dev/null; npm run build:hono && HASHMARK_NO_OPEN=1 node dist/bin.js & npx wait-on -t 30000 http-get://localhost:3200/api/health; npm run dev:client & npx tauri dev",
     "tauri:build": "npm run build:client && npx tauri build",
-    "dist": "npm run build && electron-builder",
-    "dist:mac": "npm run build && electron-builder --mac",
+    "typecheck": "tsc --noEmit",
     "prepare": "husky",
     "test": "cd packages/cli && npm test",
     "test:watch": "cd packages/cli && npx vitest"
-  },
-  "build": {
-    "appId": "com.hashmark.studio",
-    "productName": "hashmark studio",
-    "afterSign": "scripts/notarize.cjs",
-    "mac": {
-      "category": "public.app-category.developer-tools",
-      "icon": "assets/icon.icns",
-      "target": [
-        "dmg",
-        "zip"
-      ],
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist"
-    },
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "assets/**/*",
-      "node_modules/**/*"
-    ],
-    "publish": {
-      "provider": "github",
-      "owner": "jpoindexter",
-      "repo": "hashmark"
-    }
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",
@@ -68,18 +32,15 @@
     "@xterm/addon-web-links": "^0.12.0",
     "@xterm/xterm": "^6.0.0",
     "better-sqlite3": "^12.8.0",
-    "electron-updater": "^6.8.3",
     "hono": "^4.6.17",
     "just-bash": "^2.13.1",
     "lucide-react": "^0.577.0",
-    "monaco-editor": "^0.55.1",
     "open": "^10.1.0",
     "shiki": "^4.0.2",
     "ws": "^8.19.0",
     "xterm": "^5.3.0"
   },
   "devDependencies": {
-    "@electron/notarize": "^2.5.0",
     "@tauri-apps/cli": "^2.10.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
@@ -88,8 +49,6 @@
     "@typescript-eslint/typescript-estree": "^8.57.1",
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.2",
-    "electron": "^41.0.3",
-    "electron-builder": "^26.8.1",
     "node-pty": "^1.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
