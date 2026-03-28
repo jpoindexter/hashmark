@@ -85,7 +85,7 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 - [x] **[sonnet]** Add `--surface: var(--bg-2)` and `--surface-2` to `tokens.css` — 2-line fix, unbreaks Home.tsx mission cards
 - [x] **[sonnet]** Consolidate toast systems — remove inline toast array from `Shell.tsx` (lines 92, 480-496), route everything through `Toasts.tsx` event bus
 - [x] **[sonnet]** Add `useFocusTrap` hook and apply to all modals — `ConfirmDialog`, `CommandPalette`, `ShortcutsHelp`, `AboutDialog`
-- [ ] **[sonnet]** Fix accessibility on interactive divs — add `role="button"`, `tabIndex={0}`, `onKeyDown` to `SessionsPanel` rows and any other `<div onClick>`
+- [x] **[sonnet]** Fix accessibility on interactive divs — add `role="button"`, `tabIndex={0}`, `onKeyDown` to `SessionsPanel` rows and any other `<div onClick>`
 - [x] **[sonnet]** Wire XTerminal colors to CSS variables — currently hardcoded VS Code dark (`#1e1e1e`, `#cccccc`) in `client/src/components/XTerminal.tsx`
 - [ ] **[sonnet]** Replace `useState(hovered)` with CSS `:hover` — 22+ components triggering re-renders on every mouse move
 - [ ] **[opus]** Decompose `Shell.tsx` (499 lines) — extract `useSessionManager`, `useStreamingSession`, `useStudioEvents` hooks
@@ -133,9 +133,9 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 - [x] **[sonnet]** Fix light mode: `StatusBar.tsx:53` — `color: "rgba(0,0,0,0.8)"` on dark accent; add `--overlay-bg` token and replace all 6 modal backdrops using hardcoded `rgba(0,0,0,0.5)`
 - [x] **[sonnet]** Fix light mode: replace 15+ hardcoded `boxShadow: "0 Npx Mpx rgba(0,0,0,X)"` values with CSS variable shadows
 - [x] **[sonnet]** Add `--orange` and `--purple` tokens to `tokens.css` — `ToolSummary.tsx` falls back to raw GitHub palette values
-- [ ] **[sonnet]** Replace `AVATAR_COLORS` rainbow table in `SessionsSidebar.tsx` — 52-entry rainbow contradicts the zero-hue Void system; replace with 3-4 grey variants
-- [ ] **[sonnet]** Replace `AGENT_COLORS` `#c084fc` raw purple in `SessionsPanel.tsx` with CSS variable
-- [ ] **[sonnet]** Fix `GitSidebar.tsx` status colors — replace GitHub palette (`#cca700`, `#2ea043`, `#f85149`, `#58a6ff`) with muted Void equivalents via tokens
+- [x] **[sonnet]** Replace `AVATAR_COLORS` rainbow table in `SessionsSidebar.tsx` — 52-entry rainbow contradicts the zero-hue Void system; replace with 3-4 grey variants
+- [x] **[sonnet]** Replace `AGENT_COLORS` `#c084fc` raw purple in `SessionsPanel.tsx` with CSS variable
+- [x] **[sonnet]** Fix `GitSidebar.tsx` status colors — replace GitHub palette (`#cca700`, `#2ea043`, `#f85149`, `#58a6ff`) with muted Void equivalents via tokens
 - [x] **[sonnet]** Add font size scale tokens — replace hardcoded `10`, `11`, `12`, `13` px values with `--font-size-xs`, `--font-size-sm`, etc.
 - [ ] **[sonnet]** Unify mission/session naming — audit all UI copy: use "mission" everywhere in the UI, keep `sessions` for internal API/DB. Files: `SessionsPanel.tsx`, `Sessions.tsx`, `DispatchModal.tsx`, `Home.tsx`
 - [ ] **[sonnet]** Standardize button casing — everything lowercase: `"Generate Context"` → `"generate context"`, `"Launch Swarm (3)"` → `"launch swarm (3)"` etc.

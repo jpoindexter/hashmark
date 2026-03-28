@@ -68,7 +68,7 @@ function FileTypeIcon({ filename }: { filename: string }) {
       <span style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         width: 16, height: 16, fontSize: 8, fontWeight: 700, flexShrink: 0,
-        color: "#3178c6", fontFamily: "var(--font)",
+        color: "var(--blue)", fontFamily: "var(--font)",
       }}>
         TS
       </span>
@@ -81,7 +81,7 @@ function FileTypeIcon({ filename }: { filename: string }) {
       <span style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         width: 16, height: 16, fontSize: 8, fontWeight: 700, flexShrink: 0,
-        color: "#e8d44d", fontFamily: "var(--font)",
+        color: "var(--yellow)", fontFamily: "var(--font)",
       }}>
         JS
       </span>
@@ -94,7 +94,7 @@ function FileTypeIcon({ filename }: { filename: string }) {
       <span style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         width: 16, height: 16, fontSize: 9, fontWeight: 700, flexShrink: 0,
-        color: "#cca700", fontFamily: "var(--font)",
+        color: "var(--yellow)", fontFamily: "var(--font)",
       }}>
         {"{}"}
       </span>
@@ -107,7 +107,7 @@ function FileTypeIcon({ filename }: { filename: string }) {
       <span style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         width: 16, height: 16, fontSize: 8, fontWeight: 700, flexShrink: 0,
-        color: "#8b5cf6", fontFamily: "var(--font)",
+        color: "var(--purple)", fontFamily: "var(--font)",
       }}>
         MD
       </span>
@@ -120,7 +120,7 @@ function FileTypeIcon({ filename }: { filename: string }) {
       <span style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         width: 16, height: 16, fontSize: 10, fontWeight: 700, flexShrink: 0,
-        color: "#56b6c2", fontFamily: "var(--font)",
+        color: "var(--accent)", fontFamily: "var(--font)",
       }}>
         #
       </span>
@@ -133,7 +133,7 @@ function FileTypeIcon({ filename }: { filename: string }) {
       <span style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         width: 16, height: 16, fontSize: 7, fontWeight: 700, flexShrink: 0,
-        color: "#e34c26", fontFamily: "var(--font)",
+        color: "var(--orange)", fontFamily: "var(--font)",
       }}>
         {"<>"}
       </span>
@@ -146,7 +146,7 @@ function FileTypeIcon({ filename }: { filename: string }) {
       <span style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         width: 16, height: 16, fontSize: 8, fontWeight: 700, flexShrink: 0,
-        color: "#3572a5", fontFamily: "var(--font)",
+        color: "var(--blue)", fontFamily: "var(--font)",
       }}>
         PY
       </span>
