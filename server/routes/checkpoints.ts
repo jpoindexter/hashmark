@@ -18,7 +18,7 @@ export function checkpointRoutes(projectDir: string) {
 
   // List checkpoints
   app.get("/", async (c) => {
-    let output = "";
+    let forEachOutput = "";
     try {
       const result = await execFile(
         "git",
@@ -30,70 +30,94 @@ export function checkpointRoutes(projectDir: string) {
         ],
         opts
       );
-      output = result.stdout;
+      forEachOutput = result.stdout;
     } catch {
       return c.json({ checkpoints: [] });
     }
 
-    const checkpoints = await Promise.all(
-      output
-        .trim()
-        .split("\n")
-        .filter(Boolean)
-        .map(async (line) => {
-          const parts = line.match(
-            /^(refs\/studio-checkpoints\/\S+)\s+(\S+)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\s+\S+)\s+(.*)$/
-          );
-          if (!parts) return null;
+    type RawCheckpoint = {
+      ref: string; hashFull: string; timestamp: string;
+      label: string; subject: string; slug: string;
+    };
 
-          const ref = parts[1];
-          const hash = parts[2];
-          const timestamp = parts[3];
-          const subject = parts[4];
-          const label = subject.replace(/^studio-checkpoint:\s*/, "");
+    const parsed = forEachOutput
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .reduce<RawCheckpoint[]>((acc, line) => {
+        const parts = line.match(
+          /^(refs\/studio-checkpoints\/\S+)\s+(\S+)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\s+\S+)\s+(.*)$/
+        );
+        if (!parts) return acc;
+        const ref = parts[1];
+        acc.push({
+          ref,
+          hashFull: parts[2],
+          timestamp: parts[3],
+          label: parts[4].replace(/^studio-checkpoint:\s*/, ""),
+          subject: parts[4],
+          slug: ref.replace("refs/studio-checkpoints/", ""),
+        });
+        return acc;
+      }, []);
 
-          // Count files changed vs parent
-          let filesChanged = 0;
-          try {
-            const { stdout: diffStat } = await execFile(
-              "git",
-              ["diff-tree", "--no-commit-id", "-r", "--name-only", hash],
-              opts
-            );
-            filesChanged = diffStat.trim().split("\n").filter(Boolean).length;
-          } catch {}
+    if (parsed.length === 0) return c.json({ checkpoints: [] });
 
-          // Determine status: check if merged into HEAD
-          let status: "active" | "merged" | "abandoned" = "active";
-          try {
-            const { stdout: mergeBase } = await execFile(
-              "git",
-              ["merge-base", "--is-ancestor", hash, "HEAD"],
-              opts
-            );
-            void mergeBase;
-            status = "merged";
-          } catch {
-            // not an ancestor of HEAD — could be abandoned or active
-            // treat as abandoned if older than 7 days
-            try {
-              const { stdout: refDate } = await execFile(
-                "git",
-                ["log", "-1", "--format=%ct", hash],
-                opts
-              );
-              const age = Date.now() / 1000 - parseInt(refDate.trim());
-              if (age > 7 * 24 * 3600) status = "abandoned";
-            } catch {}
-          }
+    const hashes = parsed.map((p) => p.hashFull);
 
-          const slug = ref.replace("refs/studio-checkpoints/", "");
+    // Batch 1: file counts — single git log --no-walk call for all hashes at once
+    // Output: "==COMMIT <hash>\n\nfile1\nfile2\n\n==COMMIT ..."
+    const fileCountMap = new Map<string, number>();
+    try {
+      const { stdout: logOut } = await execFile(
+        "git",
+        ["log", "--no-walk=unsorted", "--format===COMMIT %H", "--name-only", ...hashes],
+        opts
+      );
+      let cur = "";
+      for (const line of logOut.split("\n")) {
+        if (line.startsWith("==COMMIT ")) {
+          cur = line.slice(9).trim();
+          if (!fileCountMap.has(cur)) fileCountMap.set(cur, 0);
+        } else if (cur && line.trim()) {
+          fileCountMap.set(cur, (fileCountMap.get(cur) ?? 0) + 1);
+        }
+      }
+    } catch {}
 
-          return { id: slug, ref, hash: hash.slice(0, 7), hashFull: hash, timestamp, label, message: subject, filesChanged, status };
-        })
-    );
+    // Batch 2: HEAD-reachable hashes (capped at 2000) for merge-status check
+    const headReachable = new Set<string>();
+    try {
+      const { stdout: headLog } = await execFile(
+        "git",
+        ["log", "HEAD", "--format=%H", "--max-count=2000"],
+        opts
+      );
+      for (const h of headLog.trim().split("\n").filter(Boolean)) {
+        headReachable.add(h);
+      }
+    } catch {}
 
-    return c.json({ checkpoints: checkpoints.filter(Boolean) });
+    const nowSeconds = Date.now() / 1000;
+    const staleThreshold = 7 * 24 * 3600;
+
+    const checkpoints = parsed.map(({ ref, hashFull, timestamp, label, subject, slug }) => {
+      const filesChanged = fileCountMap.get(hashFull) ?? 0;
+
+      let status: "active" | "merged" | "abandoned" = "active";
+      if (headReachable.has(hashFull)) {
+        status = "merged";
+      } else {
+        const commitAgeSeconds = nowSeconds - new Date(timestamp).getTime() / 1000;
+        if (!isNaN(commitAgeSeconds) && commitAgeSeconds > staleThreshold) {
+          status = "abandoned";
+        }
+      }
+
+      return { id: slug, ref, hash: hashFull.slice(0, 7), hashFull, timestamp, label, message: subject, filesChanged, status };
+    });
+
+    return c.json({ checkpoints });
   });
 
   // Get diff for a checkpoint vs its parent
