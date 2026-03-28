@@ -25,11 +25,20 @@ export function findClaudeBin(projectDir: string): string {
   return findBin("claude", projectDir);
 }
 
+// Default tools agents are allowed to use without interactive permission prompts.
+// This replaces CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS with explicit tool approval.
+const DEFAULT_ALLOWED_TOOLS = [
+  "Edit", "Write", "Read", "Bash", "Glob", "Grep",
+  "WebFetch", "WebSearch",
+];
+
 export function buildClaudeArgs(
   prompt: string,
-  opts?: { resume?: string; outputFormat?: string },
+  opts?: { resume?: string; outputFormat?: string; allowedTools?: string[] },
 ): string[] {
   const args: string[] = ["--print", prompt];
+  const tools = opts?.allowedTools ?? DEFAULT_ALLOWED_TOOLS;
+  if (tools.length > 0) args.push("--allowedTools", tools.join(","));
   if (opts?.outputFormat) args.push("--output-format", opts.outputFormat);
   if (opts?.resume) args.push("--resume", opts.resume);
   return args;

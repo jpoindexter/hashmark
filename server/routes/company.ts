@@ -13,7 +13,7 @@ import { promisify } from "util";
 import { tmpdir } from "os";
 import { getDb, getStudioSetting } from "../db.js";
 import { logAgentAction, parseActionsFromOutput } from "../lib/action-log.js";
-import { findClaudeBin } from "../lib/bin-resolver.js";
+import { findClaudeBin, buildClaudeArgs } from "../lib/bin-resolver.js";
 import type { WorkspaceCtx } from "./workspaces.js";
 
 const execFile = promisify(execFileCb);
@@ -125,7 +125,7 @@ Respond with ONLY a JSON array, no markdown, no explanation:
     if (skipPerms) planEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
 
     try {
-      const { stdout } = await execFile(claudeBin, ["--print", prompt], {
+      const { stdout } = await execFile(claudeBin, buildClaudeArgs(prompt), {
         cwd: ctx.projectDir,
         env: planEnv,
         maxBuffer: 1024 * 1024,
@@ -224,7 +224,7 @@ Work in the current directory. Make the necessary code changes, create or modify
           if (workerSkipPerms) workerEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
 
           return new Promise((resolve, reject) => {
-            const proc = spawn(claudeBin, ["--print", workerPrompt], {
+            const proc = spawn(claudeBin, buildClaudeArgs(workerPrompt), {
               cwd: worktreeDir,
               stdio: ["ignore", "pipe", "pipe"],
               env: workerEnv,

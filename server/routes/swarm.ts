@@ -14,7 +14,7 @@ import { tmpdir } from "os";
 import { logAgentAction } from "../lib/action-log.js";
 import { detectConflicts } from "../lib/dep-graph.js";
 import { getDb, getStudioSetting } from "../db.js";
-import { findClaudeBin } from "../lib/bin-resolver.js";
+import { findClaudeBin, buildClaudeArgs } from "../lib/bin-resolver.js";
 import { z } from "zod";
 import type { WorkspaceCtx } from "./workspaces.js";
 
@@ -193,7 +193,7 @@ async function runAgent(
   await new Promise<void>((resolve) => {
     if (ctrl.signal.aborted) { resolve(); return; }
 
-    const proc = spawn(claudeBin, ["--print", prompt], {
+    const proc = spawn(claudeBin, buildClaudeArgs(prompt), {
       cwd: worktreeDir,
       stdio: ["ignore", "pipe", "pipe"],
       env: swarmEnv,

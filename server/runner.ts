@@ -10,6 +10,7 @@ import { randomUUID } from "crypto";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { getDb, getStudioSetting } from "./db.js";
+import { buildClaudeArgs } from "./lib/bin-resolver.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -146,7 +147,7 @@ export function runTask(
   const taskEnv: Record<string, string> = { ...process.env as Record<string, string> };
   if (skipPerms) taskEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
 
-  const proc = spawn(claudeBin, ["--print", fullPrompt], {
+  const proc = spawn(claudeBin, buildClaudeArgs(fullPrompt), {
     cwd: projectDir,
     env: taskEnv,
   });
