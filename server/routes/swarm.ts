@@ -15,6 +15,15 @@ import { logAgentAction } from "../lib/action-log.js";
 import { detectConflicts } from "../lib/dep-graph.js";
 import { getDb } from "../db.js";
 import { findClaudeBin } from "../lib/bin-resolver.js";
+import { z } from "zod";
+
+const SwarmBodySchema = z.object({
+  tasks: z.array(z.object({
+    task: z.string().min(1).max(8000),
+    agentId: z.string().max(200).optional(),
+  })).min(1).max(8),
+  mode: z.enum(["plan", "build"]).optional(),
+});
 
 const execFile = promisify(execFileCb);
 
@@ -355,24 +364,12 @@ export function swarmRoutes(projectDir: string) {
 
   // POST /api/swarm
   app.post("/", async (c) => {
-    const body = await c.req.json<{
-      tasks: Array<{ task: string; agentId?: string }>;
-      mode?: "plan" | "build";
-    }>();
-
-    if (!Array.isArray(body.tasks) || body.tasks.length === 0) {
-      return c.json({ error: "tasks array is required and must not be empty" }, 400);
+    const parsed = SwarmBodySchema.safeParse(await c.req.json().catch(() => ({})));
+    if (!parsed.success) {
+      return c.json({ error: parsed.error.issues[0]?.message ?? "invalid input" }, 400);
     }
-    if (body.tasks.length > 8) {
-      return c.json({ error: "Maximum 8 tasks per swarm" }, 400);
-    }
-    for (const t of body.tasks) {
-      if (!t.task?.trim()) {
-        return c.json({ error: "Each task must have a non-empty task string" }, 400);
-      }
-    }
-
-    const mode: "plan" | "build" = body.mode === "plan" ? "plan" : "build";
+    const body = parsed.data;
+    const mode: "plan" | "build" = body.mode ?? "build";
     const swarmId = randomUUID().slice(0, 8);
 
     ensureSwarmTables(dataDir);

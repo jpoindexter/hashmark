@@ -14,8 +14,15 @@ import { tmpdir } from "os";
 import { logAgentAction, parseActionsFromOutput } from "../lib/action-log.js";
 import { getDb } from "../db.js";
 import { findClaudeBin } from "../lib/bin-resolver.js";
+import { z } from "zod";
 
 const execFile = promisify(execFileCb);
+
+const RunBodySchema = z.object({
+  task: z.string().min(1).max(8000),
+  agentId: z.string().max(200).optional(),
+  mode: z.enum(["plan", "build"]).optional(),
+});
 
 // ─── Agent loading (same as company.ts) ───────────────────────────────────────
 
@@ -150,11 +157,12 @@ export function runRoutes(projectDir: string) {
       return c.json({ error: "A run is already in progress" }, 409);
     }
 
-    const body = await c.req.json<{ task: string; agentId?: string; mode?: "plan" | "build" }>();
-    if (!body.task?.trim()) {
-      return c.json({ error: "task is required" }, 400);
+    const parsed = RunBodySchema.safeParse(await c.req.json().catch(() => ({})));
+    if (!parsed.success) {
+      return c.json({ error: parsed.error.issues[0]?.message ?? "invalid input" }, 400);
     }
-    const mode = body.mode === "plan" ? "plan" : "build";
+    const body = parsed.data;
+    const mode = body.mode ?? "build";
 
     const claudeBin = findClaudeBin(projectDir);
     const runId = randomUUID().slice(0, 8);

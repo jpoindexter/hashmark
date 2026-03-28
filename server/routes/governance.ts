@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { getDb } from "../db.js";
 import { randomUUID } from "crypto";
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, statSync } from "fs";
 import { join } from "path";
 
 export function governanceRoutes(dataDir: string) {
@@ -103,6 +103,13 @@ export function governanceRoutes(dataDir: string) {
     const offset = parseInt(c.req.query("offset") ?? "0");
     const filterRunId = c.req.query("runId");
     const filterAgentId = c.req.query("agentId");
+
+    // Guard: skip if file exceeds 50 MB to avoid OOM on runaway logs
+    const MAX_LOG_BYTES = 50 * 1024 * 1024;
+    const stat = statSync(logPath);
+    if (stat.size > MAX_LOG_BYTES) {
+      return c.json({ error: "action log too large to read in memory", bytes: stat.size }, 413);
+    }
 
     const lines = readFileSync(logPath, "utf-8").trim().split("\n").filter(Boolean);
     let events = lines.map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);

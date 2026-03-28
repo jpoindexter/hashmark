@@ -6,14 +6,17 @@ import { Hono } from "hono";
 import { spawn } from "child_process";
 import { mkdirSync, writeFileSync, existsSync } from "fs";
 import { join, resolve, dirname } from "path";
+import { z } from "zod";
 
-interface GenerateRequest {
-  companyType: string;
-  projectName: string;
-  provider: string;
-  apiKey?: string;
-  baseURL?: string;
-}
+const GenerateBodySchema = z.object({
+  companyType: z.string().min(1).max(200),
+  projectName: z.string().min(1).max(200),
+  provider: z.string().min(1).max(100),
+  apiKey: z.string().max(500).optional(),
+  baseURL: z.string().url().max(500).optional().or(z.literal("")),
+});
+
+type GenerateRequest = z.infer<typeof GenerateBodySchema>;
 
 interface SaveRequest {
   agents: Array<{ path: string; content: string }>;
@@ -24,7 +27,11 @@ export function generateRoutes(projectDir: string) {
 
   // POST /api/generate — stream agent generation via SSE
   app.post("/", async (c) => {
-    const body = await c.req.json<GenerateRequest>();
+    const parsed = GenerateBodySchema.safeParse(await c.req.json().catch(() => ({})));
+    if (!parsed.success) {
+      return c.json({ error: parsed.error.issues[0]?.message ?? "invalid input" }, 400);
+    }
+    const body: GenerateRequest = parsed.data;
 
     const stream = new ReadableStream({
       start(controller) {
@@ -34,13 +41,6 @@ export function generateRoutes(projectDir: string) {
         };
 
         send({ type: "start", message: "Starting agent generation..." });
-
-        // Validate inputs don't start with - (flag injection)
-        if (body.companyType?.startsWith("-") || body.projectName?.startsWith("-")) {
-          send({ type: "error", message: "Invalid input" });
-          controller.close();
-          return;
-        }
 
         // Build the hashmark agents command args
         const args = [
