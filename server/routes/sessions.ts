@@ -16,6 +16,7 @@ import { streamAIResponse } from "../lib/ai-stream.js";
 import {
   parseClaudeMdSections,
   updateAnalytics,
+  flushAnalytics,
   loadSessionAnalytics,
 } from "../lib/context-analytics.js";
 import { createCheckpoint } from "../lib/checkpoint.js";
@@ -474,8 +475,9 @@ export function sessionsRoutes(projectDir: string) {
           }
         };
 
-        db.prepare("UPDATE sessions SET status = 'streaming', updated_at = ? WHERE id = ?")
-          .run(Date.now(), sessionId);
+        const streamStart = Date.now();
+        db.prepare("UPDATE sessions SET status = 'streaming', started_at = COALESCE(started_at, ?), updated_at = ? WHERE id = ?")
+          .run(streamStart, streamStart, sessionId);
 
         if (useApiStream && activeProvider) {
           // -- Direct API stream path --
@@ -505,7 +507,7 @@ export function sessionsRoutes(projectDir: string) {
               fullText += text;
               send({ type: "text", text });
               if (claudeSections.length > 0) {
-                updateAnalytics(dataDir, sessionId, text, claudeSections).catch(() => {});
+                updateAnalytics(dataDir, sessionId, text, claudeSections);
               }
             },
             onDone: () => {
@@ -529,10 +531,12 @@ export function sessionsRoutes(projectDir: string) {
                     model = ?,
                     total_input_tokens = total_input_tokens + ?,
                     total_output_tokens = total_output_tokens + ?,
+                    ended_at = ?,
                     updated_at = ?
                 WHERE id = ?
-              `).run(actualModel, msgInputEstimate, msgOutputEstimate, Date.now(), sessionId);
+              `).run(actualModel, msgInputEstimate, msgOutputEstimate, Date.now(), Date.now(), sessionId);
 
+              flushAnalytics(dataDir, sessionId).catch(() => {});
               send({ type: "done", success: true });
               controller.close();
             },
@@ -546,8 +550,8 @@ export function sessionsRoutes(projectDir: string) {
                 VALUES (?, ?, 'assistant', ?, ?, ?)
               `).run(randomUUID(), sessionId, `Error: ${err.message}`, Date.now(), Date.now());
 
-              db.prepare("UPDATE sessions SET status = 'idle', updated_at = ? WHERE id = ?")
-                .run(Date.now(), sessionId);
+              db.prepare("UPDATE sessions SET status = 'idle', ended_at = ?, error_count = error_count + 1, updated_at = ? WHERE id = ?")
+                .run(Date.now(), Date.now(), sessionId);
 
               controller.close();
             },
@@ -649,7 +653,7 @@ export function sessionsRoutes(projectDir: string) {
                       fullText += block.text;
                       send({ type: "text", text: block.text });
                       if (claudeSections.length > 0) {
-                        updateAnalytics(dataDir, sessionId, block.text, claudeSections).catch(() => {});
+                        updateAnalytics(dataDir, sessionId, block.text, claudeSections);
                       }
                     }
                     if (block.type === "thinking") {
@@ -710,10 +714,12 @@ export function sessionsRoutes(projectDir: string) {
               SET status = 'idle',
                   total_input_tokens = total_input_tokens + ?,
                   total_output_tokens = total_output_tokens + ?,
+                  ended_at = ?,
                   updated_at = ?
               WHERE id = ?
-            `).run(msgInputEstimate, msgOutputEstimate, Date.now(), sessionId);
+            `).run(msgInputEstimate, msgOutputEstimate, Date.now(), Date.now(), sessionId);
 
+            flushAnalytics(dataDir, sessionId).catch(() => {});
             if (code !== 0 && !killed) {
               send({ type: "done", success: false });
             } else if (killed) {
@@ -732,8 +738,8 @@ export function sessionsRoutes(projectDir: string) {
               VALUES (?, ?, 'assistant', ?, ?, ?)
             `).run(randomUUID(), sessionId, `Error: ${err.message}`, Date.now(), Date.now());
 
-            db.prepare("UPDATE sessions SET status = 'idle', updated_at = ? WHERE id = ?")
-              .run(Date.now(), sessionId);
+            db.prepare("UPDATE sessions SET status = 'idle', ended_at = ?, error_count = error_count + 1, updated_at = ? WHERE id = ?")
+              .run(Date.now(), Date.now(), sessionId);
 
             controller.close();
           });
@@ -840,6 +846,49 @@ export function sessionsRoutes(projectDir: string) {
       wasteEstimatePct,
       stageBreakdown,
       avgMessageTokens,
+    });
+  });
+
+  // GET /api/sessions/analytics/summary — aggregate stats for the app dashboard
+  app.get("/analytics/summary", (c) => {
+    const db = getDb(dataDir);
+    const now = Date.now();
+    const day = 86400000;
+
+    const totalSessions = (db.prepare("SELECT COUNT(*) AS n FROM sessions WHERE archived = 0").get() as { n: number }).n;
+    const activeLast7d = (db.prepare(
+      "SELECT COUNT(*) AS n FROM sessions WHERE archived = 0 AND updated_at > ?"
+    ).get(now - 7 * day) as { n: number }).n;
+
+    const tokenRow = db.prepare(
+      "SELECT COALESCE(SUM(total_input_tokens),0) AS inp, COALESCE(SUM(total_output_tokens),0) AS out FROM sessions WHERE archived = 0"
+    ).get() as { inp: number; out: number };
+
+    const avgDuration = (db.prepare(
+      "SELECT COALESCE(AVG(ended_at - started_at), 0) AS avg FROM sessions WHERE archived = 0 AND started_at IS NOT NULL AND ended_at IS NOT NULL"
+    ).get() as { avg: number }).avg;
+
+    const errorRow = db.prepare(
+      "SELECT COALESCE(SUM(error_count), 0) AS n FROM sessions WHERE archived = 0"
+    ).get() as { n: number };
+
+    const totalRuns = (db.prepare("SELECT COUNT(*) AS n FROM runs").get() as { n: number }).n;
+    const completedRuns = (db.prepare("SELECT COUNT(*) AS n FROM runs WHERE status = 'complete'").get() as { n: number }).n;
+
+    return c.json({
+      sessions: {
+        total: totalSessions,
+        activeLast7d,
+        totalInputTokens: tokenRow.inp,
+        totalOutputTokens: tokenRow.out,
+        avgDurationMs: Math.round(avgDuration),
+        totalErrors: errorRow.n,
+      },
+      runs: {
+        total: totalRuns,
+        completed: completedRuns,
+        successRate: totalRuns > 0 ? Math.round((completedRuns / totalRuns) * 100) : 0,
+      },
     });
   });
 

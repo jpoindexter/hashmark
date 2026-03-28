@@ -76,6 +76,17 @@ function migrate(db: Database.Database) {
   if (!sessionCols.includes("claude_session_id")) {
     db.exec("ALTER TABLE sessions ADD COLUMN claude_session_id TEXT");
   }
+  // Session duration tracking
+  if (!sessionCols.includes("started_at")) {
+    db.exec("ALTER TABLE sessions ADD COLUMN started_at INTEGER");
+    db.exec("UPDATE sessions SET started_at = created_at WHERE started_at IS NULL");
+  }
+  if (!sessionCols.includes("ended_at")) {
+    db.exec("ALTER TABLE sessions ADD COLUMN ended_at INTEGER");
+  }
+  if (!sessionCols.includes("error_count")) {
+    db.exec("ALTER TABLE sessions ADD COLUMN error_count INTEGER NOT NULL DEFAULT 0");
+  }
 
   // Pending message safety: NULL sent_at = queued, non-NULL = delivered
   const msgCols = (db.pragma("table_info(session_messages)") as Array<{ name: string }>).map(r => r.name);

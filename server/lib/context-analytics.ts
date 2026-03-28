@@ -77,6 +77,9 @@ function ensureDir(dataDir: string) {
   }
 }
 
+// In-memory buffer: accumulate hits during a stream, flush to disk at stream end
+const pendingAnalytics = new Map<string, SessionAnalytics>();
+
 export async function loadSessionAnalytics(
   dataDir: string,
   sessionId: string
@@ -102,28 +105,60 @@ export async function saveSessionAnalytics(
   writeFileSync(path, JSON.stringify(analytics, null, 2), "utf-8");
 }
 
-export async function updateAnalytics(
+/**
+ * Accumulate chunk hits in memory. Does NOT write to disk.
+ * Call flushAnalytics() at stream end to persist.
+ */
+export function updateAnalytics(
   dataDir: string,
   sessionId: string,
   outputChunk: string,
   sections: string[]
-): Promise<void> {
+): void {
   const newHits = scoreOutputChunk(outputChunk, sections);
   if (newHits.size === 0) return;
 
-  const analytics = await loadSessionAnalytics(dataDir, sessionId);
+  if (!pendingAnalytics.has(sessionId)) {
+    pendingAnalytics.set(sessionId, { sessionId, sectionHits: [], updatedAt: Date.now() });
+  }
+  const pending = pendingAnalytics.get(sessionId)!;
   const now = Date.now();
 
   for (const [heading, count] of newHits) {
-    const existing = analytics.sectionHits.find((h) => h.heading === heading);
+    const existing = pending.sectionHits.find((h) => h.heading === heading);
     if (existing) {
       existing.hitCount += count;
       existing.lastHitAt = now;
     } else {
-      analytics.sectionHits.push({ heading, hitCount: count, lastHitAt: now });
+      pending.sectionHits.push({ heading, hitCount: count, lastHitAt: now });
     }
   }
+  pending.updatedAt = now;
+  // Suppress unused dataDir warning — kept in signature for callers who pass it
+  void dataDir;
+}
 
-  analytics.updatedAt = now;
-  await saveSessionAnalytics(dataDir, analytics);
+/**
+ * Merge buffered hits with on-disk state and write once. Called at stream end.
+ */
+export async function flushAnalytics(dataDir: string, sessionId: string): Promise<void> {
+  const pending = pendingAnalytics.get(sessionId);
+  if (!pending || pending.sectionHits.length === 0) return;
+
+  pendingAnalytics.delete(sessionId);
+
+  const stored = await loadSessionAnalytics(dataDir, sessionId);
+  const now = Date.now();
+
+  for (const hit of pending.sectionHits) {
+    const existing = stored.sectionHits.find((h) => h.heading === hit.heading);
+    if (existing) {
+      existing.hitCount += hit.hitCount;
+      existing.lastHitAt = now;
+    } else {
+      stored.sectionHits.push({ heading: hit.heading, hitCount: hit.hitCount, lastHitAt: now });
+    }
+  }
+  stored.updatedAt = now;
+  await saveSessionAnalytics(dataDir, stored);
 }

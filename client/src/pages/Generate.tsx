@@ -196,17 +196,22 @@ export default function Generate() {
     const generated = scanResult.generatedFiles as Array<{ fileName?: string; tokenCount?: number; content?: string }> | undefined;
     if (Array.isArray(generated)) {
       for (const gf of generated) {
+        const name = gf.fileName ?? "unknown";
         files.push({
-          name: gf.fileName ?? "unknown",
+          name,
           tokens: gf.tokenCount,
           bytes: gf.content ? new TextEncoder().encode(gf.content).length : undefined,
+          path: info?.projectDir ? `${info.projectDir}/${name}` : undefined,
         });
       }
     }
     // Fallback: infer from selected formats if no generatedFiles field
     if (files.length === 0 && pageState === "done") {
       for (const fmt of selectedFormats) {
-        files.push({ name: fmt });
+        files.push({
+          name: fmt,
+          path: info?.projectDir ? `${info.projectDir}/${fmt}` : undefined,
+        });
       }
     }
     return files;
@@ -553,19 +558,26 @@ export default function Generate() {
                             border: "1px solid var(--border-dim)",
                             borderRadius: "var(--radius)",
                           }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                              <span style={{ fontSize: "12px", fontFamily: "var(--font)", color: "var(--text)" }}>
-                                {f.name}
-                              </span>
-                              {f.tokens !== undefined && (
-                                <span className="badge badge-zinc" style={{ fontSize: "10px" }}>
-                                  {fmtTokens(f.tokens)}
+                            <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <span style={{ fontSize: "12px", fontFamily: "var(--font)", color: "var(--text)" }}>
+                                  {f.name}
                                 </span>
-                              )}
-                              {f.bytes !== undefined && (
-                                <span style={{ fontSize: "10px", color: "var(--text-dimmer)" }}>
-                                  {fmtBytes(f.bytes)}
-                                </span>
+                                {f.tokens !== undefined && (
+                                  <span className="badge badge-zinc" style={{ fontSize: "10px" }}>
+                                    {fmtTokens(f.tokens)}
+                                  </span>
+                                )}
+                                {f.bytes !== undefined && (
+                                  <span style={{ fontSize: "10px", color: "var(--text-dimmer)" }}>
+                                    {fmtBytes(f.bytes)}
+                                  </span>
+                                )}
+                              </div>
+                              {f.path && (
+                                <div style={{ fontSize: "10px", color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>
+                                  {f.path}
+                                </div>
                               )}
                             </div>
                             <div style={{ display: "flex", gap: "6px" }}>

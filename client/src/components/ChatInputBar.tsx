@@ -483,6 +483,7 @@ export default function ChatInputBar({
   const [chipDismissed, setChipDismissed] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [pendingDismissed, setPendingDismissed] = useState(false);
+  const skipContextRef = useRef(false);
   const [attachedImage, setAttachedImage] = useState<{ name: string; dataUrl: string } | null>(null);
   const [listening, setListening] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -512,8 +513,9 @@ export default function ChatInputBar({
       const raw = sessionStorage.getItem(`studio:prefill:${sessionId}`);
       if (raw) {
         sessionStorage.removeItem(`studio:prefill:${sessionId}`);
-        const { prompt, model } = JSON.parse(raw) as { prompt: string; model: string };
+        const { prompt, model, attachContext } = JSON.parse(raw) as { prompt: string; model: string; attachContext?: boolean };
         setInput(prompt);
+        skipContextRef.current = attachContext === false;
         window.dispatchEvent(new CustomEvent("studio:settings-change", { detail: { key: "selectedModel", value: model } }));
         requestAnimationFrame(() => textareaRef.current?.focus());
       }
@@ -776,6 +778,7 @@ export default function ChatInputBar({
           thinking,
           planMode,
           ...(systemPrompt && { systemPrompt }),
+          ...(skipContextRef.current && { skipContext: true }),
         }),
       });
     } catch {
@@ -794,6 +797,7 @@ export default function ChatInputBar({
       return;
     }
 
+    skipContextRef.current = false;
     setPendingMessage(null);
     setPendingDismissed(true);
     if (!overrideText) {

@@ -45,6 +45,9 @@ const XTerminal = forwardRef<XTerminalHandle, XTerminalProps>(function XTerminal
   useEffect(() => {
     if (!containerRef.current || termRef.current) return;
 
+    const css = (v: string) =>
+      getComputedStyle(document.documentElement).getPropertyValue(v).trim() || undefined;
+
     const term = new Terminal({
       allowProposedApi: true,
       fontFamily: "'Menlo', 'Monaco', 'Courier New', monospace",
@@ -53,25 +56,25 @@ const XTerminal = forwardRef<XTerminalHandle, XTerminalProps>(function XTerminal
       cursorBlink: true,
       scrollback: 5000,
       theme: {
-        background: "#1e1e1e",
-        foreground: "#cccccc",
-        cursor: "#aeafad",
-        black: "#000000",
-        brightBlack: "#666666",
-        red: "#cd3131",
-        brightRed: "#f14c4c",
-        green: "#0dbc79",
+        background: css("--bg") ?? "#080808",
+        foreground: css("--text") ?? "#e8e8e8",
+        cursor:     css("--accent") ?? "#c0c0c0",
+        black:      css("--bg-4") ?? "#1a1a1a",
+        brightBlack: css("--text-dimmer") ?? "#444444",
+        red:        css("--red") ?? "#9e5a5a",
+        brightRed:  "#f14c4c",
+        green:      css("--green") ?? "#5a9e6e",
         brightGreen: "#23d18b",
-        yellow: "#e5e510",
+        yellow:     css("--yellow") ?? "#9a7a32",
         brightYellow: "#f5f543",
-        blue: "#2472c8",
+        blue:       css("--blue") ?? "#888888",
         brightBlue: "#3b8eea",
-        magenta: "#bc3fbc",
+        magenta:    css("--purple") ?? "#9b7ab8",
         brightMagenta: "#d670d6",
-        cyan: "#11a8cd",
+        cyan:       css("--cyan") ?? "#06b6d4",
         brightCyan: "#29b8db",
-        white: "#e5e5e5",
-        brightWhite: "#e5e5e5",
+        white:      css("--text-dim") ?? "#888888",
+        brightWhite: css("--text") ?? "#e8e8e8",
       },
     });
 
