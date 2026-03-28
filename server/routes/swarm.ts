@@ -18,13 +18,13 @@ import { findClaudeBin, buildClaudeArgs } from "../lib/bin-resolver.js";
 import { z } from "zod";
 import type { WorkspaceCtx } from "./workspaces.js";
 
-const MAX_CONCURRENT_CLAUDE = 2;
+const MAX_CONCURRENT_CLAUDE = 3;
 
 const SwarmBodySchema = z.object({
   tasks: z.array(z.object({
     task: z.string().min(1).max(8000),
     agentId: z.string().max(200).optional(),
-  })).min(1).max(3),
+  })).min(1).max(6),
   mode: z.enum(["plan", "build"]).optional(),
 });
 
@@ -37,6 +37,7 @@ interface AgentDef {
   name: string;
   description: string;
   content: string;
+  tools?: string[];
 }
 
 type AgentStatus = "pending" | "running" | "done" | "failed" | "cancelled";
@@ -86,11 +87,13 @@ function loadAgents(projectDir: string): AgentDef[] {
           const content = readFileSync(fullPath, "utf-8");
           const nameMatch = content.match(/^name:\s*(.+)$/m);
           const descMatch = content.match(/^description:\s*(.+)$/m);
+          const toolsMatch = content.match(/^tools:\s*(.+)$/m);
           agents.push({
             id: relPath.replace(/\.md$/, "").replace(/\//g, "-"),
             name: nameMatch?.[1]?.trim() ?? relPath,
             description: descMatch?.[1]?.trim() ?? "",
             content,
+            tools: toolsMatch ? toolsMatch[1].split(",").map(t => t.trim()).filter(Boolean) : undefined,
           });
         } catch {}
       }
@@ -193,7 +196,8 @@ async function runAgent(
   await new Promise<void>((resolve) => {
     if (ctrl.signal.aborted) { resolve(); return; }
 
-    const proc = spawn(claudeBin, buildClaudeArgs(prompt), {
+    const agentTools = agent.agentId ? agentMap.get(agent.agentId)?.tools : undefined;
+    const proc = spawn(claudeBin, buildClaudeArgs(prompt, { mode: swarm.mode, allowedTools: agentTools }), {
       cwd: worktreeDir,
       stdio: ["ignore", "pipe", "pipe"],
       env: swarmEnv,

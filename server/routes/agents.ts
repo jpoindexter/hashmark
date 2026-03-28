@@ -15,26 +15,32 @@ export interface AgentFile {
   department: string;
   path: string;
   content: string;
+  tools?: string[];
 }
 
 function parseAgentMd(content: string, filePath: string): Omit<AgentFile, "id" | "path"> {
   const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
   let name = "";
   let description = "";
+  let tools: string[] | undefined;
 
   if (frontmatterMatch) {
     const fm = frontmatterMatch[1];
     const nameMatch = fm.match(/^name:\s*(.+)$/m);
     const descMatch = fm.match(/^description:\s*(.+)$/m);
+    const toolsMatch = fm.match(/^tools:\s*(.+)$/m);
     name = nameMatch?.[1]?.trim() ?? "";
     description = descMatch?.[1]?.trim() ?? "";
+    if (toolsMatch) {
+      tools = toolsMatch[1].split(",").map(t => t.trim()).filter(Boolean);
+    }
   }
 
   // Infer department from path: .claude/agents/{dept}/{file}.md
   const parts = filePath.split("/");
   const department = parts.length >= 2 ? parts[parts.length - 2] : "general";
 
-  return { name, description, department, content };
+  return { name, description, department, content, tools };
 }
 
 function readAgentsDir(projectDir: string): AgentFile[] {

@@ -33,6 +33,7 @@ interface AgentDef {
   name: string;
   description: string;
   content: string;
+  tools?: string[];
 }
 
 function loadAgents(projectDir: string): AgentDef[] {
@@ -57,11 +58,13 @@ function loadAgents(projectDir: string): AgentDef[] {
           const content = readFileSync(fullPath, "utf-8");
           const nameMatch = content.match(/^name:\s*(.+)$/m);
           const descMatch = content.match(/^description:\s*(.+)$/m);
+          const toolsMatch = content.match(/^tools:\s*(.+)$/m);
           agents.push({
             id: relPath.replace(/\.md$/, "").replace(/\//g, "-"),
             name: nameMatch?.[1]?.trim() ?? relPath,
             description: descMatch?.[1]?.trim() ?? "",
             content,
+            tools: toolsMatch ? toolsMatch[1].split(",").map(t => t.trim()).filter(Boolean) : undefined,
           });
         } catch {}
       }
@@ -261,8 +264,9 @@ export function runRoutes(ctx: WorkspaceCtx) {
 
           let fullOutput = "";
           recordInvocation();
+          const agentTools = agentDef?.tools; // from agent frontmatter `tools:` field
           await new Promise<void>((resolve) => {
-            const proc = spawn(claudeBin, buildClaudeArgs(prompt), {
+            const proc = spawn(claudeBin, buildClaudeArgs(prompt, { mode, allowedTools: agentTools }), {
               cwd: worktreeDir,
               stdio: ["ignore", "pipe", "pipe"],
               env: runEnv,
