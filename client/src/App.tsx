@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense, Component, type ReactNode, type ErrorInfo } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Shell from "./components/shell/Shell.tsx";
 import ProjectPicker from "./components/ProjectPicker.tsx";
@@ -33,6 +33,47 @@ function PageSkeleton() {
   return <div style={{ flex: 1, background: "var(--bg)" }} />;
 }
 
+// App-level error boundary — catches unhandled render errors
+class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("[hashmark studio] render error", error, info);
+  }
+
+  render() {
+    if (this.state.error) {
+      const err = this.state.error as Error;
+      return (
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          height: "100vh", background: "var(--bg)", gap: 12,
+        }}>
+          <div style={{ fontFamily: "var(--font)", fontSize: 20, color: "var(--accent)" }}>#</div>
+          <div style={{ fontFamily: "var(--font)", fontSize: 12, color: "var(--red)" }}>
+            {err.message || "unexpected error"}
+          </div>
+          <button
+            style={{
+              fontFamily: "var(--font)", fontSize: 11, padding: "6px 16px",
+              background: "transparent", border: "1px solid var(--border)",
+              color: "var(--text-dim)", cursor: "pointer", borderRadius: "var(--radius)",
+            }}
+            onClick={() => window.location.reload()}
+          >
+            reload
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function AppShell() {
   const [configured, setConfigured] = useState<boolean | null>(null);
 
@@ -46,12 +87,11 @@ function AppShell() {
   if (configured === null) {
     return (
       <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100vh",
-        background: "var(--bg)",
-      }} />
+        display: "flex", alignItems: "center", justifyContent: "center",
+        height: "100vh", background: "var(--bg)",
+      }}>
+        <div style={{ fontFamily: "var(--font)", fontSize: 20, color: "var(--text-dimmer)" }}>#</div>
+      </div>
     );
   }
 
@@ -85,5 +125,9 @@ function AppShell() {
 }
 
 export default function App() {
-  return <AppShell />;
+  return (
+    <AppErrorBoundary>
+      <AppShell />
+    </AppErrorBoundary>
+  );
 }
