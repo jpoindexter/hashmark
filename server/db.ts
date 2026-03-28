@@ -59,15 +59,6 @@ function migrate(db: Database.Database) {
 
   // Additive migrations -- safe to run on existing DBs
 
-  // runs table columns (previously added inline in run.ts on every request)
-  const runCols = (db.pragma('table_info(runs)') as Array<{ name: string }>).map(r => r.name);
-  if (!runCols.includes('task')) {
-    db.exec('ALTER TABLE runs ADD COLUMN task TEXT NOT NULL DEFAULT ""');
-  }
-  if (!runCols.includes('worktree_branch')) {
-    db.exec('ALTER TABLE runs ADD COLUMN worktree_branch TEXT');
-  }
-
   const sessionCols = (db.pragma("table_info(sessions)") as Array<{ name: string }>).map(r => r.name);
   if (!sessionCols.includes("archived")) {
     db.exec("ALTER TABLE sessions ADD COLUMN archived INTEGER NOT NULL DEFAULT 0");
@@ -193,6 +184,15 @@ function migrate(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_agent_actions_agent ON agent_actions(agent_id);
     CREATE INDEX IF NOT EXISTS idx_runs_started ON runs(started_at DESC);
   `);
+
+  // runs additive migrations (must come after the CREATE TABLE above)
+  const runCols = (db.pragma('table_info(runs)') as Array<{ name: string }>).map(r => r.name);
+  if (!runCols.includes('task')) {
+    db.exec('ALTER TABLE runs ADD COLUMN task TEXT NOT NULL DEFAULT ""');
+  }
+  if (!runCols.includes('worktree_branch')) {
+    db.exec('ALTER TABLE runs ADD COLUMN worktree_branch TEXT');
+  }
 
   // FTS5 full-text search index for session messages
   // Only create + backfill once; subsequent startups skip via IF NOT EXISTS on table
