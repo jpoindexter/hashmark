@@ -14,6 +14,7 @@ import { tmpdir } from "os";
 import { logAgentAction } from "../lib/action-log.js";
 import { detectConflicts } from "../lib/dep-graph.js";
 import { getDb } from "../db.js";
+import { findClaudeBin } from "../lib/bin-resolver.js";
 
 const execFile = promisify(execFileCb);
 
@@ -86,18 +87,6 @@ function loadAgents(projectDir: string): AgentDef[] {
 
   walk(agentsDir);
   return agents;
-}
-
-function findClaudeBin(projectDir: string): string {
-  const candidates = [
-    join(projectDir, "node_modules", ".bin", "claude"),
-    "/Applications/Conductor.app/Contents/Resources/bin/claude",
-    "/usr/local/bin/claude",
-    "claude",
-  ];
-  return candidates.find((p) => {
-    try { return existsSync(p); } catch { return false; }
-  }) ?? "claude";
 }
 
 function ensureSwarmTables(dataDir: string) {

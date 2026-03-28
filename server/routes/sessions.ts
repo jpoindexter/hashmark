@@ -21,6 +21,7 @@ import {
 import { createCheckpoint } from "../lib/checkpoint.js";
 import { loadProjectEnvVars } from "../lib/env.js";
 import { createStudioMcpConfig } from "../lib/mcp-studio.js";
+import { findBin, findClaudeBin } from "../lib/bin-resolver.js";
 
 /**
  * Expand @file mentions in a message.
@@ -69,23 +70,6 @@ export function setStudioPort(port: number) {
   studioPort = port;
 }
 
-// Candidates for the claude binary — same as runner.ts
-function findBin(name: string, projectDir: string): string {
-  const candidates = [
-    join(projectDir, "node_modules", ".bin", name),
-    `/Applications/Conductor.app/Contents/Resources/bin/${name}`,
-    `/usr/local/bin/${name}`,
-    `/opt/homebrew/bin/${name}`,
-    name, // fallback to PATH
-  ];
-  return candidates.find((p) => {
-    try { return existsSync(p); } catch { return false; }
-  }) ?? name;
-}
-
-function findClaudeBin(projectDir: string): string {
-  return findBin("claude", projectDir);
-}
 
 /** Determine which CLI to use based on the model ID */
 function resolveProvider(model: string): "claude" | "codex" | "gemini" {
