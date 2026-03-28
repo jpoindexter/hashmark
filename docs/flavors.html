@@ -155,10 +155,10 @@ body.flavor-5 {
   --text:          #e6edf3;
   --text-dim:      #8b949e;
   --text-dimmer:   #484f58;
-  --accent:        #58a6ff;
-  --accent-dim:    #388bfd;
-  --accent-bg:     rgba(88,166,255,0.1);
-  --accent-border: rgba(88,166,255,0.22);
+  --accent:        #4d94e8;
+  --accent-dim:    #3478cc;
+  --accent-bg:     rgba(77,148,232,0.1);
+  --accent-border: rgba(77,148,232,0.22);
   --red:           #f85149;
   --yellow:        #d29922;
   --rail-bg:       #010409;
@@ -168,7 +168,7 @@ body.flavor-5 {
   --radius-card:   6px;
   --font:          -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
   --font-mono:     "JetBrains Mono", "Fira Code", Menlo, monospace;
-  --running-border: #58a6ff;
+  --running-border: #4d94e8;
   --done-border:   #30363d;
   --card-shadow:   none;
   --btn-radius:    6px;
@@ -208,6 +208,88 @@ body.flavor-6 {
   --label-spacing: 0.06em;
   font-family: var(--font);
 }
+
+/* ─── flavor 7: void ─────────────────────────────────────────── */
+/* muted contextual colors — color only where it means something */
+body.flavor-7 {
+  --bg:            #080808;
+  --surface:       #0e0e0e;
+  --surface-2:     #161616;
+  --border:        #252525;
+  --border-dim:    #1c1c1c;
+  --text:          #d0d0d0;
+  --text-dim:      #606060;
+  --text-dimmer:   #353535;
+  --accent:        #5a8a70;   /* muted sage — running/active only */
+  --accent-dim:    #3d6b54;
+  --accent-bg:     rgba(90,138,112,0.08);
+  --accent-border: rgba(90,138,112,0.2);
+  --red:           #8a4f4f;   /* muted — security findings only */
+  --yellow:        #7a6428;   /* muted — warnings only */
+  --rail-bg:       #050505;
+  --topbar-bg:     #0a0a0a;
+  --statusbar-bg:  #050505;
+  --radius:        2px;
+  --radius-card:   2px;
+  --font:          "JetBrains Mono", "Fira Code", Menlo, monospace;
+  --font-mono:     "JetBrains Mono", "Fira Code", Menlo, monospace;
+  --running-border: #5a8a70;
+  --done-border:   #252525;
+  --card-shadow:   none;
+  --btn-radius:    2px;
+  --label-transform: lowercase;
+  --label-spacing: normal;
+  font-family: var(--font);
+}
+
+/* void: running badge — muted sage, not bright */
+body.flavor-7 .status-badge.running {
+  background: rgba(90,138,112,0.12);
+  color: #7ab898;
+  border-color: rgba(90,138,112,0.25);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+body.flavor-7 .status-badge.done {
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+/* void: running card — subtle sage left border, barely-there bg */
+body.flavor-7 .mission-card.running {
+  background: rgba(90,138,112,0.03);
+}
+/* void: primary button — muted sage */
+body.flavor-7 .action-btn.primary {
+  background: rgba(90,138,112,0.1);
+  border-color: rgba(90,138,112,0.25);
+  color: #7ab898;
+}
+body.flavor-7 .action-btn.primary:hover {
+  background: rgba(90,138,112,0.16);
+  border-color: rgba(90,138,112,0.4);
+}
+/* void: new mission btn — muted sage */
+body.flavor-7 .new-mission-btn { color: #000; }
+body.flavor-7 .audit-btn.filled { color: #000; }
+body.flavor-7 .chat-send-btn    { color: #000; }
+/* void: oxide-level structural density — show uuid row + stats grid */
+body.flavor-7 .uuid-row { display: block; text-transform: lowercase; letter-spacing: 0.04em; }
+body.flavor-7 .ops-meta-grid { display: grid; }
+body.flavor-7 .ops-meta-item { text-transform: lowercase; letter-spacing: normal; font-size: 10px; }
+body.flavor-7 .ops-meta-val { color: var(--text); font-weight: 600; }
+body.flavor-7 .card-meta { display: none; }
+body.flavor-7 .card-name { text-transform: lowercase; font-size: 11px; letter-spacing: normal; font-weight: 500; }
+body.flavor-7 .session-name { text-transform: lowercase; }
+body.flavor-7 .chat-mission-name { text-transform: lowercase; }
+body.flavor-7 .chat-model-badge { text-transform: lowercase; }
+body.flavor-7 .status-badge.running { font-size: 9px; letter-spacing: 0.06em; }
+body.flavor-7 .status-badge.done   { font-size: 9px; letter-spacing: 0.06em; }
+/* void: ops log stream in statusbar */
+body.flavor-7 .statusbar-ops-logs { display: flex; }
+body.flavor-7 .status-item-briefing { display: none; }
+body.flavor-7 .ops-log-line { text-transform: lowercase; }
 
 /* ─── shell ──────────────────────────────────────────────────── */
 .shell {
@@ -1848,6 +1930,7 @@ body[data-screen="audit"] .topbar-status-strip { display: none !important; }
               <option value="4">4 — Obsidian</option>
               <option value="5">5 — GitHub Dark</option>
               <option value="6">6 — Oxide</option>
+              <option value="7">7 — Void</option>
             </select>
           </div>
         </div>
@@ -2535,11 +2618,16 @@ body[data-screen="audit"] .topbar-status-strip { display: none !important; }
 
     var isOps   = (n === '2');
     var isOxide = (n === '6');
+    var isVoid  = (n === '7');
 
     if (isOps || isOxide) {
       newLabel.textContent = '+ NEW MISSION';
       newIcon.style.display = 'none';
       newBtn.style.color = isOps ? '#000' : '';
+    } else if (isVoid) {
+      newLabel.textContent = '+ new mission';
+      newIcon.style.display = 'none';
+      newBtn.style.color = '#000';
     } else {
       newLabel.textContent = 'new mission';
       newIcon.style.display = 'block';
