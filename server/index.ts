@@ -96,8 +96,29 @@ export function createServer(opts: ServerOptions) {
     c.header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; img-src 'self' data: blob:; font-src 'self' data:");
   });
 
-  // Health check
-  app.get("/api/health", (c) => c.json({ ok: true, timestamp: Date.now() }));
+  // Health check — verifies DB write access and claude binary exists
+  app.get("/api/health", (c) => {
+    const checks: Record<string, boolean> = {};
+
+    try {
+      const db = getDb(ctx.dataDir);
+      db.prepare("SELECT 1").get();
+      checks.db = true;
+    } catch {
+      checks.db = false;
+    }
+
+    try {
+      const { spawnSync } = require("child_process") as typeof import("child_process");
+      const r = spawnSync("which", ["claude"], { stdio: "pipe", timeout: 1000 });
+      checks.claude = r.status === 0;
+    } catch {
+      checks.claude = false;
+    }
+
+    const ok = Object.values(checks).every(Boolean);
+    return c.json({ ok, checks, timestamp: Date.now() }, ok ? 200 : 503);
+  });
 
   // Project info — reads from mutable ctx so it reflects workspace switches
   app.get("/api/info", async (c) => {
