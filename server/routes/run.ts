@@ -339,13 +339,16 @@ export function runRoutes(projectDir: string) {
           controller.close();
         }
 
-        run().catch((err) => {
-          try { getDb(dataDir).prepare("UPDATE runs SET status = ?, ended_at = ? WHERE id = ?").run("error", Date.now(), runId); } catch {}
-          send({ type: "error", error: err instanceof Error ? err.message : String(err) });
-          activeProc = null;
-          activeRun = false;
-          controller.close();
-        });
+        run()
+          .catch((err) => {
+            try { getDb(dataDir).prepare("UPDATE runs SET status = ?, ended_at = ? WHERE id = ?").run("error", Date.now(), runId); } catch {}
+            send({ type: "error", error: err instanceof Error ? err.message : String(err) });
+            try { controller.close(); } catch {}
+          })
+          .finally(() => {
+            activeProc = null;
+            activeRun = false;
+          });
       },
     });
 
