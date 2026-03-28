@@ -29,6 +29,22 @@ function IconFindings() {
   );
 }
 
+function IconGenerate() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 15, height: 15 }}>
+      <path d="M2 12L6 2l4 10M3.5 9h5M11 5h3M12.5 3.5v3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconRun() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 15, height: 15 }}>
+      <path d="M5 3l8 5-8 5V3z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function IconUser() {
   return (
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 15, height: 15 }}>
@@ -94,6 +110,8 @@ export default function Rail({ agentsBadge = false, theme = "dark" }: RailProps)
   const items = [
     { path: "/", icon: <IconSessions />, badge: false },
     { path: "/agents", icon: <IconAgents />, badge: agentsBadge },
+    { path: "/generate", icon: <IconGenerate />, badge: false },
+    { path: "/run", icon: <IconRun />, badge: false },
   ];
 
   return (

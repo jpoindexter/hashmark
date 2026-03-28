@@ -177,6 +177,7 @@ function DispatchModal({ onClose, onDispatched }: {
   const [prompt, setPrompt] = useState("");
   const [model, setModel] = useState("claude-sonnet-4-6");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => { textareaRef.current?.focus(); }, []);
@@ -184,15 +185,23 @@ function DispatchModal({ onClose, onDispatched }: {
   const handleDispatch = async () => {
     if (!prompt.trim() || loading) return;
     setLoading(true);
+    setError(null);
     try {
       const r = await fetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: title.trim() || undefined }),
       });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({})) as { error?: string };
+        setError(body.error ?? `server error ${r.status}`);
+        setLoading(false);
+        return;
+      }
       const d = await r.json() as { session: { id: string } };
       onDispatched(d.session.id, prompt.trim(), model);
-    } catch {
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "failed to create session");
       setLoading(false);
     }
   };
@@ -292,6 +301,17 @@ function DispatchModal({ onClose, onDispatched }: {
             }} />
           </div>
         </div>
+
+        {/* Error state */}
+        {error && (
+          <div style={{
+            fontFamily: "var(--font)", fontSize: 11, color: "var(--red)",
+            background: "var(--red-bg)", border: "1px solid var(--red)",
+            borderRadius: "var(--radius)", padding: "7px 12px",
+          }}>
+            {error}
+          </div>
+        )}
 
         {/* Actions */}
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>

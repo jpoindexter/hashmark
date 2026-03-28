@@ -49,6 +49,10 @@
   --sidebar-default-width: 240px;
   --sidebar-min-width:     170px;
 
+  /* Named surface aliases (referenced by components) */
+  --surface:   var(--bg-2);
+  --surface-2: var(--bg-3);
+
   /* Interactive surface overlays (theme-aware) */
   --hover-bg:        rgba(255, 255, 255, 0.04);
   --hover-bg-strong: rgba(255, 255, 255, 0.08);
