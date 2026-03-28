@@ -1,839 +1,477 @@
-import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { Zap, Play, GitBranch, History, Bot, Clock, CheckCircle, XCircle, Loader } from "lucide-react";
-import { Skeleton, SkeletonCard, SkeletonText } from "../components/shared/Skeleton";
+import { useState, useEffect, useCallback, useRef } from "react";
 
-// ── Types ───────────────────────────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────────────────
 
-interface Agent {
+interface Mission {
   id: string;
-  name: string;
-  description: string;
-  department: string;
-  path: string;
+  title: string;
+  message_count: number;
+  updated_at: number; // unix seconds
 }
 
-interface ProjectInfo {
-  projectName: string;
-  projectDir: string;
+const MODELS = [
+  { id: "claude-sonnet-4-6", label: "Sonnet 4.6" },
+  { id: "claude-opus-4-6", label: "Opus 4.6" },
+  { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5" },
+  { id: "o3", label: "o3" },
+  { id: "gpt-4o", label: "GPT-4o" },
+];
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function elapsedStr(updatedSec: number): string {
+  const s = Math.max(0, Math.floor(Date.now() / 1000) - updatedSec);
+  const m = Math.floor(s / 60);
+  const h = Math.floor(m / 60);
+  if (h > 0) return `${h}:${String(m % 60).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  return `${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
-interface ScanSnapshot {
-  scannedAt: number;
-  totalFiles: number;
-  totalLines: number;
-  componentCount: number;
-  apiRouteCount: number;
-  aiReadiness: number | null;
-  hubFileCount: number;
+function timeAgo(sec: number): string {
+  const d = Math.floor(Date.now() / 1000) - sec;
+  if (d < 60) return "just now";
+  if (d < 3600) return `${Math.floor(d / 60)}m ago`;
+  if (d < 86400) return `${Math.floor(d / 3600)}h ago`;
+  return `${Math.floor(d / 86400)}d ago`;
 }
 
-interface Run {
-  id: string;
-  task: string;
-  status: string;
-  created_at: number;
-  worktree_branch: string | null;
+function uuidShort(id: string): string {
+  return id.slice(0, 8).toLowerCase();
 }
 
-interface Staleness {
-  exists: boolean;
-  generatedAt: string | null;
-  commitsSince: number | null;
-  daysStale: number | null;
-}
+// ── Pulsing dot ──────────────────────────────────────────────────────────────
 
-interface RecentProject {
-  path: string;
-  name: string;
-  lastOpened: number;
-}
-
-// ── Constants ───────────────────────────────────────────────────────────────
-
-const STORAGE_KEY = "studio:recent_projects";
-
-// Department-specific colors (no Grove token equivalent)
-const DEPT_COLORS: Record<string, string> = {
-  engineering: "var(--blue)",
-  product: "#8b5cf6",
-  design: "#ec4899",
-  marketing: "var(--yellow)",
-  sales: "var(--accent)",
-  operations: "#6366f1",
-  pr: "var(--cyan)",
-};
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-function formatRelativeTime(ms: number): string {
-  const diff = Date.now() - ms;
-  const mins = Math.floor(diff / 60_000);
-  const hours = Math.floor(diff / 3_600_000);
-  const days = Math.floor(diff / 86_400_000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${days}d ago`;
-}
-
-function loadRecentProjects(): RecentProject[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as RecentProject[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-// ── Sub-components ──────────────────────────────────────────────────────────
-
-function FolderIcon({ size = 16, color = "currentColor" }: { size?: number; color?: string }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={{ flexShrink: 0 }}
-    >
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-    </svg>
-  );
-}
-
-function StatusDot({ status }: { status: string }) {
-  const color =
-    status === "complete" ? "var(--accent)" :
-    status === "error" ? "var(--red)" :
-    status === "running" ? "var(--accent)" :
-    "var(--text-dimmer)";
-  const icon =
-    status === "complete" ? <CheckCircle size={12} /> :
-    status === "error" ? <XCircle size={12} /> :
-    status === "running" ? <Loader size={12} style={{ animation: "spin 1s linear infinite" }} /> :
-    <Clock size={12} />;
-  return <span style={{ color, display: "flex", alignItems: "center" }}>{icon}</span>;
-}
-
-function SectionHeader({ children }: { children: React.ReactNode }) {
+function PulsingDot() {
   return (
     <div style={{
-      fontSize: "10px",
-      color: "var(--text-dimmer)",
-      textTransform: "uppercase",
-      letterSpacing: "0.1em",
-      marginBottom: "12px",
-      paddingBottom: "8px",
-      borderBottom: "1px solid var(--border-dim)",
-    }}>
-      {children}
-    </div>
+      width: 7, height: 7, borderRadius: "50%",
+      background: "var(--accent)", flexShrink: 0,
+      animation: "pdot 1.9s ease-in-out infinite",
+    }} />
   );
 }
 
-function FreshnessTag({ staleness }: { staleness: Staleness | null }) {
-  if (!staleness?.exists) {
-    return <span className="badge badge-zinc">NO SCAN</span>;
-  }
-  const isStale =
-    (staleness.commitsSince != null && staleness.commitsSince >= 5) ||
-    (staleness.daysStale != null && staleness.daysStale >= 14);
-  if (isStale) return <span className="badge badge-yellow">STALE</span>;
-  return <span className="badge badge-green">FRESH</span>;
-}
+// ── Mission card ─────────────────────────────────────────────────────────────
 
-function QuickAction({
-  icon,
-  label,
-  shortcut,
-  primary,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  shortcut?: string;
-  primary?: boolean;
-  onClick: () => void;
+function MissionCard({ mission, running, onView, onStop }: {
+  mission: Mission;
+  running: boolean;
+  onView: () => void;
+  onStop: () => void;
 }) {
-  return (
-    <button
-      className={primary ? "btn btn-primary" : "btn"}
-      onClick={onClick}
-      style={{ gap: "6px", paddingRight: "10px" }}
-    >
-      {icon}
-      <span>{label}</span>
-      {shortcut && (
-        <span style={{
-          fontSize: "10px",
-          opacity: 0.55,
-          marginLeft: "2px",
-          fontFamily: "var(--font)",
-        }}>
-          {shortcut}
-        </span>
-      )}
-    </button>
-  );
-}
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => tick((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, [running]);
 
-function RunRow({ run }: { run: Run }) {
   return (
     <div style={{
-      display: "flex",
-      alignItems: "center",
-      gap: "10px",
-      padding: "10px 12px",
-      background: "var(--bg-2)",
-      border: "1px solid var(--border-dim)",
+      background: "var(--surface)",
+      border: `1px solid ${running ? "rgba(0,208,132,0.15)" : "var(--border)"}`,
       borderRadius: "var(--radius)",
-      marginBottom: "2px",
-    }}>
-      <StatusDot status={run.status} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          fontSize: "12px",
-          color: "var(--text)",
-          fontFamily: "var(--font)",
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}>
-          {run.task || "(no task)"}
-        </div>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, flexShrink: 0 }}>
-        <span style={{ fontSize: "10px", color: "var(--text-dimmer)" }}>
-          {formatRelativeTime(run.created_at)}
-        </span>
-        <span style={{ fontSize: "10px", color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>
-          {run.id}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function DeptRow({
-  dept,
-  agents,
-  onClick,
-}: {
-  dept: string;
-  agents: { id: string; name: string }[];
-  onClick: () => void;
-}) {
-  const color = DEPT_COLORS[dept] ?? "var(--text-dim)";
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "9px 12px",
-        background: "var(--bg-2)",
-        border: "1px solid var(--border-dim)",
-        borderRadius: "var(--radius)",
-        cursor: "pointer",
-        marginBottom: "2px",
-        transition: "border-color 0.1s",
-      }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = color; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border-dim)"; }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <Bot size={12} style={{ color }} />
-        <span style={{ fontSize: "12px", fontWeight: 600, color, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          {dept}
-        </span>
-      </div>
-      <span style={{
-        fontSize: "11px",
-        fontWeight: 600,
-        color: "var(--text-dim)",
-        background: "var(--bg-4)",
-        border: "1px solid var(--border)",
-        borderRadius: "100px",
-        padding: "1px 7px",
-        fontFamily: "var(--font)",
-      }}>
-        {agents.length}
-      </span>
-    </div>
-  );
-}
-
-// ── Folder picker section ────────────────────────────────────────────────────
-
-function FolderPickerSection({ info, onFolderChanged }: {
-  info: ProjectInfo | null;
-  onFolderChanged: () => void;
-}) {
-  const [showPathInput, setShowPathInput] = useState(false);
-  const [pathValue, setPathValue] = useState("");
-  const [pathError, setPathError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleChangeFolderClick = async () => {
-    if (window.studio?.pickFolder) {
-      const picked = await window.studio.pickFolder();
-      if (!picked) return;
-      await activateFolder(picked);
-    } else {
-      setShowPathInput(true);
-      setPathValue("");
-      setPathError(null);
-    }
-  };
-
-  const activateFolder = async (dir: string) => {
-    setSubmitting(true);
-    setPathError(null);
-    try {
-      const createRes = await fetch("/api/workspaces", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: dir }),
-      });
-      if (!createRes.ok) {
-        const d = await createRes.json() as { error?: string };
-        setPathError(d.error ?? "Invalid path");
-        setSubmitting(false);
-        return;
-      }
-      const created = await createRes.json() as { workspace?: { id: string } };
-      if (created.workspace?.id) {
-        await fetch(`/api/workspaces/${created.workspace.id}/activate`, { method: "POST" });
-      }
-      window.location.reload();
-    } catch {
-      setPathError("Could not reach server");
-      setSubmitting(false);
-    }
-  };
-
-  const handlePathSubmit = () => {
-    const trimmed = pathValue.trim();
-    if (!trimmed) return;
-    void activateFolder(trimmed);
-  };
-
-  return (
-    <div style={{ marginBottom: "28px" }}>
-      {/* Studio label */}
-      <div style={{
-        fontSize: "10px",
-        color: "var(--text-dimmer)",
-        textTransform: "uppercase",
-        letterSpacing: "0.1em",
-        marginBottom: "8px",
-      }}>
-        hashmark studio
-      </div>
-
-      {/* Project name + path row */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px" }}>
-        <div style={{ minWidth: 0 }}>
-          <h1 style={{
-            fontSize: "22px",
-            fontWeight: 700,
-            letterSpacing: "-0.02em",
-            color: "var(--text)",
-            marginBottom: "4px",
-            lineHeight: 1.2,
-          }}>
-            {info == null ? <Skeleton width={180} height={22} /> : (info.projectName || "Project")}
-          </h1>
-          {info && (
-            <div style={{
-              fontSize: "12px",
-              color: "var(--text-dimmer)",
-              fontFamily: "var(--font)",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              maxWidth: "460px",
-            }}>
-              {info.projectDir}
-            </div>
-          )}
-        </div>
-
-        <button
-          className="btn"
-          style={{ flexShrink: 0, fontSize: "11px", marginTop: "2px" }}
-          onClick={() => void handleChangeFolderClick()}
-        >
-          <FolderIcon size={12} />
-          Change Folder
-        </button>
-      </div>
-
-      {/* Inline path input (web fallback) */}
-      {showPathInput && (
-        <div style={{
-          marginTop: "12px",
-          display: "flex",
-          gap: "8px",
-          alignItems: "center",
-        }}>
-          <input
-            type="text"
-            value={pathValue}
-            autoFocus
-            placeholder="/path/to/project"
-            onChange={(e) => { setPathValue(e.target.value); setPathError(null); }}
-            onKeyDown={(e) => { if (e.key === "Enter") handlePathSubmit(); if (e.key === "Escape") setShowPathInput(false); }}
-            style={{
-              flex: 1,
-              background: "var(--bg-3)",
-              border: `1px solid ${pathError ? "var(--red)" : "var(--border)"}`,
-              color: "var(--text)",
-              fontFamily: "var(--font)",
-              fontSize: "12px",
-              padding: "7px 12px",
-              borderRadius: "var(--radius)",
-              outline: "none",
-            }}
-          />
-          <button
-            className="btn btn-primary"
-            style={{ fontSize: "11px", padding: "0 14px" }}
-            disabled={submitting || !pathValue.trim()}
-            onClick={handlePathSubmit}
-          >
-            {submitting ? "Opening..." : "Open"}
-          </button>
-          <button
-            className="btn"
-            style={{ fontSize: "11px" }}
-            onClick={() => setShowPathInput(false)}
-          >
-            Cancel
-          </button>
-        </div>
-      )}
-      {pathError && (
-        <div style={{ marginTop: "6px", fontSize: "11px", color: "var(--red)" }}>{pathError}</div>
-      )}
-    </div>
-  );
-}
-
-// ── No-agents empty state ────────────────────────────────────────────────────
-
-function NoAgentsEmptyState({ onGenerate }: { onGenerate: () => void }) {
-  return (
-    <div style={{
-      border: "1px dashed var(--border-dim)",
-      borderRadius: "8px",
-      minHeight: "180px",
+      padding: "16px",
       display: "flex",
       flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "32px 24px",
-      marginBottom: "28px",
-      textAlign: "center",
     }}>
-      <div style={{ fontSize: "28px", marginBottom: "12px", lineHeight: 1 }}>
-        <FolderIcon size={28} color="var(--text-dimmer)" />
+      {/* Status row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 12 }}>
+        {running
+          ? <PulsingDot />
+          : <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--text-dimmer)", flexShrink: 0 }} />
+        }
+        <span style={{
+          fontFamily: "var(--font)", fontSize: 10, letterSpacing: "0.04em",
+          color: running ? "var(--accent)" : "var(--text-dimmer)",
+        }}>
+          {running ? "running" : "done"}
+        </span>
+        <span style={{ marginLeft: "auto", fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)" }}>
+          {running ? elapsedStr(mission.updated_at) : timeAgo(mission.updated_at)}
+        </span>
       </div>
-      <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-dim)", marginBottom: "4px" }}>
-        No agents found
+
+      {/* Title */}
+      <div style={{
+        fontFamily: "var(--font)", fontSize: 12, color: "var(--text)",
+        marginBottom: 3, lineHeight: 1.5,
+        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+      }}>
+        {mission.title || "untitled mission"}
       </div>
-      <div style={{ fontSize: "12px", color: "var(--text-dimmer)", marginBottom: "18px" }}>
-        .claude/agents/ is empty
+
+      {/* UUID */}
+      <div style={{
+        fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)",
+        marginBottom: 14, letterSpacing: "0.04em",
+      }}>
+        {uuidShort(mission.id)}
       </div>
-      <button className="btn btn-primary" onClick={onGenerate}>
-        Generate Agents
-      </button>
+
+      {/* Meta */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span style={{ fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)" }}>messages</span>
+          <span style={{ fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dim)" }}>{mission.message_count}</span>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: "flex", gap: 6 }}>
+        <button
+          onClick={onView}
+          style={{
+            flex: 1, fontFamily: "var(--font)", fontSize: 10, padding: "6px 0",
+            background: running ? "var(--accent)" : "transparent",
+            border: `1px solid ${running ? "var(--accent)" : "var(--border)"}`,
+            borderRadius: "var(--radius)",
+            color: running ? "#000" : "var(--text-dim)",
+            cursor: "pointer", letterSpacing: "0.04em",
+          }}
+        >
+          {running ? "view" : "review"}
+        </button>
+        {running ? (
+          <button
+            onClick={onStop}
+            style={{
+              fontFamily: "var(--font)", fontSize: 10, padding: "6px 14px",
+              background: "transparent", border: "1px solid rgba(239,68,68,0.3)",
+              borderRadius: "var(--radius)", color: "var(--red)",
+              cursor: "pointer", letterSpacing: "0.04em",
+            }}
+          >
+            stop
+          </button>
+        ) : (
+          <button
+            onClick={onView}
+            style={{
+              fontFamily: "var(--font)", fontSize: 10, padding: "6px 14px",
+              background: "transparent", border: "1px solid var(--border)",
+              borderRadius: "var(--radius)", color: "var(--text-dimmer)",
+              cursor: "pointer", letterSpacing: "0.04em",
+            }}
+          >
+            audit
+          </button>
+        )}
+      </div>
     </div>
   );
 }
 
-// ── Recent projects ──────────────────────────────────────────────────────────
+// ── Dispatch modal ───────────────────────────────────────────────────────────
 
-function RecentProjectsSection() {
-  const [recent, setRecent] = useState<RecentProject[]>([]);
-  const [activating, setActivating] = useState<string | null>(null);
+function DispatchModal({ onClose, onDispatched }: {
+  onClose: () => void;
+  onDispatched: (sessionId: string, prompt: string, model: string) => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [model, setModel] = useState("claude-sonnet-4-6");
+  const [loading, setLoading] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    setRecent(loadRecentProjects());
-  }, []);
+  useEffect(() => { textareaRef.current?.focus(); }, []);
 
-  if (recent.length === 0) return null;
-
-  const handleOpen = async (proj: RecentProject) => {
-    setActivating(proj.path);
+  const handleDispatch = async () => {
+    if (!prompt.trim() || loading) return;
+    setLoading(true);
     try {
-      const createRes = await fetch("/api/workspaces", {
+      const r = await fetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: proj.path }),
+        body: JSON.stringify({ title: title.trim() || undefined }),
       });
-      if (createRes.ok) {
-        const created = await createRes.json() as { workspace?: { id: string } };
-        if (created.workspace?.id) {
-          await fetch(`/api/workspaces/${created.workspace.id}/activate`, { method: "POST" });
-        }
-      }
-      window.location.reload();
+      const d = await r.json() as { session: { id: string } };
+      onDispatched(d.session.id, prompt.trim(), model);
     } catch {
-      setActivating(null);
+      setLoading(false);
     }
   };
 
+  const field: React.CSSProperties = {
+    width: "100%", fontFamily: "var(--font)", fontSize: 12,
+    background: "var(--bg)", border: "1px solid var(--border)",
+    color: "var(--text)", borderRadius: "var(--radius)",
+    padding: "8px 12px", outline: "none", boxSizing: "border-box",
+  };
+
+  const label: React.CSSProperties = {
+    fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)",
+    marginBottom: 6, letterSpacing: "0.04em", display: "block",
+  };
+
   return (
-    <div style={{ marginBottom: "28px" }}>
-      <SectionHeader>Recent Projects</SectionHeader>
-      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-        {recent.map((proj) => (
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 1000,
+        background: "rgba(0,0,0,0.72)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div style={{
+        width: 540,
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius)",
+        padding: "24px",
+        display: "flex", flexDirection: "column", gap: 16,
+      }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontFamily: "var(--font)", fontSize: 12, color: "var(--text)", letterSpacing: "0.04em" }}>
+            new mission briefing
+          </span>
           <button
-            key={proj.path}
-            onClick={() => void handleOpen(proj)}
-            disabled={activating === proj.path}
+            onClick={onClose}
+            style={{ background: "none", border: "none", color: "var(--text-dimmer)", cursor: "pointer", fontSize: 18, lineHeight: 1 }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Title */}
+        <div>
+          <span style={label}>mission title</span>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="auto-generated from prompt"
+            style={field}
+          />
+        </div>
+
+        {/* Model */}
+        <div>
+          <span style={label}>model</span>
+          <select value={model} onChange={(e) => setModel(e.target.value)} style={{ ...field, cursor: "pointer" }}>
+            {MODELS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+          </select>
+        </div>
+
+        {/* Prompt */}
+        <div>
+          <span style={label}>objective</span>
+          <textarea
+            ref={textareaRef}
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); void handleDispatch(); } }}
+            placeholder="describe what you want the agent to do..."
+            rows={5}
+            style={{ ...field, resize: "none", lineHeight: 1.6 }}
+          />
+        </div>
+
+        {/* Briefing toggle (Phase 2 placeholder) */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "10px 12px",
+          background: "var(--bg)", border: "1px solid var(--border-dim)",
+          borderRadius: "var(--radius)",
+        }}>
+          <span style={{ fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dim)", letterSpacing: "0.04em" }}>
+            attach codebase context
+          </span>
+          <div style={{
+            width: 28, height: 16, borderRadius: 8, background: "var(--accent)",
+            position: "relative", cursor: "pointer", flexShrink: 0,
+          }}>
+            <div style={{
+              width: 12, height: 12, borderRadius: 6, background: "#000",
+              position: "absolute", top: 2, right: 2,
+            }} />
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button
+            onClick={onClose}
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              padding: "9px 12px",
-              background: "transparent",
-              border: "1px solid transparent",
-              borderRadius: "var(--radius)",
-              cursor: activating === proj.path ? "wait" : "pointer",
-              textAlign: "left",
-              width: "100%",
-              opacity: activating === proj.path ? 0.6 : 1,
-              transition: "background 0.1s, border-color 0.1s",
-            }}
-            onMouseEnter={(e) => {
-              if (activating !== proj.path) {
-                e.currentTarget.style.background = "var(--bg-2)";
-                e.currentTarget.style.borderColor = "var(--border-dim)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.borderColor = "transparent";
+              fontFamily: "var(--font)", fontSize: 11, padding: "8px 16px",
+              background: "transparent", border: "1px solid var(--border)",
+              color: "var(--text-dim)", borderRadius: "var(--radius)", cursor: "pointer",
             }}
           >
-            <FolderIcon size={14} color="var(--text-dimmer)" />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{
-                fontSize: "13px",
-                fontWeight: 600,
-                color: "var(--text)",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}>
-                {proj.name}
-              </div>
-              <div style={{
-                fontSize: "11px",
-                color: "var(--text-dimmer)",
-                fontFamily: "var(--font)",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                marginTop: "1px",
-              }}>
-                {proj.path}
-              </div>
-            </div>
-            <div style={{ fontSize: "11px", color: "var(--text-dimmer)", flexShrink: 0, whiteSpace: "nowrap" }}>
-              {formatRelativeTime(proj.lastOpened)}
-            </div>
+            cancel
           </button>
-        ))}
+          <button
+            onClick={() => void handleDispatch()}
+            disabled={!prompt.trim() || loading}
+            style={{
+              fontFamily: "var(--font)", fontSize: 11, padding: "8px 22px", fontWeight: 600,
+              background: prompt.trim() && !loading ? "var(--accent)" : "var(--surface-2)",
+              border: "none",
+              color: prompt.trim() && !loading ? "#000" : "var(--text-dimmer)",
+              borderRadius: "var(--radius)",
+              cursor: prompt.trim() && !loading ? "pointer" : "default",
+            }}
+          >
+            {loading ? "dispatching..." : "dispatch mission"}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-// ── Stat cards (has-agents state) ────────────────────────────────────────────
-
-function StatCards({
-  loading,
-  agents,
-  snapshot,
-  staleness,
-  runs,
-  runsLoading,
-  onViewHistory,
-}: {
-  loading: boolean;
-  agents: Agent[];
-  snapshot: ScanSnapshot | null;
-  staleness: Staleness | null;
-  runs: Run[];
-  runsLoading: boolean;
-  onViewHistory: () => void;
-}) {
-  const deptCount = new Set(agents.map((a) => a.department)).size;
-  const lastScanAt = snapshot?.scannedAt ?? null;
-  const avgComplexity = snapshot?.aiReadiness != null ? `${snapshot.aiReadiness}%` : "—";
-
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "24px" }}>
-      {/* Agents */}
-      <div style={{ background: "var(--bg-2)", border: "1px solid var(--border-dim)", borderRadius: "var(--radius)", padding: "16px" }}>
-        <div style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>
-          Agents
-        </div>
-        {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <Skeleton width={60} height={22} />
-            <Skeleton width={80} height={11} />
-          </div>
-        ) : (
-          <>
-            <div style={{ fontSize: "22px", fontWeight: 700, color: "var(--text)", letterSpacing: "-0.02em", marginBottom: "4px" }}>
-              {agents.length}
-            </div>
-            <div style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
-              {deptCount} department{deptCount !== 1 ? "s" : ""}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Context health */}
-      <div style={{ background: "var(--bg-2)", border: "1px solid var(--border-dim)", borderRadius: "var(--radius)", padding: "16px" }}>
-        <div style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>
-          Context Health
-        </div>
-        {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <Skeleton width={80} height={20} />
-            <Skeleton width={100} height={11} />
-          </div>
-        ) : (
-          <>
-            <div style={{ marginBottom: "6px" }}>
-              <FreshnessTag staleness={staleness} />
-            </div>
-            <div style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
-              {lastScanAt ? `Scanned ${formatRelativeTime(lastScanAt)}` : "Never scanned"}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Project size */}
-      <div style={{ background: "var(--bg-2)", border: "1px solid var(--border-dim)", borderRadius: "var(--radius)", padding: "16px" }}>
-        <div style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>
-          Project Size
-        </div>
-        {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <Skeleton width={100} height={20} />
-            <Skeleton width={80} height={11} />
-          </div>
-        ) : snapshot ? (
-          <>
-            <div style={{ fontSize: "22px", fontWeight: 700, color: "var(--text)", letterSpacing: "-0.02em", marginBottom: "4px" }}>
-              {snapshot.totalFiles.toLocaleString()}
-              <span style={{ fontSize: "12px", fontWeight: 400, color: "var(--text-dimmer)", marginLeft: "6px" }}>files</span>
-            </div>
-            <div style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
-              AI Readiness: <span style={{ color: "var(--accent)", fontWeight: 600 }}>{avgComplexity}</span>
-            </div>
-          </>
-        ) : (
-          <div style={{ fontSize: "12px", color: "var(--text-dimmer)" }}>Run a scan to see stats</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Main component ───────────────────────────────────────────────────────────
+// ── Mission Board ────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const navigate = useNavigate();
-  const [info, setInfo] = useState<ProjectInfo | null>(null);
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [runs, setRuns] = useState<Run[]>([]);
-  const [snapshot, setSnapshot] = useState<ScanSnapshot | null>(null);
-  const [staleness, setStaleness] = useState<Staleness | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [runsLoading, setRunsLoading] = useState(true);
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [runningId, setRunningId] = useState<string | null>(null);
+  const [showDispatch, setShowDispatch] = useState(false);
 
-  const fetchData = useCallback(() => {
-    Promise.all([
-      fetch("/api/info").then((r) => r.json()),
-      fetch("/api/agents").then((r) => r.json()),
-      fetch("/api/scan/history").then((r) => r.json()),
-      fetch("/api/scan/staleness").then((r) => r.json()).catch(() => null),
-    ]).then(([infoData, agentsData, historyData, stalenessData]) => {
-      setInfo(infoData as ProjectInfo);
-      setAgents((agentsData as { agents?: Agent[] }).agents ?? []);
-      const snaps: ScanSnapshot[] = (historyData as { snapshots?: ScanSnapshot[] }).snapshots ?? [];
-      setSnapshot(snaps[0] ?? null);
-      setStaleness(stalenessData as Staleness | null);
-    }).finally(() => setLoading(false));
-
-    fetch("/api/run/runs")
+  const fetchMissions = useCallback(() => {
+    fetch("/api/sessions")
       .then((r) => r.json())
-      .then((d) => setRuns(((d as { runs?: Run[] }).runs ?? []).slice(0, 5)))
-      .catch(() => {
-        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load recent runs", type: "error" } }));
+      .then((d: { sessions?: Mission[] }) => {
+        setMissions((d.sessions ?? []).filter((s) => s.message_count > 0));
       })
-      .finally(() => setRunsLoading(false));
+      .catch(() => {});
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchMissions();
+    const id = setInterval(fetchMissions, 8000);
+    return () => clearInterval(id);
+  }, [fetchMissions]);
 
-  const byDept = agents.reduce<Record<string, Agent[]>>((acc, a) => {
-    if (!acc[a.department]) acc[a.department] = [];
-    acc[a.department].push(a);
-    return acc;
-  }, {});
-  const depts = Object.entries(byDept).sort((a, b) => b[1].length - a[1].length);
+  // Sync running state from Shell
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { streaming, sessionId } = (e as CustomEvent<{ streaming: boolean; sessionId: string | null }>).detail;
+      setRunningId(streaming ? sessionId : null);
+      if (!streaming) fetchMissions();
+    };
+    window.addEventListener("studio:streaming-change", handler);
+    return () => window.removeEventListener("studio:streaming-change", handler);
+  }, [fetchMissions]);
 
-  const hasAgents = !loading && agents.length > 0;
-  const lastRunAt = runs[0]?.created_at ?? null;
+  const openMission = (sessionId: string) => {
+    window.dispatchEvent(new CustomEvent("studio:open-mission", { detail: { sessionId } }));
+  };
+
+  const stopMission = (sessionId: string) => {
+    fetch(`/api/sessions/${sessionId}/interrupt`, { method: "POST" }).catch(() => {});
+    setRunningId(null);
+  };
+
+  const handleDispatched = (sessionId: string, prompt: string, model: string) => {
+    setShowDispatch(false);
+    try {
+      sessionStorage.setItem(`studio:prefill:${sessionId}`, JSON.stringify({ prompt, model }));
+    } catch { /* noop */ }
+    openMission(sessionId);
+  };
+
+  const running = missions.filter((m) => m.id === runningId);
+  const done = missions.filter((m) => m.id !== runningId);
 
   return (
-    <div style={{ padding: "32px 24px", maxWidth: "680px", margin: "0 auto" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--bg)" }}>
+      <style>{`@keyframes pdot { 0%,100%{opacity:1} 50%{opacity:.15} }`}</style>
 
-      {/* Folder picker header */}
-      <FolderPickerSection info={info} onFolderChanged={fetchData} />
+      <div style={{ flex: 1, overflowY: "auto", padding: "28px" }}>
 
-      {/* State 1: No agents */}
-      {!loading && agents.length === 0 && (
-        <>
-          <NoAgentsEmptyState onGenerate={() => navigate("/generate")} />
+        {/* Empty state */}
+        {missions.length === 0 && (
+          <div style={{
+            display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center",
+            minHeight: "60vh",
+          }}>
+            <div style={{
+              fontFamily: "var(--font)", fontSize: 12, color: "var(--text-dimmer)",
+              marginBottom: 20, letterSpacing: "0.04em",
+            }}>
+              no active missions
+            </div>
+            <button
+              onClick={() => setShowDispatch(true)}
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                fontFamily: "var(--font)", fontSize: 11, padding: "8px 18px", fontWeight: 600,
+                background: "var(--accent)", border: "none",
+                color: "#000", borderRadius: "var(--radius)", cursor: "pointer",
+              }}
+            >
+              + new mission
+            </button>
+          </div>
+        )}
 
-          <RecentProjectsSection />
-
-          <div style={{ marginBottom: "8px" }}>
-            <SectionHeader>Start</SectionHeader>
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              <button className="btn btn-primary" onClick={() => navigate("/generate")}>
-                Generate Agents
-              </button>
-              <button className="btn" onClick={() => navigate("/agents")}>
-                &#9647; VIEW AGENTS
-              </button>
-              <button className="btn" onClick={() => navigate("/generate")}>
-                @ RUN SCAN
-              </button>
+        {/* Running */}
+        {running.length > 0 && (
+          <div style={{ marginBottom: 28 }}>
+            <div style={{
+              fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)",
+              letterSpacing: "0.06em", marginBottom: 12,
+            }}>
+              active
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+              {running.map((m) => (
+                <MissionCard
+                  key={m.id} mission={m} running
+                  onView={() => openMission(m.id)}
+                  onStop={() => stopMission(m.id)}
+                />
+              ))}
             </div>
           </div>
-        </>
-      )}
+        )}
 
-      {/* State 2: Has agents (compact) */}
-      {hasAgents && (
-        <>
-          <StatCards
-            loading={loading}
-            agents={agents}
-            snapshot={snapshot}
-            staleness={staleness}
-            runs={runs}
-            runsLoading={runsLoading}
-            onViewHistory={() => navigate("/history")}
-          />
-
-          {/* Quick actions */}
-          <div style={{ marginBottom: "28px" }}>
-            <SectionHeader>Quick Actions</SectionHeader>
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              <QuickAction icon={<Zap size={13} />} label="Scan project" primary onClick={() => navigate("/generate")} />
-              <QuickAction icon={<Play size={13} />} label="Run agent" onClick={() => navigate("/run")} />
-              <QuickAction icon={<GitBranch size={13} />} label="Launch swarm" onClick={() => navigate("/swarm")} />
-              <QuickAction icon={<History size={13} />} label="View history" onClick={() => navigate("/history")} />
+        {/* Done */}
+        {done.length > 0 && (
+          <div>
+            <div style={{
+              fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)",
+              letterSpacing: "0.06em", marginBottom: 12,
+            }}>
+              completed
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+              {done.map((m) => (
+                <MissionCard
+                  key={m.id} mission={m} running={false}
+                  onView={() => openMission(m.id)}
+                  onStop={() => {}}
+                />
+              ))}
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Bottom split: recent runs + agent roster */}
-          <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: "20px", marginBottom: "28px" }}>
-            <div>
-              <SectionHeader>Recent Runs</SectionHeader>
-              {runsLoading ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {[0, 1, 2].map((i) => (
-                    <SkeletonCard key={i} height={48} style={{ borderRadius: "var(--radius)" }} />
-                  ))}
-                </div>
-              ) : runs.length === 0 ? (
-                <div style={{
-                  background: "var(--bg-2)",
-                  border: "1px dashed var(--border)",
-                  borderRadius: "var(--radius)",
-                  padding: "20px",
-                  textAlign: "center",
-                  fontSize: "12px",
-                  color: "var(--text-dimmer)",
-                }}>
-                  No runs yet
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                  {runs.map((run) => <RunRow key={run.id} run={run} />)}
-                </div>
-              )}
-              {lastRunAt && (
-                <button
-                  onClick={() => navigate("/history")}
-                  style={{ background: "none", border: "none", color: "var(--blue)", fontSize: "11px", cursor: "pointer", padding: "8px 0 0", display: "block" }}
-                >
-                  View all runs →
-                </button>
-              )}
-            </div>
-
-            <div>
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: "12px",
-                paddingBottom: "8px",
-                borderBottom: "1px solid var(--border-dim)",
-              }}>
-                <span style={{ fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                  Agent Roster
-                </span>
-                <button
-                  onClick={() => navigate("/agents")}
-                  style={{ background: "none", border: "none", color: "var(--blue)", fontSize: "11px", cursor: "pointer", padding: 0 }}
-                >
-                  View all →
-                </button>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                {depts.map(([dept, deptAgents]) => (
-                  <DeptRow key={dept} dept={dept} agents={deptAgents} onClick={() => navigate("/agents")} />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <RecentProjectsSection />
-        </>
-      )}
-
-      {/* Loading skeleton state */}
-      {loading && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
-            {[0, 1, 2].map((i) => <SkeletonCard key={i} height={80} style={{ borderRadius: "var(--radius)" }} />)}
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} height={32} style={{ borderRadius: "var(--radius)", width: 100 }} />)}
-          </div>
+      {/* Bottom bar */}
+      {missions.length > 0 && (
+        <div style={{
+          padding: "12px 28px",
+          borderTop: "0.5px solid var(--border-dim)",
+          display: "flex", justifyContent: "flex-end",
+        }}>
+          <button
+            onClick={() => setShowDispatch(true)}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              fontFamily: "var(--font)", fontSize: 11, padding: "7px 16px", fontWeight: 600,
+              background: "var(--accent)", border: "none",
+              color: "#000", borderRadius: "var(--radius)", cursor: "pointer",
+            }}
+          >
+            + new mission
+          </button>
         </div>
+      )}
+
+      {showDispatch && (
+        <DispatchModal onClose={() => setShowDispatch(false)} onDispatched={handleDispatched} />
       )}
     </div>
   );

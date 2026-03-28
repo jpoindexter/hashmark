@@ -505,6 +505,19 @@ export default function ChatInputBar({
       setPendingMessage(null);
       return;
     }
+
+    // Pick up prefill from dispatch modal
+    try {
+      const raw = sessionStorage.getItem(`studio:prefill:${sessionId}`);
+      if (raw) {
+        sessionStorage.removeItem(`studio:prefill:${sessionId}`);
+        const { prompt, model } = JSON.parse(raw) as { prompt: string; model: string };
+        setInput(prompt);
+        window.dispatchEvent(new CustomEvent("studio:settings-change", { detail: { key: "selectedModel", value: model } }));
+        requestAnimationFrame(() => textareaRef.current?.focus());
+      }
+    } catch { /* noop */ }
+
     fetch(`/api/sessions/${sessionId}/pending`)
       .then(r => r.json())
       .then((d: { hasPending: boolean; message: string | null }) => {

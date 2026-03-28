@@ -4,8 +4,6 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Titlebar from "./Titlebar";
 import Rail from "./Rail";
 import SessionsPanel from "./SessionsPanel";
-import MissionBar from "./MissionBar";
-import ContextPanel from "./ContextPanel";
 import TerminalPanel from "./TerminalPanel";
 import ChatMessages, { type StreamingState } from "../ChatMessages";
 import ChatInputBar from "../ChatInputBar";
@@ -67,6 +65,7 @@ export default function Shell() {
 
   const isHome = location.pathname === "/" || location.pathname === "/sessions";
 
+  const [boardView, setBoardView] = useState(true);
   const [termOpen, setTermOpen] = useState(() => restore("termOpen", false));
   const [termBig, setTermBig] = useState(false);
   const [activeTab, setActiveTab] = useState<"TERMINAL" | "OUTPUT">("TERMINAL");
@@ -148,6 +147,31 @@ export default function Shell() {
     window.addEventListener("studio:switch-session", handler);
     return () => window.removeEventListener("studio:switch-session", handler);
   }, []);
+
+  // Mission board navigation
+  useEffect(() => {
+    const openHandler = (e: Event) => {
+      const { sessionId } = (e as CustomEvent<{ sessionId: string }>).detail;
+      sessionValidated.current = false;
+      setChatHasMessages(true);
+      setActiveSessionId(sessionId);
+      setBoardView(false);
+    };
+    const backHandler = () => setBoardView(true);
+    window.addEventListener("studio:open-mission", openHandler);
+    window.addEventListener("studio:back-to-board", backHandler);
+    return () => {
+      window.removeEventListener("studio:open-mission", openHandler);
+      window.removeEventListener("studio:back-to-board", backHandler);
+    };
+  }, []);
+
+  // Emit streaming state to board
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("studio:streaming-change", {
+      detail: { streaming, sessionId: activeSessionId },
+    }));
+  }, [streaming, activeSessionId]);
 
   // Navigation events
   useEffect(() => {
@@ -332,105 +356,119 @@ export default function Shell() {
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
         <Rail />
 
-        {isHome && (
-          <SessionsPanel
-            activeSessionId={activeSessionId}
-            onSessionSelect={handleSessionSelect}
-            onNewSession={handleNewSession}
-            streaming={streaming}
-            streamingSessionId={streaming ? activeSessionId : null}
-          />
+        {/* Mission board: full canvas, no sidepanels */}
+        {isHome && boardView && (
+          <ErrorBoundary>
+            <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", minWidth: 0 }}>
+              <Outlet />
+            </div>
+          </ErrorBoundary>
         )}
 
-        {/* Canvas */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
-          {isHome && (
-            <MissionBar
+        {/* Mission canvas: sessions panel + chat */}
+        {isHome && !boardView && (
+          <>
+            <SessionsPanel
+              activeSessionId={activeSessionId}
+              onSessionSelect={handleSessionSelect}
+              onNewSession={handleNewSession}
               streaming={streaming}
-              model={modelLabel.toLowerCase()}
-              projectName={info?.projectName}
+              streamingSessionId={streaming ? activeSessionId : null}
             />
-          )}
 
-          {isHome ? (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}>
-              {sessionError && (
-                <div style={{ padding: 20, textAlign: "center", color: "var(--red)" }}>
-                  <div>Failed to create session</div>
-                  <button
-                    onClick={() => { setSessionError(false); sessionRetryCount.current = 0; handleNewSession(); }}
-                    style={{
-                      marginTop: 8, padding: "4px 12px",
-                      background: "var(--bg-3)", border: "1px solid var(--border)",
-                      borderRadius: "var(--radius)", color: "var(--text-dim)", cursor: "pointer",
-                      fontFamily: "var(--font-ui)", fontSize: 12,
-                    }}
-                  >
-                    Retry
-                  </button>
-                </div>
-              )}
-              <ErrorBoundary>
-                <div style={{
-                  flex: termBig ? 0 : 1,
-                  overflow: "hidden",
-                  display: termBig ? "none" : "flex",
-                  flexDirection: "column",
-                  minHeight: 0,
-                }}>
-                  <ChatMessages
-                    sessionId={activeSessionId}
-                    streamText={streamText}
-                    streaming={streaming}
-                    streamingState={streamingState ?? undefined}
-                    modelLabel={modelLabel}
-                    planMode={planMode}
-                  />
-                </div>
-              </ErrorBoundary>
-
-              <ResizableDrawer open={termOpen} onToggle={() => setTermOpen((v) => !v)} defaultHeight={280}>
-                <TerminalPanel
-                  activeTab={activeTab}
-                  onTabChange={setActiveTab}
-                  termBig={termBig}
-                  onToggleBig={() => setTermBig((v) => !v)}
-                  onClose={() => setTermOpen(false)}
-                  onCwdChange={setTerminalCwd}
-                />
-              </ResizableDrawer>
-
-              <ChatInputBar
-                sessionId={activeSessionId}
-                hasMessages={chatHasMessages}
-                onNewSession={handleNewSession}
-                onSessionCreated={setActiveSessionId}
-                onStreamText={setStreamText}
-                onStreamingState={setStreamingState}
-                onStreamingChange={setStreaming}
-                streaming={streaming}
-                terminalCwd={terminalCwd || undefined}
-                selectedModel={selectedModel}
-                thinking={thinking}
-                planMode={planMode}
-              />
-            </div>
-          ) : (
-            <ErrorBoundary>
-              <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", minWidth: 0 }}>
-                <Outlet />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+              {/* Back to board breadcrumb */}
+              <div style={{
+                height: 34, borderBottom: "0.5px solid var(--border-dim)",
+                display: "flex", alignItems: "center", padding: "0 14px", flexShrink: 0,
+                background: "var(--bg)",
+              }}>
+                <button
+                  onClick={() => setBoardView(true)}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)",
+                    display: "flex", alignItems: "center", gap: 6,
+                    letterSpacing: "0.04em", padding: 0,
+                  }}
+                >
+                  ← missions
+                </button>
               </div>
-            </ErrorBoundary>
-          )}
-        </div>
 
-        {isHome && (
-          <ContextPanel
-            streaming={streaming}
-            model={modelLabel.toLowerCase()}
-            branch={git?.branch}
-            projectName={info?.projectName}
-          />
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}>
+                {sessionError && (
+                  <div style={{ padding: 20, textAlign: "center", color: "var(--red)" }}>
+                    <div>Failed to create session</div>
+                    <button
+                      onClick={() => { setSessionError(false); sessionRetryCount.current = 0; handleNewSession(); }}
+                      style={{
+                        marginTop: 8, padding: "4px 12px",
+                        background: "var(--bg-3)", border: "1px solid var(--border)",
+                        borderRadius: "var(--radius)", color: "var(--text-dim)", cursor: "pointer",
+                        fontFamily: "var(--font-ui)", fontSize: 12,
+                      }}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
+                <ErrorBoundary>
+                  <div style={{
+                    flex: termBig ? 0 : 1,
+                    overflow: "hidden",
+                    display: termBig ? "none" : "flex",
+                    flexDirection: "column",
+                    minHeight: 0,
+                  }}>
+                    <ChatMessages
+                      sessionId={activeSessionId}
+                      streamText={streamText}
+                      streaming={streaming}
+                      streamingState={streamingState ?? undefined}
+                      modelLabel={modelLabel}
+                      planMode={planMode}
+                    />
+                  </div>
+                </ErrorBoundary>
+
+                <ResizableDrawer open={termOpen} onToggle={() => setTermOpen((v) => !v)} defaultHeight={280}>
+                  <TerminalPanel
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                    termBig={termBig}
+                    onToggleBig={() => setTermBig((v) => !v)}
+                    onClose={() => setTermOpen(false)}
+                    onCwdChange={setTerminalCwd}
+                  />
+                </ResizableDrawer>
+
+                <ChatInputBar
+                  sessionId={activeSessionId}
+                  hasMessages={chatHasMessages}
+                  onNewSession={handleNewSession}
+                  onSessionCreated={setActiveSessionId}
+                  onStreamText={setStreamText}
+                  onStreamingState={setStreamingState}
+                  onStreamingChange={setStreaming}
+                  streaming={streaming}
+                  terminalCwd={terminalCwd || undefined}
+                  selectedModel={selectedModel}
+                  thinking={thinking}
+                  planMode={planMode}
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Non-home routes */}
+        {!isHome && (
+          <ErrorBoundary>
+            <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", minWidth: 0 }}>
+              <Outlet />
+            </div>
+          </ErrorBoundary>
         )}
       </div>
 
