@@ -109,15 +109,25 @@ export default function WorkspaceSetup() {
     setRecent(loadRecent());
   }, []);
 
-  // Poll for MCP readiness on step 3
+  // Poll for MCP readiness on step 3 — 60s timeout
   useEffect(() => {
     if (step !== 3) return;
+    let timedOut = false;
     const check = () => {
       fetchApi("/api/health").then(r => { if (r.ok) setMcpReady(true); }).catch(() => {});
     };
     check();
-    const id = setInterval(check, 3000);
-    return () => clearInterval(id);
+    const id = setInterval(() => {
+      if (timedOut) return;
+      check();
+    }, 3000);
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      clearInterval(id);
+      // Don't block the user — let them proceed even if MCP didn't start
+      setMcpReady(true);
+    }, 60_000);
+    return () => { clearInterval(id); clearTimeout(timeout); };
   }, [step]);
 
   // Check for generated context file when on step 3
