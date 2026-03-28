@@ -4,7 +4,7 @@ import ContextMenu, { type ContextMenuItem } from "./shared/ContextMenu.tsx";
 import ConfirmDialog from "./shared/ConfirmDialog.tsx";
 import { fetchApi } from "../lib/api";
 
-interface DiffFile { path: string; added: number; removed: number; status: string; }
+interface DiffFile { path?: string; file?: string; added: number; removed: number; status: string; }
 
 export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: () => void; projectDir: string }) {
   const [files, setFiles] = useState<DiffFile[]>([]);
@@ -18,9 +18,11 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
     fetchApi('/api/files/git')
       .then(r => r.json())
       .then((d: { files?: DiffFile[] }) => {
-        const changed = (d.files ?? []).filter((f: DiffFile) => f.status !== '?');
+        const changed = (d.files ?? [])
+          .map((f: DiffFile) => ({ ...f, path: f.path ?? f.file ?? "" }))
+          .filter((f) => f.status !== '?' && f.path);
         setFiles(changed);
-        if (changed.length > 0) setSelectedFile(changed[0].path);
+        if (changed.length > 0) setSelectedFile(changed[0].path!);
       })
       .catch(() => {});
   }, [open]);
@@ -37,10 +39,12 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
     fetchApi('/api/files/git')
       .then(r => r.json())
       .then((d: { files?: DiffFile[] }) => {
-        const changed = (d.files ?? []).filter((f: DiffFile) => f.status !== '?');
+        const changed = (d.files ?? [])
+          .map((f: DiffFile) => ({ ...f, path: f.path ?? f.file ?? "" }))
+          .filter((f) => f.status !== '?' && f.path);
         setFiles(changed);
         if (selectedFile && !changed.some(f => f.path === selectedFile)) {
-          setSelectedFile(changed.length > 0 ? changed[0].path : null);
+          setSelectedFile(changed.length > 0 ? changed[0].path! : null);
         }
       })
       .catch(() => {});
