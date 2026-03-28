@@ -10,6 +10,10 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { readFileSync, existsSync } from "fs";
 import { join, basename } from "path";
+import { execFile as execFileCb } from "child_process";
+import { promisify } from "util";
+
+const execFile = promisify(execFileCb);
 import { randomUUID } from "crypto";
 import { agentsRoutes } from "./routes/agents.js";
 import { generateRoutes } from "./routes/generate.js";
@@ -197,6 +201,27 @@ export function createServer(opts: ServerOptions) {
 
   // Attach WebSocket terminal (raw ws, not Hono's upgradeWebSocket)
   attachTerminalWS(server as Parameters<typeof attachTerminalWS>[0], opts.projectDir);
+
+  // Clean up orphaned studio worktrees from previous crashed runs
+  if (opts.projectDir !== "__unset__") {
+    setImmediate(() => {
+      execFile("git", ["worktree", "list", "--porcelain"], { cwd: opts.projectDir })
+        .then(({ stdout }) => {
+          const worktrees = stdout.split("\n\n").filter(Boolean);
+          for (const wt of worktrees) {
+            const pathMatch = wt.match(/^worktree (.+)$/m);
+            const branchMatch = wt.match(/^branch refs\/heads\/(.+)$/m);
+            if (!pathMatch || !branchMatch) continue;
+            const wtPath = pathMatch[1];
+            const branch = branchMatch[1];
+            if (!branch.startsWith("studio-run-") && !branch.startsWith("swarm-")) continue;
+            execFile("git", ["worktree", "remove", wtPath, "--force"], { cwd: opts.projectDir }).catch(() => {});
+            execFile("git", ["branch", "-D", branch], { cwd: opts.projectDir }).catch(() => {});
+          }
+        })
+        .catch(() => {});
+    });
+  }
 
   return { app, server };
 }
