@@ -294,6 +294,97 @@ body.flavor-7 .statusbar-ops-logs { display: flex; }
 body.flavor-7 .status-item-briefing { display: none; }
 body.flavor-7 .ops-log-line { text-transform: lowercase; }
 
+/* ─── flavor 10: void muted ───────────────────────────────────── */
+/* black base, desaturated colors — green/red/amber only where meaningful */
+body.flavor-10 {
+  --bg:            #080808;
+  --surface:       #0e0e0e;
+  --surface-2:     #141414;
+  --border:        #1e1e1e;
+  --border-dim:    #161616;
+  --text:          #e0e0e0;
+  --text-dim:      #555;
+  --text-dimmer:   #2e2e2e;
+  --accent:        #6b9e82;   /* muted green — running/active */
+  --accent-dim:    #4e7a63;
+  --accent-bg:     rgba(107,158,130,0.08);
+  --accent-border: rgba(107,158,130,0.22);
+  --red:           #9e5a5a;   /* muted red — security */
+  --yellow:        #9a7a32;   /* muted amber — warnings */
+  --rail-bg:       #050505;
+  --topbar-bg:     #0a0a0a;
+  --statusbar-bg:  #050505;
+  --radius:        2px;
+  --radius-card:   2px;
+  --font:          "JetBrains Mono", "Fira Code", Menlo, monospace;
+  --font-mono:     "JetBrains Mono", "Fira Code", Menlo, monospace;
+  --running-border: rgba(107,158,130,0.3);
+  --done-border:   #1e1e1e;
+  --card-shadow:   none;
+  --btn-radius:    2px;
+  --label-transform: lowercase;
+  --label-spacing: normal;
+  font-family: var(--font);
+}
+
+/* void muted: running badge — desaturated green */
+body.flavor-10 .status-badge.running {
+  background: rgba(107,158,130,0.1);
+  color: #8abda0;
+  border-color: rgba(107,158,130,0.25);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+/* void muted: done badge */
+body.flavor-10 .status-badge.done {
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+/* void muted: running card — barely-there green */
+body.flavor-10 .mission-card.running {
+  background: rgba(107,158,130,0.03);
+  border-color: rgba(107,158,130,0.12);
+}
+/* void muted: primary btn — muted green, restrained */
+body.flavor-10 .action-btn.primary {
+  background: rgba(107,158,130,0.08);
+  border-color: rgba(107,158,130,0.22);
+  color: #8abda0;
+}
+body.flavor-10 .action-btn.primary:hover {
+  background: rgba(107,158,130,0.14);
+  border-color: rgba(107,158,130,0.38);
+}
+/* void muted: filled btns */
+body.flavor-10 .new-mission-btn,
+body.flavor-10 .audit-btn.filled,
+body.flavor-10 .chat-send-btn { color: #000; }
+/* void muted: audit findings — muted semantic colors */
+body.flavor-10 .finding-row.red   .finding-label { color: #9e5a5a; }
+body.flavor-10 .finding-row.amber .finding-label { color: #9a7a32; }
+body.flavor-10 .finding-row.green .finding-label { color: #6b9e82; }
+body.flavor-10 .finding-row.red   .finding-icon  { color: #9e5a5a; }
+body.flavor-10 .finding-row.amber .finding-icon  { color: #9a7a32; }
+body.flavor-10 .finding-row.green .finding-icon  { color: #6b9e82; }
+/* void muted: structural density */
+body.flavor-10 .uuid-row { display: block; text-transform: lowercase; letter-spacing: 0.04em; }
+body.flavor-10 .ops-meta-grid { display: grid; }
+body.flavor-10 .ops-meta-item { text-transform: lowercase; letter-spacing: normal; font-size: 10px; }
+body.flavor-10 .ops-meta-val { color: var(--text); font-weight: 600; }
+body.flavor-10 .card-meta { display: none; }
+body.flavor-10 .card-name { text-transform: lowercase; font-size: 11px; letter-spacing: normal; font-weight: 500; }
+body.flavor-10 .session-name { text-transform: lowercase; }
+body.flavor-10 .chat-mission-name { text-transform: lowercase; }
+body.flavor-10 .chat-model-badge { text-transform: lowercase; }
+/* void muted: ops log stream */
+body.flavor-10 .statusbar-ops-logs { display: flex; }
+body.flavor-10 .status-item-briefing { display: none; }
+body.flavor-10 .ops-log-line { text-transform: lowercase; }
+
 /* ─── flavor 8: oxide void ────────────────────────────────────── */
 body.flavor-8 {
   --bg: #080808;
@@ -2116,6 +2207,7 @@ body[data-screen="audit"] .topbar-status-strip { display: none !important; }
               <option value="7">7 — Void</option>
               <option value="8">8 — Oxide Void</option>
               <option value="9">9 — Void Teal</option>
+              <option value="10">10 — Void Muted</option>
             </select>
           </div>
         </div>
@@ -2803,7 +2895,7 @@ body[data-screen="audit"] .topbar-status-strip { display: none !important; }
 
     var isOps   = (n === '2');
     var isOxide = (n === '6');
-    var isVoid  = (n === '7' || n === '8' || n === '9');
+    var isVoid  = (n === '7' || n === '8' || n === '9' || n === '10');
 
     if (isOps || isOxide) {
       newLabel.textContent = '+ NEW MISSION';
