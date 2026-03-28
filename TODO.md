@@ -65,7 +65,7 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 - [x] **[sonnet]** Add FTS5 virtual table for session search — replace `LIKE '%query%'` full table scan
 - [x] **[sonnet]** Fix N+1 in checkpoint listing — replace per-checkpoint git invocations with single `git log` call (`server/routes/checkpoints.ts:38-96`)
 - [x] **[sonnet]** Add pagination to `GET /api/sessions/:id` messages — no LIMIT means 1MB+ for long sessions
-- [ ] **[opus]** Pass DB instance through `WorkspaceCtx` instead of module-level singleton — prevents stale DB reference after workspace switch
+- [x] **[opus]** Pass DB instance through `WorkspaceCtx` instead of module-level singleton — prevents stale DB reference after workspace switch
 
 ---
 
@@ -87,8 +87,8 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 - [x] **[sonnet]** Add `useFocusTrap` hook and apply to all modals — `ConfirmDialog`, `CommandPalette`, `ShortcutsHelp`, `AboutDialog`
 - [x] **[sonnet]** Fix accessibility on interactive divs — add `role="button"`, `tabIndex={0}`, `onKeyDown` to `SessionsPanel` rows and any other `<div onClick>`
 - [x] **[sonnet]** Wire XTerminal colors to CSS variables — currently hardcoded VS Code dark (`#1e1e1e`, `#cccccc`) in `client/src/components/XTerminal.tsx`
-- [ ] **[sonnet]** Replace `useState(hovered)` with CSS `:hover` — 22+ components triggering re-renders on every mouse move
-- [ ] **[opus]** Decompose `Shell.tsx` (499 lines) — extract `useSessionManager`, `useStreamingSession`, `useStudioEvents` hooks
+- [x] **[sonnet]** Replace `useState(hovered)` with CSS `:hover` — 22+ components triggering re-renders on every mouse move
+- [x] **[opus]** Decompose `Shell.tsx` (499 lines) — extract `useSessionManager`, `useStreamingSession`, `useStudioEvents` hooks
 - [x] **[sonnet]** Extract `findClaudeBin` to `server/lib/bin-resolver.ts` — currently duplicated across `runner.ts`, `run.ts`, `swarm.ts`, `sessions.ts` with inconsistent candidate lists
 - [x] **[sonnet]** Add Zod validation on top 5 routes — chat, run, swarm, session create, workspace switch
 - [x] **[sonnet]** Fix `Skeleton.tsx` and `PageTransition.tsx` — remove direct DOM `<style>` injection, use CSS class or `styled-jsx`
@@ -119,12 +119,12 @@ Model key: `[sonnet]` = Claude Sonnet 4.6 · `[opus]` = Claude Opus 4.6
 
 - [x] **[sonnet]** Fix root `vitest.config.ts` — targets `src/**` which doesn't exist; fix glob to match actual source structure (5-minute fix, unlocks all tests)
 - [x] **[sonnet]** Fix `packages/cli/vitest.config.ts` — remove stray `import { Button }` that throws at config load time
-- [ ] **[sonnet]** Move Playwright specs out of `.hashmark/snapshots/` — add `playwright.config.ts` and `test:e2e` script
+- [x] **[sonnet]** Move Playwright specs out of `.hashmark/snapshots/` — add `playwright.config.ts` and `test:e2e` script
 - [x] **[sonnet]** Write auth token flow tests — highest blast radius, 0% coverage
 - [x] **[sonnet]** Write session create + chat route tests — core user action, 0% coverage
-- [ ] **[sonnet]** Write `secrets.ts` scanner tests — false negatives are a security issue, 0% coverage
-- [ ] **[sonnet]** Write `generator.ts` output tests — primary CLI deliverable, 0% coverage
-- [ ] **[sonnet]** Remove `waitForTimeout` from Playwright specs — replace with `waitForSelector` / `waitForResponse`
+- [x] **[sonnet]** Write `secrets.ts` scanner tests — false negatives are a security issue, 0% coverage
+- [x] **[sonnet]** Write `generator.ts` output tests — primary CLI deliverable, 0% coverage
+- [x] **[sonnet]** Remove `waitForTimeout` from Playwright specs — replace with `waitForSelector` / `waitForResponse`
 
 ---
 
