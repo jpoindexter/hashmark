@@ -1,29 +1,7 @@
 import { useRef, useEffect, CSSProperties } from "react";
 import { useLocation } from "react-router-dom";
 
-// ---------------------------------------------------------------------------
-// CSS keyframes injected once
-// ---------------------------------------------------------------------------
-
-const STYLE_ID = "hashmark-page-transition-keyframes";
-
-function injectStyles() {
-  if (typeof document === "undefined") return;
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement("style");
-  style.id = STYLE_ID;
-  style.textContent = `
-    @keyframes page-enter {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-// ---------------------------------------------------------------------------
-// PageTransition
-// ---------------------------------------------------------------------------
+// @keyframes page-enter is defined in reset.css
 
 interface PageTransitionProps {
   children: React.ReactNode;
@@ -35,10 +13,6 @@ export function PageTransition({ children, className, style }: PageTransitionPro
   const location = useLocation();
   const keyRef = useRef(location.key);
   const elRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    injectStyles();
-  }, []);
 
   useEffect(() => {
     if (!elRef.current) return;

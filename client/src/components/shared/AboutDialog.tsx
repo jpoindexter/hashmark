@@ -87,7 +87,7 @@ export default function AboutDialog({ open, onClose }: { open: boolean; onClose:
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(0,0,0,0.5)",
+        background: "var(--overlay-bg)",
         backdropFilter: "blur(4px)",
         animation: "fadeIn 0.1s ease",
       }}
@@ -104,7 +104,7 @@ export default function AboutDialog({ open, onClose }: { open: boolean; onClose:
           padding: "32px 36px",
           minWidth: 340,
           maxWidth: 400,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+          boxShadow: "var(--shadow-lg)",
           fontFamily: "var(--font-ui)",
           animation: "dropdownIn 0.15s ease-out",
           textAlign: "center",

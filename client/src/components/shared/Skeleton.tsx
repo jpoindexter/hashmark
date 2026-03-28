@@ -1,20 +1,6 @@
 import type { CSSProperties } from "react";
 
-const pulseKeyframes = `
-@keyframes skeleton-pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
-}
-`;
-
-let stylesInjected = false;
-function injectStyles() {
-  if (stylesInjected) return;
-  const style = document.createElement("style");
-  style.textContent = pulseKeyframes;
-  document.head.appendChild(style);
-  stylesInjected = true;
-}
+// @keyframes skeleton-pulse is defined in reset.css
 
 interface SkeletonProps {
   width?: string | number;
@@ -29,7 +15,6 @@ export function Skeleton({
   borderRadius = "var(--radius-sm)",
   style,
 }: SkeletonProps) {
-  injectStyles();
   return (
     <div
       style={{

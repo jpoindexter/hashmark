@@ -481,7 +481,7 @@ export default function CommandPalette({ open, onClose, mode = "files" }: Props)
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.5)",
+        background: "var(--overlay-bg)",
         backdropFilter: "blur(4px)",
         zIndex: 9000,
       }}

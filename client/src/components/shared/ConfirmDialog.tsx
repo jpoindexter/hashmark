@@ -72,7 +72,7 @@ export default function ConfirmDialog({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(0,0,0,0.5)",
+        background: "var(--overlay-bg)",
         backdropFilter: "blur(2px)",
         animation: "fadeIn 0.1s ease",
       }}
@@ -90,7 +90,7 @@ export default function ConfirmDialog({
           padding: "20px 24px",
           minWidth: 320,
           maxWidth: 420,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+          boxShadow: "var(--shadow-lg)",
           fontFamily: "var(--font-ui)",
           animation: "dropdownIn 0.15s ease-out",
         }}

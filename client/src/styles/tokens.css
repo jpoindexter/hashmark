@@ -65,6 +65,12 @@
   --surface:   var(--bg-2);
   --surface-2: var(--bg-3);
 
+  /* Modal overlay + shadow */
+  --overlay-bg:  rgba(0, 0, 0, 0.55);
+  --shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-md:   0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-sm:   0 2px 12px rgba(0, 0, 0, 0.5);
+
   /* Interactive surface overlays (theme-aware) */
   --hover-bg:        rgba(255, 255, 255, 0.04);
   --hover-bg-strong: rgba(255, 255, 255, 0.08);
@@ -120,6 +126,11 @@
   --orange-bg: rgba(122, 74, 32, 0.08);
   --purple:    #5a4a88;
   --purple-bg: rgba(90, 74, 136, 0.08);
+
+  --overlay-bg:  rgba(0, 0, 0, 0.30);
+  --shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.2);
+  --shadow-md:   0 4px 20px rgba(0, 0, 0, 0.2);
+  --shadow-sm:   0 2px 12px rgba(0, 0, 0, 0.15);
 
   --hover-bg:        rgba(0, 0, 0, 0.04);
   --hover-bg-strong: rgba(0, 0, 0, 0.08);
