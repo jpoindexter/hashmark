@@ -79,6 +79,8 @@ function findClaudeBin(projectDir: string): string {
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 let activeRun = false;
+let activeProc: ReturnType<typeof spawn> | null = null;
+const RUN_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 
 export function runRoutes(projectDir: string) {
   const app = new Hono();
@@ -86,8 +88,12 @@ export function runRoutes(projectDir: string) {
 
   app.get("/status", (c) => c.json({ active: activeRun }));
 
-  // DELETE /api/run — cancel an active run
+  // DELETE /api/run — cancel an active run and kill the subprocess
   app.delete("/", (c) => {
+    if (activeProc) {
+      try { activeProc.kill("SIGTERM"); } catch {}
+      activeProc = null;
+    }
     activeRun = false;
     return c.json({ ok: true, message: "Run cancelled" });
   });
@@ -236,6 +242,12 @@ export function runRoutes(projectDir: string) {
               stdio: ["ignore", "pipe", "pipe"],
               env: { ...process.env, CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS: "1" },
             });
+            activeProc = proc;
+
+            const timeout = setTimeout(() => {
+              send({ type: "error", error: "Run timed out after 10 minutes" });
+              try { proc.kill("SIGTERM"); } catch {}
+            }, RUN_TIMEOUT_MS);
 
             proc.stdout.on("data", (chunk: Buffer) => {
               const text = chunk.toString();
@@ -246,6 +258,8 @@ export function runRoutes(projectDir: string) {
             proc.stderr.on("data", () => {});
 
             proc.on("close", (code: number | null) => {
+              clearTimeout(timeout);
+              activeProc = null;
               if (code !== 0 && code !== null) {
                 send({ type: "error", error: `Claude exited with code ${code}` });
               }
@@ -253,6 +267,8 @@ export function runRoutes(projectDir: string) {
             });
 
             proc.on("error", (err: Error) => {
+              clearTimeout(timeout);
+              activeProc = null;
               send({ type: "error", error: err.message });
               resolve();
             });
@@ -336,6 +352,7 @@ export function runRoutes(projectDir: string) {
         run().catch((err) => {
           try { getDb(dataDir).prepare("UPDATE runs SET status = ?, ended_at = ? WHERE id = ?").run("error", Date.now(), runId); } catch {}
           send({ type: "error", error: err instanceof Error ? err.message : String(err) });
+          activeProc = null;
           activeRun = false;
           controller.close();
         });
