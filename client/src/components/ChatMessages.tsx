@@ -1006,6 +1006,8 @@ function isLastWithRole(msgs: Message[], role: Message["role"], id: string): boo
 
 export default function ChatMessages({ sessionId, streamText, streaming, streamingState, modelLabel = "Sonnet 4.6", planMode = false }: ChatMessagesProps) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingEarlier, setLoadingEarlier] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
@@ -1024,8 +1026,8 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
   const loadMessages = useCallback(async (id: string) => {
     setLoading(true);
     try {
-      const res = await fetchApi(`/api/sessions/${id}`);
-      const data = await res.json() as { messages: Message[] };
+      const res = await fetchApi(`/api/sessions/${id}?limit=50`);
+      const data = await res.json() as { messages: Message[]; hasMore: boolean };
       const msgs = data.messages ?? [];
       if (msgs.length > 0) {
         resumedAtCount.current = msgs.length;
@@ -1035,10 +1037,38 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
         resumeTimestamp.current = 0;
       }
       setMessages(msgs);
+      setHasMore(data.hasMore ?? false);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const loadEarlier = useCallback(async () => {
+    if (!sessionId || messages.length === 0 || loadingEarlier) return;
+    setLoadingEarlier(true);
+    try {
+      const firstId = messages[0].id;
+      const res = await fetchApi(`/api/sessions/${sessionId}?before=${firstId}&limit=50`);
+      const data = await res.json() as { messages: Message[]; hasMore: boolean };
+      const older = data.messages ?? [];
+      if (older.length === 0) {
+        setHasMore(false);
+        return;
+      }
+      const scrollEl = parentRef.current;
+      const prevScrollTop = scrollEl?.scrollTop ?? 0;
+      resumedAtCount.current += older.length;
+      setMessages(prev => [...older, ...prev]);
+      setHasMore(data.hasMore ?? false);
+      if (scrollEl) {
+        requestAnimationFrame(() => {
+          scrollEl.scrollTop = prevScrollTop + older.length * 200;
+        });
+      }
+    } finally {
+      setLoadingEarlier(false);
+    }
+  }, [sessionId, messages, loadingEarlier]);
 
   useEffect(() => {
     if (sessionId) {
@@ -1199,6 +1229,26 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
       ref={parentRef}
       style={{ flex: 1, overflow: "auto", fontFamily: "var(--font)", position: "relative" }}
     >
+      {hasMore && (
+        <div style={{ padding: "8px 24px", textAlign: "center" }}>
+          <button
+            onClick={() => void loadEarlier()}
+            disabled={loadingEarlier}
+            style={{
+              fontSize: "11px",
+              fontFamily: "var(--font)",
+              color: "var(--text-dim)",
+              background: "transparent",
+              border: "1px solid var(--border-dim)",
+              padding: "4px 12px",
+              cursor: loadingEarlier ? "default" : "pointer",
+              opacity: loadingEarlier ? 0.5 : 1,
+            }}
+          >
+            {loadingEarlier ? "loading..." : "load earlier messages"}
+          </button>
+        </div>
+      )}
       <div style={{ height: virtualizer.getTotalSize(), width: "100%", position: "relative" }}>
         {virtualizer.getVirtualItems().map((vrow) => {
           const item = items[vrow.index];

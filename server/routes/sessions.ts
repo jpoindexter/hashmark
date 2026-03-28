@@ -164,27 +164,49 @@ export function sessionsRoutes(projectDir: string) {
     if (q.length < 2) return c.json({ results: [] });
 
     const db = getDb(dataDir);
-    const like = `%${q}%`;
 
-    // Search titles + message content; return one snippet per session
-    const rows = db.prepare(`
-      SELECT s.id, s.title, s.model, s.updated_at, s.total_input_tokens, s.total_output_tokens,
-        m.content as snippet, m.role as snippet_role
-      FROM sessions s
-      LEFT JOIN session_messages m ON m.id = (
-        SELECT id FROM session_messages
-        WHERE session_id = s.id AND content LIKE ?
-        ORDER BY created_at ASC LIMIT 1
-      )
-      WHERE s.title LIKE ? OR m.content LIKE ?
-      GROUP BY s.id
-      ORDER BY s.updated_at DESC
-      LIMIT 30
-    `).all(like, like, like) as Array<{
+    type SearchRow = {
       id: string; title: string; model: string;
       updated_at: number; total_input_tokens: number; total_output_tokens: number;
       snippet: string | null; snippet_role: string | null;
-    }>;
+    };
+
+    // FTS5 phrase search; wrap in double-quotes, strip any internal quotes to prevent syntax errors
+    const ftsQuery = '"' + q.replace(/"/g, " ").trim() + '"';
+    let rows: SearchRow[] = [];
+    try {
+      rows = db.prepare(`
+        SELECT s.id, s.title, s.model, s.updated_at, s.total_input_tokens, s.total_output_tokens,
+          f.body AS snippet, f.role AS snippet_role
+        FROM (
+          SELECT session_id, body, role, min(rank) AS best_rank
+          FROM sessions_fts
+          WHERE sessions_fts MATCH ?
+          GROUP BY session_id
+        ) f
+        JOIN sessions s ON s.id = f.session_id
+        WHERE s.archived = 0
+        ORDER BY f.best_rank
+        LIMIT 30
+      `).all(ftsQuery) as SearchRow[];
+    } catch {
+      // Malformed FTS query -- fall back to LIKE
+      const like = `%${q}%`;
+      rows = db.prepare(`
+        SELECT s.id, s.title, s.model, s.updated_at, s.total_input_tokens, s.total_output_tokens,
+          m.content as snippet, m.role as snippet_role
+        FROM sessions s
+        LEFT JOIN session_messages m ON m.id = (
+          SELECT id FROM session_messages
+          WHERE session_id = s.id AND content LIKE ?
+          ORDER BY created_at ASC LIMIT 1
+        )
+        WHERE s.title LIKE ? OR m.content LIKE ?
+        GROUP BY s.id
+        ORDER BY s.updated_at DESC
+        LIMIT 30
+      `).all(like, like, like) as SearchRow[];
+    }
 
     const results = rows.map((r) => ({
       id: r.id,
@@ -236,14 +258,61 @@ export function sessionsRoutes(projectDir: string) {
   });
 
   // GET /api/sessions/:id
+  // Supports optional pagination: ?limit=50&before=<message_id>
+  // Returns last `limit` messages by default; pass `before` cursor to page backward
   app.get("/:id", (c) => {
     const db = getDb(dataDir);
-    const session = db.prepare("SELECT * FROM sessions WHERE id = ?").get(c.req.param("id"));
+    const id = c.req.param("id");
+    const session = db.prepare("SELECT * FROM sessions WHERE id = ?").get(id);
     if (!session) return c.json({ error: "Not found" }, 404);
-    const messages = db.prepare(
-      "SELECT * FROM session_messages WHERE session_id = ? ORDER BY created_at ASC"
-    ).all(c.req.param("id"));
-    return c.json({ session, messages });
+
+    const limitParam = c.req.query("limit");
+    const before = c.req.query("before");
+
+    // If no pagination params, return all messages (backward-compatible)
+    if (!limitParam && !before) {
+      const messages = db.prepare(
+        "SELECT * FROM session_messages WHERE session_id = ? ORDER BY created_at ASC"
+      ).all(id);
+      return c.json({ session, messages, hasMore: false });
+    }
+
+    const limit = Math.min(parseInt(limitParam ?? "50", 10), 200);
+
+    type MsgRow = { id: string; created_at: number; [key: string]: unknown };
+
+    let messages: MsgRow[];
+    let hasMore = false;
+
+    if (before) {
+      const cursor = db.prepare(
+        "SELECT created_at FROM session_messages WHERE id = ? AND session_id = ?"
+      ).get(before, id) as { created_at: number } | undefined;
+
+      if (!cursor) return c.json({ error: "invalid cursor" }, 400);
+
+      const rows = db.prepare(`
+        SELECT * FROM session_messages
+        WHERE session_id = ? AND created_at < ?
+        ORDER BY created_at DESC
+        LIMIT ?
+      `).all(id, cursor.created_at, limit + 1) as MsgRow[];
+
+      hasMore = rows.length > limit;
+      messages = rows.slice(0, limit).reverse();
+    } else {
+      const rows = db.prepare(`
+        SELECT * FROM session_messages
+        WHERE session_id = ?
+        ORDER BY created_at DESC
+        LIMIT ?
+      `).all(id, limit + 1) as MsgRow[];
+
+      hasMore = rows.length > limit;
+      messages = rows.slice(0, limit).reverse();
+    }
+
+    return c.json({ session, messages, hasMore });
   });
 
   // DELETE /api/sessions/:id
@@ -306,6 +375,7 @@ export function sessionsRoutes(projectDir: string) {
       thinking?: boolean;
       planMode?: boolean;
       model?: string;
+      skipContext?: boolean;
     }>();
 
     const db = getDb(dataDir);
@@ -364,7 +434,7 @@ export function sessionsRoutes(projectDir: string) {
     } catch { /* no CLAUDE.md — analytics just won't fire */ }
 
     // Build system prompt — scan context + agent identity + user's custom prompt
-    const scanContext = loadScanContext(projectDir);
+    const scanContext = body.skipContext ? null : loadScanContext(projectDir);
     const agentIdentity = session.agent_name ? `You are ${session.agent_name}, an AI assistant.` : null;
     const userSystemPrompt = body.systemPrompt ?? null;
 

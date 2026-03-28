@@ -182,4 +182,28 @@ function migrate(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_agent_actions_agent ON agent_actions(agent_id);
     CREATE INDEX IF NOT EXISTS idx_runs_started ON runs(started_at DESC);
   `);
+
+  // FTS5 full-text search index for session messages
+  // Only create + backfill once; subsequent startups skip via IF NOT EXISTS on table
+  const ftsExists = (db.prepare(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='sessions_fts'"
+  ).get() as { name: string } | undefined)?.name;
+
+  if (!ftsExists) {
+    db.exec(`
+      CREATE VIRTUAL TABLE sessions_fts USING fts5(
+        session_id UNINDEXED,
+        role UNINDEXED,
+        body,
+        tokenize = 'porter ascii'
+      );
+      INSERT INTO sessions_fts(session_id, role, body)
+        SELECT session_id, role, content FROM session_messages;
+      CREATE TRIGGER sessions_fts_ai
+      AFTER INSERT ON session_messages BEGIN
+        INSERT INTO sessions_fts(session_id, role, body)
+        VALUES (NEW.session_id, NEW.role, NEW.content);
+      END;
+    `);
+  }
 }
