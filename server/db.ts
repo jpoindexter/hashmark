@@ -185,6 +185,33 @@ function migrate(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_runs_started ON runs(started_at DESC);
   `);
 
+  // swarm_runs additive columns (mode + timing for swarm.ts, which previously created a separate schema)
+  const swarmRunCols = (db.pragma("table_info(swarm_runs)") as Array<{ name: string }>).map(r => r.name);
+  if (!swarmRunCols.includes("mode")) {
+    db.exec("ALTER TABLE swarm_runs ADD COLUMN mode TEXT NOT NULL DEFAULT 'build'");
+  }
+  if (!swarmRunCols.includes("started_at")) {
+    db.exec("ALTER TABLE swarm_runs ADD COLUMN started_at INTEGER");
+    db.exec("UPDATE swarm_runs SET started_at = created_at WHERE started_at IS NULL");
+  }
+  if (!swarmRunCols.includes("ended_at")) {
+    db.exec("ALTER TABLE swarm_runs ADD COLUMN ended_at INTEGER");
+    db.exec("UPDATE swarm_runs SET ended_at = completed_at WHERE ended_at IS NULL AND completed_at IS NOT NULL");
+  }
+
+  // swarm_workers additive columns (task + branch for swarm.ts, which previously used a separate swarm_agents table)
+  const swarmWorkerCols = (db.pragma("table_info(swarm_workers)") as Array<{ name: string }>).map(r => r.name);
+  if (!swarmWorkerCols.includes("task")) {
+    db.exec("ALTER TABLE swarm_workers ADD COLUMN task TEXT NOT NULL DEFAULT ''");
+  }
+  if (!swarmWorkerCols.includes("branch")) {
+    db.exec("ALTER TABLE swarm_workers ADD COLUMN branch TEXT");
+  }
+  if (!swarmWorkerCols.includes("ended_at")) {
+    db.exec("ALTER TABLE swarm_workers ADD COLUMN ended_at INTEGER");
+    db.exec("UPDATE swarm_workers SET ended_at = completed_at WHERE ended_at IS NULL AND completed_at IS NOT NULL");
+  }
+
   // runs additive migrations (must come after the CREATE TABLE above)
   const runCols = (db.pragma('table_info(runs)') as Array<{ name: string }>).map(r => r.name);
   if (!runCols.includes('task')) {

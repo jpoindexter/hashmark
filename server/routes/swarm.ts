@@ -39,7 +39,7 @@ interface AgentDef {
 type AgentStatus = "pending" | "running" | "done" | "failed" | "cancelled";
 
 interface SwarmAgent {
-  id: string;
+  workerIndex: number;
   task: string;
   agentId?: string;
   status: AgentStatus;
@@ -98,31 +98,6 @@ function loadAgents(projectDir: string): AgentDef[] {
   return agents;
 }
 
-function ensureSwarmTables(dataDir: string) {
-  try {
-    const db = getDb(dataDir);
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS swarm_runs (
-        id TEXT PRIMARY KEY,
-        mode TEXT NOT NULL DEFAULT 'build',
-        status TEXT NOT NULL DEFAULT 'running',
-        started_at INTEGER NOT NULL,
-        ended_at INTEGER
-      );
-      CREATE TABLE IF NOT EXISTS swarm_agents (
-        id TEXT PRIMARY KEY,
-        swarm_id TEXT NOT NULL,
-        task TEXT NOT NULL,
-        agent_id TEXT,
-        status TEXT NOT NULL DEFAULT 'pending',
-        branch TEXT,
-        started_at INTEGER NOT NULL,
-        ended_at INTEGER
-      );
-    `);
-  } catch { /* non-fatal */ }
-}
-
 // ─── Internal event system ────────────────────────────────────────────────────
 
 type SwarmEventType = "chunk" | "status" | "complete" | "committed" | "merged" | "merge_conflict";
@@ -164,8 +139,8 @@ async function runAgent(
 
   try {
     getDb(dataDir)
-      .prepare("UPDATE swarm_agents SET status = 'running' WHERE id = ?")
-      .run(agent.id);
+      .prepare("UPDATE swarm_workers SET status = 'running', started_at = ? WHERE run_id = ? AND worker_id = ?")
+      .run(Date.now(), swarm.swarmId, agent.workerIndex);
   } catch {}
 
   try {
@@ -186,8 +161,8 @@ async function runAgent(
     emit(swarm, agentIndex, { type: "chunk", data: `[worktree error] ${msg}` });
     try {
       getDb(dataDir)
-        .prepare("UPDATE swarm_agents SET status = 'failed', ended_at = ? WHERE id = ?")
-        .run(Date.now(), agent.id);
+        .prepare("UPDATE swarm_workers SET status = 'failed', ended_at = ? WHERE run_id = ? AND worker_id = ?")
+        .run(Date.now(), swarm.swarmId, agent.workerIndex);
     } catch {}
     return;
   }
@@ -258,8 +233,8 @@ async function runAgent(
     emit(swarm, agentIndex, { type: "complete", data: "plan" });
     try {
       getDb(dataDir)
-        .prepare("UPDATE swarm_agents SET status = 'done', ended_at = ? WHERE id = ?")
-        .run(Date.now(), agent.id);
+        .prepare("UPDATE swarm_workers SET status = 'done', ended_at = ? WHERE run_id = ? AND worker_id = ?")
+        .run(Date.now(), swarm.swarmId, agent.workerIndex);
     } catch {}
     try { await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: projectDir }); } catch {}
     try { await execFile("git", ["branch", "-D", branch], { cwd: projectDir }); } catch {}
@@ -336,8 +311,8 @@ async function runAgent(
 
   try {
     getDb(dataDir)
-      .prepare("UPDATE swarm_agents SET status = 'done', ended_at = ? WHERE id = ?")
-      .run(Date.now(), agent.id);
+      .prepare("UPDATE swarm_workers SET status = 'done', ended_at = ? WHERE run_id = ? AND worker_id = ?")
+      .run(Date.now(), swarm.swarmId, agent.workerIndex);
   } catch {}
 
   checkSwarmComplete(swarm, dataDir);
@@ -372,10 +347,8 @@ export function swarmRoutes(projectDir: string) {
     const mode: "plan" | "build" = body.mode ?? "build";
     const swarmId = randomUUID().slice(0, 8);
 
-    ensureSwarmTables(dataDir);
-
-    const agents: SwarmAgent[] = body.tasks.map((t) => ({
-      id: randomUUID().slice(0, 8),
+    const agents: SwarmAgent[] = body.tasks.map((t, i) => ({
+      workerIndex: i,
       task: t.task.trim(),
       agentId: t.agentId,
       status: "pending" as AgentStatus,
@@ -394,13 +367,14 @@ export function swarmRoutes(projectDir: string) {
 
     try {
       const db = getDb(dataDir);
+      const now = Date.now();
       db.prepare(
-        "INSERT INTO swarm_runs (id, mode, status, started_at) VALUES (?, ?, 'running', ?)"
-      ).run(swarmId, mode, Date.now());
+        "INSERT INTO swarm_runs (id, task, mode, status, worker_count, created_at, started_at) VALUES (?, '', ?, 'running', ?, ?, ?)"
+      ).run(swarmId, mode, agents.length, now, now);
       for (const agent of agents) {
         db.prepare(
-          "INSERT INTO swarm_agents (id, swarm_id, task, agent_id, status, branch, started_at) VALUES (?, ?, ?, ?, 'pending', ?, ?)"
-        ).run(agent.id, swarmId, agent.task, agent.agentId ?? null, agent.branch, Date.now());
+          "INSERT INTO swarm_workers (run_id, worker_id, title, task, agent_id, agent_name, status, branch) VALUES (?, ?, ?, ?, ?, '', 'pending', ?)"
+        ).run(swarmId, agent.workerIndex, agent.task.slice(0, 72), agent.task, agent.agentId ?? "", agent.branch);
       }
     } catch {}
 
@@ -413,7 +387,7 @@ export function swarmRoutes(projectDir: string) {
     }
 
     return c.json(
-      { swarmId, agents: agents.map(({ id, task, status }) => ({ id, task, status })) },
+      { swarmId, agents: agents.map(({ workerIndex, task, status }) => ({ id: workerIndex, task, status })) },
       202
     );
   });
@@ -427,8 +401,8 @@ export function swarmRoutes(projectDir: string) {
       swarmId: swarm.swarmId,
       mode: swarm.mode,
       cancelled: swarm.cancelled,
-      agents: swarm.agents.map(({ id, task, agentId, status, output, branch }) => ({
-        id, task, agentId, status, output, branch,
+      agents: swarm.agents.map(({ workerIndex, task, agentId, status, output, branch }) => ({
+        id: workerIndex, task, agentId, status, output, branch,
       })),
     });
   });
@@ -441,7 +415,7 @@ export function swarmRoutes(projectDir: string) {
     // Only check workers that have branches (running or done, not pending)
     const activeWorkers = swarm.agents
       .filter((a) => a.branch && a.status !== "pending")
-      .map((a) => ({ id: a.id, branch: a.branch }));
+      .map((a) => ({ id: String(a.workerIndex), branch: a.branch }));
 
     if (activeWorkers.length < 2) {
       return c.json({
