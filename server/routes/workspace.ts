@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join, resolve } from "path";
 import { spawn } from "child_process";
+import type { WorkspaceCtx } from "./workspaces.js";
 
 interface WorkspaceConfig {
   setupCommand?: string;
@@ -91,16 +92,16 @@ function streamCommand(
   });
 }
 
-export function workspaceRoutes(projectDir: string) {
+export function workspaceRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
 
   // POST /api/workspace/detect — detect project framework from a given path
   app.post("/detect", async (c) => {
     const body = await c.req.json<{ path?: string }>().catch(() => ({}));
     const rawPath = (body as { path?: string }).path?.trim();
-    // If a path is provided, resolve it and ensure it stays within projectDir
-    const dir = rawPath ? resolve(projectDir, rawPath) : projectDir;
-    if (rawPath && !dir.startsWith(projectDir + "/") && dir !== projectDir) {
+    // If a path is provided, resolve it and ensure it stays within ctx.projectDir
+    const dir = rawPath ? resolve(ctx.projectDir, rawPath) : ctx.projectDir;
+    if (rawPath && !dir.startsWith(ctx.projectDir + "/") && dir !== ctx.projectDir) {
       return c.json({ error: "forbidden" }, 403);
     }
 
@@ -143,27 +144,27 @@ export function workspaceRoutes(projectDir: string) {
   });
 
   app.get("/config", (c) => {
-    return c.json({ config: readConfig(projectDir) });
+    return c.json({ config: readConfig(ctx.projectDir) });
   });
 
   app.put("/config", async (c) => {
     const body = await c.req.json<WorkspaceConfig>();
-    const current = readConfig(projectDir);
+    const current = readConfig(ctx.projectDir);
     const updated = { ...current, ...body };
-    writeConfig(projectDir, updated);
+    writeConfig(ctx.projectDir, updated);
     return c.json({ config: updated });
   });
 
   app.post("/run-setup", (c) => {
-    const config = readConfig(projectDir);
+    const config = readConfig(ctx.projectDir);
     if (!config.setupCommand) return c.json({ error: "No setup command configured" }, 400);
-    return streamCommand("setup", config.setupCommand, projectDir, config.env ?? {});
+    return streamCommand("setup", config.setupCommand, ctx.projectDir, config.env ?? {});
   });
 
   app.post("/run", (c) => {
-    const config = readConfig(projectDir);
+    const config = readConfig(ctx.projectDir);
     if (!config.runCommand) return c.json({ error: "No run command configured" }, 400);
-    return streamCommand("run", config.runCommand, projectDir, config.env ?? {});
+    return streamCommand("run", config.runCommand, ctx.projectDir, config.env ?? {});
   });
 
   app.post("/stop", async (c) => {

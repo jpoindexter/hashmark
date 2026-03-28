@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { loadProviders, saveProviders, detectCLIs } from "../lib/providers.js";
+import type { WorkspaceCtx } from "./workspaces.js";
 
 const STATIC_MODELS: Record<string, string[]> = {
   claude:  ["claude-opus-4-6", "claude-sonnet-4-6", "claude-haiku-4-5-20251001"],
@@ -14,14 +15,13 @@ const STATIC_MODELS: Record<string, string[]> = {
   copilot: ["copilot-default"],
 };
 
-export function providersRoutes(projectDir: string) {
-  const dataDir = `${projectDir}/.hashmark`;
+export function providersRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
 
   // GET /api/providers
   app.get("/", (c) => {
-    const store = loadProviders(dataDir);
-    const cliResults = detectCLIs(projectDir);
+    const store = loadProviders(ctx.dataDir);
+    const cliResults = detectCLIs(ctx.projectDir);
     const cliInstalled = new Set(cliResults.filter(r => r.installed).map(r => r.id));
     const masked = store.providers.map(({ apiKey, ...rest }) => ({
       ...rest,
@@ -33,7 +33,7 @@ export function providersRoutes(projectDir: string) {
 
   // GET /api/providers/detect — scan system for installed AI CLI tools
   app.get("/detect", (c) => {
-    const providers = detectCLIs(projectDir);
+    const providers = detectCLIs(ctx.projectDir);
     return c.json({ providers });
   });
 
@@ -42,13 +42,13 @@ export function providersRoutes(projectDir: string) {
     const body = await c.req.json<{ providerId?: string; model?: string }>();
     if (!body.providerId) return c.json({ error: "providerId required" }, 400);
 
-    const store = loadProviders(dataDir);
+    const store = loadProviders(ctx.dataDir);
     const provider = store.providers.find(p => p.id === body.providerId);
     if (!provider) return c.json({ error: "Provider not found" }, 404);
 
     store.active = body.providerId;
     if (body.model) store.model = body.model;
-    saveProviders(dataDir, store);
+    saveProviders(ctx.dataDir, store);
 
     return c.json({ active: store.active, model: store.model });
   });
@@ -59,13 +59,13 @@ export function providersRoutes(projectDir: string) {
     const body = await c.req.json<{ apiKey?: string }>();
     if (body.apiKey === undefined) return c.json({ error: "apiKey required" }, 400);
 
-    const store = loadProviders(dataDir);
+    const store = loadProviders(ctx.dataDir);
     const provider = store.providers.find(p => p.id === id);
     if (!provider) return c.json({ error: "Provider not found" }, 404);
 
     provider.apiKey = body.apiKey;
     provider.enabled = body.apiKey.length > 0;
-    saveProviders(dataDir, store);
+    saveProviders(ctx.dataDir, store);
 
     return c.json({ ok: true, hasKey: body.apiKey.length > 0 });
   });
@@ -73,7 +73,7 @@ export function providersRoutes(projectDir: string) {
   // GET /api/providers/models/:id
   app.get("/models/:id", async (c) => {
     const id = c.req.param("id");
-    const store = loadProviders(dataDir);
+    const store = loadProviders(ctx.dataDir);
     const provider = store.providers.find(p => p.id === id);
     if (!provider) return c.json({ error: "Provider not found" }, 404);
 
@@ -100,12 +100,12 @@ export function providersRoutes(projectDir: string) {
     const body = await c.req.json<{ baseUrl?: string }>();
     if (!body.baseUrl) return c.json({ error: "baseUrl required" }, 400);
 
-    const store = loadProviders(dataDir);
+    const store = loadProviders(ctx.dataDir);
     const provider = store.providers.find(p => p.id === id);
     if (!provider) return c.json({ error: "Provider not found" }, 404);
 
     provider.baseUrl = body.baseUrl;
-    saveProviders(dataDir, store);
+    saveProviders(ctx.dataDir, store);
 
     return c.json({ ok: true });
   });

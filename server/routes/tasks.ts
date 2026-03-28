@@ -4,6 +4,7 @@
 
 import { Hono } from "hono";
 import { taskStore, runTask, loadAgentContent } from "../runner.js";
+import type { WorkspaceCtx } from "./workspaces.js";
 
 interface CreateTaskBody {
   agentId: string | null;
@@ -14,7 +15,7 @@ interface CreateTaskBody {
   autoRun?: boolean;
 }
 
-export function tasksRoutes(projectDir: string) {
+export function tasksRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
 
   // GET /api/tasks — list all tasks
@@ -40,9 +41,9 @@ export function tasksRoutes(projectDir: string) {
     );
 
     if (body.autoRun !== false) {
-      const content = body.agentPath ? loadAgentContent(projectDir, body.agentPath) : null;
+      const content = body.agentPath ? loadAgentContent(ctx.projectDir, body.agentPath) : null;
       // Run async, don't await
-      setImmediate(() => runTask(projectDir, task.id, content, body.agentName));
+      setImmediate(() => runTask(ctx.projectDir, task.id, content, body.agentName));
     }
 
     return c.json({ task }, 201);

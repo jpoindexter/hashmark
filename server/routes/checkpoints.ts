@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { execFile as execFileCb } from "child_process";
 import { promisify } from "util";
+import type { WorkspaceCtx } from "./workspaces.js";
 
 const execFile = promisify(execFileCb);
 
@@ -12,9 +13,8 @@ function slugify(label: string): string {
     .slice(0, 60) || "checkpoint";
 }
 
-export function checkpointRoutes(projectDir: string) {
+export function checkpointRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
-  const opts = { cwd: projectDir };
 
   // List checkpoints
   app.get("/", async (c) => {
@@ -28,7 +28,7 @@ export function checkpointRoutes(projectDir: string) {
           "--format=%(refname) %(objectname) %(committerdate:iso8601) %(subject)",
           "--sort=-committerdate",
         ],
-        opts
+        { cwd: ctx.projectDir }
       );
       forEachOutput = result.stdout;
     } catch {
@@ -72,7 +72,7 @@ export function checkpointRoutes(projectDir: string) {
       const { stdout: logOut } = await execFile(
         "git",
         ["log", "--no-walk=unsorted", "--format===COMMIT %H", "--name-only", ...hashes],
-        opts
+        { cwd: ctx.projectDir }
       );
       let cur = "";
       for (const line of logOut.split("\n")) {
@@ -91,7 +91,7 @@ export function checkpointRoutes(projectDir: string) {
       const { stdout: headLog } = await execFile(
         "git",
         ["log", "HEAD", "--format=%H", "--max-count=2000"],
-        opts
+        { cwd: ctx.projectDir }
       );
       for (const h of headLog.trim().split("\n").filter(Boolean)) {
         headReachable.add(h);
@@ -127,7 +127,7 @@ export function checkpointRoutes(projectDir: string) {
 
     let hash: string;
     try {
-      const { stdout } = await execFile("git", ["rev-parse", refName], opts);
+      const { stdout } = await execFile("git", ["rev-parse", refName], { cwd: ctx.projectDir });
       hash = stdout.trim();
     } catch {
       return c.json({ error: "checkpoint not found" }, 404);
@@ -139,7 +139,7 @@ export function checkpointRoutes(projectDir: string) {
       const { stdout } = await execFile(
         "git",
         ["show", "--format=", hash],
-        { ...opts, maxBuffer: 4 * 1024 * 1024 }
+        { cwd: ctx.projectDir, maxBuffer: 4 * 1024 * 1024 }
       );
       diff = stdout;
     } catch {}
@@ -155,21 +155,21 @@ export function checkpointRoutes(projectDir: string) {
     const slug = `${timestamp}-${slugify(label)}`;
     const refName = `refs/studio-checkpoints/${slug}`;
 
-    const { stdout: treeHash } = await execFile("git", ["write-tree"], opts);
+    const { stdout: treeHash } = await execFile("git", ["write-tree"], { cwd: ctx.projectDir });
 
     let parentArgs: string[] = [];
     try {
-      const { stdout: headHash } = await execFile("git", ["rev-parse", "HEAD"], opts);
+      const { stdout: headHash } = await execFile("git", ["rev-parse", "HEAD"], { cwd: ctx.projectDir });
       if (headHash.trim()) parentArgs = ["-p", headHash.trim()];
     } catch {}
 
     const { stdout: commitHash } = await execFile(
       "git",
       ["commit-tree", treeHash.trim(), ...parentArgs, "-m", `studio-checkpoint: ${label}`],
-      opts
+      { cwd: ctx.projectDir }
     );
 
-    await execFile("git", ["update-ref", refName, commitHash.trim()], opts);
+    await execFile("git", ["update-ref", refName, commitHash.trim()], { cwd: ctx.projectDir });
 
     return c.json({ ok: true, id: slug, ref: refName, label, timestamp });
   });
@@ -182,20 +182,20 @@ export function checkpointRoutes(projectDir: string) {
     // Resolve the ref to a commit hash
     let hash: string;
     try {
-      const { stdout } = await execFile("git", ["rev-parse", refName], opts);
+      const { stdout } = await execFile("git", ["rev-parse", refName], { cwd: ctx.projectDir });
       hash = stdout.trim();
     } catch {
       return c.json({ error: "checkpoint not found" }, 404);
     }
 
-    const { stdout: objType } = await execFile("git", ["cat-file", "-t", hash], opts);
+    const { stdout: objType } = await execFile("git", ["cat-file", "-t", hash], { cwd: ctx.projectDir });
     if (objType.trim() !== "commit") {
       return c.json({ error: "ref is not a commit" }, 400);
     }
 
     // Create a new branch from the checkpoint rather than clobbering working tree
     const branchName = `restore/${id}`;
-    await execFile("git", ["branch", "-f", branchName, hash], opts);
+    await execFile("git", ["branch", "-f", branchName, hash], { cwd: ctx.projectDir });
 
     return c.json({ ok: true, branch: branchName });
   });
@@ -208,7 +208,7 @@ export function checkpointRoutes(projectDir: string) {
       return c.json({ error: "use DELETE /prune" }, 400);
     }
     const refName = `refs/studio-checkpoints/${refSlug}`;
-    await execFile("git", ["update-ref", "-d", refName], opts);
+    await execFile("git", ["update-ref", "-d", refName], { cwd: ctx.projectDir });
     return c.json({ ok: true });
   });
 
@@ -224,7 +224,7 @@ export function checkpointRoutes(projectDir: string) {
           "--format=%(refname) %(objectname) %(committerdate:unix)",
           "--sort=-committerdate",
         ],
-        opts
+        { cwd: ctx.projectDir }
       );
       output = result.stdout;
     } catch {
@@ -245,7 +245,7 @@ export function checkpointRoutes(projectDir: string) {
       // Only prune if merged into HEAD or not reachable
       let shouldPrune = false;
       try {
-        await execFile("git", ["merge-base", "--is-ancestor", hash, "HEAD"], opts);
+        await execFile("git", ["merge-base", "--is-ancestor", hash, "HEAD"], { cwd: ctx.projectDir });
         shouldPrune = true; // merged
       } catch {
         shouldPrune = true; // not ancestor = abandoned, prune if old
@@ -253,7 +253,7 @@ export function checkpointRoutes(projectDir: string) {
 
       if (shouldPrune) {
         try {
-          await execFile("git", ["update-ref", "-d", refName], opts);
+          await execFile("git", ["update-ref", "-d", refName], { cwd: ctx.projectDir });
           pruned++;
         } catch {}
       }
@@ -266,11 +266,11 @@ export function checkpointRoutes(projectDir: string) {
   app.post("/restore", async (c) => {
     const body = await c.req.json<{ ref: string }>();
     const ref = body.ref;
-    const { stdout: objType } = await execFile("git", ["cat-file", "-t", ref], opts);
+    const { stdout: objType } = await execFile("git", ["cat-file", "-t", ref], { cwd: ctx.projectDir });
     if (objType.trim() !== "commit") {
       return c.json({ error: "ref is not a commit" }, 400);
     }
-    await execFile("git", ["checkout", ref, "--", "."], opts);
+    await execFile("git", ["checkout", ref, "--", "."], { cwd: ctx.projectDir });
     return c.json({ ok: true });
   });
 

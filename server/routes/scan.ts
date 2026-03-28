@@ -7,6 +7,7 @@ import { spawn, spawnSync } from "child_process";
 import { join } from "path";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { getScanContextMeta } from "../context.js";
+import type { WorkspaceCtx } from "./workspaces.js";
 
 interface ScanSnapshot {
   scannedAt: number;
@@ -61,13 +62,12 @@ function computeDelta(prev: ScanSnapshot, curr: ScanSnapshot): Record<string, { 
   return out;
 }
 
-export function scanRoutes(projectDir: string) {
+export function scanRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
-  const dataDir = join(projectDir, ".hashmark");
-  const snapshotPath = join(dataDir, "last-scan-snapshot.json");
 
   // GET /api/scan/history — last scan snapshot (file count, line count, timestamp)
   app.get("/history", (c) => {
+    const snapshotPath = join(ctx.dataDir, "last-scan-snapshot.json");
     if (!existsSync(snapshotPath)) return c.json({ snapshots: [] });
     try {
       const snap = JSON.parse(readFileSync(snapshotPath, "utf-8")) as ScanSnapshot;
@@ -79,13 +79,13 @@ export function scanRoutes(projectDir: string) {
 
   // GET /api/scan/context — check if scan context is available for chat injection
   app.get("/context", (c) => {
-    const meta = getScanContextMeta(projectDir);
+    const meta = getScanContextMeta(ctx.projectDir);
     return c.json(meta);
   });
 
   // GET /api/scan/staleness — check if CLAUDE.md is stale vs. recent commits
   app.get("/staleness", (c) => {
-    const claudeMdPath = join(projectDir, "CLAUDE.md");
+    const claudeMdPath = join(ctx.projectDir, "CLAUDE.md");
     if (!existsSync(claudeMdPath)) {
       return c.json({ exists: false, generatedAt: null, commitsSince: null, daysStale: null });
     }
@@ -107,7 +107,7 @@ export function scanRoutes(projectDir: string) {
       const result = spawnSync(
         "git",
         ["log", `--after=${generatedAt}T00:00:00`, "--oneline"],
-        { cwd: projectDir, timeout: 5000, encoding: "utf-8" }
+        { cwd: ctx.projectDir, timeout: 5000, encoding: "utf-8" }
       );
       if (result.status === 0 && result.stdout) {
         commitsSince = result.stdout.split("\n").filter((l: string) => l.trim().length > 0).length;
@@ -128,6 +128,8 @@ export function scanRoutes(projectDir: string) {
     c.header("Cache-Control", "no-cache");
     c.header("Connection", "keep-alive");
 
+    const snapshotPath = join(ctx.dataDir, "last-scan-snapshot.json");
+
     // Load previous snapshot for delta computation
     let prevSnapshot: ScanSnapshot | null = null;
     try {
@@ -143,21 +145,21 @@ export function scanRoutes(projectDir: string) {
         controller.enqueue(send({ type: "start", message: "Starting scan..." }));
 
         // Find the hashmark CLI binary — check local install, monorepo, then global
-        const localBin = join(projectDir, "node_modules", ".bin", "hashmark");
-        const monoBin = join(projectDir, "packages", "cli", "dist", "cli.js");
+        const localBin = join(ctx.projectDir, "node_modules", ".bin", "hashmark");
+        const monoBin = join(ctx.projectDir, "packages", "cli", "dist", "cli.js");
         const isMonorepo = !existsSync(localBin) && existsSync(monoBin);
         const bin = existsSync(localBin) ? localBin
           : isMonorepo ? "node" : "hashmark";
         const args = bin === "node"
-          ? [monoBin, projectDir, "--json", "--output", "/dev/stdout"]
+          ? [monoBin, ctx.projectDir, "--json", "--output", "/dev/stdout"]
           : ["--json", "--output", "/dev/stdout"];
 
         // When using monorepo bin, set CWD to packages/cli so Node resolves
         // ESM imports from the CLI's own node_modules (NODE_PATH doesn't work for ESM).
         // The target project dir is passed as a positional arg instead.
         const spawnCwd = isMonorepo
-          ? join(projectDir, "packages", "cli")
-          : projectDir;
+          ? join(ctx.projectDir, "packages", "cli")
+          : ctx.projectDir;
 
         const proc = spawn(bin, args, {
           cwd: spawnCwd,
@@ -184,7 +186,7 @@ export function scanRoutes(projectDir: string) {
 
               // Persist snapshot for next run
               try {
-                mkdirSync(dataDir, { recursive: true });
+                mkdirSync(ctx.dataDir, { recursive: true });
                 writeFileSync(snapshotPath, JSON.stringify(currSnapshot), "utf-8");
               } catch { /* non-fatal */ }
 

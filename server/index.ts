@@ -187,24 +187,24 @@ export function createServer(opts: ServerOptions) {
   app.use("/api/run", rateLimitMiddleware(10, 60_000, "run"));
 
   // API routes
-  app.route("/api/scan", scanRoutes(opts.projectDir));
-  app.route("/api/agents", agentsRoutes(opts.projectDir));
-  app.route("/api/generate", generateRoutes(opts.projectDir));
-  app.route("/api/tasks", tasksRoutes(opts.projectDir));
-  app.route("/api/sessions", sessionsRoutes(opts.projectDir));
-  app.route("/api/files", filesRoutes(opts.projectDir));
-  app.route("/api/workspace", workspaceRoutes(opts.projectDir));
-  app.route("/api/checkpoints", checkpointRoutes(opts.projectDir));
-  app.route("/api/mcp", mcpRoutes(opts.projectDir));
-  app.route("/api/run", runRoutes(opts.projectDir));
-  app.route("/api/swarm", swarmRoutes(opts.projectDir));
-  app.route("/api/company", companyRoutes(opts.projectDir));
-  app.route("/api/drift", driftRoutes(opts.projectDir));
-  app.route("/api/providers", providersRoutes(opts.projectDir));
-  app.route("/api/governance", governanceRoutes(ctx.dataDir));
+  app.route("/api/scan", scanRoutes(ctx));
+  app.route("/api/agents", agentsRoutes(ctx));
+  app.route("/api/generate", generateRoutes(ctx));
+  app.route("/api/tasks", tasksRoutes(ctx));
+  app.route("/api/sessions", sessionsRoutes(ctx));
+  app.route("/api/files", filesRoutes(ctx));
+  app.route("/api/workspace", workspaceRoutes(ctx));
+  app.route("/api/checkpoints", checkpointRoutes(ctx));
+  app.route("/api/mcp", mcpRoutes(ctx));
+  app.route("/api/run", runRoutes(ctx));
+  app.route("/api/swarm", swarmRoutes(ctx));
+  app.route("/api/company", companyRoutes(ctx));
+  app.route("/api/drift", driftRoutes(ctx));
+  app.route("/api/providers", providersRoutes(ctx));
+  app.route("/api/governance", governanceRoutes(ctx));
   app.route("/api/workspaces", workspacesRoutes(globalDataDir, ctx));
-  app.route("/api/config", configRoutes(opts.projectDir));
-  app.route("/api/sandbox", sandboxRoutes(opts.projectDir));
+  app.route("/api/config", configRoutes(ctx));
+  app.route("/api/sandbox", sandboxRoutes(ctx));
 
   // Serve static client files
   app.use(

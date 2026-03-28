@@ -12,7 +12,7 @@ const TOKEN = "test-token-sessions";
 function makeApp(projectDir: string) {
   const app = new Hono();
   app.use("/api/*", studioAuthMiddleware(TOKEN));
-  app.route("/api/sessions", sessionsRoutes(projectDir));
+  app.route("/api/sessions", sessionsRoutes({ projectDir, dataDir: `${projectDir}/.hashmark` }));
   return app;
 }
 

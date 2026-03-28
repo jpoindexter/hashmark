@@ -16,8 +16,9 @@ import { Hono } from "hono";
 import { Bash } from "just-bash";
 import { readFileSync, readdirSync, statSync } from "fs";
 import { join, relative } from "path";
+import type { WorkspaceCtx } from "./workspaces.js";
 
-export function sandboxRoutes(projectDir: string) {
+export function sandboxRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
 
   // Active sandbox instances keyed by session ID
@@ -29,9 +30,9 @@ export function sandboxRoutes(projectDir: string) {
 
     const files: Record<string, string> = {};
 
-    if (seedFromProject && projectDir && projectDir !== "__unset__") {
+    if (seedFromProject && ctx.projectDir && ctx.projectDir !== "__unset__") {
       try {
-        seedFiles(projectDir, projectDir, files, 0);
+        seedFiles(ctx.projectDir, ctx.projectDir, files, 0);
       } catch {
         // Start with empty filesystem if seeding fails
       }

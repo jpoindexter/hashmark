@@ -13,6 +13,8 @@ import { tmpdir, homedir } from "os";
 import { spawn, execFile as execFileCb } from "child_process";
 import { promisify } from "util";
 
+import type { WorkspaceCtx } from "./workspaces.js";
+
 const execFile = promisify(execFileCb);
 
 interface McpServerEntry {
@@ -46,12 +48,12 @@ function readMcpFile(filePath: string): McpConfig | null {
   }
 }
 
-export function mcpRoutes(projectDir: string) {
+export function mcpRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
 
   // GET /api/mcp/config — returns detected MCP sources and merged config
   app.get("/config", (c) => {
-    const projectMcpPath = join(projectDir, ".mcp.json");
+    const projectMcpPath = join(ctx.projectDir, ".mcp.json");
     const globalMcpPath = join(homedir(), ".claude", "claude_desktop_config.json");
 
     const projectConfig = readMcpFile(projectMcpPath);
@@ -99,7 +101,7 @@ export function mcpRoutes(projectDir: string) {
     }
 
     // Build a temp config with just the requested server
-    const projectMcpPath = join(projectDir, ".mcp.json");
+    const projectMcpPath = join(ctx.projectDir, ".mcp.json");
     const globalMcpPath = join(homedir(), ".claude", "claude_desktop_config.json");
 
     const projectConfig = readMcpFile(projectMcpPath);
@@ -129,7 +131,7 @@ export function mcpRoutes(projectDir: string) {
         "claude",
         ["--mcp-config", tmpPath, "--print", "List available tools"],
         {
-          cwd: projectDir,
+          cwd: ctx.projectDir,
           stdio: ["ignore", "pipe", "pipe"],
           env: { ...process.env },
         }
@@ -163,7 +165,7 @@ export function mcpRoutes(projectDir: string) {
   app.get("/tools/diff", async (c) => {
     const file = c.req.query("file");
     const stat = c.req.query("stat") === "true";
-    const opts = { cwd: projectDir, maxBuffer: 4 * 1024 * 1024 };
+    const opts = { cwd: ctx.projectDir, maxBuffer: 4 * 1024 * 1024 };
 
     try {
       // Find merge base to show full branch diff (same approach as Conductor)
@@ -225,7 +227,7 @@ export function mcpRoutes(projectDir: string) {
     const maxLines = parseInt(c.req.query("maxLines") ?? "100", 10);
 
     // Read from the run command output log if it exists
-    const logPath = join(projectDir, ".hashmark", "terminal-output.log");
+    const logPath = join(ctx.projectDir, ".hashmark", "terminal-output.log");
     try {
       if (existsSync(logPath)) {
         const raw = readFileSync(logPath, "utf-8");
@@ -239,7 +241,7 @@ export function mcpRoutes(projectDir: string) {
     try {
       const { stdout } = await execFile(
         "git", ["log", "--oneline", "-20"],
-        { cwd: projectDir }
+        { cwd: ctx.projectDir }
       );
       return c.json({
         output: `No terminal output log found. Recent git activity:\n${stdout}`,
@@ -258,10 +260,10 @@ export function mcpRoutes(projectDir: string) {
     const relPath = c.req.query("path");
     if (!relPath) return c.json({ error: "path query parameter is required" }, 400);
 
-    const fullPath = join(projectDir, relPath);
+    const fullPath = join(ctx.projectDir, relPath);
 
     // Prevent path traversal
-    if (!fullPath.startsWith(projectDir + "/") && fullPath !== projectDir) {
+    if (!fullPath.startsWith(ctx.projectDir + "/") && fullPath !== ctx.projectDir) {
       return c.json({ error: "path traversal blocked" }, 403);
     }
 

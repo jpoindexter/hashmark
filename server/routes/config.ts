@@ -5,6 +5,7 @@
 import { Hono } from "hono";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
+import type { WorkspaceCtx } from "./workspaces.js";
 
 export interface ScanConfig {
   formats: string[];
@@ -36,26 +37,25 @@ function saveConfig(dataDir: string, config: ScanConfig): void {
   writeFileSync(join(dataDir, "scan-config.json"), JSON.stringify(config, null, 2), "utf-8");
 }
 
-export function configRoutes(projectDir: string) {
+export function configRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
-  const dataDir = join(projectDir, ".hashmark");
 
   // GET /api/config
   app.get("/", (c) => {
-    return c.json(loadConfig(dataDir));
+    return c.json(loadConfig(ctx.dataDir));
   });
 
   // PUT /api/config
   app.put("/", async (c) => {
     const body = await c.req.json<Partial<ScanConfig>>();
-    const current = loadConfig(dataDir);
+    const current = loadConfig(ctx.dataDir);
     const updated: ScanConfig = {
       formats:          Array.isArray(body.formats) ? body.formats : current.formats,
       maxTokens:        typeof body.maxTokens === "number" ? body.maxTokens : current.maxTokens,
       watchDebounceMs:  typeof body.watchDebounceMs === "number" ? body.watchDebounceMs : current.watchDebounceMs,
       autoRescan:       typeof body.autoRescan === "boolean" ? body.autoRescan : current.autoRescan,
     };
-    saveConfig(dataDir, updated);
+    saveConfig(ctx.dataDir, updated);
     return c.json(updated);
   });
 

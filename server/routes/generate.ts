@@ -7,6 +7,7 @@ import { spawn } from "child_process";
 import { mkdirSync, writeFileSync, existsSync } from "fs";
 import { join, resolve, dirname } from "path";
 import { z } from "zod";
+import type { WorkspaceCtx } from "./workspaces.js";
 
 const GenerateBodySchema = z.object({
   companyType: z.string().min(1).max(200),
@@ -22,7 +23,7 @@ interface SaveRequest {
   agents: Array<{ path: string; content: string }>;
 }
 
-export function generateRoutes(projectDir: string) {
+export function generateRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
 
   // POST /api/generate — stream agent generation via SSE
@@ -55,8 +56,8 @@ export function generateRoutes(projectDir: string) {
         }
 
         // Find hashmark binary — check local install, monorepo, then global
-        const localBin = join(projectDir, "node_modules", ".bin", "hashmark");
-        const monoBin = join(projectDir, "packages", "cli", "dist", "cli.js");
+        const localBin = join(ctx.projectDir, "node_modules", ".bin", "hashmark");
+        const monoBin = join(ctx.projectDir, "packages", "cli", "dist", "cli.js");
         const isMonorepo = !existsSync(localBin) && existsSync(monoBin);
         const resolvedBin = existsSync(localBin) ? localBin
           : isMonorepo ? "node" : "hashmark";
@@ -66,7 +67,7 @@ export function generateRoutes(projectDir: string) {
           const agentsIdx = args.indexOf("agents");
           args.splice(0, 0, monoBin);
           // Insert projectDir right after "agents" (now at agentsIdx + 1)
-          args.splice(agentsIdx + 2, 0, projectDir);
+          args.splice(agentsIdx + 2, 0, ctx.projectDir);
         }
 
         const env: NodeJS.ProcessEnv = { ...process.env };
@@ -87,8 +88,8 @@ export function generateRoutes(projectDir: string) {
         // When using monorepo bin, set CWD to packages/cli so Node resolves
         // ESM imports from the CLI's own node_modules. Target dir is passed as positional arg.
         const spawnCwd = isMonorepo
-          ? join(projectDir, "packages", "cli")
-          : projectDir;
+          ? join(ctx.projectDir, "packages", "cli")
+          : ctx.projectDir;
 
         const proc = spawn(resolvedBin, args, { cwd: spawnCwd, env });
 
@@ -141,7 +142,7 @@ export function generateRoutes(projectDir: string) {
   // POST /api/generate/save — write generated agents to disk
   app.post("/save", async (c) => {
     const body = await c.req.json<SaveRequest>();
-    const agentsDir = join(projectDir, ".claude", "agents");
+    const agentsDir = join(ctx.projectDir, ".claude", "agents");
 
     let written = 0;
     for (const agent of body.agents) {

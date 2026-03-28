@@ -15,6 +15,7 @@ import { logAgentAction, parseActionsFromOutput } from "../lib/action-log.js";
 import { getDb } from "../db.js";
 import { findClaudeBin } from "../lib/bin-resolver.js";
 import { z } from "zod";
+import type { WorkspaceCtx } from "./workspaces.js";
 
 const execFile = promisify(execFileCb);
 
@@ -76,9 +77,8 @@ let activeRun = false;
 let activeProc: ReturnType<typeof spawn> | null = null;
 const RUN_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 
-export function runRoutes(projectDir: string) {
+export function runRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
-  const dataDir = `${projectDir}/.hashmark`;
 
   app.get("/status", (c) => c.json({ active: activeRun }));
 
@@ -95,7 +95,7 @@ export function runRoutes(projectDir: string) {
   // GET /api/runs — list past runs newest first
   app.get("/runs", (c) => {
     try {
-      const db = getDb(dataDir);
+      const db = getDb(ctx.dataDir);
       const rows = db
         .prepare(
           `SELECT id, task, status, started_at AS created_at, worktree_branch
@@ -112,7 +112,7 @@ export function runRoutes(projectDir: string) {
   app.get("/runs/:id/diff", async (c) => {
     const id = c.req.param("id");
     try {
-      const db = getDb(dataDir);
+      const db = getDb(ctx.dataDir);
       const run = db.prepare("SELECT worktree_branch, task FROM runs WHERE id = ?").get(id) as
         | { worktree_branch: string | null; task: string } | undefined;
       if (!run) return c.json({ error: "Run not found" }, 404);
@@ -124,7 +124,7 @@ export function runRoutes(projectDir: string) {
       let diff = "";
       try {
         const res = await execFile("git", ["diff", `main...${branch}`], {
-          cwd: projectDir,
+          cwd: ctx.projectDir,
           maxBuffer: 4 * 1024 * 1024,
         });
         diff = res.stdout;
@@ -132,12 +132,12 @@ export function runRoutes(projectDir: string) {
         try {
           const logRes = await execFile(
             "git", ["log", "--all", "--oneline", `--grep=run/${id}`],
-            { cwd: projectDir }
+            { cwd: ctx.projectDir }
           );
           const hash = logRes.stdout.trim().split(/\s/)[0];
           if (hash) {
             const showRes = await execFile("git", ["show", hash], {
-              cwd: projectDir,
+              cwd: ctx.projectDir,
               maxBuffer: 4 * 1024 * 1024,
             });
             diff = showRes.stdout;
@@ -164,9 +164,9 @@ export function runRoutes(projectDir: string) {
     const body = parsed.data;
     const mode = body.mode ?? "build";
 
-    const claudeBin = findClaudeBin(projectDir);
+    const claudeBin = findClaudeBin(ctx.projectDir);
     const runId = randomUUID().slice(0, 8);
-    const agents = loadAgents(projectDir);
+    const agents = loadAgents(ctx.projectDir);
     const agentMap = new Map(agents.map((a) => [a.id, a]));
 
     activeRun = true;
@@ -186,7 +186,7 @@ export function runRoutes(projectDir: string) {
 
           // Persist run record to DB
           try {
-            const db = getDb(dataDir);
+            const db = getDb(ctx.dataDir);
             db.prepare(
               `INSERT INTO runs (id, task, status, worktree_branch, started_at) VALUES (?, ?, 'running', ?, ?)`
             ).run(runId, body.task, branchName, Date.now());
@@ -195,12 +195,12 @@ export function runRoutes(projectDir: string) {
           // Create worktree
           try {
             await execFile("git", ["worktree", "add", worktreeDir, "-b", branchName], {
-              cwd: projectDir,
+              cwd: ctx.projectDir,
             });
-            logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "worktree_create", target: branchName, outcome: "success" });
+            logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "worktree_create", target: branchName, outcome: "success" });
           } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
-            logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "worktree_create", target: branchName, outcome: "failure", detail: msg });
+            logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "worktree_create", target: branchName, outcome: "failure", detail: msg });
             send({ type: "error", error: `Worktree failed: ${msg}` });
             activeRun = false;
             controller.close();
@@ -262,19 +262,19 @@ export function runRoutes(projectDir: string) {
           // In plan mode, skip commit + merge entirely
           let hasChanges = false;
           if (mode === "plan") {
-            try { getDb(dataDir).prepare("UPDATE runs SET status = ?, ended_at = ? WHERE id = ?").run("complete", Date.now(), runId); } catch {}
+            try { getDb(ctx.dataDir).prepare("UPDATE runs SET status = ?, ended_at = ? WHERE id = ?").run("complete", Date.now(), runId); } catch {}
             send({ type: "complete", hasChanges: false, mode: "plan" });
             activeRun = false;
             controller.close();
             // Cleanup worktree
-            try { await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: projectDir }); } catch {}
-            try { await execFile("git", ["branch", "-D", branchName], { cwd: projectDir }); } catch {}
+            try { await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: ctx.projectDir }); } catch {}
+            try { await execFile("git", ["branch", "-D", branchName], { cwd: ctx.projectDir }); } catch {}
             return;
           }
 
           // Parse and log file write / bash events from agent output
           const actionEvents = parseActionsFromOutput(fullOutput, runId, body.agentId ?? "general");
-          for (const ev of actionEvents) logAgentAction(dataDir, ev);
+          for (const ev of actionEvents) logAgentAction(ctx.dataDir, ev);
 
           // Commit if there are changes
           try {
@@ -283,7 +283,7 @@ export function runRoutes(projectDir: string) {
             if (hasChanges) {
               await execFile("git", ["add", "-A"], { cwd: worktreeDir });
               await execFile("git", ["commit", "-m", `feat(run/${runId}): ${body.task.slice(0, 72)}`], { cwd: worktreeDir });
-              logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "git_commit", target: branchName, outcome: "success" });
+              logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "git_commit", target: branchName, outcome: "success" });
               send({ type: "committed", hasChanges: true, branch: branchName });
             } else {
               send({ type: "committed", hasChanges: false, branch: branchName });
@@ -299,32 +299,32 @@ export function runRoutes(projectDir: string) {
               await execFile("git", [
                 "merge", branchName, "--no-ff",
                 "-m", `feat(run): merge ${branchName}`,
-              ], { cwd: projectDir });
-              logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "git_merge", target: branchName, outcome: "success" });
+              ], { cwd: ctx.projectDir });
+              logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "git_merge", target: branchName, outcome: "success" });
               send({ type: "merged" });
             } catch {
-              try { await execFile("git", ["merge", "--abort"], { cwd: projectDir }); } catch {}
-              logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "git_merge", target: branchName, outcome: "failure", detail: "merge conflict" });
+              try { await execFile("git", ["merge", "--abort"], { cwd: ctx.projectDir }); } catch {}
+              logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "git_merge", target: branchName, outcome: "failure", detail: "merge conflict" });
               send({ type: "merge_conflict", branch: branchName });
             }
           }
 
           // Cleanup worktree + branch (skip if conflict — branch preserved intentionally)
           try {
-            await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: projectDir });
-            logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "worktree_remove", target: branchName, outcome: "success" });
+            await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: ctx.projectDir });
+            logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "worktree_remove", target: branchName, outcome: "success" });
           } catch {}
 
           if (hasChanges) {
             // Only delete branch if merge succeeded (no conflict)
             try {
-              await execFile("git", ["branch", "-d", branchName], { cwd: projectDir });
+              await execFile("git", ["branch", "-d", branchName], { cwd: ctx.projectDir });
             } catch {}
           }
 
           // Update run status in DB
           try {
-            const db = getDb(dataDir);
+            const db = getDb(ctx.dataDir);
             db.prepare("UPDATE runs SET status = ?, ended_at = ? WHERE id = ?")
               .run("complete", Date.now(), runId);
           } catch { /* non-fatal */ }
@@ -336,7 +336,7 @@ export function runRoutes(projectDir: string) {
 
         run()
           .catch((err) => {
-            try { getDb(dataDir).prepare("UPDATE runs SET status = ?, ended_at = ? WHERE id = ?").run("error", Date.now(), runId); } catch {}
+            try { getDb(ctx.dataDir).prepare("UPDATE runs SET status = ?, ended_at = ? WHERE id = ?").run("error", Date.now(), runId); } catch {}
             send({ type: "error", error: err instanceof Error ? err.message : String(err) });
             try { controller.close(); } catch {}
           })

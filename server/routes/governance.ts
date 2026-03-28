@@ -3,13 +3,14 @@ import { getDb } from "../db.js";
 import { randomUUID } from "crypto";
 import { existsSync, readFileSync, statSync } from "fs";
 import { join } from "path";
+import type { WorkspaceCtx } from "./workspaces.js";
 
-export function governanceRoutes(dataDir: string) {
+export function governanceRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
 
   // GET /api/governance/policies
   app.get("/policies", (c) => {
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const policies = db.prepare("SELECT * FROM governance_policies ORDER BY created_at DESC").all();
     type RawPolicy = { rules: string; [k: string]: unknown };
     return c.json({ policies: policies.map(p => { const r = p as RawPolicy; return { ...r, rules: JSON.parse(r.rules) }; }) });
@@ -18,7 +19,7 @@ export function governanceRoutes(dataDir: string) {
   // POST /api/governance/policies
   app.post("/policies", async (c) => {
     const body = await c.req.json<{ name: string; description?: string; scope?: string; rules?: unknown[] }>();
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const id = randomUUID().slice(0, 8);
     db.prepare(
       "INSERT INTO governance_policies (id, name, description, scope, rules, enabled, created_at) VALUES (?, ?, ?, ?, ?, 1, ?)"
@@ -29,7 +30,7 @@ export function governanceRoutes(dataDir: string) {
   // PUT /api/governance/policies/:id
   app.put("/policies/:id", async (c) => {
     const body = await c.req.json<{ name?: string; description?: string; scope?: string; rules?: unknown[]; enabled?: boolean }>();
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const fields: string[] = [];
     const vals: unknown[] = [];
     if (body.name !== undefined) { fields.push("name=?"); vals.push(body.name); }
@@ -46,14 +47,14 @@ export function governanceRoutes(dataDir: string) {
 
   // DELETE /api/governance/policies/:id
   app.delete("/policies/:id", (c) => {
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     db.prepare("DELETE FROM governance_policies WHERE id=?").run(c.req.param("id"));
     return c.json({ ok: true });
   });
 
   // GET /api/governance/actions
   app.get("/actions", (c) => {
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const limit = parseInt(c.req.query("limit") ?? "100");
     const offset = parseInt(c.req.query("offset") ?? "0");
     const agentId = c.req.query("agentId");
@@ -76,7 +77,7 @@ export function governanceRoutes(dataDir: string) {
   // POST /api/governance/actions
   app.post("/actions", async (c) => {
     const body = await c.req.json<{ sessionId?: string; agentId?: string; actionType: string; target?: string; outcome?: string; policyId?: string }>();
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     db.prepare(
       "INSERT INTO agent_actions (session_id, agent_id, action_type, target, outcome, policy_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
     ).run(body.sessionId ?? null, body.agentId ?? null, body.actionType, body.target ?? null, body.outcome ?? "allowed", body.policyId ?? null, Date.now());
@@ -85,7 +86,7 @@ export function governanceRoutes(dataDir: string) {
 
   // GET /api/governance/summary
   app.get("/summary", (c) => {
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const total = (db.prepare("SELECT COUNT(*) as c FROM agent_actions").get() as { c: number })?.c ?? 0;
     const blocked = (db.prepare("SELECT COUNT(*) as c FROM agent_actions WHERE outcome='blocked'").get() as { c: number })?.c ?? 0;
     const flagged = (db.prepare("SELECT COUNT(*) as c FROM agent_actions WHERE outcome='flagged'").get() as { c: number })?.c ?? 0;
@@ -96,7 +97,7 @@ export function governanceRoutes(dataDir: string) {
 
   // GET /api/governance/action-log?limit=100&offset=0&runId=&agentId=
   app.get("/action-log", (c) => {
-    const logPath = join(dataDir, "agent-actions.jsonl");
+    const logPath = join(ctx.dataDir, "agent-actions.jsonl");
     if (!existsSync(logPath)) return c.json({ events: [], total: 0 });
 
     const limit = parseInt(c.req.query("limit") ?? "100");

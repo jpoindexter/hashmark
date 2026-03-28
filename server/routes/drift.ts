@@ -9,6 +9,8 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import { createHash } from "crypto";
 
+import type { WorkspaceCtx } from "./workspaces.js";
+
 const execAsync = promisify(execFile);
 
 const CONTEXT_FILES = ["CLAUDE.md", "AGENTS.md", "GEMINI.md"];
@@ -49,7 +51,7 @@ function extractCommitHash(content: string): string | null {
   return m ? m[1] : null;
 }
 
-export function driftRoutes(projectDir: string) {
+export function driftRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
 
   app.get("/check", async (c) => {
@@ -59,7 +61,7 @@ export function driftRoutes(projectDir: string) {
 
     for (const name of CONTEXT_FILES) {
       try {
-        content = await readFile(join(projectDir, name), "utf-8");
+        content = await readFile(join(ctx.projectDir, name), "utf-8");
         fileName = name;
         break;
       } catch {
@@ -81,7 +83,7 @@ export function driftRoutes(projectDir: string) {
       const { stdout } = await execAsync(
         "git",
         ["ls-files", "--cached", "--others", "--exclude-standard"],
-        { cwd: projectDir, maxBuffer: 4 * 1024 * 1024 }
+        { cwd: ctx.projectDir, maxBuffer: 4 * 1024 * 1024 }
       );
       const allFiles = stdout.split("\n").filter(Boolean);
       currentFileCount = allFiles.filter(f =>
@@ -92,7 +94,7 @@ export function driftRoutes(projectDir: string) {
     }
 
     try {
-      const { stdout } = await execAsync("git", ["log", "--oneline", "-1"], { cwd: projectDir });
+      const { stdout } = await execAsync("git", ["log", "--oneline", "-1"], { cwd: ctx.projectDir });
       headCommit = stdout.trim().split(" ")[0] ?? null;
     } catch {
       // git not available
@@ -125,7 +127,7 @@ export function driftRoutes(projectDir: string) {
       const { stdout } = await execAsync(
         "git",
         ["log", "-1", "--format=%ct", "--", fileName],
-        { cwd: projectDir }
+        { cwd: ctx.projectDir }
       );
       const ts = parseInt(stdout.trim(), 10);
       if (!isNaN(ts) && ts > 0) {
@@ -137,7 +139,7 @@ export function driftRoutes(projectDir: string) {
 
     if (ageDays === null) {
       try {
-        const s = await stat(join(projectDir, fileName));
+        const s = await stat(join(ctx.projectDir, fileName));
         ageDays = Math.floor((Date.now() - s.mtimeMs) / 86400000);
       } catch {
         // can't determine age

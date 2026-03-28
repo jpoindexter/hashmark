@@ -23,6 +23,7 @@ import { createCheckpoint } from "../lib/checkpoint.js";
 import { loadProjectEnvVars } from "../lib/env.js";
 import { createStudioMcpConfig } from "../lib/mcp-studio.js";
 import { findBin, findClaudeBin } from "../lib/bin-resolver.js";
+import type { WorkspaceCtx } from "./workspaces.js";
 
 /**
  * Expand @file mentions in a message.
@@ -148,13 +149,12 @@ export function killAllActiveSessions() {
   sessionLastActivity.clear();
 }
 
-export function sessionsRoutes(projectDir: string) {
-  const dataDir = `${projectDir}/.hashmark`;
+export function sessionsRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
 
   // GET /api/sessions/config — status check
   app.get("/config", (c) => {
-    const claudeBin = findClaudeBin(projectDir);
+    const claudeBin = findClaudeBin(ctx.projectDir);
     const claudeAvailable = existsSync(claudeBin) || claudeBin === "claude";
     return c.json({ claudeAvailable, claudeBin });
   });
@@ -164,7 +164,7 @@ export function sessionsRoutes(projectDir: string) {
     const q = (c.req.query("q") ?? "").trim();
     if (q.length < 2) return c.json({ results: [] });
 
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
 
     type SearchRow = {
       id: string; title: string; model: string;
@@ -223,7 +223,7 @@ export function sessionsRoutes(projectDir: string) {
 
   // GET /api/sessions?archived=true
   app.get("/", (c) => {
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const archived = c.req.query("archived") === "true" ? 1 : 0;
     const sessions = db.prepare(`
       SELECT s.*,
@@ -245,7 +245,7 @@ export function sessionsRoutes(projectDir: string) {
       model?: string;
     }>();
 
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const id = randomUUID();
     const now = Date.now();
 
@@ -262,7 +262,7 @@ export function sessionsRoutes(projectDir: string) {
   // Supports optional pagination: ?limit=50&before=<message_id>
   // Returns last `limit` messages by default; pass `before` cursor to page backward
   app.get("/:id", (c) => {
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const id = c.req.param("id");
     const session = db.prepare("SELECT * FROM sessions WHERE id = ?").get(id);
     if (!session) return c.json({ error: "Not found" }, 404);
@@ -323,7 +323,7 @@ export function sessionsRoutes(projectDir: string) {
     if (active) active.kill();
     activeProcesses.delete(id);
     sessionLastActivity.delete(id);
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     db.prepare("DELETE FROM sessions WHERE id = ?").run(id);
     return c.json({ ok: true });
   });
@@ -331,7 +331,7 @@ export function sessionsRoutes(projectDir: string) {
   // PATCH /api/sessions/:id
   app.patch("/:id", async (c) => {
     const body = await c.req.json<{ title?: string; archived?: boolean }>();
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const id = c.req.param("id");
     if (body.title !== undefined) {
       db.prepare("UPDATE sessions SET title = ?, updated_at = ? WHERE id = ?")
@@ -347,7 +347,7 @@ export function sessionsRoutes(projectDir: string) {
 
   // GET /api/sessions/:id/pending -- check for unsent messages
   app.get("/:id/pending", (c) => {
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const row = db.prepare(
       "SELECT id, content FROM session_messages WHERE session_id = ? AND role = 'user' AND sent_at IS NULL ORDER BY created_at ASC LIMIT 1"
     ).get(c.req.param("id")) as { id: string; content: string } | undefined;
@@ -379,7 +379,7 @@ export function sessionsRoutes(projectDir: string) {
       skipContext?: boolean;
     }>();
 
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const session = db.prepare("SELECT * FROM sessions WHERE id = ?").get(sessionId) as {
       id: string; title: string; agent_name: string | null; claude_session_id: string | null;
     } | undefined;
@@ -390,7 +390,7 @@ export function sessionsRoutes(projectDir: string) {
     sessionLastActivity.set(sessionId, Date.now());
 
     // Pre-turn checkpoint -- snapshot working tree before Claude touches anything
-    await createCheckpoint(projectDir, `pre-turn-${sessionId.slice(0, 8)}`).catch(() => null);
+    await createCheckpoint(ctx.projectDir, `pre-turn-${sessionId.slice(0, 8)}`).catch(() => null);
 
     // Load conversation history (only sent messages)
     const history = db.prepare(
@@ -425,7 +425,7 @@ export function sessionsRoutes(projectDir: string) {
     }
 
     // Load CLAUDE.md sections for analytics heatmap
-    const claudeMdPath = join(projectDir, "CLAUDE.md");
+    const claudeMdPath = join(ctx.projectDir, "CLAUDE.md");
     let claudeSections: string[] = [];
     try {
       if (existsSync(claudeMdPath)) {
@@ -435,7 +435,7 @@ export function sessionsRoutes(projectDir: string) {
     } catch { /* no CLAUDE.md — analytics just won't fire */ }
 
     // Build system prompt — scan context + agent identity + user's custom prompt
-    const scanContext = body.skipContext ? null : loadScanContext(projectDir);
+    const scanContext = body.skipContext ? null : loadScanContext(ctx.projectDir);
     const agentIdentity = session.agent_name ? `You are ${session.agent_name}, an AI assistant.` : null;
     const userSystemPrompt = body.systemPrompt ?? null;
 
@@ -444,12 +444,12 @@ export function sessionsRoutes(projectDir: string) {
       .join("\n\n---\n\n") || undefined;
 
     // Expand @file mentions -- inlines file content as fenced code blocks
-    const expandedMessage = expandMentions(effectiveMessage, projectDir);
+    const expandedMessage = expandMentions(effectiveMessage, ctx.projectDir);
 
     // Build the full prompt with conversation history
     const fullPrompt = buildConversationPrompt(history, expandedMessage, effectiveSystemPrompt);
 
-    const providersStore = loadProviders(dataDir);
+    const providersStore = loadProviders(ctx.dataDir);
     const activeProvider = providersStore.providers.find(p => p.id === providersStore.active);
     const useApiStream = providersStore.active !== "claude" || (activeProvider?.apiKey && activeProvider.apiKey.length > 0);
 
@@ -507,7 +507,7 @@ export function sessionsRoutes(projectDir: string) {
               fullText += text;
               send({ type: "text", text });
               if (claudeSections.length > 0) {
-                updateAnalytics(dataDir, sessionId, text, claudeSections);
+                updateAnalytics(ctx.dataDir, sessionId, text, claudeSections);
               }
             },
             onDone: () => {
@@ -536,7 +536,7 @@ export function sessionsRoutes(projectDir: string) {
                 WHERE id = ?
               `).run(actualModel, msgInputEstimate, msgOutputEstimate, Date.now(), Date.now(), sessionId);
 
-              flushAnalytics(dataDir, sessionId).catch(() => {});
+              flushAnalytics(ctx.dataDir, sessionId).catch(() => {});
               send({ type: "done", success: true });
               controller.close();
             },
@@ -564,19 +564,19 @@ export function sessionsRoutes(projectDir: string) {
         } else {
           // -- CLI streaming agent path (Claude, Codex, or Gemini) --
           const provider = resolveProvider(body.model || "claude-sonnet-4-6");
-          const cliBin = findBin(provider === "codex" ? "codex" : provider === "gemini" ? "gemini" : "claude", projectDir);
+          const cliBin = findBin(provider === "codex" ? "codex" : provider === "gemini" ? "gemini" : "claude", ctx.projectDir);
 
           // Build merged MCP config: user servers + Studio tool bridge
           let mcpConfigPath: string | null = null;
           try {
-            mcpConfigPath = createStudioMcpConfig(projectDir, studioPort);
+            mcpConfigPath = createStudioMcpConfig(ctx.projectDir, studioPort);
           } catch {
             // MCP config generation failed -- continue without it
           }
 
           let cliArgs: string[];
           // Layer env vars: process.env < project .env/.env.local < explicit overrides
-          const projectEnv = loadProjectEnvVars(projectDir);
+          const projectEnv = loadProjectEnvVars(ctx.projectDir);
           const cliEnv: Record<string, string> = {
             ...process.env as Record<string, string>,
             ...projectEnv,
@@ -607,7 +607,7 @@ export function sessionsRoutes(projectDir: string) {
           }
 
           const proc = spawn(cliBin, cliArgs, {
-            cwd: projectDir,
+            cwd: ctx.projectDir,
             stdio: ["pipe", "pipe", "pipe"],
             env: cliEnv,
           });
@@ -653,7 +653,7 @@ export function sessionsRoutes(projectDir: string) {
                       fullText += block.text;
                       send({ type: "text", text: block.text });
                       if (claudeSections.length > 0) {
-                        updateAnalytics(dataDir, sessionId, block.text, claudeSections);
+                        updateAnalytics(ctx.dataDir, sessionId, block.text, claudeSections);
                       }
                     }
                     if (block.type === "thinking") {
@@ -719,7 +719,7 @@ export function sessionsRoutes(projectDir: string) {
               WHERE id = ?
             `).run(msgInputEstimate, msgOutputEstimate, Date.now(), Date.now(), sessionId);
 
-            flushAnalytics(dataDir, sessionId).catch(() => {});
+            flushAnalytics(ctx.dataDir, sessionId).catch(() => {});
             if (code !== 0 && !killed) {
               send({ type: "done", success: false });
             } else if (killed) {
@@ -759,16 +759,16 @@ export function sessionsRoutes(projectDir: string) {
   // GET /api/sessions/:id/analytics — context section heatmap
   app.get("/:id/analytics", async (c) => {
     const id = c.req.param("id");
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const session = db.prepare("SELECT id FROM sessions WHERE id = ?").get(id);
     if (!session) return c.json({ error: "Not found" }, 404);
-    const analytics = await loadSessionAnalytics(dataDir, id);
+    const analytics = await loadSessionAnalytics(ctx.dataDir, id);
     return c.json(analytics);
   });
 
   // GET /api/sessions/:id/loop-analysis — detect behavioral loops in conversation
   app.get("/:id/loop-analysis", (c) => {
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const session = db.prepare("SELECT id FROM sessions WHERE id = ?").get(c.req.param("id"));
     if (!session) return c.json({ error: "Not found" }, 404);
     const messages = db.prepare(
@@ -779,7 +779,7 @@ export function sessionsRoutes(projectDir: string) {
 
   // GET /api/sessions/:id/tokens
   app.get("/:id/tokens", (c) => {
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const sessionId = c.req.param("id");
     const session = db.prepare(`
       SELECT total_input_tokens, total_output_tokens,
@@ -851,7 +851,7 @@ export function sessionsRoutes(projectDir: string) {
 
   // GET /api/sessions/analytics/summary — aggregate stats for the app dashboard
   app.get("/analytics/summary", (c) => {
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const now = Date.now();
     const day = 86400000;
 

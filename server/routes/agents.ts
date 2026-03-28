@@ -6,6 +6,7 @@ import { Hono } from "hono";
 import { readFileSync, readdirSync, existsSync, writeFileSync, unlinkSync } from "fs";
 import { join, relative } from "path";
 import { getDb } from "../db.js";
+import type { WorkspaceCtx } from "./workspaces.js";
 
 export interface AgentFile {
   id: string;
@@ -247,9 +248,8 @@ function computeEffectiveness(agentId: string, rows: WorkerRow[]): Effectiveness
   return { agentId, totalRuns: total, successRate, recentTrend, recentSuccessRate, avgOutputLength, lastRun };
 }
 
-export function agentsRoutes(projectDir: string) {
+export function agentsRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
-  const dataDir = `${projectDir}/.hashmark`;
 
   // GET /api/agents/route?q=<message>&file=<optional-path>
   app.get("/route", (c) => {
@@ -257,7 +257,7 @@ export function agentsRoutes(projectDir: string) {
     const file = c.req.query("file") ?? "";
     const fileExt = file ? file.split(".").pop() : undefined;
 
-    const agents = readAgentsDir(projectDir);
+    const agents = readAgentsDir(ctx.projectDir);
     if (agents.length === 0) return c.json({ suggestions: [] });
 
     const queryWords = Array.from(extractKeywords(q)).filter(w => w.length > 2);
@@ -285,14 +285,14 @@ export function agentsRoutes(projectDir: string) {
 
   // GET /api/agents/security-scan — scan all agents for security issues
   app.get("/security-scan", (c) => {
-    const agents = readAgentsDir(projectDir);
+    const agents = readAgentsDir(ctx.projectDir);
     const findings = scanAgentSecurity(agents);
     return c.json({ findings, scannedAt: Date.now(), agentCount: agents.length });
   });
 
   // GET /api/agents — list all agents
   app.get("/", (c) => {
-    const agents = readAgentsDir(projectDir);
+    const agents = readAgentsDir(ctx.projectDir);
     return c.json({ agents });
   });
 
@@ -303,7 +303,7 @@ export function agentsRoutes(projectDir: string) {
 
     const dept = body.department?.trim() || "general";
     const slug = body.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    const agentsDir = join(projectDir, ".claude", "agents", dept);
+    const agentsDir = join(ctx.projectDir, ".claude", "agents", dept);
 
     // mkdir -p equivalent
     const { mkdirSync } = await import("fs");
@@ -328,7 +328,7 @@ export function agentsRoutes(projectDir: string) {
   // GET /api/agents/effectiveness — all agents' stats
   app.get("/effectiveness", (c) => {
     try {
-      const db = getDb(dataDir);
+      const db = getDb(ctx.dataDir);
       const rows = db.prepare(
         "SELECT agent_id, status, output, completed_at FROM swarm_workers WHERE completed_at IS NOT NULL ORDER BY completed_at DESC"
       ).all() as WorkerRow[];
@@ -352,7 +352,7 @@ export function agentsRoutes(projectDir: string) {
   app.get("/:id/effectiveness", (c) => {
     const id = c.req.param("id");
     try {
-      const db = getDb(dataDir);
+      const db = getDb(ctx.dataDir);
       const rows = db.prepare(
         "SELECT agent_id, status, output, completed_at FROM swarm_workers WHERE agent_id = ? AND completed_at IS NOT NULL ORDER BY completed_at DESC"
       ).all(id) as WorkerRow[];
@@ -365,7 +365,7 @@ export function agentsRoutes(projectDir: string) {
   // GET /api/agents/:id — get single agent
   app.get("/:id", (c) => {
     const id = c.req.param("id");
-    const agents = readAgentsDir(projectDir);
+    const agents = readAgentsDir(ctx.projectDir);
     const agent = agents.find((a) => a.id === id);
     if (!agent) return c.json({ error: "Not found" }, 404);
     return c.json({ agent });
@@ -374,8 +374,8 @@ export function agentsRoutes(projectDir: string) {
   // DELETE /api/agents/:id — remove agent file
   app.delete("/:id", (c) => {
     const id = c.req.param("id");
-    const agentsDir = join(projectDir, ".claude", "agents");
-    const agents = readAgentsDir(projectDir);
+    const agentsDir = join(ctx.projectDir, ".claude", "agents");
+    const agents = readAgentsDir(ctx.projectDir);
     const agent = agents.find((a) => a.id === id);
     if (!agent) return c.json({ error: "Not found" }, 404);
     const fullPath = join(agentsDir, agent.path);
@@ -391,11 +391,11 @@ export function agentsRoutes(projectDir: string) {
   app.put("/:id", async (c) => {
     const id = c.req.param("id");
     const body = await c.req.json<{ content: string }>();
-    const agentsDir = join(projectDir, ".claude", "agents");
+    const agentsDir = join(ctx.projectDir, ".claude", "agents");
     // Convert id back to path: engineering-frontend-developer → engineering/frontend-developer.md
     const segments = id.split("-");
     // Find the matching file
-    const agents = readAgentsDir(projectDir);
+    const agents = readAgentsDir(ctx.projectDir);
     const agent = agents.find((a) => a.id === id);
     if (!agent) return c.json({ error: "Not found" }, 404);
     const fullPath = join(agentsDir, agent.path);

@@ -16,6 +16,7 @@ import { detectConflicts } from "../lib/dep-graph.js";
 import { getDb } from "../db.js";
 import { findClaudeBin } from "../lib/bin-resolver.js";
 import { z } from "zod";
+import type { WorkspaceCtx } from "./workspaces.js";
 
 const SwarmBodySchema = z.object({
   tasks: z.array(z.object({
@@ -333,9 +334,8 @@ function checkSwarmComplete(swarm: SwarmRun, dataDir: string) {
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
-export function swarmRoutes(projectDir: string) {
+export function swarmRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
-  const dataDir = `${projectDir}/.hashmark`;
 
   // POST /api/swarm
   app.post("/", async (c) => {
@@ -366,7 +366,7 @@ export function swarmRoutes(projectDir: string) {
     swarms.set(swarmId, swarm);
 
     try {
-      const db = getDb(dataDir);
+      const db = getDb(ctx.dataDir);
       const now = Date.now();
       db.prepare(
         "INSERT INTO swarm_runs (id, task, mode, status, worker_count, created_at, started_at) VALUES (?, '', ?, 'running', ?, ?, ?)"
@@ -378,12 +378,12 @@ export function swarmRoutes(projectDir: string) {
       }
     } catch {}
 
-    const claudeBin = findClaudeBin(projectDir);
-    const agentDefs = loadAgents(projectDir);
+    const claudeBin = findClaudeBin(ctx.projectDir);
+    const agentDefs = loadAgents(ctx.projectDir);
     const agentMap = new Map(agentDefs.map((a) => [a.id, a]));
 
     for (let i = 0; i < agents.length; i++) {
-      runAgent(swarm, i, projectDir, dataDir, claudeBin, agentMap).catch(() => {});
+      runAgent(swarm, i, ctx.projectDir, ctx.dataDir, claudeBin, agentMap).catch(() => {});
     }
 
     return c.json(
@@ -426,7 +426,7 @@ export function swarmRoutes(projectDir: string) {
     }
 
     // Detect which base to diff against -- worktree branches fork from HEAD at spawn time
-    const report = detectConflicts(projectDir, activeWorkers, "HEAD");
+    const report = detectConflicts(ctx.projectDir, activeWorkers, "HEAD");
     return c.json(report);
   });
 
@@ -494,7 +494,7 @@ export function swarmRoutes(projectDir: string) {
     }
 
     try {
-      getDb(dataDir)
+      getDb(ctx.dataDir)
         .prepare("UPDATE swarm_runs SET status = 'cancelled', ended_at = ? WHERE id = ?")
         .run(Date.now(), swarm.swarmId);
     } catch {}

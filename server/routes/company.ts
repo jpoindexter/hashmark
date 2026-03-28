@@ -14,6 +14,7 @@ import { tmpdir } from "os";
 import { getDb } from "../db.js";
 import { logAgentAction, parseActionsFromOutput } from "../lib/action-log.js";
 import { findClaudeBin } from "../lib/bin-resolver.js";
+import type { WorkspaceCtx } from "./workspaces.js";
 
 const execFile = promisify(execFileCb);
 
@@ -78,9 +79,8 @@ let activeRun = false;
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
-export function companyRoutes(projectDir: string) {
+export function companyRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
-  const dataDir = `${projectDir}/.hashmark`;
 
   // GET /api/company/status
   app.get("/status", (c) => {
@@ -89,15 +89,15 @@ export function companyRoutes(projectDir: string) {
 
   // GET /api/company/agents — list available agents for the UI
   app.get("/agents", (c) => {
-    const agents = loadAgents(projectDir).map(({ id, name, description }) => ({ id, name, description }));
+    const agents = loadAgents(ctx.projectDir).map(({ id, name, description }) => ({ id, name, description }));
     return c.json({ agents });
   });
 
   // POST /api/company/plan — use Claude to decompose task + assign to available agents
   app.post("/plan", async (c) => {
     const body = await c.req.json<{ task: string }>();
-    const claudeBin = findClaudeBin(projectDir);
-    const agents = loadAgents(projectDir);
+    const claudeBin = findClaudeBin(ctx.projectDir);
+    const agents = loadAgents(ctx.projectDir);
 
     const agentList = agents.length > 0
       ? agents.map(a => `  - id: "${a.id}" | name: "${a.name}" | ${a.description}`).join("\n")
@@ -121,7 +121,7 @@ Respond with ONLY a JSON array, no markdown, no explanation:
 
     try {
       const { stdout } = await execFile(claudeBin, ["--print", prompt], {
-        cwd: projectDir,
+        cwd: ctx.projectDir,
         env: { ...process.env, CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS: "1" },
         maxBuffer: 1024 * 1024,
       });
@@ -150,10 +150,10 @@ Respond with ONLY a JSON array, no markdown, no explanation:
   // POST /api/company/run — spawn workers in parallel worktrees, stream all events
   app.post("/run", async (c) => {
     const body = await c.req.json<{ task: string; plan: Subtask[] }>();
-    const claudeBin = findClaudeBin(projectDir);
+    const claudeBin = findClaudeBin(ctx.projectDir);
     const runId = randomUUID().slice(0, 8);
     const plan = body.plan.slice(0, MAX_WORKERS);
-    const agents = loadAgents(projectDir);
+    const agents = loadAgents(ctx.projectDir);
     const agentMap = new Map(agents.map(a => [a.id, a]));
 
     activeRun = true;
@@ -176,7 +176,7 @@ Respond with ONLY a JSON array, no markdown, no explanation:
 
           // Update worker status to running in DB
           try {
-            const db = getDb(dataDir);
+            const db = getDb(ctx.dataDir);
             db.prepare(
               "UPDATE swarm_workers SET status='running', started_at=? WHERE run_id=? AND worker_id=?"
             ).run(Date.now(), runId, subtask.id);
@@ -184,15 +184,15 @@ Respond with ONLY a JSON array, no markdown, no explanation:
 
           try {
             await execFile("git", ["worktree", "add", worktreeDir, "-b", branchName], {
-              cwd: projectDir,
+              cwd: ctx.projectDir,
             });
-            logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "worktree_create", target: branchName, outcome: "success" });
+            logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "worktree_create", target: branchName, outcome: "success" });
           } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
-            logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "worktree_create", target: branchName, outcome: "failure", detail: msg });
+            logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "worktree_create", target: branchName, outcome: "failure", detail: msg });
             send({ type: "worker_error", id: subtask.id, error: `Worktree failed: ${msg}` });
             try {
-              const db = getDb(dataDir);
+              const db = getDb(ctx.dataDir);
               db.prepare(
                 "UPDATE swarm_workers SET status='error', error=?, completed_at=? WHERE run_id=? AND worker_id=?"
               ).run(`Worktree failed: ${msg}`, Date.now(), runId, subtask.id);
@@ -228,7 +228,7 @@ Work in the current directory. Make the necessary code changes, create or modify
               fullOutput += text;
               send({ type: "worker_chunk", id: subtask.id, text });
               try {
-                const db = getDb(dataDir);
+                const db = getDb(ctx.dataDir);
                 db.prepare(
                   "UPDATE swarm_workers SET output = output || ? WHERE run_id=? AND worker_id=?"
                 ).run(text, runId, subtask.id);
@@ -241,7 +241,7 @@ Work in the current directory. Make the necessary code changes, create or modify
               if (code !== 0 && code !== null) {
                 send({ type: "worker_error", id: subtask.id, error: `Exit code ${code}` });
                 try {
-                  const db = getDb(dataDir);
+                  const db = getDb(ctx.dataDir);
                   db.prepare(
                     "UPDATE swarm_workers SET status='error', error=?, completed_at=? WHERE run_id=? AND worker_id=?"
                   ).run(`Exit code ${code}`, Date.now(), runId, subtask.id);
@@ -257,13 +257,13 @@ Work in the current directory. Make the necessary code changes, create or modify
                 if (hasChanges) {
                   await execFile("git", ["add", "-A"], { cwd: worktreeDir });
                   await execFile("git", ["commit", "-m", `feat(swarm/${runId}): agent ${subtask.id} - ${subtask.title}`], { cwd: worktreeDir });
-                  logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "git_commit", target: branchName, outcome: "success" });
+                  logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "git_commit", target: branchName, outcome: "success" });
                 }
               } catch {}
 
               // Parse and log file write / bash events from agent output
               const actionEvents = parseActionsFromOutput(fullOutput, runId, subtask.agentId, subtask.id);
-              for (const ev of actionEvents) logAgentAction(dataDir, ev);
+              for (const ev of actionEvents) logAgentAction(ctx.dataDir, ev);
 
               // Test verification step
               let testResult: { passed: boolean; output: string; skipped: boolean } = { passed: true, output: "", skipped: false };
@@ -296,7 +296,7 @@ Work in the current directory. Make the necessary code changes, create or modify
               }
 
               try {
-                const db = getDb(dataDir);
+                const db = getDb(ctx.dataDir);
                 db.prepare(
                   "UPDATE swarm_workers SET status='done', completed_at=? WHERE run_id=? AND worker_id=?"
                 ).run(Date.now(), runId, subtask.id);
@@ -309,7 +309,7 @@ Work in the current directory. Make the necessary code changes, create or modify
             proc.on("error", (err: Error) => {
               send({ type: "worker_error", id: subtask.id, error: err.message });
               try {
-                const db = getDb(dataDir);
+                const db = getDb(ctx.dataDir);
                 db.prepare(
                   "UPDATE swarm_workers SET status='error', error=?, completed_at=? WHERE run_id=? AND worker_id=?"
                 ).run(err.message, Date.now(), runId, subtask.id);
@@ -322,7 +322,7 @@ Work in the current directory. Make the necessary code changes, create or modify
         async function orchestrate() {
           // Insert run + workers into DB
           try {
-            const db = getDb(dataDir);
+            const db = getDb(ctx.dataDir);
             db.prepare(
               "INSERT INTO swarm_runs (id, task, status, worker_count, created_at) VALUES (?, ?, 'running', ?, ?)"
             ).run(runId, body.task, plan.length, Date.now());
@@ -354,13 +354,13 @@ Work in the current directory. Make the necessary code changes, create or modify
               await execFile("git", [
                 "merge", branchName, "--no-ff",
                 "-m", `feat(swarm): merge agent ${subtask.id} - ${subtask.title}`,
-              ], { cwd: projectDir });
+              ], { cwd: ctx.projectDir });
               merged.push(subtask.id);
-              logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "git_merge", target: branchName, outcome: "success" });
+              logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "git_merge", target: branchName, outcome: "success" });
             } catch {
-              try { await execFile("git", ["merge", "--abort"], { cwd: projectDir }); } catch {}
+              try { await execFile("git", ["merge", "--abort"], { cwd: ctx.projectDir }); } catch {}
               conflicts.push(subtask.id);
-              logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "git_merge", target: branchName, outcome: "failure", detail: "merge conflict" });
+              logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "git_merge", target: branchName, outcome: "failure", detail: "merge conflict" });
             }
           }
 
@@ -370,16 +370,16 @@ Work in the current directory. Make the necessary code changes, create or modify
             const worktreeDir = worktreeDirs.get(subtask.id);
             try {
               if (worktreeDir) {
-                await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: projectDir });
-                logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "worktree_remove", target: branchName, outcome: "success" });
+                await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: ctx.projectDir });
+                logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "worktree_remove", target: branchName, outcome: "success" });
               }
             } catch {}
-            try { await execFile("git", ["branch", "-D", branchName], { cwd: projectDir }); } catch {}
+            try { await execFile("git", ["branch", "-D", branchName], { cwd: ctx.projectDir }); } catch {}
           }
 
           // Persist merge result
           try {
-            const db = getDb(dataDir);
+            const db = getDb(ctx.dataDir);
             db.prepare(
               "UPDATE swarm_runs SET merged_count=?, conflict_count=?, skipped_count=?, status='done', completed_at=? WHERE id=?"
             ).run(merged.length, conflicts.length, skipped.length, Date.now(), runId);
@@ -402,7 +402,7 @@ Work in the current directory. Make the necessary code changes, create or modify
         orchestrate().catch((err) => {
           send({ type: "error", error: err instanceof Error ? err.message : String(err) });
           try {
-            const db = getDb(dataDir);
+            const db = getDb(ctx.dataDir);
             db.prepare(
               "UPDATE swarm_runs SET status='error', completed_at=? WHERE id=?"
             ).run(Date.now(), runId);
@@ -424,7 +424,7 @@ Work in the current directory. Make the necessary code changes, create or modify
 
   // GET /api/company/runs — list past swarm runs with workers
   app.get("/runs", (c) => {
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const runs = db.prepare(
       "SELECT * FROM swarm_runs ORDER BY created_at DESC LIMIT 50"
     ).all() as Record<string, unknown>[];
@@ -445,7 +445,7 @@ Work in the current directory. Make the necessary code changes, create or modify
 
   // GET /api/company/runs/:id — single run + workers
   app.get("/runs/:id", (c) => {
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     const run = db.prepare("SELECT * FROM swarm_runs WHERE id=?").get(c.req.param("id")) as Record<string, unknown> | undefined;
     if (!run) return c.json({ error: "Not found" }, 404);
     const workers = db.prepare(
@@ -456,7 +456,7 @@ Work in the current directory. Make the necessary code changes, create or modify
 
   // DELETE /api/company/runs/:id — delete run (cascades to workers)
   app.delete("/runs/:id", (c) => {
-    const db = getDb(dataDir);
+    const db = getDb(ctx.dataDir);
     db.prepare("DELETE FROM swarm_runs WHERE id=?").run(c.req.param("id"));
     return c.json({ ok: true });
   });

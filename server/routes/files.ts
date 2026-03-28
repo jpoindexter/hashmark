@@ -9,6 +9,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import { existsSync } from "fs";
 import { analyzeImpact } from "../lib/dep-graph.js";
+import type { WorkspaceCtx } from "./workspaces.js";
 
 const execAsync = promisify(execFile);
 
@@ -57,12 +58,12 @@ async function buildTree(dir: string, root: string, depth = 0): Promise<FileNode
   return nodes;
 }
 
-export function filesRoutes(projectDir: string) {
+export function filesRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
 
   app.get("/tree", async (c) => {
-    const tree = await buildTree(projectDir, projectDir);
-    return c.json({ tree, root: projectDir });
+    const tree = await buildTree(ctx.projectDir, ctx.projectDir);
+    return c.json({ tree, root: ctx.projectDir });
   });
 
   // Flat gitignore-aware file list for @mention completion.
@@ -73,7 +74,7 @@ export function filesRoutes(projectDir: string) {
       const { stdout } = await execAsync(
         "git",
         ["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
-        { cwd: projectDir, maxBuffer: 4 * 1024 * 1024 }
+        { cwd: ctx.projectDir, maxBuffer: 4 * 1024 * 1024 }
       );
       const files = stdout
         .split("\0")
@@ -87,7 +88,7 @@ export function filesRoutes(projectDir: string) {
       return c.json({ files });
     } catch {
       // Fallback: not a git repo — return flat tree walk
-      const tree = await buildTree(projectDir, projectDir);
+      const tree = await buildTree(ctx.projectDir, ctx.projectDir);
       const flat: { name: string; path: string; ext?: string }[] = [];
       function flatten(nodes: FileNode[]) {
         for (const n of nodes) {
@@ -103,8 +104,8 @@ export function filesRoutes(projectDir: string) {
   app.get("/read", async (c) => {
     const relPath = c.req.query("path");
     if (!relPath) return c.json({ error: "path required" }, 400);
-    const fullPath = join(projectDir, relPath);
-    if (!fullPath.startsWith(projectDir + "/") && fullPath !== projectDir) return c.json({ error: "forbidden" }, 403);
+    const fullPath = join(ctx.projectDir, relPath);
+    if (!fullPath.startsWith(ctx.projectDir + "/") && fullPath !== ctx.projectDir) return c.json({ error: "forbidden" }, 403);
     try {
       const content = await readFile(fullPath, "utf-8");
       return c.json({ content, path: relPath });
@@ -114,8 +115,8 @@ export function filesRoutes(projectDir: string) {
   app.get("/diff", async (c) => {
     const relPath = c.req.query("path");
     if (!relPath) return c.json({ error: "path required" }, 400);
-    const fullPath = join(projectDir, relPath);
-    if (!fullPath.startsWith(projectDir + "/") && fullPath !== projectDir) return c.json({ error: "forbidden" }, 403);
+    const fullPath = join(ctx.projectDir, relPath);
+    if (!fullPath.startsWith(ctx.projectDir + "/") && fullPath !== ctx.projectDir) return c.json({ error: "forbidden" }, 403);
     const stagedParam = c.req.query("staged");
     const staged = stagedParam === "true" || stagedParam === "1";
     try {
@@ -124,7 +125,7 @@ export function filesRoutes(projectDir: string) {
       const args = staged
         ? ["diff", "--cached", "--", relPath]
         : ["diff", "--", relPath];
-      const { stdout } = await execAsync("git", args, { cwd: projectDir });
+      const { stdout } = await execAsync("git", args, { cwd: ctx.projectDir });
       if (!stdout) {
         try {
           const content = await readFile(fullPath, "utf-8");
@@ -147,10 +148,10 @@ export function filesRoutes(projectDir: string) {
       if (body.paths?.length) {
         for (const p of body.paths) {
           if (!safePath(p)) continue;
-          await execAsync("git", ["add", "--", p], { cwd: projectDir });
+          await execAsync("git", ["add", "--", p], { cwd: ctx.projectDir });
         }
       } else {
-        await execAsync("git", ["add", "-A"], { cwd: projectDir });
+        await execAsync("git", ["add", "-A"], { cwd: ctx.projectDir });
       }
       return c.json({ ok: true });
     } catch (err) {
@@ -164,10 +165,10 @@ export function filesRoutes(projectDir: string) {
       if (body.paths?.length) {
         for (const p of body.paths) {
           if (!safePath(p)) continue;
-          await execAsync("git", ["restore", "--staged", "--", p], { cwd: projectDir });
+          await execAsync("git", ["restore", "--staged", "--", p], { cwd: ctx.projectDir });
         }
       } else {
-        await execAsync("git", ["restore", "--staged", "."], { cwd: projectDir });
+        await execAsync("git", ["restore", "--staged", "."], { cwd: ctx.projectDir });
       }
       return c.json({ ok: true });
     } catch (err) {
@@ -183,10 +184,10 @@ export function filesRoutes(projectDir: string) {
         if (!safePath(p)) continue;
         try {
           // Try checkout first (tracked files)
-          await execAsync("git", ["checkout", "--", p], { cwd: projectDir });
+          await execAsync("git", ["checkout", "--", p], { cwd: ctx.projectDir });
         } catch {
           // Untracked file — clean it
-          await execAsync("git", ["clean", "-f", p], { cwd: projectDir });
+          await execAsync("git", ["clean", "-f", p], { cwd: ctx.projectDir });
         }
       }
       return c.json({ ok: true });
@@ -199,7 +200,7 @@ export function filesRoutes(projectDir: string) {
     const body = await c.req.json<{ message: string }>();
     if (!body.message?.trim()) return c.json({ error: "message required" }, 400);
     try {
-      await execAsync("git", ["commit", "-m", body.message], { cwd: projectDir });
+      await execAsync("git", ["commit", "-m", body.message], { cwd: ctx.projectDir });
       return c.json({ ok: true });
     } catch (err) {
       return c.json({ error: String(err) }, 500);
@@ -208,7 +209,7 @@ export function filesRoutes(projectDir: string) {
 
   app.post("/push", async (c) => {
     try {
-      const { stdout } = await execAsync("git", ["push"], { cwd: projectDir });
+      const { stdout } = await execAsync("git", ["push"], { cwd: ctx.projectDir });
       return c.json({ ok: true, output: stdout });
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : "Push failed" }, 500);
@@ -217,7 +218,7 @@ export function filesRoutes(projectDir: string) {
 
   app.post("/pull", async (c) => {
     try {
-      const { stdout } = await execAsync("git", ["pull"], { cwd: projectDir });
+      const { stdout } = await execAsync("git", ["pull"], { cwd: ctx.projectDir });
       return c.json({ ok: true, output: stdout });
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : "Pull failed" }, 500);
@@ -226,7 +227,7 @@ export function filesRoutes(projectDir: string) {
 
   app.post("/fetch", async (c) => {
     try {
-      const { stdout } = await execAsync("git", ["fetch", "--all"], { cwd: projectDir });
+      const { stdout } = await execAsync("git", ["fetch", "--all"], { cwd: ctx.projectDir });
       return c.json({ ok: true, output: stdout });
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : "Fetch failed" }, 500);
@@ -237,8 +238,8 @@ export function filesRoutes(projectDir: string) {
 
   /** Resolve and validate a relative path is within projectDir */
   function safePath(relPath: string): string | null {
-    const full = resolve(projectDir, relPath);
-    if (!full.startsWith(projectDir + "/") && full !== projectDir) return null;
+    const full = resolve(ctx.projectDir, relPath);
+    if (!full.startsWith(ctx.projectDir + "/") && full !== ctx.projectDir) return null;
     return full;
   }
 
@@ -288,7 +289,7 @@ export function filesRoutes(projectDir: string) {
     const fullPath = safePath(relPath);
     if (!fullPath) return c.json({ error: "forbidden" }, 403);
     // Extra guard: never delete project root
-    if (fullPath === projectDir) return c.json({ error: "cannot delete project root" }, 403);
+    if (fullPath === ctx.projectDir) return c.json({ error: "cannot delete project root" }, 403);
     try {
       await rm(fullPath, { recursive: true });
       return c.json({ ok: true, path: relPath });
@@ -322,7 +323,7 @@ export function filesRoutes(projectDir: string) {
       args.push("--", q, ".");
 
       const { stdout } = await execAsync("rg", args, {
-        cwd: projectDir,
+        cwd: ctx.projectDir,
         maxBuffer: 8 * 1024 * 1024,
       });
 
@@ -418,14 +419,14 @@ export function filesRoutes(projectDir: string) {
               }
             }
             if (fileMatches.length > 0) {
-              results.push({ file: relative(projectDir, fullPath), matches: fileMatches });
+              results.push({ file: relative(ctx.projectDir, fullPath), matches: fileMatches });
             }
           } catch { /* skip unreadable files */ }
         }
       }
     }
 
-    await searchDir(projectDir, 0);
+    await searchDir(ctx.projectDir, 0);
     return c.json({ results, matchCount });
   });
 
@@ -437,7 +438,7 @@ export function filesRoutes(projectDir: string) {
     const base = c.req.query("base") ?? "HEAD";
     // Reject values starting with - to prevent flag injection in git commands
     if (branch.startsWith("-") || base.startsWith("-")) return c.json({ error: "invalid ref name" }, 400);
-    const report = analyzeImpact(projectDir, branch, base);
+    const report = analyzeImpact(ctx.projectDir, branch, base);
     return c.json(report);
   });
 
@@ -446,8 +447,8 @@ export function filesRoutes(projectDir: string) {
   app.get("/symbols", async (c) => {
     const relPath = c.req.query("path");
     if (!relPath) return c.json({ error: "path required" }, 400);
-    const fullPath = join(projectDir, relPath);
-    if (!fullPath.startsWith(projectDir + "/") && fullPath !== projectDir) return c.json({ error: "forbidden" }, 403);
+    const fullPath = join(ctx.projectDir, relPath);
+    if (!fullPath.startsWith(ctx.projectDir + "/") && fullPath !== ctx.projectDir) return c.json({ error: "forbidden" }, 403);
 
     try {
       const content = await readFile(fullPath, "utf-8");
@@ -520,7 +521,7 @@ export function filesRoutes(projectDir: string) {
   });
 
   app.get("/complexity", async (c) => {
-    const cachePath = join(projectDir, ".hashmark", "complexity-cache.json");
+    const cachePath = join(ctx.projectDir, ".hashmark", "complexity-cache.json");
     if (!existsSync(cachePath)) return c.json({ data: null });
     try {
       const raw = await readFile(cachePath, "utf-8");
@@ -537,7 +538,7 @@ export function filesRoutes(projectDir: string) {
       const { stdout: logRaw } = await execAsync(
         "git",
         ["log", "--format=%H|%h|%s|%an|%ai", "-50"],
-        { cwd: projectDir, maxBuffer: 4 * 1024 * 1024 }
+        { cwd: ctx.projectDir, maxBuffer: 4 * 1024 * 1024 }
       );
 
       const commitLines = logRaw.trim().split("\n").filter(Boolean);
@@ -547,7 +548,7 @@ export function filesRoutes(projectDir: string) {
       const { stdout: numstatRaw } = await execAsync(
         "git",
         ["log", "--format=COMMIT:%H", "--numstat", "-50"],
-        { cwd: projectDir, maxBuffer: 8 * 1024 * 1024 }
+        { cwd: ctx.projectDir, maxBuffer: 8 * 1024 * 1024 }
       );
 
       // Build map: hash -> { filesChanged, insertions, deletions, files: string[] }
@@ -575,7 +576,7 @@ export function filesRoutes(projectDir: string) {
       const { stdout: branchRaw } = await execAsync(
         "git",
         ["branch", "-v", "--no-abbrev"],
-        { cwd: projectDir }
+        { cwd: ctx.projectDir }
       ).catch(() => ({ stdout: "" }));
 
       const branchMap: Record<string, string[]> = {};
@@ -626,7 +627,7 @@ export function filesRoutes(projectDir: string) {
       const { stdout } = await execAsync(
         "git",
         ["show", "--format=", hash, "--", file],
-        { cwd: projectDir, maxBuffer: 4 * 1024 * 1024 }
+        { cwd: ctx.projectDir, maxBuffer: 4 * 1024 * 1024 }
       );
       return c.json({ diff: stdout, file, hash });
     } catch (err) {
@@ -637,8 +638,8 @@ export function filesRoutes(projectDir: string) {
   app.get("/git/branches", async (c) => {
     try {
       const [branchesOut, currentOut] = await Promise.all([
-        execAsync("git", ["branch", "--format=%(refname:short)"], { cwd: projectDir }),
-        execAsync("git", ["branch", "--show-current"], { cwd: projectDir }),
+        execAsync("git", ["branch", "--format=%(refname:short)"], { cwd: ctx.projectDir }),
+        execAsync("git", ["branch", "--show-current"], { cwd: ctx.projectDir }),
       ]);
       const branches = branchesOut.stdout.trim().split("\n").filter(Boolean);
       const current = currentOut.stdout.trim();
@@ -654,7 +655,7 @@ export function filesRoutes(projectDir: string) {
     if (!name) return c.json({ error: "Branch name required" }, 400);
     if (name.startsWith("-")) return c.json({ error: "Invalid branch name" }, 400);
     try {
-      await execAsync("git", ["checkout", "-b", "--", name], { cwd: projectDir });
+      await execAsync("git", ["checkout", "-b", "--", name], { cwd: ctx.projectDir });
       return c.json({ ok: true, branch: name });
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
@@ -667,7 +668,7 @@ export function filesRoutes(projectDir: string) {
     if (!branch) return c.json({ error: "branch required" }, 400);
     if (branch.startsWith("-")) return c.json({ error: "Invalid branch name" }, 400);
     try {
-      await execAsync("git", ["checkout", "--", branch], { cwd: projectDir });
+      await execAsync("git", ["checkout", "--", branch], { cwd: ctx.projectDir });
       return c.json({ success: true });
     } catch (err) {
       return c.json({ error: String(err) }, 500);
@@ -679,7 +680,7 @@ export function filesRoutes(projectDir: string) {
     try {
       await execAsync("which", ["gh"]);
       // Also verify auth -- gh auth status exits 0 when logged in
-      await execAsync("gh", ["auth", "status"], { cwd: projectDir });
+      await execAsync("gh", ["auth", "status"], { cwd: ctx.projectDir });
       return c.json({ available: true });
     } catch {
       return c.json({ available: false });
@@ -701,7 +702,7 @@ export function filesRoutes(projectDir: string) {
       if (body.base?.trim()) {
         args.push("--base", body.base.trim());
       }
-      const { stdout } = await execAsync("gh", args, { cwd: projectDir, timeout: 30000 });
+      const { stdout } = await execAsync("gh", args, { cwd: ctx.projectDir, timeout: 30000 });
       const url = stdout.trim();
       return c.json({ ok: true, url });
     } catch (err) {
@@ -716,13 +717,13 @@ export function filesRoutes(projectDir: string) {
     try {
       const { stdout: branchRaw } = await execAsync(
         "git", ["rev-parse", "--abbrev-ref", "HEAD"],
-        { cwd: projectDir }
+        { cwd: ctx.projectDir }
       );
       const branch = branchRaw.trim();
 
       // Check if upstream exists
       try {
-        await execAsync("git", ["rev-parse", "--abbrev-ref", `${branch}@{u}`], { cwd: projectDir });
+        await execAsync("git", ["rev-parse", "--abbrev-ref", `${branch}@{u}`], { cwd: ctx.projectDir });
       } catch {
         return c.json({ commits: [], count: 0 });
       }
@@ -730,7 +731,7 @@ export function filesRoutes(projectDir: string) {
       const { stdout } = await execAsync(
         "git",
         ["log", `origin/${branch}..HEAD`, "--format=%h|%s|%ai", "--", "."],
-        { cwd: projectDir, maxBuffer: 2 * 1024 * 1024 }
+        { cwd: ctx.projectDir, maxBuffer: 2 * 1024 * 1024 }
       );
 
       const commits = stdout.trim().split("\n").filter(Boolean).map((line) => {
@@ -747,9 +748,9 @@ export function filesRoutes(projectDir: string) {
   app.get("/git", async (c) => {
     try {
       const [statusOut, logOut, branchOut] = await Promise.all([
-        execAsync("git", ["status", "--porcelain=v1"], { cwd: projectDir }),
-        execAsync("git", ["log", "--oneline", "-10"], { cwd: projectDir }),
-        execAsync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: projectDir }),
+        execAsync("git", ["status", "--porcelain=v1"], { cwd: ctx.projectDir }),
+        execAsync("git", ["log", "--oneline", "-10"], { cwd: ctx.projectDir }),
+        execAsync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: ctx.projectDir }),
       ]);
       const branch = branchOut.stdout.trim();
 
@@ -759,7 +760,7 @@ export function filesRoutes(projectDir: string) {
       try {
         const { stdout: revCount } = await execAsync(
           "git", ["rev-list", "--left-right", "--count", `${branch}...@{u}`],
-          { cwd: projectDir }
+          { cwd: ctx.projectDir }
         );
         const parts = revCount.trim().split(/\s+/);
         ahead = parseInt(parts[0]) || 0;
@@ -781,8 +782,8 @@ export function filesRoutes(projectDir: string) {
 
       // Batch numstat: 2 git calls instead of N per-file spawns
       const [unstagedOut, stagedOut] = await Promise.all([
-        execAsync("git", ["diff", "--numstat", "HEAD"], { cwd: projectDir }).catch(() => ({ stdout: "" })),
-        execAsync("git", ["diff", "--numstat", "--cached"], { cwd: projectDir }).catch(() => ({ stdout: "" })),
+        execAsync("git", ["diff", "--numstat", "HEAD"], { cwd: ctx.projectDir }).catch(() => ({ stdout: "" })),
+        execAsync("git", ["diff", "--numstat", "--cached"], { cwd: ctx.projectDir }).catch(() => ({ stdout: "" })),
       ]);
       const parseNumstat = (out: string): Map<string, { added: number; removed: number }> => {
         const m = new Map<string, { added: number; removed: number }>();
