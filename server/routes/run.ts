@@ -273,10 +273,11 @@ export function runRoutes(ctx: WorkspaceCtx) {
 
             proc.stderr.on("data", () => {});
 
-            proc.on("close", (code: number | null) => {
+            proc.on("close", (code: number | null, signal: string | null) => {
               clearTimeout(timeout);
               activeProc = null;
-              if (code !== 0 && code !== null) {
+              // Don't report error if killed intentionally (SIGTERM from cancel)
+              if (code !== 0 && code !== null && signal !== "SIGTERM" && activeRun) {
                 send({ type: "error", error: `Claude exited with code ${code}` });
               }
               resolve();

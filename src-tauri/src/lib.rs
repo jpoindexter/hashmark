@@ -217,42 +217,8 @@ fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::Wry>> {
         )
         .build()?;
 
-    // ── Selection ──
-    let selection_menu = SubmenuBuilder::new(app, "Selection")
-        .item(&PredefinedMenuItem::select_all(app, None)?)
-        .separator()
-        .item(
-            &MenuItemBuilder::with_id("menu:expand-selection", "Expand Selection")
-                .accelerator("Shift+Alt+Right")
-                .build(app)?,
-        )
-        .item(
-            &MenuItemBuilder::with_id("menu:shrink-selection", "Shrink Selection")
-                .accelerator("Shift+Alt+Left")
-                .build(app)?,
-        )
-        .separator()
-        .item(
-            &MenuItemBuilder::with_id("menu:copy-line-up", "Copy Line Up")
-                .accelerator("Shift+Alt+Up")
-                .build(app)?,
-        )
-        .item(
-            &MenuItemBuilder::with_id("menu:copy-line-down", "Copy Line Down")
-                .accelerator("Shift+Alt+Down")
-                .build(app)?,
-        )
-        .item(
-            &MenuItemBuilder::with_id("menu:move-line-up", "Move Line Up")
-                .accelerator("Alt+Up")
-                .build(app)?,
-        )
-        .item(
-            &MenuItemBuilder::with_id("menu:move-line-down", "Move Line Down")
-                .accelerator("Alt+Down")
-                .build(app)?,
-        )
-        .build()?;
+    // Selection menu removed — Alt-based accelerators intercept macOS system keys
+    // (breaks screenshots, Finder, and other Option-key behaviors)
 
     // ── View ──
     let view_menu = SubmenuBuilder::new(app, "View")
@@ -412,7 +378,6 @@ fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::Wry>> {
         .item(&app_menu)
         .item(&file_menu)
         .item(&edit_menu)
-        .item(&selection_menu)
         .item(&view_menu)
         .item(&go_menu)
         .item(&run_menu)
