@@ -13,7 +13,7 @@ import { promisify } from "util";
 import { tmpdir } from "os";
 import { logAgentAction } from "../lib/action-log.js";
 import { detectConflicts } from "../lib/dep-graph.js";
-import { getDb } from "../db.js";
+import { getDb, getStudioSetting } from "../db.js";
 import { findClaudeBin } from "../lib/bin-resolver.js";
 import { z } from "zod";
 import type { WorkspaceCtx } from "./workspaces.js";
@@ -103,11 +103,13 @@ function loadAgents(projectDir: string): AgentDef[] {
 
 // ─── Internal event system ────────────────────────────────────────────────────
 
-type SwarmEventType = "chunk" | "status" | "complete" | "committed" | "merged" | "merge_conflict";
+type SwarmEventType = "chunk" | "status" | "complete" | "committed" | "merged" | "merge_conflict" | "ready_to_merge";
 
 interface SwarmEvent {
   type: SwarmEventType;
   data?: string;
+  branch?: string;
+  filesChanged?: number;
 }
 
 interface SwarmRunWithEmitter extends SwarmRun {
@@ -184,13 +186,17 @@ async function runAgent(
 
   const ctrl = swarm.controllers[agentIndex];
 
+  const skipPerms = getStudioSetting(getDb(dataDir), "dangerousSkipPermissions", "false") === "true";
+  const swarmEnv: Record<string, string> = { ...process.env as Record<string, string> };
+  if (skipPerms) swarmEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
+
   await new Promise<void>((resolve) => {
     if (ctrl.signal.aborted) { resolve(); return; }
 
     const proc = spawn(claudeBin, ["--print", prompt], {
       cwd: worktreeDir,
       stdio: ["ignore", "pipe", "pipe"],
-      env: { ...process.env, CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS: "1" },
+      env: swarmEnv,
     });
 
     ctrl.signal.addEventListener("abort", () => {
@@ -272,41 +278,21 @@ async function runAgent(
     emit(swarm, agentIndex, { type: "chunk", data: `\n[commit error] ${msg}` });
   }
 
+  // Count files and notify client to review before merging
   if (hasChanges) {
+    let filesChanged = 0;
     try {
-      await execFile(
-        "git",
-        ["merge", branch, "--no-ff", "-m", `feat(swarm): merge ${branch}`],
-        { cwd: projectDir }
+      const { stdout: nameOnly } = await execFile(
+        "git", ["diff-tree", "--no-commit-id", "-r", "--name-only", "HEAD"],
+        { cwd: worktreeDir }
       );
-      emit(swarm, agentIndex, { type: "merged", data: branch });
-      logAgentAction(dataDir, {
-        timestamp: Date.now(),
-        runId: swarm.swarmId,
-        agentId: agent.agentId ?? "general",
-        action: "git_merge",
-        target: branch,
-        outcome: "success",
-      });
-    } catch {
-      try { await execFile("git", ["merge", "--abort"], { cwd: projectDir }); } catch {}
-      emit(swarm, agentIndex, { type: "merge_conflict", data: branch });
-      logAgentAction(dataDir, {
-        timestamp: Date.now(),
-        runId: swarm.swarmId,
-        agentId: agent.agentId ?? "general",
-        action: "git_merge",
-        target: branch,
-        outcome: "failure",
-        detail: "merge conflict",
-      });
-    }
+      filesChanged = nameOnly.trim().split("\n").filter(Boolean).length;
+    } catch {}
+    emit(swarm, agentIndex, { type: "ready_to_merge", branch, filesChanged });
   }
 
+  // Remove worktree but keep branch — user triggers merge via POST /api/swarm/:id/agents/:index/merge
   try { await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: projectDir }); } catch {}
-  if (hasChanges) {
-    try { await execFile("git", ["branch", "-d", branch], { cwd: projectDir }); } catch {}
-  }
 
   agent.status = "done";
   emit(swarm, agentIndex, { type: "status", data: "done" });
@@ -488,6 +474,49 @@ export function swarmRoutes(ctx: WorkspaceCtx) {
         "Connection": "keep-alive",
       },
     });
+  });
+
+  // POST /api/swarm/:id/agents/:index/merge — user-triggered merge for a single agent's branch
+  app.post("/:id/agents/:index/merge", async (c) => {
+    const id = c.req.param("id");
+    const index = parseInt(c.req.param("index"), 10);
+    const swarm = swarms.get(id);
+    if (!swarm) return c.json({ error: "Swarm not found" }, 404);
+    const agent = swarm.agents[index];
+    if (!agent) return c.json({ error: "Agent not found" }, 404);
+    const { branch } = agent;
+    if (!branch) return c.json({ error: "No branch for this agent" }, 400);
+
+    try {
+      await execFile(
+        "git",
+        ["merge", branch, "--no-ff", "-m", `feat(swarm): merge ${branch}`],
+        { cwd: ctx.projectDir }
+      );
+      logAgentAction(ctx.dataDir, {
+        timestamp: Date.now(),
+        runId: id,
+        agentId: agent.agentId ?? "general",
+        action: "git_merge",
+        target: branch,
+        outcome: "success",
+      });
+      try { await execFile("git", ["branch", "-d", branch], { cwd: ctx.projectDir }); } catch {}
+      return c.json({ ok: true });
+    } catch (err) {
+      try { await execFile("git", ["merge", "--abort"], { cwd: ctx.projectDir }); } catch {}
+      const msg = err instanceof Error ? err.message : String(err);
+      logAgentAction(ctx.dataDir, {
+        timestamp: Date.now(),
+        runId: id,
+        agentId: agent.agentId ?? "general",
+        action: "git_merge",
+        target: branch,
+        outcome: "failure",
+        detail: "merge conflict",
+      });
+      return c.json({ error: "Merge conflict — resolve manually", branch, detail: msg }, 409);
+    }
   });
 
   // DELETE /api/swarm/:id

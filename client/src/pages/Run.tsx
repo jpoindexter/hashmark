@@ -22,6 +22,8 @@ interface RunResult {
   mode?: RunMode;
   runId?: string;
   worktreeBranch?: string;
+  readyToMerge?: { branch: string; filesChanged: number };
+  merged?: boolean;
 }
 
 // Department-specific colors (no Grove token equivalent)
@@ -128,6 +130,7 @@ export default function Run() {
   const [showRecent, setShowRecent]   = useState(false);
   const [recentTasks, setRecentTasks] = useState<string[]>([]);
   const [copied, setCopied]     = useState(false);
+  const [merging, setMerging]   = useState(false);
 
   const outputRef     = useRef<HTMLDivElement>(null);
   const textareaRef   = useRef<HTMLTextAreaElement>(null);
@@ -256,29 +259,33 @@ export default function Run() {
         setOutput((prev) => prev + (event.text as string));
         break;
       case "committed":
-        setStatus("Committing...");
+        setStatus("Committed");
         break;
-      case "merged":
-        setStatus("Merging...");
+      case "ready_to_merge":
+        setStatus("Ready to merge");
+        setResult((prev) => ({
+          ...(prev ?? { hasChanges: true }),
+          readyToMerge: { branch: event.branch as string, filesChanged: event.filesChanged as number },
+        }));
         break;
       case "merge_conflict":
         setStatus("Merge conflict");
         setResult((prev) => ({ ...prev, hasChanges: true, conflictBranch: event.branch as string }));
         break;
       case "complete": {
-        setStatus("Done");
         const r: RunResult = {
           hasChanges: event.hasChanges as boolean,
           mode: event.mode as RunMode | undefined,
           runId: event.runId as string | undefined,
           worktreeBranch: event.branch as string | undefined,
+          ...(resultRef.current ?? {}),
         };
-        if (!resultRef.current) setResult(r);
+        setResult(r);
         setPhase("done");
-        toast("Run complete", {
-          variant: "success",
-          title: r.worktreeBranch ? `Changes committed to ${r.worktreeBranch}` : "No changes made",
-        });
+        setStatus(r.hasChanges && r.mode !== "plan" ? "Ready to merge" : "Done");
+        if (r.mode === "plan" || !r.hasChanges) {
+          toast("Run complete", { variant: "success", title: "No changes made" });
+        }
         break;
       }
       case "error": {
@@ -290,6 +297,27 @@ export default function Run() {
       }
     }
   }, []);
+
+  async function handleMerge() {
+    const rid = result?.runId;
+    if (!rid || merging) return;
+    setMerging(true);
+    try {
+      const res = await fetchApi(`/api/run/runs/${rid}/merge`, { method: "POST" });
+      if (res.ok) {
+        setResult((prev) => prev ? { ...prev, merged: true, readyToMerge: undefined } : prev);
+        setStatus("Merged");
+        toast("Merged to main", { variant: "success", title: result?.readyToMerge?.branch ?? "" });
+      } else {
+        const data = await res.json() as { error?: string };
+        toast("Merge failed", { variant: "error", title: data.error ?? "Conflict — resolve manually" });
+      }
+    } catch {
+      toast("Merge failed", { variant: "error" });
+    } finally {
+      setMerging(false);
+    }
+  }
 
   async function handleViewDiff() {
     const rid = result?.runId;
@@ -729,9 +757,11 @@ export default function Run() {
                   ? "var(--cyan)"
                   : result.conflictBranch
                     ? "var(--yellow)"
-                    : result.hasChanges
-                      ? "var(--accent)"
-                      : "var(--border-dim)"
+                    : result.readyToMerge && !result.merged
+                      ? "var(--yellow)"
+                      : result.merged || result.hasChanges
+                        ? "var(--accent)"
+                        : "var(--border-dim)"
               }`,
               borderRadius: "var(--radius)",
               display: "flex",
@@ -764,17 +794,31 @@ export default function Run() {
                     ? "Plan complete — review output above"
                     : result.conflictBranch
                       ? `Merge conflict — branch ${result.conflictBranch} preserved`
-                      : result.hasChanges
-                        ? "Changes merged to main"
-                        : "No changes made"}
+                      : result.merged
+                        ? "Merged to main"
+                        : result.readyToMerge
+                          ? `Ready to merge — ${result.readyToMerge.filesChanged} file${result.readyToMerge.filesChanged !== 1 ? "s" : ""} changed`
+                          : result.hasChanges
+                            ? `Changes on ${result.readyToMerge ? result.readyToMerge.branch : "branch"}`
+                            : "No changes made"}
                 </span>
               </div>
 
               {/* Action buttons */}
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {result.hasChanges && result.mode !== "plan" && (
+                {result.readyToMerge && !result.merged && (
                   <button
                     className="btn btn-primary btn-sm"
+                    onClick={handleMerge}
+                    disabled={merging}
+                    style={{ borderColor: "var(--yellow)", color: "var(--yellow)" }}
+                  >
+                    {merging ? "merging..." : `review & merge (${result.readyToMerge.filesChanged} file${result.readyToMerge.filesChanged !== 1 ? "s" : ""})`}
+                  </button>
+                )}
+                {result.hasChanges && result.mode !== "plan" && (
+                  <button
+                    className="btn btn-sm"
                     onClick={handleViewDiff}
                     disabled={diffLoading}
                   >

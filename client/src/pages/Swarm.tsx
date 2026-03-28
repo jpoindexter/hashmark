@@ -24,6 +24,9 @@ interface AgentCard {
   agentId?: string;
   status: AgentStatus;
   output: string;
+  branch?: string;
+  readyToMerge?: { branch: string; filesChanged: number };
+  merged?: boolean;
 }
 
 const STATUS_COLOR: Record<AgentStatus, string> = {
@@ -54,6 +57,7 @@ export default function Swarm() {
   const [availableAgents, setAvailableAgents] = useState<AgentDef[]>([]);
   const [swarmId, setSwarmId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mergingAgents, setMergingAgents] = useState<Set<number>>(new Set());
   const outputRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const esRef = useRef<EventSource | null>(null);
 
@@ -83,6 +87,8 @@ export default function Swarm() {
           agentIndex?: number;
           data?: string;
           swarmId?: string;
+          branch?: string;
+          filesChanged?: number;
         };
 
         if (event.type === "swarm_complete") {
@@ -115,6 +121,8 @@ export default function Swarm() {
             }
           } else if (event.type === "chunk") {
             next[idx] = { ...card, output: card.output + (event.data ?? "") };
+          } else if (event.type === "ready_to_merge") {
+            next[idx] = { ...card, readyToMerge: { branch: event.branch!, filesChanged: event.filesChanged ?? 0 } };
           } else if (event.type === "complete") {
             next[idx] = { ...card, status: "done" };
           }
@@ -195,6 +203,27 @@ export default function Swarm() {
       )
     );
     toast("Swarm cancelled", { variant: "info" });
+  }
+
+  async function handleMerge(agentIndex: number) {
+    if (!swarmId) return;
+    setMergingAgents((prev) => new Set(prev).add(agentIndex));
+    try {
+      const res = await fetchApi(`/api/swarm/${swarmId}/agents/${agentIndex}/merge`, { method: "POST" });
+      if (res.ok) {
+        setAgents((prev) => prev.map((a, i) =>
+          i === agentIndex ? { ...a, readyToMerge: undefined, merged: true } : a
+        ));
+        toast("Merged", { variant: "success" });
+      } else {
+        const data = await res.json() as { error?: string };
+        toast("Merge failed", { variant: "error", title: data.error ?? "Conflict — resolve manually" });
+      }
+    } catch {
+      toast("Merge failed", { variant: "error" });
+    } finally {
+      setMergingAgents((prev) => { const s = new Set(prev); s.delete(agentIndex); return s; });
+    }
   }
 
   function handleReset() {
@@ -542,6 +571,35 @@ export default function Swarm() {
                     }} />
                   )}
                 </div>
+
+                {/* Merge footer */}
+                {(agent.readyToMerge || agent.merged) && (
+                  <div style={{
+                    padding: "6px 12px",
+                    borderTop: "1px solid var(--border-dim)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}>
+                    {agent.merged ? (
+                      <span style={{ fontSize: 10, color: "var(--accent)" }}>merged</span>
+                    ) : (
+                      <>
+                        <span style={{ fontSize: 10, color: "var(--yellow)", flex: 1 }}>
+                          {agent.readyToMerge!.filesChanged} file{agent.readyToMerge!.filesChanged !== 1 ? "s" : ""} ready
+                        </span>
+                        <button
+                          className="btn btn-sm"
+                          onClick={() => handleMerge(i)}
+                          disabled={mergingAgents.has(i)}
+                          style={{ fontSize: 10, color: "var(--yellow)", borderColor: "var(--yellow)" }}
+                        >
+                          {mergingAgents.has(i) ? "merging..." : "review & merge"}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}

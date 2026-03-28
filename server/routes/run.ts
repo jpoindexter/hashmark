@@ -12,8 +12,8 @@ import { randomUUID } from "crypto";
 import { promisify } from "util";
 import { tmpdir } from "os";
 import { logAgentAction, parseActionsFromOutput } from "../lib/action-log.js";
-import { getDb } from "../db.js";
-import { findClaudeBin } from "../lib/bin-resolver.js";
+import { getDb, getStudioSetting } from "../db.js";
+import { findClaudeBin, buildClaudeArgs } from "../lib/bin-resolver.js";
 import { z } from "zod";
 import type { WorkspaceCtx } from "./workspaces.js";
 
@@ -151,6 +151,33 @@ export function runRoutes(ctx: WorkspaceCtx) {
     }
   });
 
+  // POST /api/run/runs/:id/merge — user-triggered merge after reviewing Claude's changes
+  app.post("/runs/:id/merge", async (c) => {
+    const id = c.req.param("id");
+    const db = getDb(ctx.dataDir);
+    const run = db.prepare("SELECT worktree_branch FROM runs WHERE id = ?").get(id) as
+      | { worktree_branch: string | null } | undefined;
+    if (!run) return c.json({ error: "Run not found" }, 404);
+    const branch = run.worktree_branch;
+    if (!branch) return c.json({ error: "No branch for this run" }, 400);
+
+    try {
+      await execFile(
+        "git",
+        ["merge", branch, "--no-ff", "-m", `feat(run): merge ${branch}`],
+        { cwd: ctx.projectDir }
+      );
+      logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId: id, agentId: "general", action: "git_merge", target: branch, outcome: "success" });
+      try { await execFile("git", ["branch", "-d", branch], { cwd: ctx.projectDir }); } catch {}
+      return c.json({ ok: true });
+    } catch (err) {
+      try { await execFile("git", ["merge", "--abort"], { cwd: ctx.projectDir }); } catch {}
+      const msg = err instanceof Error ? err.message : String(err);
+      logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId: id, agentId: "general", action: "git_merge", target: branch, outcome: "failure", detail: "merge conflict" });
+      return c.json({ error: "Merge conflict — resolve manually", branch, detail: msg }, 409);
+    }
+  });
+
   // POST /api/run — start a single-agent run, returns SSE stream
   app.post("/", async (c) => {
     if (activeRun) {
@@ -220,12 +247,16 @@ export function runRoutes(ctx: WorkspaceCtx) {
           const prompt = `${planPrefix}${agentContext}${body.task}\n\nWork in the current directory. Make the necessary code changes, create or modify files as needed.`;
 
           // Spawn claude and stream output
+          const skipPerms = getStudioSetting(getDb(ctx.dataDir), "dangerousSkipPermissions", "false") === "true";
+          const runEnv: Record<string, string> = { ...process.env as Record<string, string> };
+          if (skipPerms) runEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
+
           let fullOutput = "";
           await new Promise<void>((resolve) => {
-            const proc = spawn(claudeBin, ["--print", prompt], {
+            const proc = spawn(claudeBin, buildClaudeArgs(prompt), {
               cwd: worktreeDir,
               stdio: ["ignore", "pipe", "pipe"],
-              env: { ...process.env, CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS: "1" },
+              env: runEnv,
             });
             activeProc = proc;
 
@@ -293,34 +324,24 @@ export function runRoutes(ctx: WorkspaceCtx) {
             send({ type: "error", error: `Commit failed: ${msg}` });
           }
 
-          // Merge back to main branch
+          // Count files and notify client to review before merging
           if (hasChanges) {
+            let filesChanged = 0;
             try {
-              await execFile("git", [
-                "merge", branchName, "--no-ff",
-                "-m", `feat(run): merge ${branchName}`,
-              ], { cwd: ctx.projectDir });
-              logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "git_merge", target: branchName, outcome: "success" });
-              send({ type: "merged" });
-            } catch {
-              try { await execFile("git", ["merge", "--abort"], { cwd: ctx.projectDir }); } catch {}
-              logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "git_merge", target: branchName, outcome: "failure", detail: "merge conflict" });
-              send({ type: "merge_conflict", branch: branchName });
-            }
+              const { stdout: nameOnly } = await execFile(
+                "git", ["diff-tree", "--no-commit-id", "-r", "--name-only", "HEAD"],
+                { cwd: worktreeDir }
+              );
+              filesChanged = nameOnly.trim().split("\n").filter(Boolean).length;
+            } catch {}
+            send({ type: "ready_to_merge", branch: branchName, filesChanged });
           }
 
-          // Cleanup worktree + branch (skip if conflict — branch preserved intentionally)
+          // Remove worktree but keep branch — user triggers merge via POST /api/run/runs/:id/merge
           try {
             await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: ctx.projectDir });
             logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "worktree_remove", target: branchName, outcome: "success" });
           } catch {}
-
-          if (hasChanges) {
-            // Only delete branch if merge succeeded (no conflict)
-            try {
-              await execFile("git", ["branch", "-d", branchName], { cwd: ctx.projectDir });
-            } catch {}
-          }
 
           // Update run status in DB
           try {
@@ -329,7 +350,7 @@ export function runRoutes(ctx: WorkspaceCtx) {
               .run("complete", Date.now(), runId);
           } catch { /* non-fatal */ }
 
-          send({ type: "complete", hasChanges, mode: "build" });
+          send({ type: "complete", hasChanges, mode: "build", runId });
           activeRun = false;
           controller.close();
         }
