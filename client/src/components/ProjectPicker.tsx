@@ -126,8 +126,6 @@ function ActionCard({
   onClick: () => void;
   disabled?: boolean;
 }) {
-  const [hovered, setHovered] = useState(false);
-
   return (
     <button
       onClick={onClick}
@@ -136,11 +134,19 @@ function ActionCard({
         ...cardBase,
         opacity: disabled ? 0.5 : 1,
         cursor: disabled ? "default" : "pointer",
-        background: hovered && !disabled ? "var(--bg-3)" : "var(--bg-2)",
-        borderColor: hovered && !disabled ? "var(--border)" : "var(--border-dim)",
+        background: "var(--bg-2)",
+        borderColor: "var(--border-dim)",
       }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => {
+        if (!disabled) {
+          e.currentTarget.style.background = "var(--bg-3)";
+          e.currentTarget.style.borderColor = "var(--border)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "var(--bg-2)";
+        e.currentTarget.style.borderColor = "var(--border-dim)";
+      }}
     >
       <div style={{ color: "var(--text-dim)" }}>{icon}</div>
       <div>
@@ -637,8 +643,6 @@ function RecentProjectRow({
   opening: boolean;
   onOpen: () => void;
 }) {
-  const [hovered, setHovered] = useState(false);
-
   return (
     <button
       onClick={onOpen}
@@ -649,7 +653,7 @@ function RecentProjectRow({
         gap: 12,
         height: 36,
         padding: "0 12px",
-        background: hovered ? "var(--bg-3)" : "transparent",
+        background: "transparent",
         border: "1px solid transparent",
         borderRadius: "var(--radius)",
         cursor: opening ? "default" : "pointer",
@@ -659,8 +663,8 @@ function RecentProjectRow({
         transition: "background 0.1s",
         boxSizing: "border-box",
       }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-3)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
     >
       <FolderIcon size={14} color="var(--text-dimmer)" />
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -979,7 +983,7 @@ function DropdownWorkspaceRow({
   onSwitch: () => void;
   onRemove: (e: React.MouseEvent) => void;
 }) {
-  const [hovered, setHovered] = useState(false);
+  const switchBtnRef = useRef<HTMLButtonElement>(null);
 
   return (
     <div
@@ -988,13 +992,19 @@ function DropdownWorkspaceRow({
         alignItems: "center",
         gap: 8,
         padding: "6px 12px",
-        background: hovered || focused ? "var(--accent-bg)" : "transparent",
+        background: focused ? "var(--accent-bg)" : "transparent",
         borderBottom: "1px solid var(--border-dim)",
         transition: "background 0.1s",
         cursor: isActive ? "default" : "pointer",
       }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "var(--accent-bg)";
+        if (!isActive && switchBtnRef.current) switchBtnRef.current.style.visibility = "visible";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = focused ? "var(--accent-bg)" : "transparent";
+        if (!isActive && switchBtnRef.current) switchBtnRef.current.style.visibility = focused ? "visible" : "hidden";
+      }}
     >
       <div style={{ color: isActive ? "var(--accent)" : "var(--text-dimmer)", flexShrink: 0 }}>
         <FolderIcon size={12} color={isActive ? "var(--accent)" : "var(--text-dimmer)"} />
@@ -1056,8 +1066,9 @@ function DropdownWorkspaceRow({
           </span>
         )}
 
-        {!isActive && (hovered || focused) && (
+        {!isActive && (
           <button
+            ref={switchBtnRef}
             onClick={(e) => { e.stopPropagation(); onSwitch(); }}
             disabled={switching}
             style={{
@@ -1072,6 +1083,7 @@ function DropdownWorkspaceRow({
               whiteSpace: "nowrap",
               letterSpacing: "0.04em",
               transition: "border-color 0.1s, color 0.1s",
+              visibility: focused ? "visible" : "hidden",
             }}
           >
             {switching ? "…" : "Switch"}

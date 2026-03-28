@@ -382,7 +382,7 @@ function ChangedFileRow({
   onUnstage: (e: React.MouseEvent) => void;
   onDiscard?: (e: React.MouseEvent) => void;
 }) {
-  const [hovered, setHovered] = useState(false);
+  const actionsRef = useRef<HTMLDivElement>(null);
   const displayStatus = isStaged
     ? f.x
     : f.isUntracked
@@ -395,8 +395,14 @@ function ChangedFileRow({
   return (
     <div
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => {
+        if (!isSelected) e.currentTarget.style.background = "var(--hover-bg)";
+        if (actionsRef.current) actionsRef.current.style.opacity = "1";
+      }}
+      onMouseLeave={(e) => {
+        if (!isSelected) e.currentTarget.style.background = "transparent";
+        if (actionsRef.current) actionsRef.current.style.opacity = "0";
+      }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -410,11 +416,7 @@ function ChangedFileRow({
         color: "var(--text-dim)",
         whiteSpace: "nowrap",
         overflow: "hidden",
-        background: isSelected
-          ? "var(--active-bg)"
-          : hovered
-            ? "var(--hover-bg)"
-            : "transparent",
+        background: isSelected ? "var(--active-bg)" : "transparent",
         borderLeft: isSelected
           ? "2px solid var(--accent)"
           : "2px solid transparent",
@@ -468,11 +470,12 @@ function ChangedFileRow({
         </span>
       ) : null}
       <div
+        ref={actionsRef}
         style={{
           display: "flex",
           gap: 1,
           flexShrink: 0,
-          opacity: hovered ? 1 : 0,
+          opacity: 0,
           transition: "opacity 0.1s",
         }}
       >
@@ -493,8 +496,6 @@ function ChangedFileRow({
 // --- Outgoing commit row ---
 
 function OutgoingCommitRow({ commit }: { commit: OutgoingCommit }) {
-  const [hovered, setHovered] = useState(false);
-
   function relativeDate(dateStr: string): string {
     const d = new Date(dateStr);
     const now = Date.now();
@@ -508,8 +509,8 @@ function OutgoingCommitRow({ commit }: { commit: OutgoingCommit }) {
 
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -522,7 +523,7 @@ function OutgoingCommitRow({ commit }: { commit: OutgoingCommit }) {
         color: "var(--text-dim)",
         whiteSpace: "nowrap",
         overflow: "hidden",
-        background: hovered ? "var(--hover-bg)" : "transparent",
+        background: "transparent",
         transition: "background 0.1s",
       }}
     >

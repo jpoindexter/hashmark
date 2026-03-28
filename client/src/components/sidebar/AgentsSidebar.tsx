@@ -52,13 +52,12 @@ function AgentRow({
   onClick: () => void;
   onContextMenu: (e: React.MouseEvent, agent: Agent) => void;
 }) {
-  const [hovered, setHovered] = useState(false);
   return (
     <div
       onClick={onClick}
       onContextMenu={(e) => { e.preventDefault(); onContextMenu(e, agent); }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "var(--hover-bg)"; }}
+      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
       title={agent.description || agent.path}
       style={{
         display: "flex",
@@ -73,7 +72,7 @@ function AgentRow({
         color: "var(--text-dim)",
         whiteSpace: "nowrap",
         overflow: "hidden",
-        background: isSelected ? "var(--active-bg)" : hovered ? "var(--hover-bg)" : "transparent",
+        background: isSelected ? "var(--active-bg)" : "transparent",
         borderLeft: isSelected ? "2px solid var(--accent)" : "2px solid transparent",
       }}
     >

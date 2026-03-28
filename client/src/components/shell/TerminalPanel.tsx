@@ -23,9 +23,6 @@ export default function TerminalPanel({
   onClose,
   onCwdChange,
 }: TerminalPanelProps) {
-  const [hoveredTab, setHoveredTab] = useState<string | null>(null);
-  const [maxHover, setMaxHover] = useState(false);
-  const [closeHover, setCloseHover] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
 
   const handleTerminalContextMenu = useCallback((e: React.MouseEvent) => {
@@ -102,15 +99,14 @@ export default function TerminalPanel({
       }}>
         {PANEL_TABS.map(tab => {
           const isActive = activeTab === tab;
-          const isHovered = hoveredTab === tab;
           return (
             <button
               key={tab}
               onClick={() => onTabChange(tab)}
-              onMouseEnter={() => setHoveredTab(tab)}
-              onMouseLeave={() => setHoveredTab(null)}
+              onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "var(--hover-bg)"; }}
+              onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "none"; }}
               style={{
-                background: !isActive && isHovered ? "var(--hover-bg)" : "none",
+                background: "none",
                 border: "none",
                 cursor: "pointer",
                 padding: "0 14px",
@@ -130,10 +126,10 @@ export default function TerminalPanel({
         <button
           title={termBig ? "Restore terminal" : "Maximize terminal"}
           onClick={onToggleBig}
-          onMouseEnter={() => setMaxHover(true)}
-          onMouseLeave={() => setMaxHover(false)}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg-strong)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
           style={{
-            background: maxHover ? "var(--hover-bg-strong)" : "none",
+            background: "none",
             border: "none",
             cursor: "pointer",
             color: "var(--text-dimmer)",
@@ -147,10 +143,10 @@ export default function TerminalPanel({
         <button
           title="Close terminal (\u2318`)"
           onClick={onClose}
-          onMouseEnter={() => setCloseHover(true)}
-          onMouseLeave={() => setCloseHover(false)}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg-strong)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
           style={{
-            background: closeHover ? "var(--hover-bg-strong)" : "none",
+            background: "none",
             border: "none",
             cursor: "pointer",
             color: "var(--text-dimmer)",

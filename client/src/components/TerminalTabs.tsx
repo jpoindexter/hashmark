@@ -32,13 +32,18 @@ function ToolbarBtn({
   children: React.ReactNode;
   danger?: boolean;
 }) {
-  const [hovered, setHovered] = useState(false);
   return (
     <button
       onClick={onClick}
       title={title}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = danger ? "rgba(248, 81, 73, 0.15)" : "var(--hover-bg-strong)";
+        e.currentTarget.style.color = danger ? "var(--red)" : "var(--text)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "none";
+        e.currentTarget.style.color = "var(--text-dimmer)";
+      }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -47,14 +52,8 @@ function ToolbarBtn({
         height: 22,
         borderRadius: 4,
         border: "none",
-        background: hovered
-          ? danger
-            ? "rgba(248, 81, 73, 0.15)"
-            : "var(--hover-bg-strong)"
-          : "none",
-        color: hovered
-          ? danger ? "var(--red)" : "var(--text)"
-          : "var(--text-dimmer)",
+        background: "none",
+        color: "var(--text-dimmer)",
         cursor: "pointer",
         padding: 0,
         transition: "background 0.1s, color 0.1s",
@@ -644,7 +643,7 @@ function TabItem({
   cwd?: string;
   shellIntegration: boolean;
 }) {
-  const [hovered, setHovered] = useState(false);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
   const tabRef = useRef<HTMLDivElement>(null);
 
   // Shortened CWD for display: show last 2 segments
@@ -662,8 +661,16 @@ function TabItem({
       onClick={onSelect}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(); } }}
       onContextMenu={onContextMenu}
-      onMouseEnter={() => { setHovered(true); onInfoEnter(); }}
-      onMouseLeave={() => { setHovered(false); onInfoLeave(); }}
+      onMouseEnter={(e) => {
+        if (!active) e.currentTarget.style.background = "var(--surface-subtle)";
+        if (closeBtnRef.current && showClose) closeBtnRef.current.style.visibility = "visible";
+        onInfoEnter();
+      }}
+      onMouseLeave={(e) => {
+        if (!active) e.currentTarget.style.background = "transparent";
+        if (closeBtnRef.current && !active) closeBtnRef.current.style.visibility = "hidden";
+        onInfoLeave();
+      }}
       style={{
         position: "relative",
         display: "flex",
@@ -676,7 +683,7 @@ function TabItem({
         color: active ? "var(--text)" : "var(--text-dimmer)",
         borderRight: "1px solid var(--border-dim)",
         borderBottom: active ? "2px solid var(--accent)" : "2px solid transparent",
-        background: active ? "var(--bg-3)" : hovered ? "var(--surface-subtle)" : "transparent",
+        background: active ? "var(--bg-3)" : "transparent",
         flexShrink: 0,
         userSelect: "none",
         minWidth: 80,
@@ -700,8 +707,9 @@ function TabItem({
           style={{ color: "var(--text-dimmer)", flexShrink: 0 }}
         />
       )}
-      {showClose && (hovered || active) && (
+      {showClose && (
         <button
+          ref={closeBtnRef}
           onClick={e => { e.stopPropagation(); onClose(); }}
           style={{
             display: "flex",
@@ -718,6 +726,7 @@ function TabItem({
             fontSize: 12,
             lineHeight: 1,
             flexShrink: 0,
+            visibility: active ? "visible" : "hidden",
           }}
           onMouseEnter={e => {
             (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-strong)";

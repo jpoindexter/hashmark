@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import { ChevronDown } from "lucide-react";
 
 interface ScrollToBottomProps {
@@ -41,8 +41,6 @@ const hoverStyle: Partial<CSSProperties> = {
 };
 
 export default function ScrollToBottom({ visible, onClick }: ScrollToBottomProps) {
-  const [hovered, setHovered] = useState(false);
-
   if (!visible) return null;
 
   return (
@@ -50,12 +48,15 @@ export default function ScrollToBottom({ visible, onClick }: ScrollToBottomProps
       <style>{`@keyframes scrollBtnFadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }`}</style>
       <button
         onClick={onClick}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          ...buttonBase,
-          ...(hovered ? hoverStyle : {}),
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = hoverStyle.background as string;
+          e.currentTarget.style.color = hoverStyle.color as string;
         }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = buttonBase.background as string;
+          e.currentTarget.style.color = buttonBase.color as string;
+        }}
+        style={{ ...buttonBase }}
       >
         <ChevronDown size={14} />
         Scroll to bottom

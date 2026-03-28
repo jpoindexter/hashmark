@@ -99,19 +99,11 @@ function ToggleButton({
   active: boolean;
   onClick: () => void;
 }) {
-  const [hovered, setHovered] = useState(false);
-
-  const color = active
-    ? "var(--accent)"
-    : hovered
-      ? "var(--text-dim)"
-      : "var(--text-dimmer)";
-
   return (
     <button
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = "var(--text-dim)"; }}
+      onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = "var(--text-dimmer)"; }}
       title={`${active ? "Disable" : "Enable"} ${label}`}
       style={{
         display: "flex",
@@ -121,7 +113,7 @@ function ToggleButton({
         border: "none",
         background: active ? "var(--accent-bg)" : "none",
         borderRadius: "var(--radius-sm)",
-        color,
+        color: active ? "var(--accent)" : "var(--text-dimmer)",
         fontSize: 11,
         fontFamily: "var(--font-ui)",
         cursor: "pointer",
@@ -248,7 +240,6 @@ function ModelRow({
 
 function InstallRow({ providerId, name }: { providerId: string; name: string }) {
   const url = INSTALL_URLS[providerId];
-  const [hovered, setHovered] = useState(false);
 
   return (
     <div
@@ -269,14 +260,14 @@ function InstallRow({ providerId, name }: { providerId: string; name: string }) 
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "var(--accent)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-dimmer)"; }}
           style={{
             display: "flex",
             alignItems: "center",
             gap: 3,
             fontSize: 9,
-            color: hovered ? "var(--accent)" : "var(--text-dimmer)",
+            color: "var(--text-dimmer)",
             textDecoration: "none",
             transition: "color 0.1s ease",
           }}
@@ -419,7 +410,6 @@ function ModelSelector({
   groups: ProviderGroup[];
 }) {
   const [open, setOpen] = useState(false);
-  const [hovered, setHovered] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -445,8 +435,6 @@ function ModelSelector({
     g.models.some((m) => m.id === selectedModel),
   );
 
-  const color = hovered ? "var(--text-dim)" : "var(--text-dimmer)";
-
   const handleSelect = useCallback(
     (id: string) => {
       onModelChange(id);
@@ -459,8 +447,8 @@ function ModelSelector({
     <div ref={ref} style={{ position: "relative" }}>
       <button
         onClick={() => setOpen((v) => !v)}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-dim)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-dimmer)"; }}
         title="Switch model"
         style={{
           display: "flex",
@@ -470,7 +458,7 @@ function ModelSelector({
           border: "none",
           background: "none",
           borderRadius: "var(--radius-sm)",
-          color,
+          color: "var(--text-dimmer)",
           fontSize: 11,
           fontFamily: "var(--font-ui)",
           cursor: "pointer",

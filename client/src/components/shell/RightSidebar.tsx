@@ -78,7 +78,6 @@ function CompactTreeRow({
   depth: number;
 }) {
   const [open, setOpen] = useState(depth < 1);
-  const [hovered, setHovered] = useState(false);
   const isDir = node.type === "dir";
   const Icon = isDir ? Folder : fileIcon(node.ext);
   const Chevron = open ? ChevronDown : ChevronRight;
@@ -105,8 +104,8 @@ function CompactTreeRow({
     <>
       <div
         onClick={handleClick}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
         style={{
           display: "flex",
           alignItems: "center",
@@ -121,7 +120,7 @@ function CompactTreeRow({
           color: "var(--text-dim)",
           whiteSpace: "nowrap",
           overflow: "hidden",
-          background: hovered ? "var(--hover-bg)" : "transparent",
+          background: "transparent",
         }}
       >
         {isDir && (
@@ -307,12 +306,10 @@ function ChangeRow({
   dir: string;
   status: string;
 }) {
-  const [hovered, setHovered] = useState(false);
-
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
       onClick={() =>
         window.dispatchEvent(
           new CustomEvent("studio:open-file", { detail: { path: file } }),
@@ -332,7 +329,7 @@ function ChangeRow({
         color: "var(--text-dim)",
         whiteSpace: "nowrap",
         overflow: "hidden",
-        background: hovered ? "var(--hover-bg)" : "transparent",
+        background: "transparent",
       }}
     >
       <StatusBadge status={status} />
@@ -545,13 +542,11 @@ function TabButton({
   icon: React.ReactNode;
   badge?: number;
 }) {
-  const [hovered, setHovered] = useState(false);
-
   return (
     <button
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -560,7 +555,7 @@ function TabButton({
         height: "100%",
         border: "none",
         borderBottom: active ? "2px solid var(--accent)" : "2px solid transparent",
-        background: hovered ? "var(--hover-bg)" : "transparent",
+        background: "transparent",
         color: active ? "var(--text)" : "var(--text-dimmer)",
         fontSize: 11,
         fontFamily: "var(--font-ui)",

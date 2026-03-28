@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import { GitBranch, Sparkles, Gauge } from "lucide-react";
 
 interface StatusBarProps {
@@ -19,16 +19,14 @@ function StatusItem({
   title?: string;
   onClick?: () => void;
 }) {
-  const [hovered, setHovered] = useState(false);
-
   return (
     <div
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
       title={title}
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => { if (onClick) e.currentTarget.style.background = "rgba(0,0,0,0.12)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -36,7 +34,7 @@ function StatusItem({
         padding: "0 5px",
         margin: "0 3px",
         cursor: onClick ? "pointer" : "default",
-        background: hovered ? "rgba(0,0,0,0.12)" : "transparent",
+        background: "transparent",
         borderRadius: "var(--radius-sm)",
         height: "100%",
         transition: "background 0.1s ease",

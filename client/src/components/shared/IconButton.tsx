@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type ReactNode, type MouseEvent } from "react";
+import { type CSSProperties, type ReactNode, type MouseEvent } from "react";
 
 interface IconButtonProps {
   children: ReactNode;
@@ -22,23 +22,20 @@ const baseStyle: CSSProperties = {
   transition: "color 0.1s ease",
 };
 
-const hoverBg = "var(--hover-bg-strong)";
-
 export default function IconButton({ children, title, onClick, style }: IconButtonProps) {
-  const [hovered, setHovered] = useState(false);
-
   return (
     <button
       title={title}
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        ...baseStyle,
-        background: hovered ? hoverBg : "none",
-        color: hovered ? "var(--text-dim)" : "var(--text-dimmer)",
-        ...style,
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "var(--hover-bg-strong)";
+        e.currentTarget.style.color = "var(--text-dim)";
       }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "none";
+        e.currentTarget.style.color = "var(--text-dimmer)";
+      }}
+      style={{ ...baseStyle, ...style }}
     >
       {children}
     </button>

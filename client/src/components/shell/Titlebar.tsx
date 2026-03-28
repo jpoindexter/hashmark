@@ -50,15 +50,19 @@ function LayoutToggle({
   onClick: () => void;
   children: React.ReactNode;
 }) {
-  const [hovered, setHovered] = useState(false);
-
   return (
     <button
       title={title}
       aria-label={title}
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "var(--hover-bg-strong)";
+        if (!active) e.currentTarget.style.color = "var(--text)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "none";
+        if (!active) e.currentTarget.style.color = "var(--text-dimmer)";
+      }}
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -67,8 +71,8 @@ function LayoutToggle({
         height: 28,
         padding: 0,
         border: "none",
-        background: hovered ? "var(--hover-bg-strong)" : "none",
-        color: active || hovered ? "var(--text)" : "var(--text-dimmer)",
+        background: "none",
+        color: active ? "var(--text)" : "var(--text-dimmer)",
         cursor: "pointer",
         borderRadius: 4,
         transition: "color 0.1s ease, background 0.1s ease",
@@ -80,21 +84,19 @@ function LayoutToggle({
 }
 
 function PrButton({ onClick }: { onClick: () => void }) {
-  const [hovered, setHovered] = useState(false);
-
   return (
     <button
       title="Create Pull Request"
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent-bg)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
       style={{
         display: "inline-flex",
         alignItems: "center",
         gap: 4,
         padding: "1px 7px",
         border: "1px solid var(--accent)",
-        background: hovered ? "var(--accent-bg)" : "transparent",
+        background: "transparent",
         color: "var(--accent)",
         fontSize: 11,
         fontFamily: "var(--font)",
@@ -120,7 +122,6 @@ function UpdatePill({ status, version, onClick }: {
   version: string;
   onClick: () => void;
 }) {
-  const [hovered, setHovered] = useState(false);
   if (status === "idle") return null;
 
   const ready = status === "downloaded";
@@ -130,15 +131,15 @@ function UpdatePill({ status, version, onClick }: {
     <button
       title={ready ? "Restart to update" : "Update downloading..."}
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => { if (ready) e.currentTarget.style.background = "var(--accent-bg)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
       style={{
         display: "inline-flex",
         alignItems: "center",
         gap: 4,
         padding: "1px 7px",
         border: `1px solid ${ready ? "var(--accent)" : "var(--text-dimmer)"}`,
-        background: ready && hovered ? "var(--accent-bg)" : "transparent",
+        background: "transparent",
         color: ready ? "var(--accent)" : "var(--text-dim)",
         fontSize: 11,
         fontFamily: "var(--font)",

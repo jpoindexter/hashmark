@@ -1011,7 +1011,7 @@ function SessionListItem({
   s, isActive, sPct, isDelConfirm,
   onSelect, onDeleteRequest, onDeleteConfirm, onDeleteCancel,
 }: SessionListItemProps) {
-  const [hovered, setHovered] = useState(false);
+  const trashBtnRef = useRef<HTMLButtonElement>(null);
   const barColor = tokenBarColor(sPct);
 
   return (
@@ -1021,12 +1021,18 @@ function SessionListItem({
       aria-current={isActive ? "true" : undefined}
       onClick={onSelect}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(); } }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => {
+        if (!isActive) e.currentTarget.style.background = "var(--bg-3)";
+        if (trashBtnRef.current) trashBtnRef.current.style.visibility = "visible";
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive) e.currentTarget.style.background = "transparent";
+        if (!isActive && trashBtnRef.current) trashBtnRef.current.style.visibility = "hidden";
+      }}
       style={{
         padding: "9px 10px 9px 12px",
         cursor: "pointer",
-        background: isActive ? "var(--accent-bg)" : hovered ? "var(--bg-3)" : "transparent",
+        background: isActive ? "var(--accent-bg)" : "transparent",
         borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
         borderBottom: "1px solid var(--border-dim)",
         transition: "background 0.1s",
@@ -1077,21 +1083,23 @@ function SessionListItem({
               <X size={10} />
             </button>
           </div>
-        ) : (hovered || isActive) ? (
+        ) : (
           <button
+            ref={trashBtnRef}
             onClick={onDeleteRequest}
             title="Delete mission"
             style={{
               background: "none", border: "none", cursor: "pointer",
               color: "var(--text-dimmer)", display: "flex", alignItems: "center",
               padding: "1px", flexShrink: 0, borderRadius: "var(--radius-sm)",
+              visibility: isActive ? "visible" : "hidden",
             }}
             onMouseEnter={(e) => { e.currentTarget.style.color = "var(--red)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-dimmer)"; }}
           >
             <Trash2 size={11} />
           </button>
-        ) : null}
+        )}
       </div>
 
       {/* Meta row */}

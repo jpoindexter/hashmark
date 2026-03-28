@@ -144,28 +144,32 @@ function SectionHeader({
 }
 
 function FileRow({
-  f, selected, hovered, busy, isStaged,
-  onClick, onMouseEnter, onMouseLeave,
+  f, selected, busy, isStaged,
+  onClick,
   onStage, onUnstage, onDiscard,
 }: {
   f: GitFile;
   selected: boolean;
-  hovered: boolean;
   busy: boolean;
   isStaged: boolean;
   onClick: () => void;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
   onStage: (e: React.MouseEvent) => void;
   onUnstage: (e: React.MouseEvent) => void;
   onDiscard: (e: React.MouseEvent) => void;
 }) {
+  const actionsRef = useRef<HTMLDivElement>(null);
   const displayStatus = isStaged ? f.x : (f.isUntracked ? "?" : f.y);
   return (
     <div
       onClick={onClick}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      onMouseEnter={(e) => {
+        if (!selected) e.currentTarget.style.background = "var(--hover-bg)";
+        if (actionsRef.current) actionsRef.current.style.opacity = "1";
+      }}
+      onMouseLeave={(e) => {
+        if (!selected) e.currentTarget.style.background = "transparent";
+        if (actionsRef.current) actionsRef.current.style.opacity = "0";
+      }}
       style={{
         display: "flex", alignItems: "center", gap: 6,
         padding: "3px 8px 3px 24px", cursor: "pointer",
@@ -200,9 +204,9 @@ function FileRow({
           {f.removed ? <span style={{ color: "var(--red)" }}>-{f.removed}</span> : null}
         </span>
       ) : null}
-      <div style={{
+      <div ref={actionsRef} style={{
         display: "flex", gap: 2, flexShrink: 0,
-        opacity: hovered || busy ? 1 : 0, transition: "opacity 0.1s",
+        opacity: busy ? 1 : 0, transition: "opacity 0.1s",
       }}>
         {!isStaged && !f.isUntracked && (
           <FileActionBtn label="+" title="Stage file" color="var(--accent)" onClick={onStage} />
@@ -234,7 +238,6 @@ export default function SourceControlPage() {
   const [fetching, setFetching] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [fileLoading, setFileLoading] = useState<string | null>(null);
-  const [hoveredFile, setHoveredFile] = useState<string | null>(null);
   const [stagedExpanded, setStagedExpanded] = useState(true);
   const [unstagedExpanded, setUnstagedExpanded] = useState(true);
   const [untrackedExpanded, setUntrackedExpanded] = useState(true);
@@ -554,11 +557,8 @@ export default function SourceControlPage() {
                       f={f}
                       isStaged
                       selected={selectedFile === f.file && selectedStaged}
-                      hovered={hoveredFile === `staged-${f.file}`}
                       busy={fileLoading === f.file}
                       onClick={() => selectFile(f.file, true)}
-                      onMouseEnter={() => setHoveredFile(`staged-${f.file}`)}
-                      onMouseLeave={() => setHoveredFile(null)}
                       onStage={e => stageFile(e, f.file)}
                       onUnstage={e => unstageFile(e, f.file)}
                       onDiscard={e => discardFile(e, f.file, f.isUntracked)}
@@ -585,11 +585,8 @@ export default function SourceControlPage() {
                       f={f}
                       isStaged={false}
                       selected={selectedFile === f.file && !selectedStaged}
-                      hovered={hoveredFile === `unstaged-${f.file}`}
                       busy={fileLoading === f.file}
                       onClick={() => selectFile(f.file, false)}
-                      onMouseEnter={() => setHoveredFile(`unstaged-${f.file}`)}
-                      onMouseLeave={() => setHoveredFile(null)}
                       onStage={e => stageFile(e, f.file)}
                       onUnstage={e => unstageFile(e, f.file)}
                       onDiscard={e => discardFile(e, f.file, f.isUntracked)}
@@ -621,11 +618,8 @@ export default function SourceControlPage() {
                       f={f}
                       isStaged={false}
                       selected={selectedFile === f.file && !selectedStaged}
-                      hovered={hoveredFile === `untracked-${f.file}`}
                       busy={fileLoading === f.file}
                       onClick={() => selectFile(f.file, false)}
-                      onMouseEnter={() => setHoveredFile(`untracked-${f.file}`)}
-                      onMouseLeave={() => setHoveredFile(null)}
                       onStage={e => stageFile(e, f.file)}
                       onUnstage={e => unstageFile(e, f.file)}
                       onDiscard={e => discardFile(e, f.file, f.isUntracked)}

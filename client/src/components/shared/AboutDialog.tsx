@@ -263,24 +263,30 @@ function InfoRow({
 }
 
 function LinkButton({ label, onClick }: { label: string; onClick: () => void }) {
-  const [hovered, setHovered] = useState(false);
   return (
     <button
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "var(--accent-bg)";
+        e.currentTarget.style.color = "var(--accent)";
+        e.currentTarget.style.borderColor = "var(--accent-border)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "transparent";
+        e.currentTarget.style.color = "var(--text-dim)";
+        e.currentTarget.style.borderColor = "var(--border-dim)";
+      }}
       style={{
         padding: "4px 12px",
         fontSize: 11,
         fontFamily: "var(--font-ui)",
         fontWeight: 500,
-        background: hovered ? "var(--accent-bg)" : "transparent",
+        background: "transparent",
         border: "1px solid var(--border-dim)",
         borderRadius: "var(--radius)",
-        color: hovered ? "var(--accent)" : "var(--text-dim)",
+        color: "var(--text-dim)",
         cursor: "pointer",
         transition: "background 0.1s, color 0.1s, border-color 0.1s",
-        borderColor: hovered ? "var(--accent-border)" : "var(--border-dim)",
       }}
     >
       {label}

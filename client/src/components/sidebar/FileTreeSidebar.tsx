@@ -72,7 +72,6 @@ interface TreeRowProps {
 
 function TreeRow({ node, depth, selectedPaths, gitFiles, onSelect, onContextMenu }: TreeRowProps) {
   const [open, setOpen] = useState(depth < 1);
-  const [hovered, setHovered] = useState(false);
   const isDir = node.type === "dir";
   const isSelected = selectedPaths.has(node.path);
   const Icon = isDir ? Folder : fileIcon(node.ext);
@@ -109,8 +108,8 @@ function TreeRow({ node, depth, selectedPaths, gitFiles, onSelect, onContextMenu
         onClick={handleClick}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }}
         onContextMenu={(e) => { e.preventDefault(); onContextMenu(e, node); }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "var(--hover-bg)"; }}
+        onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
         style={{
           position: "relative",
           display: "flex",
@@ -126,7 +125,7 @@ function TreeRow({ node, depth, selectedPaths, gitFiles, onSelect, onContextMenu
           color: "var(--text-dim)",
           whiteSpace: "nowrap",
           overflow: "hidden",
-          background: isSelected ? "var(--active-bg)" : hovered ? "var(--hover-bg)" : "transparent",
+          background: isSelected ? "var(--active-bg)" : "transparent",
           borderLeft: isSelected ? "2px solid var(--accent)" : "2px solid transparent",
         }}
       >

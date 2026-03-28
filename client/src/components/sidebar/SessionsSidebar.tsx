@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "../shared/Skeleton.tsx";
@@ -259,7 +259,6 @@ function WorkspaceGroup({
   onWorkspaceContextMenu: (e: React.MouseEvent) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
-  const [hovered, setHovered] = useState(false);
 
   return (
     <div>
@@ -270,8 +269,8 @@ function WorkspaceGroup({
         onClick={() => setExpanded(v => !v)}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(v => !v); } }}
         onContextMenu={onWorkspaceContextMenu}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
         style={{
           display: "flex",
           alignItems: "center",
@@ -280,7 +279,7 @@ function WorkspaceGroup({
           paddingRight: 8,
           gap: 4,
           cursor: "pointer",
-          background: hovered ? "var(--hover-bg)" : "transparent",
+          background: "transparent",
           transition: "background 0.1s",
         }}
       >
@@ -392,7 +391,7 @@ function SessionRow({
   isStreaming: boolean;
   onContextMenu: (e: React.MouseEvent) => void;
 }) {
-  const [hovered, setHovered] = useState(false);
+  const shortcutRef = useRef<HTMLSpanElement>(null);
   const title = session.title || "Untitled";
 
   const dotColor = isStreaming
@@ -411,8 +410,14 @@ function SessionRow({
       onClick={onClick}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
       onContextMenu={onContextMenu}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => {
+        if (!active) e.currentTarget.style.background = "var(--hover-bg)";
+        if (shortcutRef.current && shortcut) shortcutRef.current.style.visibility = "visible";
+      }}
+      onMouseLeave={(e) => {
+        if (!active) e.currentTarget.style.background = "transparent";
+        if (shortcutRef.current && !active) shortcutRef.current.style.visibility = "hidden";
+      }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -420,11 +425,7 @@ function SessionRow({
         height: 22,
         padding: "0 8px 0 28px",
         cursor: "pointer",
-        background: active
-          ? "var(--active-bg)"
-          : hovered
-          ? "var(--hover-bg)"
-          : "transparent",
+        background: active ? "var(--active-bg)" : "transparent",
         transition: "background 0.1s",
       }}
     >
@@ -450,12 +451,16 @@ function SessionRow({
       }}>
         {title}
       </span>
-      {(hovered || active) && shortcut && (
-        <span style={{
-          fontSize: 10,
-          color: "var(--text-dimmer)",
-          flexShrink: 0,
-        }}>
+      {shortcut && (
+        <span
+          ref={shortcutRef}
+          style={{
+            fontSize: 10,
+            color: "var(--text-dimmer)",
+            flexShrink: 0,
+            visibility: active ? "visible" : "hidden",
+          }}
+        >
           {shortcut}
         </span>
       )}

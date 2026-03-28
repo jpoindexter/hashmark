@@ -392,12 +392,12 @@ function UserBubble({ msg, onContextMenu, showRetry, onRetry }: {
   showRetry?: boolean;
   onRetry?: () => void;
 }) {
-  const [hovered, setHovered] = useState(false);
+  const timestampRef = useRef<HTMLDivElement>(null);
   return (
     <div
       style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={() => { if (timestampRef.current) timestampRef.current.style.opacity = "1"; }}
+      onMouseLeave={() => { if (timestampRef.current) timestampRef.current.style.opacity = "0"; }}
       onContextMenu={onContextMenu}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 8, maxWidth: "80%" }}>
@@ -422,7 +422,7 @@ function UserBubble({ msg, onContextMenu, showRetry, onRetry }: {
           <RetryButton onClick={onRetry} />
         </div>
       )}
-      <div style={{ ...TIMESTAMP_STYLE, marginTop: 3, marginRight: 30, opacity: hovered ? 1 : 0 }}>
+      <div ref={timestampRef} style={{ ...TIMESTAMP_STYLE, marginTop: 3, marginRight: 30, opacity: 0 }}>
         {fmtTime(msg.created_at)}
       </div>
     </div>
@@ -478,12 +478,12 @@ function AssistantBubble({ msg, onContextMenu, showRetry, onRetry, responseTime 
   onRetry?: () => void;
   responseTime?: number;
 }) {
-  const [hovered, setHovered] = useState(false);
+  const timestampRef = useRef<HTMLDivElement>(null);
   return (
     <div
       style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={() => { if (timestampRef.current && responseTime == null) timestampRef.current.style.opacity = "1"; }}
+      onMouseLeave={() => { if (timestampRef.current && responseTime == null) timestampRef.current.style.opacity = "0"; }}
       onContextMenu={onContextMenu}
     >
       <div style={{
@@ -494,7 +494,7 @@ function AssistantBubble({ msg, onContextMenu, showRetry, onRetry, responseTime 
         <AssistantContent text={msg.content} />
       </div>
       {showRetry && onRetry && <RetryButton onClick={onRetry} />}
-      <div style={{ ...TIMESTAMP_STYLE, display: "flex", gap: 8, marginTop: 3, paddingLeft: 14, opacity: hovered || responseTime != null ? 1 : 0 }}>
+      <div ref={timestampRef} style={{ ...TIMESTAMP_STYLE, display: "flex", gap: 8, marginTop: 3, paddingLeft: 14, opacity: responseTime != null ? 1 : 0 }}>
         <span>{fmtTime(msg.created_at)}</span>
         {responseTime != null && (
           <span>{fmtDuration(responseTime)}</span>
