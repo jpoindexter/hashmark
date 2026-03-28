@@ -90,12 +90,19 @@ fn open_external(url: String) {
 
 /// Show OS folder-picker dialog; returns the chosen path or null
 #[tauri::command]
-fn pick_folder(app: AppHandle) -> Option<String> {
+async fn pick_folder(app: AppHandle) -> Option<String> {
+    let (tx, rx) = std::sync::mpsc::channel::<Option<String>>();
     app.dialog()
         .file()
         .set_title("Select Project Folder")
-        .blocking_pick_folder()
-        .map(|p| p.to_string())
+        .pick_folder(move |path| {
+            let _ = tx.send(path.map(|p| p.to_string()));
+        });
+    // Use spawn_blocking so we don't block the async runtime
+    tauri::async_runtime::spawn_blocking(move || rx.recv().ok().flatten())
+        .await
+        .ok()
+        .flatten()
 }
 
 /// Return the active project directory (null if unset)
