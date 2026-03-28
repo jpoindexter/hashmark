@@ -1,4 +1,12 @@
-import { type CSSProperties } from "react";
+import { useState, useEffect, type CSSProperties } from "react";
+
+interface Session {
+  id: string;
+  title: string;
+  status: string;
+  model?: string;
+  updated_at: number;
+}
 
 interface ContextPanelProps {
   streaming: boolean;
@@ -7,16 +15,38 @@ interface ContextPanelProps {
   projectName?: string;
 }
 
-const AGENTS = [
-  { name: "scanner", color: "var(--accent)", state: "running" as const },
-  { name: "reviewer", color: "var(--yellow)", state: "running" as const },
-  { name: "guard", color: "#c084fc", state: "done" as const },
-  { name: "fixer", color: "var(--blue)", state: "idle" as const },
-];
-
 const QUICK_CMDS = ["/scan", "/audit", "/fix all", "/review"];
 
+function statusDot(status: string): { color: string; opacity: number; animate: boolean } {
+  switch (status) {
+    case "running":  return { color: "var(--accent)", opacity: 1, animate: true };
+    case "pending":  return { color: "var(--yellow)", opacity: 1, animate: true };
+    case "idle":     return { color: "var(--text-dimmer)", opacity: 0.5, animate: false };
+    default:         return { color: "var(--text-dimmer)", opacity: 0.25, animate: false };
+  }
+}
+
 export default function ContextPanel({ streaming, model = "sonnet 4.6", branch, projectName }: ContextPanelProps) {
+  const [sessions, setSessions] = useState<Session[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = () => {
+      fetch("/api/sessions")
+        .then(r => r.ok ? r.json() as Promise<{ sessions: Session[] }> : Promise.reject())
+        .then(d => { if (!cancelled) setSessions(d.sessions ?? []); })
+        .catch(() => {});
+    };
+
+    load();
+    const iv = setInterval(load, 5000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, []);
+
+  const running = sessions.filter(s => s.status === "running" || s.status === "pending");
+  const recent = sessions.slice(0, 5);
+
   const panel: CSSProperties = {
     width: 184,
     borderLeft: "0.5px solid var(--border-dim)",
@@ -56,68 +86,78 @@ export default function ContextPanel({ streaming, model = "sonnet 4.6", branch, 
     marginBottom: 4,
   };
 
+  const activeAgents = streaming ? (running.length > 0 ? running : sessions.slice(0, 4)) : [];
+
   return (
     <div style={panel}>
-      {streaming ? (
+      {streaming && (
         <div style={sect}>
-          <div style={sLbl}>agents</div>
-          {AGENTS.map((ag) => (
-            <div
-              key={ag.name}
-              style={{
-                padding: "6px 14px",
-                display: "flex", alignItems: "center", gap: 8,
-                cursor: "pointer",
-              }}
-              className="rail-item"
-            >
-              <div style={{
-                width: 7, height: 7, borderRadius: "50%",
-                background: ag.color,
-                opacity: ag.state === "idle" ? 0.2 : ag.state === "done" ? 0.4 : 1,
-                flexShrink: 0,
-                animation: ag.state === "running" ? "pdot 1.5s ease-in-out infinite" : "none",
-              }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontFamily: "var(--font)", fontSize: 11,
-                  color: "var(--text-dim)",
-                  opacity: ag.state === "idle" ? 0.3 : 1,
-                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                }}>
-                  {ag.name}
-                </div>
-                <div style={{
-                  fontFamily: "var(--font)", fontSize: 10,
-                  color: "var(--text-dimmer)", marginTop: 1,
-                }}>
-                  {ag.state}
-                </div>
-              </div>
+          <div style={sLbl}>agents{running.length > 0 ? ` · ${running.length}` : ""}</div>
+          {activeAgents.length === 0 ? (
+            <div style={{ padding: "6px 14px", fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)" }}>
+              no active agents
             </div>
-          ))}
+          ) : (
+            activeAgents.map((s) => {
+              const dot = statusDot(s.status);
+              return (
+                <div
+                  key={s.id}
+                  style={{ padding: "6px 14px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+                  className="rail-item"
+                >
+                  <div style={{
+                    width: 7, height: 7, borderRadius: "50%",
+                    background: dot.color,
+                    opacity: dot.opacity,
+                    flexShrink: 0,
+                    animation: dot.animate ? "pdot 1.5s ease-in-out infinite" : "none",
+                  }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontFamily: "var(--font)", fontSize: 11,
+                      color: "var(--text-dim)",
+                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                    }}>
+                      {s.title}
+                    </div>
+                    <div style={{ fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)", marginTop: 1 }}>
+                      {s.status}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
-      ) : (
+      )}
+
+      {!streaming && (
         <div style={sect}>
           <div style={sLbl}>recent</div>
-          {[projectName, "gripe-pipeline", "reasonops-eval"].filter(Boolean).map((name) => (
-            <div
-              key={name}
-              style={{ padding: "6px 14px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
-              className="rail-item"
-            >
-              <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--text-dimmer)", flexShrink: 0 }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontFamily: "var(--font)", fontSize: 11,
-                  color: "var(--text-dim)",
-                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                }}>
-                  {name}
+          {recent.length === 0 ? (
+            <div style={{ padding: "6px 14px", fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)" }}>
+              no sessions yet
+            </div>
+          ) : (
+            recent.map((s) => (
+              <div
+                key={s.id}
+                style={{ padding: "6px 14px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+                className="rail-item"
+              >
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--text-dimmer)", flexShrink: 0, opacity: 0.4 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontFamily: "var(--font)", fontSize: 11, color: "var(--text-dim)",
+                    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                  }}>
+                    {s.title}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       )}
 
@@ -136,6 +176,14 @@ export default function ContextPanel({ streaming, model = "sonnet 4.6", branch, 
 
       <div style={footer}>
         <div style={footRow}><span>model</span><span>{model}</span></div>
+        {projectName && (
+          <div style={footRow}>
+            <span>project</span>
+            <span style={{ maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {projectName}
+            </span>
+          </div>
+        )}
         {branch && (
           <div style={footRow}>
             <span>branch</span>
