@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import ThinkingBlock from "./chat/ThinkingBlock";
 import ToolCallSummary, { FileBadge, getReadFilePath, categorize } from "./chat/ToolSummary";
@@ -209,7 +209,7 @@ function CodeBlock({ lang, code }: { lang: string; code: string }) {
   );
 }
 
-export function AssistantContent({ text }: { text: string }) {
+export const AssistantContent = memo(function AssistantContent({ text }: { text: string }) {
   const lines = text.split("\n");
   const nodes: React.ReactNode[] = [];
   let i = 0;
@@ -268,7 +268,7 @@ export function AssistantContent({ text }: { text: string }) {
   }
 
   return <>{nodes}</>;
-}
+});
 
 function toolAccentColor(tool: string): string {
   const name = tool.toLowerCase();

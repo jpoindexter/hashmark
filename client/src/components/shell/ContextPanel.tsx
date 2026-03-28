@@ -1,4 +1,4 @@
-import { useState, useEffect, type CSSProperties } from "react";
+import { useState, useEffect, useCallback, type CSSProperties } from "react";
 import { fetchApi } from "../../lib/api";
 
 interface Session {
@@ -29,21 +29,27 @@ function statusDot(status: string): { color: string; opacity: number; animate: b
 
 export default function ContextPanel({ streaming, model = "sonnet 4.6", branch, projectName }: ContextPanelProps) {
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [visible, setVisible] = useState(() => document.visibilityState === "visible");
 
   useEffect(() => {
-    let cancelled = false;
-
-    const load = () => {
-      fetchApi("/api/sessions")
-        .then(r => r.ok ? r.json() as Promise<{ sessions: Session[] }> : Promise.reject())
-        .then(d => { if (!cancelled) setSessions(d.sessions ?? []); })
-        .catch(() => {});
-    };
-
-    load();
-    const iv = setInterval(load, 5000);
-    return () => { cancelled = true; clearInterval(iv); };
+    const h = () => setVisible(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", h);
+    return () => document.removeEventListener("visibilitychange", h);
   }, []);
+
+  const load = useCallback(() => {
+    fetchApi("/api/sessions")
+      .then(r => r.ok ? r.json() as Promise<{ sessions: Session[] }> : Promise.reject())
+      .then(d => setSessions(d.sessions ?? []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    load();
+    if (!visible) return;
+    const iv = setInterval(load, 5000);
+    return () => clearInterval(iv);
+  }, [load, visible]);
 
   const running = sessions.filter(s => s.status === "running" || s.status === "pending");
   const recent = sessions.slice(0, 5);

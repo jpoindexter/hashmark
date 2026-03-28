@@ -76,11 +76,19 @@ export default function SessionsPanel({
       .catch(() => {});
   }, []);
 
+  const [visible, setVisible] = useState(() => document.visibilityState === "visible");
+  useEffect(() => {
+    const h = () => setVisible(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", h);
+    return () => document.removeEventListener("visibilitychange", h);
+  }, []);
+
   useEffect(() => {
     fetchSessions();
+    if (!visible) return;
     const id = setInterval(fetchSessions, 10000);
     return () => clearInterval(id);
-  }, [fetchSessions]);
+  }, [fetchSessions, visible]);
 
   useEffect(() => {
     if (!streaming) fetchSessions();

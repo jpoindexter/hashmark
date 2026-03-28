@@ -779,19 +779,25 @@ export function filesRoutes(projectDir: string) {
         return { status: xy, file, x, y, isStaged, isUnstaged, isUntracked };
       });
 
-      const filesWithStats = await Promise.all(rawFiles.map(async (f) => {
-        try {
-          // For staged files use --cached, for others use HEAD comparison
-          const args = f.isStaged
-            ? ["diff", "--numstat", "--cached", "--", f.file]
-            : ["diff", "--numstat", "HEAD", "--", f.file];
-          const { stdout } = await execAsync("git", args, { cwd: projectDir });
-          const parts = stdout.trim().split("\t");
-          return { ...f, added: parseInt(parts[0]) || 0, removed: parseInt(parts[1]) || 0 };
-        } catch {
-          return { ...f, added: 0, removed: 0 };
+      // Batch numstat: 2 git calls instead of N per-file spawns
+      const [unstagedOut, stagedOut] = await Promise.all([
+        execAsync("git", ["diff", "--numstat", "HEAD"], { cwd: projectDir }).catch(() => ({ stdout: "" })),
+        execAsync("git", ["diff", "--numstat", "--cached"], { cwd: projectDir }).catch(() => ({ stdout: "" })),
+      ]);
+      const parseNumstat = (out: string): Map<string, { added: number; removed: number }> => {
+        const m = new Map<string, { added: number; removed: number }>();
+        for (const line of out.trim().split("\n").filter(Boolean)) {
+          const parts = line.split("\t");
+          if (parts.length >= 3) m.set(parts[2], { added: parseInt(parts[0]) || 0, removed: parseInt(parts[1]) || 0 });
         }
-      }));
+        return m;
+      };
+      const unstagedMap = parseNumstat(unstagedOut.stdout);
+      const stagedMap = parseNumstat(stagedOut.stdout);
+      const filesWithStats = rawFiles.map((f) => {
+        const stats = f.isStaged ? stagedMap.get(f.file) : unstagedMap.get(f.file);
+        return { ...f, added: stats?.added ?? 0, removed: stats?.removed ?? 0 };
+      });
 
       const commits = logOut.stdout.trim().split("\n").filter(Boolean).map((line) => {
         const i = line.indexOf(" ");

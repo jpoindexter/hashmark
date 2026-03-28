@@ -15,7 +15,7 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
 
   useEffect(() => {
     if (!open) return;
-    fetch('/api/files/git')
+    fetchApi('/api/files/git')
       .then(r => r.json())
       .then((d: { files?: DiffFile[] }) => {
         const changed = (d.files ?? []).filter((f: DiffFile) => f.status !== '?');
@@ -34,7 +34,7 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
   }, [selectedFile]);
 
   const reload = useCallback(() => {
-    fetch('/api/files/git')
+    fetchApi('/api/files/git')
       .then(r => r.json())
       .then((d: { files?: DiffFile[] }) => {
         const changed = (d.files ?? []).filter((f: DiffFile) => f.status !== '?');

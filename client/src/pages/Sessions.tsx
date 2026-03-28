@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { Search, X, Trash2, Plus, Download, Archive, Check, Edit2 } from "lucide-react";
 import XTerminal from "../components/XTerminal";
 import { ContextHeatmap } from "../components/ContextHeatmap.tsx";
@@ -96,7 +96,7 @@ function tokenBarColor(pct: number): string {
 }
 
 // Renderer that returns React nodes from assistant markdown text
-function AssistantContent({ text }: { text: string }) {
+const AssistantContent = memo(function AssistantContent({ text }: { text: string }) {
   const lines = text.split("\n");
   const nodes: React.ReactNode[] = [];
   let i = 0;
@@ -173,7 +173,7 @@ function AssistantContent({ text }: { text: string }) {
   }
 
   return <>{nodes}</>;
-}
+});
 
 function renderInline(text: string): React.ReactNode {
   const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g);

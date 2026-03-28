@@ -9,18 +9,24 @@ import { join } from "path";
 
 const MAX_CHARS = 50_000;
 
+// mtime-keyed cache so CLAUDE.md is only re-read when the file actually changes
+const _claudeCache = new Map<string, { mtime: number; content: string | null }>();
+
 export function loadScanContext(projectDir: string): string | null {
   // Primary: CLAUDE.md — the rich markdown context hashmark generates
   const claudeMdPath = join(projectDir, "CLAUDE.md");
   if (existsSync(claudeMdPath)) {
     try {
+      const mtime = statSync(claudeMdPath).mtimeMs;
+      const cached = _claudeCache.get(claudeMdPath);
+      if (cached && cached.mtime === mtime) return cached.content;
       const raw = readFileSync(claudeMdPath, "utf-8").trim();
-      if (!raw) return null;
-      const content = raw.length > MAX_CHARS
-        ? raw.slice(0, MAX_CHARS) + "\n\n... [truncated — context exceeds 50,000 chars]"
-        : raw;
-      return `## Project Context\n\n${content}`;
+      if (!raw) { _claudeCache.set(claudeMdPath, { mtime, content: null }); return null; }
+      const content = `## Project Context\n\n${raw.length > MAX_CHARS ? raw.slice(0, MAX_CHARS) + "\n\n... [truncated — context exceeds 50,000 chars]" : raw}`;
+      _claudeCache.set(claudeMdPath, { mtime, content });
+      return content;
     } catch {
+      _claudeCache.delete(claudeMdPath);
       // fall through to index.json
     }
   }

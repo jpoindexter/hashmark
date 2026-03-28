@@ -172,11 +172,12 @@ function MissionCard({ mission, running, onView, onStop }: {
 
 function DispatchModal({ onClose, onDispatched }: {
   onClose: () => void;
-  onDispatched: (sessionId: string, prompt: string, model: string) => void;
+  onDispatched: (sessionId: string, prompt: string, model: string, attachContext: boolean) => void;
 }) {
   const [title, setTitle] = useState("");
   const [prompt, setPrompt] = useState("");
   const [model, setModel] = useState("claude-sonnet-4-6");
+  const [attachContext, setAttachContext] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -200,7 +201,7 @@ function DispatchModal({ onClose, onDispatched }: {
         return;
       }
       const d = await r.json() as { session: { id: string } };
-      onDispatched(d.session.id, prompt.trim(), model);
+      onDispatched(d.session.id, prompt.trim(), model, attachContext);
     } catch (err) {
       setError(err instanceof Error ? err.message : "failed to create session");
       setLoading(false);
@@ -282,23 +283,40 @@ function DispatchModal({ onClose, onDispatched }: {
           />
         </div>
 
-        {/* Briefing toggle (Phase 2 placeholder) */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "10px 12px",
-          background: "var(--bg)", border: "1px solid var(--border-dim)",
-          borderRadius: "var(--radius)",
-        }}>
-          <span style={{ fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dim)", letterSpacing: "0.04em" }}>
-            attach codebase context
-          </span>
+        {/* Context toggle */}
+        <div
+          onClick={() => setAttachContext(v => !v)}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "10px 12px",
+            background: "var(--bg)", border: "1px solid var(--border-dim)",
+            borderRadius: "var(--radius)",
+            cursor: "pointer",
+            userSelect: "none",
+          }}
+        >
+          <div>
+            <span style={{ fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dim)", letterSpacing: "0.04em" }}>
+              attach codebase context
+            </span>
+            {!attachContext && (
+              <span style={{ fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)", marginLeft: 8 }}>
+                (CLAUDE.md will not be injected)
+              </span>
+            )}
+          </div>
           <div style={{
-            width: 28, height: 16, borderRadius: 8, background: "var(--accent)",
-            position: "relative", cursor: "pointer", flexShrink: 0,
+            width: 28, height: 16, borderRadius: 8,
+            background: attachContext ? "var(--accent)" : "var(--border)",
+            position: "relative", flexShrink: 0,
+            transition: "background 0.15s",
           }}>
             <div style={{
               width: 12, height: 12, borderRadius: 6, background: "#000",
-              position: "absolute", top: 2, right: 2,
+              position: "absolute", top: 2,
+              left: attachContext ? "auto" : 2,
+              right: attachContext ? 2 : "auto",
+              transition: "left 0.15s, right 0.15s",
             }} />
           </div>
         </div>
@@ -471,11 +489,19 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
+  const [missionsVisible, setMissionsVisible] = useState(() => document.visibilityState === "visible");
+  useEffect(() => {
+    const h = () => setMissionsVisible(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", h);
+    return () => document.removeEventListener("visibilitychange", h);
+  }, []);
+
   useEffect(() => {
     fetchMissions();
+    if (!missionsVisible) return;
     const id = setInterval(fetchMissions, 8000);
     return () => clearInterval(id);
-  }, [fetchMissions]);
+  }, [fetchMissions, missionsVisible]);
 
   // Sync running state from Shell
   useEffect(() => {
@@ -497,10 +523,10 @@ export default function Home() {
     setRunningId(null);
   };
 
-  const handleDispatched = (sessionId: string, prompt: string, model: string) => {
+  const handleDispatched = (sessionId: string, prompt: string, model: string, attachContext: boolean) => {
     setShowDispatch(false);
     try {
-      sessionStorage.setItem(`studio:prefill:${sessionId}`, JSON.stringify({ prompt, model }));
+      sessionStorage.setItem(`studio:prefill:${sessionId}`, JSON.stringify({ prompt, model, attachContext }));
     } catch { /* noop */ }
     openMission(sessionId);
   };
