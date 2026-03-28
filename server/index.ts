@@ -7,6 +7,7 @@ import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { cors } from "hono/cors";
+import { logger } from "hono/logger";
 import { readFileSync, existsSync } from "fs";
 import { join, basename } from "path";
 import { randomUUID } from "crypto";
@@ -82,7 +83,14 @@ export function createServer(opts: ServerOptions) {
   // Tell the sessions module which port we're on so the MCP bridge can call back
   setStudioPort(opts.port);
 
-  app.use("*", cors({ origin: "*" }));
+  app.use("*", logger());
+  app.use("*", cors({ origin: `http://localhost:${opts.port}` }));
+  app.use("*", async (c, next) => {
+    await next();
+    c.header("X-Content-Type-Options", "nosniff");
+    c.header("X-Frame-Options", "DENY");
+    c.header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; img-src 'self' data: blob:; font-src 'self' data:");
+  });
 
   // Health check
   app.get("/api/health", (c) => c.json({ ok: true, timestamp: Date.now() }));
@@ -154,7 +162,7 @@ export function createServer(opts: ServerOptions) {
   app.route("/api/company", companyRoutes(opts.projectDir));
   app.route("/api/drift", driftRoutes(opts.projectDir));
   app.route("/api/providers", providersRoutes(opts.projectDir));
-  app.route("/api/governance", governanceRoutes(opts.projectDir));
+  app.route("/api/governance", governanceRoutes(ctx.dataDir));
   app.route("/api/workspaces", workspacesRoutes(globalDataDir, ctx));
   app.route("/api/config", configRoutes(opts.projectDir));
   app.route("/api/sandbox", sandboxRoutes(opts.projectDir));
