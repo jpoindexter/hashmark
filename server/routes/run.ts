@@ -16,6 +16,7 @@ import { getDb, getStudioSetting } from "../db.js";
 import { findClaudeBin, buildClaudeArgs } from "../lib/bin-resolver.js";
 import { z } from "zod";
 import { checkUsage, recordInvocation, getUsageStats } from "../lib/claude-usage.js";
+import { createStreamParser, type StudioEvent } from "../lib/claude-stream.js";
 import type { WorkspaceCtx } from "./workspaces.js";
 
 const execFile = promisify(execFileCb);
@@ -289,40 +290,49 @@ export function runRoutes(ctx: WorkspaceCtx) {
               try { proc.kill("SIGTERM"); } catch {}
             }, RUN_TIMEOUT_MS);
 
-            let jsonBuffer = "";
+            const parser = createStreamParser();
+            let capturedSessionId: string | null = null;
+            let runCostUsd = 0;
+
             proc.stdout.on("data", (chunk: Buffer) => {
-              jsonBuffer += chunk.toString();
-              const lines = jsonBuffer.split("\n");
-              jsonBuffer = lines.pop() ?? "";
-
-              for (const line of lines) {
-                if (!line.trim()) continue;
-                try {
-                  const event = JSON.parse(line) as {
-                    type: string;
-                    message?: { content?: Array<{ type: string; text?: string; name?: string; input?: unknown; content?: unknown }> };
-                  };
-
-                  if (event.type === "assistant" && event.message?.content) {
-                    for (const block of event.message.content) {
-                      if (block.type === "text" && block.text) {
-                        fullOutput += block.text;
-                        send({ type: "chunk", text: block.text });
-                      }
-                      if (block.type === "tool_use") {
-                        send({ type: "tool_use", tool: block.name, input: block.input });
-                      }
-                      if (block.type === "tool_result") {
-                        send({ type: "tool_result", content: block.content });
-                      }
-                    }
-                  }
-                } catch {
-                  // Not JSON -- plain text progress
-                  if (line.trim()) {
-                    fullOutput += line + "\n";
-                    send({ type: "chunk", text: line + "\n" });
-                  }
+              const events = parser.push(chunk);
+              for (const ev of events) {
+                switch (ev.type) {
+                  case "text":
+                    fullOutput += ev.text;
+                    send({ type: "chunk", text: ev.text });
+                    break;
+                  case "tool_use":
+                    send({ type: "tool_use", tool: ev.tool, input: ev.input });
+                    break;
+                  case "tool_result":
+                    send({ type: "tool_result", content: ev.content });
+                    break;
+                  case "tool_progress":
+                    send({ type: "tool_progress", tool: ev.tool, elapsed: ev.elapsed });
+                    break;
+                  case "thinking":
+                    send({ type: "thinking", content: ev.content });
+                    break;
+                  case "cost":
+                    runCostUsd = ev.totalUsd;
+                    send({ type: "cost", totalUsd: ev.totalUsd, durationMs: ev.durationMs });
+                    break;
+                  case "session_id":
+                    capturedSessionId = ev.sessionId;
+                    break;
+                  case "task_started":
+                    send({ type: "task_started", taskId: ev.taskId, description: ev.description });
+                    break;
+                  case "task_progress":
+                    send({ type: "task_progress", taskId: ev.taskId, message: ev.message });
+                    break;
+                  case "error":
+                    send({ type: "error", error: ev.message });
+                    break;
+                  case "progress":
+                    send({ type: "progress", message: ev.message });
+                    break;
                 }
               }
             });

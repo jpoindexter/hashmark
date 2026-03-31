@@ -272,6 +272,27 @@ export default function Run() {
       }
       case "tool_result":
         break;
+      case "tool_progress": {
+        const tp = event.tool as string;
+        const elapsed = Math.round(event.elapsed as number);
+        setStatus(`${tp}... ${elapsed}s`);
+        break;
+      }
+      case "thinking":
+        setStatus("Thinking...");
+        break;
+      case "cost": {
+        const usd = (event.totalUsd as number).toFixed(4);
+        setOutput((prev) => prev + `\n--- Cost: $${usd} ---\n`);
+        break;
+      }
+      case "task_started":
+        setOutput((prev) => prev + `\n[Subagent] ${event.description as string}\n`);
+        setStatus("Subagent started");
+        break;
+      case "task_progress":
+        setStatus(`Subagent: ${(event.message as string).slice(0, 60)}`);
+        break;
       case "progress":
         setStatus(event.message as string);
         break;
