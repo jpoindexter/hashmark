@@ -16,6 +16,7 @@ import { detectConflicts } from "../lib/dep-graph.js";
 import { getDb, getStudioSetting } from "../db.js";
 import { findClaudeBin, buildClaudeArgs } from "../lib/bin-resolver.js";
 import { createStreamParser } from "../lib/claude-stream.js";
+import { checkUsage, recordInvocation } from "../lib/claude-usage.js";
 import { z } from "zod";
 import type { WorkspaceCtx } from "./workspaces.js";
 
@@ -196,6 +197,14 @@ async function runAgent(
 
   await new Promise<void>((resolve) => {
     if (ctrl.signal.aborted) { resolve(); return; }
+
+    const usageCheck = checkUsage();
+    if (!usageCheck.allowed) {
+      agent.output += `\n[rate limited] ${usageCheck.reason}`;
+      emit(swarm, agentIndex, { type: "chunk", data: `[rate limited] ${usageCheck.reason}` });
+      return;
+    }
+    recordInvocation();
 
     const agentTools = agent.agentId ? agentMap.get(agent.agentId)?.tools : undefined;
     const cliArgs = buildClaudeArgs({ mode: swarm.mode, allowedTools: agentTools });

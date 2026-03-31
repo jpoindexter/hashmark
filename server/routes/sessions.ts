@@ -9,6 +9,7 @@ import { spawn } from "child_process";
 import { existsSync, readFileSync } from "fs";
 import { join, extname } from "path";
 import { getDb, getStudioSetting } from "../db.js";
+import { checkUsage, recordInvocation } from "../lib/claude-usage.js";
 import { loadScanContext } from "../context.js";
 import { analyzeSessionLoop } from "../lib/loop-detector.js";
 import { loadProviders } from "../lib/providers.js";
@@ -607,6 +608,14 @@ export function sessionsRoutes(ctx: WorkspaceCtx) {
               cliEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
             }
           }
+
+          const usage = checkUsage();
+          if (!usage.allowed) {
+            send({ type: "error", error: usage.reason ?? "Rate limited" });
+            controller.close();
+            return;
+          }
+          recordInvocation();
 
           const proc = spawn(cliBin, cliArgs, {
             cwd: ctx.projectDir,
