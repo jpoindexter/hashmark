@@ -49,7 +49,7 @@ export function buildClaudeArgs(opts?: {
   allowedTools?: string[];
   mode?: "plan" | "build";
 }): string[] {
-  const args: string[] = ["--output-format", "stream-json", "--verbose"];
+  const args: string[] = ["--print", "--output-format", "stream-json", "--verbose"];
 
   // Priority: explicit tools > mode-based preset > full default
   let tools: readonly string[];
