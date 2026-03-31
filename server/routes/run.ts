@@ -266,15 +266,10 @@ export function runRoutes(ctx: WorkspaceCtx) {
           let fullOutput = "";
           recordInvocation();
           const agentTools = agentDef?.tools;
-          const cliArgs = buildClaudeArgs(prompt, { mode, allowedTools: agentTools, outputFormat: "stream-json" });
-          // Remove --print from args since we use stdin + stream-json
-          const filteredArgs = cliArgs.filter(a => a !== "--print");
-          // Replace the prompt arg with stdin delivery
-          const promptIdx = filteredArgs.indexOf(prompt);
-          if (promptIdx !== -1) filteredArgs.splice(promptIdx, 1);
+          const cliArgs = buildClaudeArgs({ mode, allowedTools: agentTools });
 
           await new Promise<void>((resolve) => {
-            const proc = spawn(claudeBin, filteredArgs, {
+            const proc = spawn(claudeBin, cliArgs, {
               cwd: worktreeDir,
               stdio: ["pipe", "pipe", "pipe"],
               env: runEnv,

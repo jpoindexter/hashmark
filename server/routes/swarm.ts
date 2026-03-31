@@ -15,6 +15,7 @@ import { logAgentAction } from "../lib/action-log.js";
 import { detectConflicts } from "../lib/dep-graph.js";
 import { getDb, getStudioSetting } from "../db.js";
 import { findClaudeBin, buildClaudeArgs } from "../lib/bin-resolver.js";
+import { createStreamParser } from "../lib/claude-stream.js";
 import { z } from "zod";
 import type { WorkspaceCtx } from "./workspaces.js";
 
@@ -106,7 +107,7 @@ function loadAgents(projectDir: string): AgentDef[] {
 
 // ─── Internal event system ────────────────────────────────────────────────────
 
-type SwarmEventType = "chunk" | "status" | "complete" | "committed" | "merged" | "merge_conflict" | "ready_to_merge";
+type SwarmEventType = "chunk" | "status" | "complete" | "committed" | "merged" | "merge_conflict" | "ready_to_merge" | "tool_use" | "tool_progress" | "cost";
 
 interface SwarmEvent {
   type: SwarmEventType;
@@ -197,27 +198,43 @@ async function runAgent(
     if (ctrl.signal.aborted) { resolve(); return; }
 
     const agentTools = agent.agentId ? agentMap.get(agent.agentId)?.tools : undefined;
-    const proc = spawn(claudeBin, buildClaudeArgs(prompt, { mode: swarm.mode, allowedTools: agentTools }), {
+    const cliArgs = buildClaudeArgs({ mode: swarm.mode, allowedTools: agentTools });
+    const proc = spawn(claudeBin, cliArgs, {
       cwd: worktreeDir,
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: ["pipe", "pipe", "pipe"],
       env: swarmEnv,
     });
+
+    // Send prompt via stdin
+    proc.stdin.write(prompt + "\n");
+    proc.stdin.end();
 
     ctrl.signal.addEventListener("abort", () => {
       try { proc.kill("SIGTERM"); } catch {}
     });
 
+    const parser = createStreamParser();
     proc.stdout.on("data", (chunk: Buffer) => {
       if (swarm.cancelled) return;
-      const text = chunk.toString();
-      agent.output += text;
-      emit(swarm, agentIndex, { type: "chunk", data: text });
+      const events = parser.push(chunk);
+      for (const ev of events) {
+        if (ev.type === "text") {
+          agent.output += ev.text;
+          emit(swarm, agentIndex, { type: "chunk", data: ev.text });
+        } else if (ev.type === "tool_use") {
+          emit(swarm, agentIndex, { type: "tool_use", data: JSON.stringify({ tool: ev.tool, input: ev.input }) });
+        } else if (ev.type === "tool_progress") {
+          emit(swarm, agentIndex, { type: "tool_progress", data: JSON.stringify({ tool: ev.tool, elapsed: ev.elapsed }) });
+        } else if (ev.type === "cost") {
+          emit(swarm, agentIndex, { type: "cost", data: String(ev.totalUsd) });
+        }
+      }
     });
 
     proc.stderr.on("data", () => {});
 
-    proc.on("close", (code: number | null) => {
-      if (code !== 0 && code !== null && !swarm.cancelled) {
+    proc.on("close", (code: number | null, signal: string | null) => {
+      if (code !== 0 && code !== null && signal !== "SIGTERM" && !swarm.cancelled) {
         const msg = `[claude exited with code ${code}]`;
         agent.output += `\n${msg}`;
         emit(swarm, agentIndex, { type: "chunk", data: msg });

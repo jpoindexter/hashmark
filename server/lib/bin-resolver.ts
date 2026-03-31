@@ -32,24 +32,26 @@ export const TOOL_PRESETS = {
   readonly: ["Read", "Glob", "Grep"],
   // Standard: can read + write files, no shell
   standard: ["Read", "Write", "Edit", "Glob", "Grep"],
-  // Full: can also run shell commands and fetch web
-  full: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "WebFetch", "WebSearch"],
+  // Full: can also run shell commands, fetch web, spawn subagents
+  full: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "WebFetch", "WebSearch", "Agent"],
   // Plan mode: read-only, no mutations
   plan: ["Read", "Glob", "Grep", "WebFetch", "WebSearch"],
 } as const;
 
-export function buildClaudeArgs(
-  prompt: string,
-  opts?: {
-    resume?: string;
-    outputFormat?: string;
-    allowedTools?: string[];
-    mode?: "plan" | "build";
-  },
-): string[] {
-  const args: string[] = ["--print", prompt];
+/**
+ * Build CLI args for Claude. Returns args array -- prompt is NOT included.
+ * Callers must send the prompt via stdin (proc.stdin.write + proc.stdin.end).
+ *
+ * Always uses --output-format stream-json for structured event parsing.
+ */
+export function buildClaudeArgs(opts?: {
+  resume?: string;
+  allowedTools?: string[];
+  mode?: "plan" | "build";
+}): string[] {
+  const args: string[] = ["--output-format", "stream-json", "--verbose"];
 
-  // Priority: explicit tools > mode-based preset > standard default
+  // Priority: explicit tools > mode-based preset > full default
   let tools: readonly string[];
   if (opts?.allowedTools && opts.allowedTools.length > 0) {
     tools = opts.allowedTools;
@@ -60,7 +62,6 @@ export function buildClaudeArgs(
   }
 
   args.push("--allowedTools", tools.join(","));
-  if (opts?.outputFormat) args.push("--output-format", opts.outputFormat);
   if (opts?.resume) args.push("--resume", opts.resume);
   return args;
 }

@@ -14,6 +14,7 @@ import { tmpdir } from "os";
 import { getDb, getStudioSetting } from "../db.js";
 import { logAgentAction, parseActionsFromOutput } from "../lib/action-log.js";
 import { findClaudeBin, buildClaudeArgs } from "../lib/bin-resolver.js";
+import { createStreamParser } from "../lib/claude-stream.js";
 import type { WorkspaceCtx } from "./workspaces.js";
 
 const execFile = promisify(execFileCb);
@@ -125,7 +126,7 @@ Respond with ONLY a JSON array, no markdown, no explanation:
     if (skipPerms) planEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
 
     try {
-      const { stdout } = await execFile(claudeBin, buildClaudeArgs(prompt), {
+      const { stdout } = await execFile(claudeBin, ["--print", "--allowedTools", "Read,Glob,Grep,WebFetch,WebSearch", prompt], {
         cwd: ctx.projectDir,
         env: planEnv,
         maxBuffer: 1024 * 1024,
@@ -224,23 +225,37 @@ Work in the current directory. Make the necessary code changes, create or modify
           if (workerSkipPerms) workerEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
 
           return new Promise((resolve, reject) => {
-            const proc = spawn(claudeBin, buildClaudeArgs(workerPrompt), {
+            const workerArgs = buildClaudeArgs({ mode: "build" });
+            const proc = spawn(claudeBin, workerArgs, {
               cwd: worktreeDir,
-              stdio: ["ignore", "pipe", "pipe"],
+              stdio: ["pipe", "pipe", "pipe"],
               env: workerEnv,
             });
 
+            // Send prompt via stdin
+            proc.stdin.write(workerPrompt + "\n");
+            proc.stdin.end();
+
             let fullOutput = "";
+            const parser = createStreamParser();
 
             proc.stdout.on("data", (chunk: Buffer) => {
-              const text = chunk.toString();
-              fullOutput += text;
-              send({ type: "worker_chunk", id: subtask.id, text });
+              const events = parser.push(chunk);
+              for (const ev of events) {
+                if (ev.type === "text") {
+                  fullOutput += ev.text;
+                  send({ type: "worker_chunk", id: subtask.id, text: ev.text });
+                } else if (ev.type === "tool_use") {
+                  send({ type: "worker_tool", id: subtask.id, tool: ev.tool });
+                } else if (ev.type === "cost") {
+                  send({ type: "worker_cost", id: subtask.id, cost: ev.totalUsd });
+                }
+              }
               try {
                 const db = getDb(ctx.dataDir);
                 db.prepare(
-                  "UPDATE swarm_workers SET output = output || ? WHERE run_id=? AND worker_id=?"
-                ).run(text, runId, subtask.id);
+                  "UPDATE swarm_workers SET output = ? WHERE run_id=? AND worker_id=?"
+                ).run(fullOutput, runId, subtask.id);
               } catch {}
             });
 
