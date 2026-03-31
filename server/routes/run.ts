@@ -25,6 +25,7 @@ const RunBodySchema = z.object({
   task: z.string().min(1).max(8000),
   agentId: z.string().max(200).optional(),
   mode: z.enum(["plan", "build"]).optional(),
+  resumeRunId: z.string().max(100).optional(),
 });
 
 // ─── Agent loading (same as company.ts) ───────────────────────────────────────
@@ -208,6 +209,16 @@ export function runRoutes(ctx: WorkspaceCtx) {
     const agents = loadAgents(ctx.projectDir);
     const agentMap = new Map(agents.map((a) => [a.id, a]));
 
+    // Resume support: look up prior run's claude_session_id
+    let resumeSessionId: string | null = null;
+    if (body.resumeRunId) {
+      try {
+        const db = getDb(ctx.dataDir);
+        const prior = db.prepare("SELECT claude_session_id FROM runs WHERE id = ?").get(body.resumeRunId) as { claude_session_id: string | null } | undefined;
+        resumeSessionId = prior?.claude_session_id ?? null;
+      } catch {}
+    }
+
     activeRun = true;
 
     const stream = new ReadableStream({
@@ -264,9 +275,11 @@ export function runRoutes(ctx: WorkspaceCtx) {
           if (skipPerms) runEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
 
           let fullOutput = "";
+          let capturedSessionId: string | null = null;
+          let runCostUsd = 0;
           recordInvocation();
           const agentTools = agentDef?.tools;
-          const cliArgs = buildClaudeArgs({ mode, allowedTools: agentTools });
+          const cliArgs = buildClaudeArgs({ mode, allowedTools: agentTools, resume: resumeSessionId ?? undefined });
 
           await new Promise<void>((resolve) => {
             const proc = spawn(claudeBin, cliArgs, {
@@ -286,8 +299,6 @@ export function runRoutes(ctx: WorkspaceCtx) {
             }, RUN_TIMEOUT_MS);
 
             const parser = createStreamParser();
-            let capturedSessionId: string | null = null;
-            let runCostUsd = 0;
 
             proc.stdout.on("data", (chunk: Buffer) => {
               const events = parser.push(chunk);
@@ -357,7 +368,7 @@ export function runRoutes(ctx: WorkspaceCtx) {
           // In plan mode, skip commit + merge entirely
           let hasChanges = false;
           if (mode === "plan") {
-            try { getDb(ctx.dataDir).prepare("UPDATE runs SET status = ?, ended_at = ? WHERE id = ?").run("complete", Date.now(), runId); } catch {}
+            try { getDb(ctx.dataDir).prepare("UPDATE runs SET status = ?, ended_at = ?, cost_usd = ?, claude_session_id = ? WHERE id = ?").run("complete", Date.now(), runCostUsd, capturedSessionId, runId); } catch {}
             send({ type: "complete", hasChanges: false, mode: "plan" });
             activeRun = false;
             controller.close();
@@ -407,11 +418,13 @@ export function runRoutes(ctx: WorkspaceCtx) {
             logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "worktree_remove", target: branchName, outcome: "success" });
           } catch {}
 
-          // Update run status in DB
+          // Update run status in DB -- persist cost + session ID for resume
           try {
             const db = getDb(ctx.dataDir);
-            db.prepare("UPDATE runs SET status = ?, ended_at = ? WHERE id = ?")
-              .run("complete", Date.now(), runId);
+            db.prepare(
+              `UPDATE runs SET status = ?, ended_at = ?, cost_usd = ?,
+               claude_session_id = ?, duration_api_ms = ? WHERE id = ?`
+            ).run("complete", Date.now(), runCostUsd, capturedSessionId, 0, runId);
           } catch { /* non-fatal */ }
 
           send({ type: "complete", hasChanges, mode: "build", runId });

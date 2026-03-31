@@ -220,6 +220,19 @@ function migrate(db: Database.Database) {
   if (!runCols.includes('worktree_branch')) {
     db.exec('ALTER TABLE runs ADD COLUMN worktree_branch TEXT');
   }
+  // Claude session ID for --resume support on runs
+  if (!runCols.includes('claude_session_id')) {
+    db.exec('ALTER TABLE runs ADD COLUMN claude_session_id TEXT');
+  }
+  // API duration tracking
+  if (!runCols.includes('duration_api_ms')) {
+    db.exec('ALTER TABLE runs ADD COLUMN duration_api_ms INTEGER');
+  }
+
+  // Session cost tracking (actual from Claude result events)
+  if (!sessionCols.includes('cost_usd')) {
+    db.exec('ALTER TABLE sessions ADD COLUMN cost_usd REAL NOT NULL DEFAULT 0');
+  }
 
   // Studio settings key-value store
   db.exec(`
