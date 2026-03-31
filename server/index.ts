@@ -38,7 +38,8 @@ import { sandboxRoutes } from "./routes/sandbox.js";
 import { getDb, getStudioSetting, setStudioSetting } from "./db.js";
 import { getStudioToken } from "./lib/studio-token.js";
 import { studioAuthMiddleware } from "./lib/auth-middleware.js";
-import { rateLimitMiddleware } from "./lib/rate-limit.js";
+// rate-limit.ts still available for future use but not applied to local desktop routes
+// import { rateLimitMiddleware } from "./lib/rate-limit.js";
 
 export interface ServerOptions {
   projectDir: string;
@@ -199,10 +200,8 @@ export function createServer(opts: ServerOptions) {
     return c.json({ vars });
   });
 
-  // Rate limiting for AI-heavy routes — 10 requests/min per IP
-  app.use("/api/sessions", rateLimitMiddleware(10, 60_000, "chat"));
-  app.use("/api/sessions/*", rateLimitMiddleware(10, 60_000, "chat"));
-  app.use("/api/run", rateLimitMiddleware(10, 60_000, "run"));
+  // Rate limiting removed — this is a local desktop app, not a public API.
+  // Claude CLI spawn rate limiting lives in server/lib/claude-usage.ts instead.
 
   // API routes
   app.route("/api/scan", scanRoutes(ctx));
