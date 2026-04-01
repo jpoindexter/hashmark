@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { fetchApi } from "../lib/api";
+import { toast } from "./useToast";
 
 export interface ProjectInfo {
   projectName: string;
@@ -63,7 +64,7 @@ export function useProjectInfo(
       .then(r => r.json())
       .then(setInfo)
       .catch(() => {
-        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load project info", type: "error" } }));
+        toast.error("Failed to load project info");
       });
     fetchApi("/api/files/git")
       .then(r => r.json())
