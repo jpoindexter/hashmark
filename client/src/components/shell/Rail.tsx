@@ -183,6 +183,7 @@ export default function Rail({ agentsBadge = false, theme = "dark", themeSetting
             key={item.path}
             className="rail-item"
             title={item.label}
+            aria-label={item.label}
             style={{
               width: 34, height: 34,
               borderRadius: 7,
@@ -215,6 +216,7 @@ export default function Rail({ agentsBadge = false, theme = "dark", themeSetting
       <button
         className="rail-item"
         title={themeSetting === "dark" ? "Switch to light" : themeSetting === "light" ? "Switch to system" : "Switch to dark"}
+        aria-label={themeSetting === "dark" ? "Switch to light" : themeSetting === "light" ? "Switch to system" : "Switch to dark"}
         style={{
           width: 34, height: 34,
           borderRadius: 7,
@@ -232,6 +234,7 @@ export default function Rail({ agentsBadge = false, theme = "dark", themeSetting
       <button
         className="rail-item"
         title="Settings"
+        aria-label="Settings"
         style={{
           width: 34, height: 34,
           borderRadius: 7,

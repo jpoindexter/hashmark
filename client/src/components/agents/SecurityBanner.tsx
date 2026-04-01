@@ -24,7 +24,7 @@ export default function SecurityBanner({ findings, dismissed, onDismiss, agents,
         <span style={{ fontSize: 11, fontFamily: "var(--font)", fontWeight: 600, color: findings.length === 0 ? "var(--accent)" : "var(--red)" }}>
           {findings.length === 0 ? "✓ No security issues found" : `✕ ${findings.length} issue${findings.length !== 1 ? "s" : ""} found`}
         </span>
-        <button onClick={onDismiss} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>
+        <button aria-label="Dismiss" onClick={onDismiss} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>
       </div>
       {findings.length > 0 && (
         <div style={{ maxHeight: 240, overflowY: "auto" }}>

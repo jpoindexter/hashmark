@@ -248,6 +248,7 @@ function DispatchModal({ onClose, onDispatched }: {
             new mission briefing
           </span>
           <button
+            aria-label="Close"
             onClick={onClose}
             style={{ background: "none", border: "none", color: "var(--text-dimmer)", cursor: "pointer", fontSize: 18, lineHeight: 1 }}
           >

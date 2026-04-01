@@ -377,15 +377,16 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
               padding: "2px 4px",
             }}
           />
-          <button onClick={findPrev} title="Previous match (Shift+Enter)" style={searchBtnStyle}>
+          <button onClick={findPrev} title="Previous match (Shift+Enter)" aria-label="Previous match" style={searchBtnStyle}>
             ↑
           </button>
-          <button onClick={findNext} title="Next match (Enter)" style={searchBtnStyle}>
+          <button onClick={findNext} title="Next match (Enter)" aria-label="Next match" style={searchBtnStyle}>
             ↓
           </button>
           <button
             onClick={closeSearch}
             title="Close (Escape)"
+            aria-label="Close search"
             style={{ ...searchBtnStyle, color: "var(--text-dim)" }}
           >
             ✕

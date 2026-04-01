@@ -125,6 +125,7 @@ export default function TerminalPanel({
         <div style={{ flex: 1 }} />
         <button
           title={termBig ? "Restore terminal" : "Maximize terminal"}
+          aria-label={termBig ? "Restore terminal" : "Maximize terminal"}
           onClick={onToggleBig}
           onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg-strong)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
@@ -142,6 +143,7 @@ export default function TerminalPanel({
         </button>
         <button
           title="Close terminal (\u2318`)"
+          aria-label="Close terminal"
           onClick={onClose}
           onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg-strong)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}

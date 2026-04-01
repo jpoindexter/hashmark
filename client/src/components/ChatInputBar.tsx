@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ArrowUp, Square, Plus, X, Mic } from "lucide-react";
+import { ArrowUp, Square, Plus, X, Mic, AlertTriangle } from "lucide-react";
 import { fetchApi } from "../lib/api";
 import { toast } from "../hooks/useToast";
 
@@ -492,6 +492,8 @@ export default function ChatInputBar({
   const retryCountRef = useRef(0);
   const lastSentMessageRef = useRef<string | null>(null);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [contextWarning, setContextWarning] = useState<string | null>(null);
+  const lastWarningPctRef = useRef(0);
 
   const agentSuggestion = useAgentSuggestion(input, currentFile);
   const slashCommands = useSlashCommands(
@@ -527,6 +529,12 @@ export default function ChatInputBar({
         setPendingMessage(d.hasPending ? d.message : null);
       })
       .catch(() => setPendingMessage(null));
+  }, [sessionId]);
+
+  // Reset context warning when session changes
+  useEffect(() => {
+    setContextWarning(null);
+    lastWarningPctRef.current = 0;
   }, [sessionId]);
 
   const resizeTextarea = useCallback(() => {
@@ -865,6 +873,16 @@ export default function ChatInputBar({
             } else if (evtType === "progress") {
               activeThinkingIdx = -1;
               blocks.push({ type: "progress", text: (evt.text ?? "") as string });
+            } else if (evtType === "warning") {
+              const msg = (evt.message ?? "") as string;
+              // Extract percentage from warning like "Context is 85% full..."
+              const pctMatch = msg.match(/(\d+)%/);
+              const pct = pctMatch ? parseInt(pctMatch[1], 10) : 0;
+              // Re-show if percentage increased since last dismissal
+              if (pct > lastWarningPctRef.current) {
+                setContextWarning(msg);
+              }
+              lastWarningPctRef.current = pct;
             }
 
             onStreamingState?.({
@@ -943,6 +961,32 @@ export default function ChatInputBar({
               onApply={applyAgentSuggestion}
               onDismiss={() => setChipDismissed(true)}
             />
+          </div>
+        )}
+
+        {contextWarning && !streaming && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "6px 14px",
+            fontSize: 11,
+            fontFamily: "var(--font-ui)",
+            color: "var(--yellow)",
+            background: "rgba(234, 179, 8, 0.08)",
+            borderBottom: "1px solid rgba(234, 179, 8, 0.2)",
+          }}>
+            <AlertTriangle size={12} style={{ flexShrink: 0 }} />
+            <span style={{ flex: 1, color: "var(--text-dim)" }}>
+              {contextWarning}
+            </span>
+            <button
+              onClick={() => setContextWarning(null)}
+              title="Dismiss"
+              style={{ ...CLOSE_BTN_STYLE, width: 18, height: 18 }}
+            >
+              <X size={12} />
+            </button>
           </div>
         )}
 

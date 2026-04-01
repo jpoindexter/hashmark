@@ -26,6 +26,7 @@ export default function IconButton({ children, title, onClick, style }: IconButt
   return (
     <button
       title={title}
+      aria-label={title}
       onClick={onClick}
       onMouseEnter={(e) => {
         e.currentTarget.style.background = "var(--hover-bg-strong)";

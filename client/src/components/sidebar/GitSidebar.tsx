@@ -213,6 +213,7 @@ function HeaderIconBtn({
   return (
     <button
       title={title}
+      aria-label={title}
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}

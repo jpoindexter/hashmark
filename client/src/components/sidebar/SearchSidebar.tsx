@@ -97,6 +97,7 @@ export default function SearchSidebar() {
           />
           {query && (
             <button
+              aria-label="Clear search"
               onClick={() => { setQuery(""); setResults([]); setTotalMatches(0); }}
               style={{
                 position: "absolute",

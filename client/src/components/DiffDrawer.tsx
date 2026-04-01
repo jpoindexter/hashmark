@@ -132,7 +132,7 @@ export default function DiffDrawer({ open, onClose }: { open: boolean; onClose: 
         <span style={{ fontSize: 12, fontFamily: 'var(--font-ui)', color: 'var(--text-dim)' }}>
           Changes {files.length}
         </span>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-dimmer)', cursor: 'pointer', fontSize: 16 }}>✕</button>
+        <button aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-dimmer)', cursor: 'pointer', fontSize: 16 }}>✕</button>
       </div>
       {/* File list + diff */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>

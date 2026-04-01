@@ -16,6 +16,7 @@ export interface RetryOptions {
   baseDelayMs?: number;   // default 1000
   maxDelayMs?: number;    // default 30000
   onRetry?: (attempt: number, error: string, delayMs: number) => void;
+  fallbackFn?: () => Promise<unknown>; // called on final retry instead of fn
 }
 
 export class NonRetryableError extends Error {
@@ -52,10 +53,16 @@ export async function withRetry<T>(
   const baseDelayMs = opts?.baseDelayMs ?? 1000;
   const maxDelayMs = opts?.maxDelayMs ?? 30000;
 
+  const fallbackFn = opts?.fallbackFn;
   let lastError: Error | undefined;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
+      // On the final retry, use fallbackFn if provided (e.g. cheaper model)
+      const isLastAttempt = attempt === maxRetries;
+      if (isLastAttempt && fallbackFn) {
+        return await fallbackFn() as T;
+      }
       return await fn();
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));

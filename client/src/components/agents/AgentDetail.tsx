@@ -53,7 +53,7 @@ export default function AgentDetail({ agent, editContent, onEditContent, onSave,
               {saving ? "Saving..." : "Save"}
             </button>
           )}
-          <button className="btn" onClick={onClose}>✕</button>
+          <button className="btn" aria-label="Close" onClick={onClose}>✕</button>
         </div>
       </div>
 

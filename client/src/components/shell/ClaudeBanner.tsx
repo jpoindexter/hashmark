@@ -55,6 +55,7 @@ export default function ClaudeBanner() {
       <button
         onClick={() => { dismiss(); setVisible(false); }}
         title="Dismiss"
+        aria-label="Dismiss"
         style={{
           background: "none", border: "none", cursor: "pointer",
           color: "var(--text-dimmer)", fontSize: 14, padding: "0 4px",

@@ -153,6 +153,7 @@ export default function SessionsPanel({
       <div style={hdr}>
         <span style={lbl}>sessions</span>
         <button
+          aria-label="New session"
           onClick={onNewSession}
           style={{
             fontSize: 16, color: "var(--text-dimmer)",

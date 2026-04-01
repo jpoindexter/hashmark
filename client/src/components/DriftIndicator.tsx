@@ -67,6 +67,7 @@ export function DriftBadge({ drift, navigate }: { drift: DriftResult; navigate: 
       <button
         onClick={() => setOpen(v => !v)}
         title={open ? undefined : tooltipText}
+        aria-label="Context drift status"
         style={{
           background: "none",
           border: "none",
@@ -202,6 +203,7 @@ export function DriftBanner({ drift, onDismiss }: { drift: DriftResult; onDismis
       <button
         onClick={onDismiss}
         title="Dismiss for 24h"
+        aria-label="Dismiss"
         style={{
           background: "none", border: "none", cursor: "pointer",
           color: "var(--text-dimmer)", fontSize: 14, padding: "0 4px",
