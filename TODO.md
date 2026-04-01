@@ -8,8 +8,8 @@
 ### God file decomposition
 - [x] Split `Agents.tsx` (1972 lines) into: AgentList, AgentDetail, AgentEditor, AgentRunner, AgentGovernance
 - [ ] Split `sessions.ts` server route (907 lines) into: chat handler, search, analytics, token counting
-- [ ] Split `Settings.tsx` into section components (13 sections in one file)
-- [ ] Split `Home.tsx` dispatch modal into its own component
+- [x] Split `Settings.tsx` into section components (13 sections in one file)
+- [x] Split `Home.tsx` dispatch modal into its own component
 
 ### Code deduplication
 - [x] Extract `loadAgents()` to `server/lib/agents.ts` (currently copy-pasted in run.ts, swarm.ts, company.ts)
@@ -24,19 +24,19 @@
 - [x] Remove Electron references from main.tsx, ProjectPicker, AboutDialog, Settings, WorkspaceSetup
 - [x] Remove `void_ = config` dead code pattern in Generate.tsx
 - [x] Remove duplicate `xterm` v5 package (keep only `@xterm/xterm` v6)
-- [ ] Remove `schema_migrations` table (created but never used)
-- [ ] Remove stale tsconfig `electron/**/*.ts` include
+- [x] Remove `schema_migrations` table (created but never used)
+- [x] Remove stale tsconfig `electron/**/*.ts` include
 
 ### Error handling
 - [x] Add `console.error` to top 20 empty catch blocks blocks (run.ts, swarm.ts, company.ts, sessions.ts)
 - [x] Standardize on `toast()` singleton -- remove all `studio:toast` CustomEvent dispatches
 - [x] Add toast feedback to all Agents CRUD operations (create, delete, save, duplicate)
-- [ ] Add error state + retry to Home page fetches (currently .catch(() => {}))
+- [x] Add error state + retry to Home page fetches (currently .catch(() => {}))
 
 ### Type safety
 - [x] Add Zod schemas to company plan + run routes (raw c.req.json() with no validation)
-- [ ] Fix `isDismissed` called as value not function in Shell.tsx:72
-- [ ] Fix stale closure in Generate.tsx triggerScan (wrap in useCallback)
+- [x] Fix `isDismissed` called as value not function in Shell.tsx:72
+- [x] Fix stale closure in Generate.tsx triggerScan (wrap in useCallback)
 - [ ] Fix stale runStatus closure in Agents.tsx streaming loop (use ref)
 
 ---
@@ -46,20 +46,20 @@
 ### Architecture
 - [ ] Wire Tauri managed sidecar for Node server (clean lifecycle, no orphan processes)
 - [x] Remove dist/ from git tracking: `git rm -r --cached dist/`
-- [ ] Add `process.on("uncaughtException")` handler to bin.ts
+- [x] Add `process.on("uncaughtException")` handler to bin.ts
 - [ ] Fix mutable shared `ctx` concurrency hazard (workspace switch corrupts in-flight ops)
-- [ ] Fix company.ts `activeRun` race condition (async check+set, no mutex)
+- [x] Fix company.ts `activeRun` race condition (async check+set, no mutex)
 
 ### Database
 - [x] Wrap FTS5 creation + backfill in transaction (partial crash = empty FTS forever)
 - [x] Add LIMIT to session list query (unbounded SELECT polled every 8s)
 - [x] Rewrite tokens endpoint (6 correlated subqueries -> 1 JOIN aggregate)
 - [x] Use LENGTH(output) instead of loading full output in effectiveness queries
-- [ ] Batch company.ts output DB writes (currently writes full output on every stdout chunk)
+- [x] Batch company.ts output DB writes (currently writes full output on every stdout chunk)
 
 ### DevOps
 - [ ] Add Tauri desktop build CI workflow (tauri-apps/tauri-action)
-- [ ] Fix tauri:build to include server build (currently skips it)
+- [x] Fix tauri:build to include server build (currently skips it)
 - [ ] Add code signing for macOS (Apple Developer ID)
 - [ ] Add Tauri auto-updater (tauri-plugin-updater)
 - [ ] Add version bump script (syncs package.json + Cargo.toml + tauri.conf.json)
@@ -94,9 +94,9 @@
 - [ ] Track context usage per session, expose via API
 
 ### Permission Cascade
-- [ ] 5 levels: default, acceptEdits, plan, auto, bypass
-- [ ] Settings UI to choose level per workspace
-- [ ] Map levels to --allowedTools + --permission-mode flags
+- [x] 5 levels: default, acceptEdits, plan, auto, bypass
+- [x] Settings UI to choose level per workspace
+- [x] Map levels to --allowedTools + --permission-mode flags
 - [ ] Cycle shortcut in Run page (like Claude Code's Shift+Tab)
 
 ### Session Memory
@@ -133,18 +133,18 @@
 - [x] Fix SPA link in Git.tsx (<a> causes full reload, use navigate())
 
 ### Components
-- [ ] Build shared Modal component (Home + Agents both roll their own)
-- [ ] Build shared Toggle component (from the 2 existing implementations)
+- [x] Build shared Modal component (Home + Agents both roll their own)
+- [x] Build shared Toggle component (from the 2 existing implementations)
 - [ ] Build shared StatusDot component (pulsing dot pattern used in 5 places)
 - [ ] Add aria-labels to all icon-only buttons
-- [ ] Add EventSource cleanup on unmount in Swarm.tsx
+- [x] Add EventSource cleanup on unmount in Swarm.tsx
 
 ### Performance
 - [x] Cap Run/Swarm output display to last 500 lines (accumulates unbounded)
 - [ ] Extract MissionCard elapsed timer into tiny component (re-renders every 1s)
 - [ ] Deduplicate /api/info call on page load (Shell + Home both fetch it)
 - [ ] Batch status API calls (3 serial calls -> 1 /api/status endpoint)
-- [ ] Reduce Shiki grammar chunks (326 -> ~15 used languages, save 8MB)
+- [x] Reduce Shiki grammar chunks (326 -> ~15 used languages, save 8MB)
 
 ### Reliability
 - [x] Add SSE heartbeat on run/company streams (prevent proxy timeout)
