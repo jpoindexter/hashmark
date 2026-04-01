@@ -253,21 +253,23 @@ function migrate(db: Database.Database) {
   ).get() as { name: string } | undefined)?.name;
 
   if (!ftsExists) {
-    db.exec(`
-      CREATE VIRTUAL TABLE sessions_fts USING fts5(
-        session_id UNINDEXED,
-        role UNINDEXED,
-        body,
-        tokenize = 'porter ascii'
-      );
-      INSERT INTO sessions_fts(session_id, role, body)
-        SELECT session_id, role, content FROM session_messages;
-      CREATE TRIGGER sessions_fts_ai
-      AFTER INSERT ON session_messages BEGIN
+    db.transaction(() => {
+      db.exec(`
+        CREATE VIRTUAL TABLE sessions_fts USING fts5(
+          session_id UNINDEXED,
+          role UNINDEXED,
+          body,
+          tokenize = 'porter ascii'
+        );
         INSERT INTO sessions_fts(session_id, role, body)
-        VALUES (NEW.session_id, NEW.role, NEW.content);
-      END;
-    `);
+          SELECT session_id, role, content FROM session_messages;
+        CREATE TRIGGER sessions_fts_ai
+        AFTER INSERT ON session_messages BEGIN
+          INSERT INTO sessions_fts(session_id, role, body)
+          VALUES (NEW.session_id, NEW.role, NEW.content);
+        END;
+      `);
+    })();
   }
 }
 
