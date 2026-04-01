@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Clock } from "lucide-react";
 import { DiffPanel } from "../components/DiffPanel.tsx";
 import { Skeleton, SkeletonCard } from "../components/shared/Skeleton";
+import { PageHeader } from "../components/shared/PageShell";
 import { fetchApi } from "../lib/api";
 import { fmtDateTime } from "../lib/format";
 
@@ -116,22 +117,7 @@ export default function History() {
         padding: "24px 28px",
         minWidth: 0,
       }}>
-        {/* Header */}
-        <div style={{ marginBottom: 20 }}>
-          <h1 style={{
-            fontSize: 16,
-            fontWeight: 700,
-            letterSpacing: "-0.01em",
-            color: "var(--text)",
-            marginBottom: 4,
-            fontFamily: "var(--font-ui, sans-serif)",
-          }}>
-            HISTORY
-          </h1>
-          <div style={{ fontSize: 11, color: "var(--text-dimmer)", fontFamily: "var(--font-ui, sans-serif)" }}>
-            Past agent runs — click "View diff" to inspect changes
-          </div>
-        </div>
+        <PageHeader title="HISTORY" subtitle="Past agent runs — click View diff to inspect changes" />
 
         {loading && (
           <div style={{
