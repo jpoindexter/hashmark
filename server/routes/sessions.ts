@@ -826,17 +826,18 @@ export function sessionsRoutes(ctx: WorkspaceCtx) {
     const wasteEstimatePct = Math.min(35, Math.round(session.message_count * 1.2));
 
     // Stage breakdown: divide conversation into early/middle/recent thirds by message position
-    const messages = db.prepare(
-      "SELECT content FROM session_messages WHERE session_id = ? ORDER BY created_at ASC"
-    ).all(sessionId) as Array<{ content: string }>;
+    // Use LENGTH() in SQL to avoid loading full message content into memory
+    const messageLengths = db.prepare(
+      "SELECT LENGTH(content) as len, role FROM session_messages WHERE session_id = ? ORDER BY created_at ASC"
+    ).all(sessionId) as Array<{ len: number; role: string }>;
 
-    const msgCount = messages.length;
+    const msgCount = messageLengths.length;
     const earlyEnd = Math.floor(msgCount * 0.33);
     const midEnd = Math.floor(msgCount * 0.66);
 
     const stageBreakdown = { early: 0, middle: 0, recent: 0 };
     for (let i = 0; i < msgCount; i++) {
-      const tokens = Math.ceil(messages[i].content.length / 4);
+      const tokens = Math.ceil(messageLengths[i].len / 4);
       if (i < earlyEnd) stageBreakdown.early += tokens;
       else if (i < midEnd) stageBreakdown.middle += tokens;
       else stageBreakdown.recent += tokens;
