@@ -60,7 +60,7 @@ export default function Shell() {
   const [contextPercent, setContextPercent] = useState<number | null>(null);
   const [terminalCwd, setTerminalCwd] = useState("");
   const [diffOpen, setDiffOpen] = useState(false);
-  const [driftDismissed, setDriftDismissed] = useState<boolean>(isDismissed);
+  const [driftDismissed, setDriftDismissed] = useState<boolean>(() => isDismissed());
   const [cmdOpen, setCmdOpen] = useState(false);
   const [paletteMode, setPaletteMode] = useState<"commands" | "files">("files");
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
