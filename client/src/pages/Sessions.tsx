@@ -283,7 +283,7 @@ export default function Sessions() {
 
   const loadSessions = useCallback(async () => {
     const url = showArchived ? "/api/sessions?archived=true" : "/api/sessions";
-    const res = await fetch(url);
+    const res = await fetchApi(url);
     const data = await res.json() as { sessions: Session[] };
     setSessions(data.sessions ?? []);
   }, [showArchived]);

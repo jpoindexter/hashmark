@@ -258,6 +258,14 @@ export function createServer(opts: ServerOptions) {
   // Attach WebSocket terminal (raw ws, not Hono's upgradeWebSocket)
   attachTerminalWS(server as Parameters<typeof attachTerminalWS>[0], opts.projectDir, studioToken);
 
+  // Mark stuck DB records as crashed (from previous unclean shutdown)
+  try {
+    const db = getDb(ctx.dataDir);
+    db.prepare("UPDATE runs SET status = 'crashed', ended_at = ? WHERE status = 'running'").run(Date.now());
+    db.prepare("UPDATE sessions SET status = 'crashed', ended_at = ? WHERE status = 'streaming'").run(Date.now());
+    db.prepare("UPDATE swarm_runs SET status = 'crashed', ended_at = ? WHERE status = 'running'").run(Date.now());
+  } catch {}
+
   // Clean up orphaned studio worktrees from previous crashed runs
   if (opts.projectDir !== "__unset__") {
     setImmediate(() => {
@@ -270,7 +278,7 @@ export function createServer(opts: ServerOptions) {
             if (!pathMatch || !branchMatch) continue;
             const wtPath = pathMatch[1];
             const branch = branchMatch[1];
-            if (!branch.startsWith("studio-run-") && !branch.startsWith("swarm-")) continue;
+            if (!branch.startsWith("studio-run-") && !branch.startsWith("swarm-") && !branch.startsWith("studio-swarm-")) continue;
             execFile("git", ["worktree", "remove", wtPath, "--force"], { cwd: opts.projectDir }).catch(() => {});
             execFile("git", ["branch", "-D", branch], { cwd: opts.projectDir }).catch(() => {});
           }

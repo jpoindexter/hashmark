@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Search, Zap } from "lucide-react";
 import { DiffPanel } from "../components/DiffPanel.tsx";
 import AgentPicker from "../components/AgentPicker.tsx";
@@ -115,8 +116,9 @@ function groupAgents(agents: AgentDef[]): Map<string, AgentDef[]> {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Run() {
+  const [searchParams] = useSearchParams();
   const [task, setTask]         = useState("");
-  const [agentId, setAgentId]   = useState<string>("");
+  const [agentId, setAgentId]   = useState<string>(searchParams.get("agent") ?? "");
   const [agents, setAgents]     = useState<AgentDef[]>([]);
   const [phase, setPhase]       = useState<RunPhase>("idle");
   const [mode, setMode]         = useState<RunMode>("build");

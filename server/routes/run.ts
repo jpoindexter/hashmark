@@ -296,6 +296,8 @@ export function runRoutes(ctx: WorkspaceCtx) {
             const timeout = setTimeout(() => {
               send({ type: "error", error: "Run timed out after 10 minutes" });
               try { proc.kill("SIGTERM"); } catch {}
+              activeRun = false;
+              activeProc = null;
             }, RUN_TIMEOUT_MS);
 
             const parser = createStreamParser();

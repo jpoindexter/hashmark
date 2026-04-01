@@ -2,7 +2,7 @@
 import { existsSync, readFileSync } from "fs";
 import { join, resolve } from "path";
 import { fileURLToPath } from "url";
-import { createServer } from "./server/index.js";
+import { createServer, killAllActiveSessions } from "./server/index.js";
 
 const PROJECT_DIR = process.env.HASHMARK_PROJECT_DIR ?? process.cwd();
 const PORT = parseInt(process.env.STUDIO_PORT ?? "3200", 10);
@@ -31,4 +31,16 @@ loadEnvFile(join(PROJECT_DIR, ".env"));
 
 console.log(`[studio] starting on port ${PORT}, project: ${PROJECT_DIR}`);
 
-createServer({ projectDir: PROJECT_DIR, staticDir: STATIC_DIR, port: PORT });
+const { server } = createServer({ projectDir: PROJECT_DIR, staticDir: STATIC_DIR, port: PORT });
+
+// Graceful shutdown -- kill all spawned Claude processes, close server
+function shutdown(signal: string) {
+  console.log(`[studio] ${signal} received, shutting down...`);
+  killAllActiveSessions();
+  server.close(() => process.exit(0));
+  // Force exit after 5s if graceful close hangs
+  setTimeout(() => process.exit(1), 5000).unref();
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

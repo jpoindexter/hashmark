@@ -202,6 +202,7 @@ async function runAgent(
     if (!usageCheck.allowed) {
       agent.output += `\n[rate limited] ${usageCheck.reason}`;
       emit(swarm, agentIndex, { type: "chunk", data: `[rate limited] ${usageCheck.reason}` });
+      resolve();
       return;
     }
     recordInvocation();
