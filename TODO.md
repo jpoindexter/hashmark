@@ -6,35 +6,35 @@
 ## Phase 0 -- Code Cleanup (do first, before any features)
 
 ### God file decomposition
-- [ ] Split `Agents.tsx` (1972 lines) into: AgentList, AgentDetail, AgentEditor, AgentRunner, AgentGovernance
+- [x] Split `Agents.tsx` (1972 lines) into: AgentList, AgentDetail, AgentEditor, AgentRunner, AgentGovernance
 - [ ] Split `sessions.ts` server route (907 lines) into: chat handler, search, analytics, token counting
 - [ ] Split `Settings.tsx` into section components (13 sections in one file)
 - [ ] Split `Home.tsx` dispatch modal into its own component
 
 ### Code deduplication
-- [ ] Extract `loadAgents()` to `server/lib/agents.ts` (currently copy-pasted in run.ts, swarm.ts, company.ts)
-- [ ] Extract MODELS constant to `client/src/lib/models.ts` (4 different lists in Home, Sessions, Agents, Shell)
-- [ ] Extract `renderInline()` to `client/src/lib/markdown.ts` (3 copies in Sessions, Agents, ChatMessages)
-- [ ] Extract Toggle component to `client/src/components/shared/Toggle.tsx` (2 different implementations in Settings, Governance)
-- [ ] Extract time formatting utils to `client/src/lib/format.ts` (5+ copies: timeAgo, fmtRelative, relativeTime, formatTs)
-- [ ] Extract DEPT_COLORS to shared constant (3 copies in Run, AgentCard, Agents)
+- [x] Extract `loadAgents()` to `server/lib/agents.ts` (currently copy-pasted in run.ts, swarm.ts, company.ts)
+- [x] Extract MODELS constant to `client/src/lib/models.ts` (4 different lists in Home, Sessions, Agents, Shell)
+- [x] Extract `renderInline()` to `client/src/lib/markdown.ts` (3 copies in Sessions, Agents, ChatMessages)
+- [x] Extract Toggle component to `client/src/components/shared/Toggle.tsx` (2 different implementations in Settings, Governance)
+- [x] Extract time formatting utils to `client/src/lib/format.ts` (5+ copies: timeAgo, fmtRelative, relativeTime, formatTs)
+- [x] Extract DEPT_COLORS to shared constant (3 copies in Run, AgentCard, Agents)
 
 ### Dead code removal
-- [ ] Remove dead shell components: ActivityBar, AgentDetailViewer, ContextPanel, MissionBar, ModelBar, SidebarPanel, RightSidebar, SidebarResize
-- [ ] Remove Electron references from main.tsx, ProjectPicker, AboutDialog, Settings, WorkspaceSetup
-- [ ] Remove `void_ = config` dead code pattern in Generate.tsx
-- [ ] Remove duplicate `xterm` v5 package (keep only `@xterm/xterm` v6)
+- [x] Remove dead shell components: ActivityBar, AgentDetailViewer, ContextPanel, MissionBar, ModelBar, SidebarPanel, RightSidebar, SidebarResize
+- [x] Remove Electron references from main.tsx, ProjectPicker, AboutDialog, Settings, WorkspaceSetup
+- [x] Remove `void_ = config` dead code pattern in Generate.tsx
+- [x] Remove duplicate `xterm` v5 package (keep only `@xterm/xterm` v6)
 - [ ] Remove `schema_migrations` table (created but never used)
 - [ ] Remove stale tsconfig `electron/**/*.ts` include
 
 ### Error handling
-- [ ] Add `console.error` to top 20 empty catch blocks (run.ts, swarm.ts, company.ts, sessions.ts)
-- [ ] Standardize on `toast()` singleton -- remove all `studio:toast` CustomEvent dispatches
-- [ ] Add toast feedback to all Agents CRUD operations (create, delete, save, duplicate)
+- [x] Add `console.error` to top 20 empty catch blocks blocks (run.ts, swarm.ts, company.ts, sessions.ts)
+- [x] Standardize on `toast()` singleton -- remove all `studio:toast` CustomEvent dispatches
+- [x] Add toast feedback to all Agents CRUD operations (create, delete, save, duplicate)
 - [ ] Add error state + retry to Home page fetches (currently .catch(() => {}))
 
 ### Type safety
-- [ ] Add Zod schemas to company plan + run routes (raw c.req.json() with no validation)
+- [x] Add Zod schemas to company plan + run routes (raw c.req.json() with no validation)
 - [ ] Fix `isDismissed` called as value not function in Shell.tsx:72
 - [ ] Fix stale closure in Generate.tsx triggerScan (wrap in useCallback)
 - [ ] Fix stale runStatus closure in Agents.tsx streaming loop (use ref)
@@ -45,16 +45,16 @@
 
 ### Architecture
 - [ ] Wire Tauri managed sidecar for Node server (clean lifecycle, no orphan processes)
-- [ ] Remove dist/ from git tracking: `git rm -r --cached dist/`
+- [x] Remove dist/ from git tracking: `git rm -r --cached dist/`
 - [ ] Add `process.on("uncaughtException")` handler to bin.ts
 - [ ] Fix mutable shared `ctx` concurrency hazard (workspace switch corrupts in-flight ops)
 - [ ] Fix company.ts `activeRun` race condition (async check+set, no mutex)
 
 ### Database
-- [ ] Wrap FTS5 creation + backfill in transaction (partial crash = empty FTS forever)
-- [ ] Add LIMIT to session list query (unbounded SELECT polled every 8s)
-- [ ] Rewrite tokens endpoint (6 correlated subqueries -> 1 JOIN aggregate)
-- [ ] Use LENGTH(output) instead of loading full output in effectiveness queries
+- [x] Wrap FTS5 creation + backfill in transaction (partial crash = empty FTS forever)
+- [x] Add LIMIT to session list query (unbounded SELECT polled every 8s)
+- [x] Rewrite tokens endpoint (6 correlated subqueries -> 1 JOIN aggregate)
+- [x] Use LENGTH(output) instead of loading full output in effectiveness queries
 - [ ] Batch company.ts output DB writes (currently writes full output on every stdout chunk)
 
 ### DevOps
@@ -63,14 +63,14 @@
 - [ ] Add code signing for macOS (Apple Developer ID)
 - [ ] Add Tauri auto-updater (tauri-plugin-updater)
 - [ ] Add version bump script (syncs package.json + Cargo.toml + tauri.conf.json)
-- [ ] Self-host JetBrains Mono font (currently @import blocks render, breaks offline)
+- [x] Self-host JetBrains Mono font (currently @import blocks render, breaks offline)
 
 ### UX
-- [ ] Add Swarm, Company, Git, Files, History, Governance to Rail nav
-- [ ] Add first-run onboarding (welcome screen, Claude CLI check, sample task)
-- [ ] Add loading skeleton to Home page (flash of empty content on mount)
-- [ ] Add focus trap + Escape handler to DispatchModal and CreateAgent modal
-- [ ] Fix Git.tsx `${color}18` string concatenation (produces invalid CSS)
+- [x] Add Swarm, Company, Git, Files, History, Governance to Rail nav
+- [x] Add first-run onboarding (welcome screen, Claude CLI check, sample task)
+- [x] Add loading skeleton to Home page (flash of empty content on mount)
+- [x] Add focus trap + Escape handler to DispatchModal and CreateAgent modal
+- [x] Fix Git.tsx string concatenation (produces invalid CSS)
 
 ### Legal
 - [ ] Add LICENSE file (recommend BSL for commercial + open source)
@@ -82,13 +82,13 @@
 ## Phase 2 -- Features from Claude Code Source
 
 ### Retry + Backoff (server/lib/retry.ts)
-- [ ] Exponential backoff: 500ms base, 10 retries max, 3 for 529 overloaded
+- [x] Exponential backoff: 500ms base, 10 retries max, 3 for 529 overloaded
 - [ ] Fallback model support (try sonnet if opus fails)
 - [ ] Heartbeat every 30s during retries (prevent client timeout)
-- [ ] Wire into all spawn sites (run, swarm, company, sessions)
+- [x] Wire into all spawn sites (run, swarm, company, sessions)
 
 ### Microcompaction (server/lib/compaction.ts)
-- [ ] Truncate large tool results in session history (file reads, bash output)
+- [x] Truncate large tool results in session history (file reads, bash output)
 - [ ] Trigger at 80% context window (AUTOCOMPACT_BUFFER_TOKENS = 13000)
 - [ ] Warning UI at 90% context (WARNING_THRESHOLD = 20000)
 - [ ] Track context usage per session, expose via API
@@ -120,9 +120,9 @@
 ## Phase 3 -- UX Polish
 
 ### Visual design system
-- [ ] Add spacing tokens (--space-1 through --space-8 on 4px grid)
-- [ ] Add --color-on-accent token (text on accent backgrounds)
-- [ ] Add z-index token scale (--z-dropdown, --z-modal, --z-toast, --z-overlay)
+- [x] Add spacing tokens (--space-1 through --space-8 on 4px grid)
+- [x] Add --color-on-accent token (text on accent backgrounds)
+- [x] Add z-index token scale (--z-dropdown, --z-modal, --z-toast, --z-overlay)
 - [ ] Replace 40+ hardcoded colors with CSS tokens
 - [ ] Standardize page headers (use PageHeader component or remove it)
 
@@ -130,7 +130,7 @@
 - [ ] Add Rail tooltips (title/tooltip on hover)
 - [ ] Add Cmd+K command palette hint for new users
 - [ ] Fix board-to-chat toggle (use URL routing, back button broken)
-- [ ] Fix SPA link in Git.tsx (<a> causes full reload, use navigate())
+- [x] Fix SPA link in Git.tsx (<a> causes full reload, use navigate())
 
 ### Components
 - [ ] Build shared Modal component (Home + Agents both roll their own)
@@ -140,20 +140,20 @@
 - [ ] Add EventSource cleanup on unmount in Swarm.tsx
 
 ### Performance
-- [ ] Cap Run/Swarm output display to last 500 lines (accumulates unbounded)
+- [x] Cap Run/Swarm output display to last 500 lines (accumulates unbounded)
 - [ ] Extract MissionCard elapsed timer into tiny component (re-renders every 1s)
 - [ ] Deduplicate /api/info call on page load (Shell + Home both fetch it)
 - [ ] Batch status API calls (3 serial calls -> 1 /api/status endpoint)
 - [ ] Reduce Shiki grammar chunks (326 -> ~15 used languages, save 8MB)
 
 ### Reliability
-- [ ] Add SSE heartbeat on run/company streams (prevent proxy timeout)
-- [ ] Add SSE reconnection logic (show "disconnected" banner, auto-retry)
+- [x] Add SSE heartbeat on run/company streams (prevent proxy timeout)
+- [x] Add SSE reconnection logic (show "disconnected" banner, auto-retry)
 - [ ] Add periodic worktree orphan cleanup (every 30 min)
 - [ ] Add DB backup mechanism (.hashmark/studio.db.bak hourly)
 - [ ] Add action log rotation (agent-actions.jsonl > 10MB -> .1)
-- [ ] Flush stream parser on process close (final result event may be lost)
-- [ ] Use shared stream parser in sessions.ts (currently inline, missing events)
+- [x] Flush stream parser on process close (final result event may be lost)
+- [x] Use shared stream parser in sessions.ts (currently inline, missing events)
 
 ---
 
