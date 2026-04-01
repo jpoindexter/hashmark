@@ -794,19 +794,19 @@ export function sessionsRoutes(ctx: WorkspaceCtx) {
     const db = getDb(ctx.dataDir);
     const sessionId = c.req.param("id");
     const session = db.prepare(`
-      SELECT total_input_tokens, total_output_tokens,
-        (SELECT COUNT(*) FROM session_messages WHERE session_id = ?) as message_count,
-        (SELECT COUNT(*) FROM session_messages WHERE session_id = ? AND role = 'user') as user_count,
-        (SELECT COUNT(*) FROM session_messages WHERE session_id = ? AND role = 'assistant') as assistant_count,
-        (SELECT COALESCE(SUM(input_tokens),0) FROM session_messages WHERE session_id = ? AND role = 'user') as user_input_tokens,
-        (SELECT COALESCE(SUM(output_tokens),0) FROM session_messages WHERE session_id = ? AND role = 'assistant') as assistant_output_tokens
-      FROM sessions WHERE id = ?
-    `).get(
-      sessionId, sessionId, sessionId,
-      sessionId, sessionId, sessionId
-    ) as {
+      SELECT s.total_input_tokens, s.total_output_tokens, s.cost_usd,
+        COUNT(m.id) as message_count,
+        SUM(CASE WHEN m.role='user' THEN 1 ELSE 0 END) as user_count,
+        SUM(CASE WHEN m.role='assistant' THEN 1 ELSE 0 END) as assistant_count,
+        COALESCE(SUM(CASE WHEN m.role='user' THEN m.input_tokens ELSE 0 END),0) as user_input_tokens,
+        COALESCE(SUM(CASE WHEN m.role='assistant' THEN m.output_tokens ELSE 0 END),0) as assistant_output_tokens
+      FROM sessions s
+      LEFT JOIN session_messages m ON m.session_id = s.id
+      WHERE s.id = ?
+    `).get(sessionId) as {
       total_input_tokens: number;
       total_output_tokens: number;
+      cost_usd: number;
       message_count: number;
       user_count: number;
       assistant_count: number;
