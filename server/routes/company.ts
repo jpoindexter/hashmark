@@ -6,13 +6,14 @@
 
 import { Hono } from "hono";
 import { spawn, execFile as execFileCb } from "child_process";
-import { existsSync, readFileSync, readdirSync } from "fs";
-import { join, relative } from "path";
+import { readFileSync } from "fs";
+import { join } from "path";
 import { randomUUID } from "crypto";
 import { promisify } from "util";
 import { tmpdir } from "os";
 import { getDb, getStudioSetting } from "../db.js";
 import { logAgentAction, parseActionsFromOutput } from "../lib/action-log.js";
+import { loadAgents } from "../lib/agents.js";
 import { findClaudeBin, buildClaudeArgs } from "../lib/bin-resolver.js";
 import { createStreamParser } from "../lib/claude-stream.js";
 import type { WorkspaceCtx } from "./workspaces.js";
@@ -21,52 +22,6 @@ const execFile = promisify(execFileCb);
 
 const MAX_CONCURRENT_CLAUDE = 2;
 const MAX_WORKERS = 3;
-
-// ─── Agent loading ────────────────────────────────────────────────────────────
-
-interface AgentDef {
-  id: string;
-  name: string;
-  description: string;
-  content: string;
-}
-
-function loadAgents(projectDir: string): AgentDef[] {
-  const agentsDir = join(projectDir, ".claude", "agents");
-  if (!existsSync(agentsDir)) return [];
-
-  const agents: AgentDef[] = [];
-
-  function walk(dir: string) {
-    let entries: import("fs").Dirent[];
-    try {
-      entries = readdirSync(dir, { withFileTypes: true });
-    } catch { return; }
-
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        walk(join(dir, entry.name));
-      } else if (entry.name.endsWith(".md") && entry.name !== "INDEX.md") {
-        const fullPath = join(dir, entry.name);
-        const relPath = relative(agentsDir, fullPath);
-        try {
-          const content = readFileSync(fullPath, "utf-8");
-          const nameMatch = content.match(/^name:\s*(.+)$/m);
-          const descMatch = content.match(/^description:\s*(.+)$/m);
-          agents.push({
-            id: relPath.replace(/\.md$/, "").replace(/\//g, "-"),
-            name: nameMatch?.[1]?.trim() ?? relPath,
-            description: descMatch?.[1]?.trim() ?? "",
-            content,
-          });
-        } catch {}
-      }
-    }
-  }
-
-  walk(agentsDir);
-  return agents;
-}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
