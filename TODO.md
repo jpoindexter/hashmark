@@ -7,7 +7,7 @@
 
 ### God file decomposition
 - [x] Split `Agents.tsx` (1972 lines) into: AgentList, AgentDetail, AgentEditor, AgentRunner, AgentGovernance
-- [ ] Split `sessions.ts` server route (907 lines) into: chat handler, search, analytics, token counting
+- [x] Split `sessions.ts` server route (907 lines) into: chat handler, search, analytics, token counting
 - [x] Split `Settings.tsx` into section components (13 sections in one file)
 - [x] Split `Home.tsx` dispatch modal into its own component
 
@@ -37,7 +37,7 @@
 - [x] Add Zod schemas to company plan + run routes (raw c.req.json() with no validation)
 - [x] Fix `isDismissed` called as value not function in Shell.tsx:72
 - [x] Fix stale closure in Generate.tsx triggerScan (wrap in useCallback)
-- [ ] Fix stale runStatus closure in Agents.tsx streaming loop (use ref)
+- [x] Fix stale runStatus closure in Agents.tsx streaming loop (use ref)
 
 ---
 
@@ -47,7 +47,7 @@
 - [ ] Wire Tauri managed sidecar for Node server (clean lifecycle, no orphan processes)
 - [x] Remove dist/ from git tracking: `git rm -r --cached dist/`
 - [x] Add `process.on("uncaughtException")` handler to bin.ts
-- [ ] Fix mutable shared `ctx` concurrency hazard (workspace switch corrupts in-flight ops)
+- [x] Fix mutable shared `ctx` concurrency hazard (workspace switch corrupts in-flight ops)
 - [x] Fix company.ts `activeRun` race condition (async check+set, no mutex)
 
 ### Database
@@ -58,7 +58,7 @@
 - [x] Batch company.ts output DB writes (currently writes full output on every stdout chunk)
 
 ### DevOps
-- [ ] Add Tauri desktop build CI workflow (tauri-apps/tauri-action)
+- [x] Add Tauri desktop build CI workflow (tauri-apps/tauri-action)
 - [x] Fix tauri:build to include server build (currently skips it)
 - [ ] Add code signing for macOS (Apple Developer ID)
 - [ ] Add Tauri auto-updater (tauri-plugin-updater)
@@ -83,21 +83,21 @@
 
 ### Retry + Backoff (server/lib/retry.ts)
 - [x] Exponential backoff: 500ms base, 10 retries max, 3 for 529 overloaded
-- [ ] Fallback model support (try sonnet if opus fails)
+- [x] Fallback model support (try sonnet if opus fails)
 - [ ] Heartbeat every 30s during retries (prevent client timeout)
 - [x] Wire into all spawn sites (run, swarm, company, sessions)
 
 ### Microcompaction (server/lib/compaction.ts)
 - [x] Truncate large tool results in session history (file reads, bash output)
 - [ ] Trigger at 80% context window (AUTOCOMPACT_BUFFER_TOKENS = 13000)
-- [ ] Warning UI at 90% context (WARNING_THRESHOLD = 20000)
+- [x] Warning UI at 90% context (WARNING_THRESHOLD = 20000)
 - [ ] Track context usage per session, expose via API
 
 ### Permission Cascade
 - [x] 5 levels: default, acceptEdits, plan, auto, bypass
 - [x] Settings UI to choose level per workspace
 - [x] Map levels to --allowedTools + --permission-mode flags
-- [ ] Cycle shortcut in Run page (like Claude Code's Shift+Tab)
+- [x] Cycle shortcut in Run page (like Claude Code's Shift+Tab)
 
 ### Session Memory
 - [ ] Periodic background updates to .session.md
@@ -123,7 +123,7 @@
 - [x] Add spacing tokens (--space-1 through --space-8 on 4px grid)
 - [x] Add --color-on-accent token (text on accent backgrounds)
 - [x] Add z-index token scale (--z-dropdown, --z-modal, --z-toast, --z-overlay)
-- [ ] Replace 40+ hardcoded colors with CSS tokens
+- [x] Replace 40+ hardcoded colors with CSS tokens
 - [ ] Standardize page headers (use PageHeader component or remove it)
 
 ### Navigation
@@ -135,8 +135,8 @@
 ### Components
 - [x] Build shared Modal component (Home + Agents both roll their own)
 - [x] Build shared Toggle component (from the 2 existing implementations)
-- [ ] Build shared StatusDot component (pulsing dot pattern used in 5 places)
-- [ ] Add aria-labels to all icon-only buttons
+- [x] Build shared StatusDot component (pulsing dot pattern used in 5 places)
+- [x] Add aria-labels to all icon-only buttons
 - [x] Add EventSource cleanup on unmount in Swarm.tsx
 
 ### Performance
