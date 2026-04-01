@@ -74,8 +74,11 @@ export function companyRoutes(ctx: WorkspaceCtx) {
       return c.json({ error: parsed.error.issues[0]?.message ?? "invalid input" }, 400);
     }
     const body = parsed.data;
-    const claudeBin = findClaudeBin(ctx.projectDir);
-    const agents = loadAgents(ctx.projectDir);
+    // Snapshot ctx at request time -- prevents workspace switches from corrupting in-flight plan
+    const planProjectDir = ctx.projectDir;
+    const planDataDir = ctx.dataDir;
+    const claudeBin = findClaudeBin(planProjectDir);
+    const agents = loadAgents(planProjectDir);
 
     const agentList = agents.length > 0
       ? agents.map(a => `  - id: "${a.id}" | name: "${a.name}" | ${a.description}`).join("\n")
@@ -97,7 +100,7 @@ Rules:
 Respond with ONLY a JSON array, no markdown, no explanation:
 [{"id":1,"title":"short title under 50 chars","description":"detailed what to implement","agentId":"exact-agent-id-here"}]`;
 
-    const skipPerms = getStudioSetting(getDb(ctx.dataDir), "dangerousSkipPermissions", "false") === "true";
+    const skipPerms = getStudioSetting(getDb(planDataDir), "dangerousSkipPermissions", "false") === "true";
     const planEnv: Record<string, string> = { ...process.env as Record<string, string> };
     if (skipPerms) planEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
 
@@ -105,7 +108,7 @@ Respond with ONLY a JSON array, no markdown, no explanation:
       // Use spawn + stdin to avoid exposing prompt in process listing
       const stdout = await new Promise<string>((resolve, reject) => {
         const proc = spawn(claudeBin, ["--print", "--allowedTools", "Read,Glob,Grep,WebFetch,WebSearch"], {
-          cwd: ctx.projectDir, env: planEnv, stdio: ["pipe", "pipe", "pipe"],
+          cwd: planProjectDir, env: planEnv, stdio: ["pipe", "pipe", "pipe"],
         });
         proc.stdin.write(prompt + "\n");
         proc.stdin.end();
@@ -147,10 +150,13 @@ Respond with ONLY a JSON array, no markdown, no explanation:
       return c.json({ error: parsed.error.issues[0]?.message ?? "invalid input" }, 400);
     }
     const body = parsed.data;
-    const claudeBin = findClaudeBin(ctx.projectDir);
+    // Snapshot ctx at request time -- prevents workspace switches from corrupting in-flight runs
+    const projectDir = ctx.projectDir;
+    const dataDir = ctx.dataDir;
+    const claudeBin = findClaudeBin(projectDir);
     const runId = randomUUID().slice(0, 8);
     const plan = body.plan.slice(0, MAX_WORKERS);
-    const agents = loadAgents(ctx.projectDir);
+    const agents = loadAgents(projectDir);
     const agentMap = new Map(agents.map(a => [a.id, a]));
 
     // Set BEFORE creating the stream to prevent race conditions from concurrent POSTs
@@ -179,7 +185,7 @@ Respond with ONLY a JSON array, no markdown, no explanation:
 
           // Update worker status to running in DB
           try {
-            const db = getDb(ctx.dataDir);
+            const db = getDb(dataDir);
             db.prepare(
               "UPDATE swarm_workers SET status='running', started_at=? WHERE run_id=? AND worker_id=?"
             ).run(Date.now(), runId, subtask.id);
@@ -187,15 +193,15 @@ Respond with ONLY a JSON array, no markdown, no explanation:
 
           try {
             await execFile("git", ["worktree", "add", worktreeDir, "-b", branchName], {
-              cwd: ctx.projectDir,
+              cwd: projectDir,
             });
-            logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "worktree_create", target: branchName, outcome: "success" });
+            logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "worktree_create", target: branchName, outcome: "success" });
           } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
-            logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "worktree_create", target: branchName, outcome: "failure", detail: msg });
+            logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "worktree_create", target: branchName, outcome: "failure", detail: msg });
             send({ type: "worker_error", id: subtask.id, error: `Worktree failed: ${msg}` });
             try {
-              const db = getDb(ctx.dataDir);
+              const db = getDb(dataDir);
               db.prepare(
                 "UPDATE swarm_workers SET status='error', error=?, completed_at=? WHERE run_id=? AND worker_id=?"
               ).run(`Worktree failed: ${msg}`, Date.now(), runId, subtask.id);
@@ -217,7 +223,7 @@ ${subtask.description}
 
 Work in the current directory. Make the necessary code changes, create or modify files as needed.`;
 
-          const workerSkipPerms = getStudioSetting(getDb(ctx.dataDir), "dangerousSkipPermissions", "false") === "true";
+          const workerSkipPerms = getStudioSetting(getDb(dataDir), "dangerousSkipPermissions", "false") === "true";
           const workerEnv: Record<string, string> = { ...process.env as Record<string, string> };
           if (workerSkipPerms) workerEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
 
@@ -241,7 +247,7 @@ Work in the current directory. Make the necessary code changes, create or modify
             const flushOutput = () => {
               if (!outputDirty) return;
               try {
-                const db = getDb(ctx.dataDir);
+                const db = getDb(dataDir);
                 db.prepare(
                   "UPDATE swarm_workers SET output = ? WHERE run_id=? AND worker_id=?"
                 ).run(fullOutput, runId, subtask.id);
@@ -291,7 +297,7 @@ Work in the current directory. Make the necessary code changes, create or modify
               if (code !== 0 && code !== null) {
                 send({ type: "worker_error", id: subtask.id, error: `Exit code ${code}` });
                 try {
-                  const db = getDb(ctx.dataDir);
+                  const db = getDb(dataDir);
                   db.prepare(
                     "UPDATE swarm_workers SET status='error', error=?, completed_at=? WHERE run_id=? AND worker_id=?"
                   ).run(`Exit code ${code}`, Date.now(), runId, subtask.id);
@@ -307,13 +313,13 @@ Work in the current directory. Make the necessary code changes, create or modify
                 if (hasChanges) {
                   await execFile("git", ["add", "-A"], { cwd: worktreeDir });
                   await execFile("git", ["commit", "--no-verify", "-m", `feat(swarm/${runId}): agent ${subtask.id} - ${subtask.title}`], { cwd: worktreeDir });
-                  logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "git_commit", target: branchName, outcome: "success" });
+                  logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "git_commit", target: branchName, outcome: "success" });
                 }
               } catch {}
 
               // Parse and log file write / bash events from agent output
               const actionEvents = parseActionsFromOutput(fullOutput, runId, subtask.agentId, subtask.id);
-              for (const ev of actionEvents) logAgentAction(ctx.dataDir, ev);
+              for (const ev of actionEvents) logAgentAction(dataDir, ev);
 
               // Test verification step
               let testResult: { passed: boolean; output: string; skipped: boolean } = { passed: true, output: "", skipped: false };
@@ -346,7 +352,7 @@ Work in the current directory. Make the necessary code changes, create or modify
               }
 
               try {
-                const db = getDb(ctx.dataDir);
+                const db = getDb(dataDir);
                 db.prepare(
                   "UPDATE swarm_workers SET status='done', completed_at=? WHERE run_id=? AND worker_id=?"
                 ).run(Date.now(), runId, subtask.id);
@@ -361,7 +367,7 @@ Work in the current directory. Make the necessary code changes, create or modify
               flushOutput();
               send({ type: "worker_error", id: subtask.id, error: err.message });
               try {
-                const db = getDb(ctx.dataDir);
+                const db = getDb(dataDir);
                 db.prepare(
                   "UPDATE swarm_workers SET status='error', error=?, completed_at=? WHERE run_id=? AND worker_id=?"
                 ).run(err.message, Date.now(), runId, subtask.id);
@@ -378,7 +384,7 @@ Work in the current directory. Make the necessary code changes, create or modify
         async function orchestrate() {
           // Insert run + workers into DB
           try {
-            const db = getDb(ctx.dataDir);
+            const db = getDb(dataDir);
             db.prepare(
               "INSERT INTO swarm_runs (id, task, status, worker_count, created_at) VALUES (?, ?, 'running', ?, ?)"
             ).run(runId, body.task, plan.length, Date.now());
@@ -429,15 +435,15 @@ Work in the current directory. Make the necessary code changes, create or modify
             const worktreeDir = worktreeDirs.get(subtask.id);
             try {
               if (worktreeDir) {
-                await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: ctx.projectDir });
-                logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "worktree_remove", target: branchName, outcome: "success" });
+                await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: projectDir });
+                logAgentAction(dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "worktree_remove", target: branchName, outcome: "success" });
               }
             } catch {}
           }
 
           // Update run status
           try {
-            const db = getDb(ctx.dataDir);
+            const db = getDb(dataDir);
             db.prepare(
               "UPDATE swarm_runs SET status='done', completed_at=? WHERE id=?"
             ).run(Date.now(), runId);
@@ -460,7 +466,7 @@ Work in the current directory. Make the necessary code changes, create or modify
         orchestrate().catch((err) => {
           send({ type: "error", error: err instanceof Error ? err.message : String(err) });
           try {
-            const db = getDb(ctx.dataDir);
+            const db = getDb(dataDir);
             db.prepare(
               "UPDATE swarm_runs SET status='error', completed_at=? WHERE id=?"
             ).run(Date.now(), runId);
@@ -524,7 +530,10 @@ Work in the current directory. Make the necessary code changes, create or modify
   app.post("/runs/:runId/workers/:workerId/merge", async (c) => {
     const runId = c.req.param("runId");
     const workerId = parseInt(c.req.param("workerId"), 10);
-    const db = getDb(ctx.dataDir);
+    // Snapshot ctx at request time -- prevents workspace switches from corrupting in-flight merges
+    const mergeProjectDir = ctx.projectDir;
+    const mergeDataDir = ctx.dataDir;
+    const db = getDb(mergeDataDir);
 
     const worker = db.prepare(
       "SELECT branch, agent_id FROM swarm_workers WHERE run_id = ? AND worker_id = ?"
@@ -538,9 +547,9 @@ Work in the current directory. Make the necessary code changes, create or modify
       await execFile(
         "git",
         ["merge", branch, "--no-ff", "-m", `feat(swarm): merge worker ${workerId} - ${branch}`],
-        { cwd: ctx.projectDir }
+        { cwd: mergeProjectDir }
       );
-      logAgentAction(ctx.dataDir, {
+      logAgentAction(mergeDataDir, {
         timestamp: Date.now(),
         runId,
         agentId: worker.agent_id ?? "general",
@@ -549,12 +558,12 @@ Work in the current directory. Make the necessary code changes, create or modify
         target: branch,
         outcome: "success",
       });
-      try { await execFile("git", ["branch", "-d", branch], { cwd: ctx.projectDir }); } catch {}
+      try { await execFile("git", ["branch", "-d", branch], { cwd: mergeProjectDir }); } catch {}
       return c.json({ ok: true });
     } catch (err) {
-      try { await execFile("git", ["merge", "--abort"], { cwd: ctx.projectDir }); } catch {}
+      try { await execFile("git", ["merge", "--abort"], { cwd: mergeProjectDir }); } catch {}
       const msg = err instanceof Error ? err.message : String(err);
-      logAgentAction(ctx.dataDir, {
+      logAgentAction(mergeDataDir, {
         timestamp: Date.now(),
         runId,
         agentId: worker.agent_id ?? "general",

@@ -115,7 +115,11 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
       skipContext?: boolean;
     }>();
 
-    const db = getDb(ctx.dataDir);
+    // Snapshot ctx at request time -- prevents workspace switches from corrupting in-flight chat
+    const projectDir = ctx.projectDir;
+    const dataDir = ctx.dataDir;
+
+    const db = getDb(dataDir);
     const session = db.prepare("SELECT * FROM sessions WHERE id = ?").get(sessionId) as {
       id: string; title: string; agent_name: string | null; claude_session_id: string | null;
     } | undefined;
@@ -126,7 +130,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
     shared.sessionLastActivity.set(sessionId, Date.now());
 
     // Pre-turn checkpoint -- snapshot working tree before Claude touches anything
-    await createCheckpoint(ctx.projectDir, `pre-turn-${sessionId.slice(0, 8)}`).catch(() => null);
+    await createCheckpoint(projectDir, `pre-turn-${sessionId.slice(0, 8)}`).catch(() => null);
 
     // Load conversation history (only sent messages)
     const rawHistory = db.prepare(
@@ -165,7 +169,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
     }
 
     // Load CLAUDE.md sections for analytics heatmap
-    const claudeMdPath = join(ctx.projectDir, "CLAUDE.md");
+    const claudeMdPath = join(projectDir, "CLAUDE.md");
     let claudeSections: string[] = [];
     try {
       if (existsSync(claudeMdPath)) {
@@ -175,7 +179,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
     } catch { /* no CLAUDE.md -- analytics just won't fire */ }
 
     // Build system prompt -- scan context + agent identity + user's custom prompt
-    const scanContext = body.skipContext ? null : loadScanContext(ctx.projectDir);
+    const scanContext = body.skipContext ? null : loadScanContext(projectDir);
     const agentIdentity = session.agent_name ? `You are ${session.agent_name}, an AI assistant.` : null;
     const userSystemPrompt = body.systemPrompt ?? null;
 
@@ -184,12 +188,12 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
       .join("\n\n---\n\n") || undefined;
 
     // Expand @file mentions -- inlines file content as fenced code blocks
-    const expandedMessage = expandMentions(effectiveMessage, ctx.projectDir);
+    const expandedMessage = expandMentions(effectiveMessage, projectDir);
 
     // Build the full prompt with conversation history
     const fullPrompt = buildConversationPrompt(history, expandedMessage, effectiveSystemPrompt);
 
-    const providersStore = loadProviders(ctx.dataDir);
+    const providersStore = loadProviders(dataDir);
     const activeProvider = providersStore.providers.find(p => p.id === providersStore.active);
     const useApiStream = providersStore.active !== "claude" || (activeProvider?.apiKey && activeProvider.apiKey.length > 0);
 
@@ -245,7 +249,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
               fullText += text;
               send({ type: "text", text });
               if (claudeSections.length > 0) {
-                updateAnalytics(ctx.dataDir, sessionId, text, claudeSections);
+                updateAnalytics(dataDir, sessionId, text, claudeSections);
               }
             },
             onDone: () => {
@@ -273,7 +277,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
                 WHERE id = ?
               `).run(actualModel, msgInputEstimate, msgOutputEstimate, Date.now(), Date.now(), sessionId);
 
-              flushAnalytics(ctx.dataDir, sessionId).catch(() => {});
+              flushAnalytics(dataDir, sessionId).catch(() => {});
 
               const updated = db.prepare(
                 "SELECT total_input_tokens, total_output_tokens FROM sessions WHERE id = ?"
@@ -310,17 +314,17 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
         } else {
           // -- CLI streaming agent path (Claude, Codex, or Gemini) --
           const provider = resolveProvider(body.model || "claude-sonnet-4-6");
-          const cliBin = findBin(provider === "codex" ? "codex" : provider === "gemini" ? "gemini" : "claude", ctx.projectDir);
+          const cliBin = findBin(provider === "codex" ? "codex" : provider === "gemini" ? "gemini" : "claude", projectDir);
 
           let mcpConfigPath: string | null = null;
           try {
-            mcpConfigPath = createStudioMcpConfig(ctx.projectDir, shared.studioPort);
+            mcpConfigPath = createStudioMcpConfig(projectDir, shared.studioPort);
           } catch {
             // MCP config generation failed -- continue without it
           }
 
           let cliArgs: string[];
-          const projectEnv = loadProjectEnvVars(ctx.projectDir);
+          const projectEnv = loadProjectEnvVars(projectDir);
           const cliEnv: Record<string, string> = {
             ...process.env as Record<string, string>,
             ...projectEnv,
@@ -346,7 +350,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
             if (mcpConfigPath) {
               cliArgs.unshift("--mcp-config", mcpConfigPath);
             }
-            if (getStudioSetting(getDb(ctx.dataDir), "dangerousSkipPermissions", "false") === "true") {
+            if (getStudioSetting(getDb(dataDir), "dangerousSkipPermissions", "false") === "true") {
               cliEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
             }
           }
@@ -360,7 +364,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
           recordInvocation();
 
           const proc = spawn(cliBin, cliArgs, {
-            cwd: ctx.projectDir,
+            cwd: projectDir,
             stdio: ["pipe", "pipe", "pipe"],
             env: cliEnv,
           });
@@ -382,7 +386,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
                   fullText += ev.text;
                   send({ type: "text", text: ev.text });
                   if (claudeSections.length > 0) {
-                    updateAnalytics(ctx.dataDir, sessionId, ev.text, claudeSections);
+                    updateAnalytics(dataDir, sessionId, ev.text, claudeSections);
                   }
                   break;
                 case "thinking":
@@ -441,7 +445,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
                   fullText += ev.text;
                   send({ type: "text", text: ev.text });
                   if (claudeSections.length > 0) {
-                    updateAnalytics(ctx.dataDir, sessionId, ev.text, claudeSections);
+                    updateAnalytics(dataDir, sessionId, ev.text, claudeSections);
                   }
                   break;
                 case "session_id":
@@ -477,7 +481,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
               WHERE id = ?
             `).run(msgInputEstimate, msgOutputEstimate, Date.now(), Date.now(), sessionId);
 
-            flushAnalytics(ctx.dataDir, sessionId).catch(() => {});
+            flushAnalytics(dataDir, sessionId).catch(() => {});
 
             const cliModel = body.model || "claude-sonnet-4-6";
             const updated = db.prepare(

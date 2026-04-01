@@ -334,6 +334,10 @@ export function swarmRoutes(ctx: WorkspaceCtx) {
     const mode: "plan" | "build" = body.mode ?? "build";
     const swarmId = randomUUID().slice(0, 8);
 
+    // Snapshot ctx at request time -- prevents workspace switches from corrupting in-flight swarms
+    const projectDir = ctx.projectDir;
+    const dataDir = ctx.dataDir;
+
     const agents: SwarmAgent[] = body.tasks.map((t, i) => ({
       workerIndex: i,
       task: t.task.trim(),
@@ -353,7 +357,7 @@ export function swarmRoutes(ctx: WorkspaceCtx) {
     swarms.set(swarmId, swarm);
 
     try {
-      const db = getDb(ctx.dataDir);
+      const db = getDb(dataDir);
       const now = Date.now();
       db.prepare(
         "INSERT INTO swarm_runs (id, task, mode, status, worker_count, created_at, started_at) VALUES (?, '', ?, 'running', ?, ?, ?)"
@@ -365,8 +369,8 @@ export function swarmRoutes(ctx: WorkspaceCtx) {
       }
     } catch {}
 
-    const claudeBin = findClaudeBin(ctx.projectDir);
-    const agentDefs = loadAgents(ctx.projectDir);
+    const claudeBin = findClaudeBin(projectDir);
+    const agentDefs = loadAgents(projectDir);
     const agentMap = new Map(agentDefs.map((a) => [a.id, a]));
 
     // Run agents in batches of MAX_CONCURRENT_CLAUDE to avoid spawning too many
@@ -376,7 +380,7 @@ export function swarmRoutes(ctx: WorkspaceCtx) {
       for (let i = 0; i < agents.length; i += MAX_CONCURRENT_CLAUDE) {
         const batch = agents
           .slice(i, i + MAX_CONCURRENT_CLAUDE)
-          .map((_, j) => runAgent(swarm, i + j, ctx.projectDir, ctx.dataDir, claudeBin, agentMap));
+          .map((_, j) => runAgent(swarm, i + j, projectDir, dataDir, claudeBin, agentMap));
         await Promise.allSettled(batch);
         if (swarm.cancelled) break;
       }
@@ -479,6 +483,9 @@ export function swarmRoutes(ctx: WorkspaceCtx) {
   app.post("/:id/agents/:index/merge", async (c) => {
     const id = c.req.param("id");
     const index = parseInt(c.req.param("index"), 10);
+    // Snapshot ctx at request time -- prevents workspace switches from corrupting in-flight merges
+    const mergeProjectDir = ctx.projectDir;
+    const mergeDataDir = ctx.dataDir;
     const swarm = swarms.get(id);
     if (!swarm) return c.json({ error: "Swarm not found" }, 404);
     const agent = swarm.agents[index];
@@ -490,9 +497,9 @@ export function swarmRoutes(ctx: WorkspaceCtx) {
       await execFile(
         "git",
         ["merge", branch, "--no-ff", "-m", `feat(swarm): merge ${branch}`],
-        { cwd: ctx.projectDir }
+        { cwd: mergeProjectDir }
       );
-      logAgentAction(ctx.dataDir, {
+      logAgentAction(mergeDataDir, {
         timestamp: Date.now(),
         runId: id,
         agentId: agent.agentId ?? "general",
@@ -500,12 +507,12 @@ export function swarmRoutes(ctx: WorkspaceCtx) {
         target: branch,
         outcome: "success",
       });
-      try { await execFile("git", ["branch", "-d", branch], { cwd: ctx.projectDir }); } catch {}
+      try { await execFile("git", ["branch", "-d", branch], { cwd: mergeProjectDir }); } catch {}
       return c.json({ ok: true });
     } catch (err) {
-      try { await execFile("git", ["merge", "--abort"], { cwd: ctx.projectDir }); } catch {}
+      try { await execFile("git", ["merge", "--abort"], { cwd: mergeProjectDir }); } catch {}
       const msg = err instanceof Error ? err.message : String(err);
-      logAgentAction(ctx.dataDir, {
+      logAgentAction(mergeDataDir, {
         timestamp: Date.now(),
         runId: id,
         agentId: agent.agentId ?? "general",
