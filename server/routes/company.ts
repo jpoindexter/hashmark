@@ -138,6 +138,10 @@ Respond with ONLY a JSON array, no markdown, no explanation:
 
   // POST /api/company/run — spawn workers in parallel worktrees, stream all events
   app.post("/run", async (c) => {
+    if (activeRun) {
+      return c.json({ error: "A company run is already in progress" }, 409);
+    }
+
     const parsed = CompanyRunSchema.safeParse(await c.req.json().catch(() => ({})));
     if (!parsed.success) {
       return c.json({ error: parsed.error.issues[0]?.message ?? "invalid input" }, 400);
@@ -149,6 +153,7 @@ Respond with ONLY a JSON array, no markdown, no explanation:
     const agents = loadAgents(ctx.projectDir);
     const agentMap = new Map(agents.map(a => [a.id, a]));
 
+    // Set BEFORE creating the stream to prevent race conditions from concurrent POSTs
     activeRun = true;
 
     const stream = new ReadableStream({
