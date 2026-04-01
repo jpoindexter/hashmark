@@ -66,6 +66,8 @@ export default function Swarm() {
       .then((r) => r.json())
       .then((d: { agents: AgentDef[] }) => setAvailableAgents(d.agents ?? []))
       .catch(() => {});
+    // Cleanup EventSource on unmount
+    return () => { esRef.current?.close(); esRef.current = null; };
   }, []);
 
   // Auto-scroll each output card while running

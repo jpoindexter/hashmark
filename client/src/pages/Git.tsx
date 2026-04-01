@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { DiffPanel } from "../components/DiffPanel.tsx";
 import { fetchApi } from "../lib/api";
 import { timeAgo } from "../lib/format";
@@ -251,6 +252,7 @@ function CommitRow({ commit, isLast, expanded, onToggle, onFileClick, activeDiff
 }
 
 export default function GitPage() {
+  const navigate = useNavigate();
   const [logData, setLogData] = useState<LogData | null>(null);
   const [branchInfo, setBranchInfo] = useState<BranchInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -356,9 +358,9 @@ export default function GitPage() {
 
               {/* Uncommitted changes */}
               {uncommittedCount > 0 && (
-                <a
-                  href="/source-control"
-                  style={{
+                <span
+                  onClick={() => navigate("/source-control")}
+                  style={{ cursor: "pointer",
                     fontFamily: "var(--font-ui)", fontSize: 11,
                     color: "var(--yellow)", textDecoration: "none",
                     background: "rgba(210,153,34,0.08)",
@@ -370,7 +372,7 @@ export default function GitPage() {
                   onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "none"; }}
                 >
                   {uncommittedCount} uncommitted {uncommittedCount === 1 ? "change" : "changes"}
-                </a>
+                </span>
               )}
             </div>
           )}
