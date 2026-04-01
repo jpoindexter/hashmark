@@ -475,6 +475,7 @@ function ProjectHeader({ info }: { info: ProjectInfo | null }) {
 export default function Home() {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [showDispatch, setShowDispatch] = useState(false);
   const [projectInfo, setProjectInfo] = useState<ProjectInfo | null>(null);
@@ -488,12 +489,13 @@ export default function Home() {
   }, []);
 
   const fetchMissions = useCallback(() => {
+    setFetchError(false);
     fetchApi("/api/sessions")
       .then((r) => r.json())
       .then((d: { sessions?: Mission[] }) => {
         setMissions((d.sessions ?? []).filter((s) => s.message_count > 0));
       })
-      .catch(() => {})
+      .catch(() => { setFetchError(true); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -587,8 +589,27 @@ export default function Home() {
           </div>
         )}
 
+        {/* Error state */}
+        {fetchError && !loading && (
+          <div style={{
+            display: "flex", flexDirection: "column", alignItems: "center",
+            justifyContent: "center", minHeight: "40vh", gap: 12,
+          }}>
+            <div style={{ fontFamily: "var(--font)", fontSize: 12, color: "var(--red)" }}>
+              Failed to load missions
+            </div>
+            <button
+              className="btn btn-sm"
+              onClick={fetchMissions}
+              style={{ fontFamily: "var(--font)" }}
+            >
+              retry
+            </button>
+          </div>
+        )}
+
         {/* Welcome + Empty state */}
-        {!loading && missions.length === 0 && (
+        {!fetchError && !loading && missions.length === 0 && (
           <>
             {showWelcome && (
               <Welcome onDismiss={() => setShowWelcome(false)} />
