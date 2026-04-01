@@ -11,6 +11,7 @@ import { join } from "path";
 import { randomUUID } from "crypto";
 import { promisify } from "util";
 import { tmpdir } from "os";
+import { z } from "zod";
 import { getDb, getStudioSetting } from "../db.js";
 import { logAgentAction, parseActionsFromOutput } from "../lib/action-log.js";
 import { loadAgents } from "../lib/agents.js";
@@ -22,6 +23,22 @@ const execFile = promisify(execFileCb);
 
 const MAX_CONCURRENT_CLAUDE = 2;
 const MAX_WORKERS = 3;
+
+const CompanyPlanSchema = z.object({
+  task: z.string().min(1).max(8000),
+  companyType: z.string().max(200).optional(),
+  projectName: z.string().max(200).optional(),
+});
+
+const CompanyRunSchema = z.object({
+  task: z.string().min(1).max(8000),
+  plan: z.array(z.object({
+    id: z.number(),
+    title: z.string(),
+    description: z.string(),
+    agentId: z.string(),
+  })).min(1).max(10),
+});
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -52,7 +69,11 @@ export function companyRoutes(ctx: WorkspaceCtx) {
 
   // POST /api/company/plan — use Claude to decompose task + assign to available agents
   app.post("/plan", async (c) => {
-    const body = await c.req.json<{ task: string }>();
+    const parsed = CompanyPlanSchema.safeParse(await c.req.json().catch(() => ({})));
+    if (!parsed.success) {
+      return c.json({ error: parsed.error.issues[0]?.message ?? "invalid input" }, 400);
+    }
+    const body = parsed.data;
     const claudeBin = findClaudeBin(ctx.projectDir);
     const agents = loadAgents(ctx.projectDir);
 
@@ -117,7 +138,11 @@ Respond with ONLY a JSON array, no markdown, no explanation:
 
   // POST /api/company/run — spawn workers in parallel worktrees, stream all events
   app.post("/run", async (c) => {
-    const body = await c.req.json<{ task: string; plan: Subtask[] }>();
+    const parsed = CompanyRunSchema.safeParse(await c.req.json().catch(() => ({})));
+    if (!parsed.success) {
+      return c.json({ error: parsed.error.issues[0]?.message ?? "invalid input" }, 400);
+    }
+    const body = parsed.data;
     const claudeBin = findClaudeBin(ctx.projectDir);
     const runId = randomUUID().slice(0, 8);
     const plan = body.plan.slice(0, MAX_WORKERS);
