@@ -4,6 +4,7 @@ import { MODELS } from "../lib/models";
 import { timeAgo } from "../lib/format";
 import { Skeleton } from "../components/shared/Skeleton";
 import { useFocusTrap } from "../hooks/useFocusTrap";
+import Welcome, { isOnboarded, markOnboarded } from "../components/Welcome";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -477,6 +478,7 @@ export default function Home() {
   const [runningId, setRunningId] = useState<string | null>(null);
   const [showDispatch, setShowDispatch] = useState(false);
   const [projectInfo, setProjectInfo] = useState<ProjectInfo | null>(null);
+  const [showWelcome, setShowWelcome] = useState(() => !isOnboarded());
 
   useEffect(() => {
     fetchApi("/api/info")
@@ -531,6 +533,8 @@ export default function Home() {
 
   const handleDispatched = (sessionId: string, prompt: string, model: string, attachContext: boolean) => {
     setShowDispatch(false);
+    markOnboarded();
+    setShowWelcome(false);
     try {
       sessionStorage.setItem(`studio:prefill:${sessionId}`, JSON.stringify({ prompt, model, attachContext }));
     } catch { /* noop */ }
@@ -583,31 +587,36 @@ export default function Home() {
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Welcome + Empty state */}
         {!loading && missions.length === 0 && (
-          <div style={{
-            display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center",
-            minHeight: "60vh",
-          }}>
+          <>
+            {showWelcome && (
+              <Welcome onDismiss={() => setShowWelcome(false)} />
+            )}
             <div style={{
-              fontFamily: "var(--font)", fontSize: 12, color: "var(--text-dimmer)",
-              marginBottom: 20, letterSpacing: "0.04em",
+              display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center",
+              minHeight: showWelcome ? "20vh" : "60vh",
             }}>
-              no active missions
+              <div style={{
+                fontFamily: "var(--font)", fontSize: 12, color: "var(--text-dimmer)",
+                marginBottom: 20, letterSpacing: "0.04em",
+              }}>
+                no active missions
+              </div>
+              <button
+                onClick={() => setShowDispatch(true)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  fontFamily: "var(--font)", fontSize: 11, padding: "8px 18px", fontWeight: 600,
+                  background: "var(--accent)", border: "none",
+                  color: "var(--bg)", borderRadius: "var(--radius)", cursor: "pointer",
+                }}
+              >
+                + new mission
+              </button>
             </div>
-            <button
-              onClick={() => setShowDispatch(true)}
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                fontFamily: "var(--font)", fontSize: 11, padding: "8px 18px", fontWeight: 600,
-                background: "var(--accent)", border: "none",
-                color: "var(--bg)", borderRadius: "var(--radius)", cursor: "pointer",
-              }}
-            >
-              + new mission
-            </button>
-          </div>
+          </>
         )}
 
         {/* Running */}
