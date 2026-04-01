@@ -155,23 +155,29 @@ export function checkpointRoutes(ctx: WorkspaceCtx) {
     const slug = `${timestamp}-${slugify(label)}`;
     const refName = `refs/studio-checkpoints/${slug}`;
 
-    const { stdout: treeHash } = await execFile("git", ["write-tree"], { cwd: ctx.projectDir });
-
-    let parentArgs: string[] = [];
     try {
-      const { stdout: headHash } = await execFile("git", ["rev-parse", "HEAD"], { cwd: ctx.projectDir });
-      if (headHash.trim()) parentArgs = ["-p", headHash.trim()];
-    } catch {}
+      const { stdout: treeHash } = await execFile("git", ["write-tree"], { cwd: ctx.projectDir });
 
-    const { stdout: commitHash } = await execFile(
-      "git",
-      ["commit-tree", treeHash.trim(), ...parentArgs, "-m", `studio-checkpoint: ${label}`],
-      { cwd: ctx.projectDir }
-    );
+      let parentArgs: string[] = [];
+      try {
+        const { stdout: headHash } = await execFile("git", ["rev-parse", "HEAD"], { cwd: ctx.projectDir });
+        if (headHash.trim()) parentArgs = ["-p", headHash.trim()];
+      } catch { /* empty repo, no HEAD yet */ }
 
-    await execFile("git", ["update-ref", refName, commitHash.trim()], { cwd: ctx.projectDir });
+      const { stdout: commitHash } = await execFile(
+        "git",
+        ["commit-tree", treeHash.trim(), ...parentArgs, "-m", `studio-checkpoint: ${label}`],
+        { cwd: ctx.projectDir }
+      );
 
-    return c.json({ ok: true, id: slug, ref: refName, label, timestamp });
+      await execFile("git", ["update-ref", refName, commitHash.trim()], { cwd: ctx.projectDir });
+
+      return c.json({ ok: true, id: slug, ref: refName, label, timestamp });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[checkpoints] create failed:", msg);
+      return c.json({ error: `Checkpoint failed: ${msg}` }, 500);
+    }
   });
 
   // Restore checkpoint — POST /api/checkpoints/:id/restore

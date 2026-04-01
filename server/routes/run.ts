@@ -6,12 +6,12 @@
 
 import { Hono } from "hono";
 import { spawn, execFile as execFileCb } from "child_process";
-import { existsSync, readFileSync, readdirSync } from "fs";
-import { join, relative } from "path";
+import { join } from "path";
 import { randomUUID } from "crypto";
 import { promisify } from "util";
 import { tmpdir } from "os";
 import { logAgentAction, parseActionsFromOutput } from "../lib/action-log.js";
+import { loadAgents, type AgentDef } from "../lib/agents.js";
 import { getDb, getStudioSetting } from "../db.js";
 import { findClaudeBin, buildClaudeArgs } from "../lib/bin-resolver.js";
 import { z } from "zod";
@@ -27,55 +27,6 @@ const RunBodySchema = z.object({
   mode: z.enum(["plan", "build"]).optional(),
   resumeRunId: z.string().max(100).optional(),
 });
-
-// ─── Agent loading (same as company.ts) ───────────────────────────────────────
-
-interface AgentDef {
-  id: string;
-  name: string;
-  description: string;
-  content: string;
-  tools?: string[];
-}
-
-function loadAgents(projectDir: string): AgentDef[] {
-  const agentsDir = join(projectDir, ".claude", "agents");
-  if (!existsSync(agentsDir)) return [];
-
-  const agents: AgentDef[] = [];
-
-  function walk(dir: string) {
-    let entries: import("fs").Dirent[];
-    try {
-      entries = readdirSync(dir, { withFileTypes: true });
-    } catch { return; }
-
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        walk(join(dir, entry.name));
-      } else if (entry.name.endsWith(".md") && entry.name !== "INDEX.md") {
-        const fullPath = join(dir, entry.name);
-        const relPath = relative(agentsDir, fullPath);
-        try {
-          const content = readFileSync(fullPath, "utf-8");
-          const nameMatch = content.match(/^name:\s*(.+)$/m);
-          const descMatch = content.match(/^description:\s*(.+)$/m);
-          const toolsMatch = content.match(/^tools:\s*(.+)$/m);
-          agents.push({
-            id: relPath.replace(/\.md$/, "").replace(/\//g, "-"),
-            name: nameMatch?.[1]?.trim() ?? relPath,
-            description: descMatch?.[1]?.trim() ?? "",
-            content,
-            tools: toolsMatch ? toolsMatch[1].split(",").map(t => t.trim()).filter(Boolean) : undefined,
-          });
-        } catch {}
-      }
-    }
-  }
-
-  walk(agentsDir);
-  return agents;
-}
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
@@ -370,7 +321,7 @@ export function runRoutes(ctx: WorkspaceCtx) {
           // In plan mode, skip commit + merge entirely
           let hasChanges = false;
           if (mode === "plan") {
-            try { getDb(ctx.dataDir).prepare("UPDATE runs SET status = ?, ended_at = ?, cost_usd = ?, claude_session_id = ? WHERE id = ?").run("complete", Date.now(), runCostUsd, capturedSessionId, runId); } catch {}
+            try { getDb(ctx.dataDir).prepare("UPDATE runs SET status = ?, ended_at = ?, cost_usd = ?, claude_session_id = ? WHERE id = ?").run("complete", Date.now(), runCostUsd, capturedSessionId, runId); } catch (e) { console.error("[run] db update failed:", e); }
             send({ type: "complete", hasChanges: false, mode: "plan" });
             activeRun = false;
             controller.close();
