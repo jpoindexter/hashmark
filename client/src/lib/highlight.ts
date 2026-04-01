@@ -1,15 +1,32 @@
-import { createHighlighter, type Highlighter } from "shiki";
+import { createHighlighterCore, type HighlighterCore } from "shiki/core";
+import { createOnigurumaEngine } from "shiki/engine/oniguruma";
+import langTypescript from "@shikijs/langs/typescript";
+import langJavascript from "@shikijs/langs/javascript";
+import langTsx from "@shikijs/langs/tsx";
+import langJsx from "@shikijs/langs/jsx";
+import langJson from "@shikijs/langs/json";
+import langCss from "@shikijs/langs/css";
+import langHtml from "@shikijs/langs/html";
+import langMarkdown from "@shikijs/langs/markdown";
+import langPython from "@shikijs/langs/python";
+import langGo from "@shikijs/langs/go";
+import langRust from "@shikijs/langs/rust";
+import langBash from "@shikijs/langs/bash";
+import langYaml from "@shikijs/langs/yaml";
+import langSql from "@shikijs/langs/sql";
+import themeOneDarkPro from "@shikijs/themes/one-dark-pro";
 
-let highlighter: Highlighter | null = null;
+const LANGS = [
+  langTypescript, langJavascript, langTsx, langJsx,
+  langJson, langCss, langHtml, langMarkdown,
+  langPython, langGo, langRust, langBash, langYaml, langSql,
+];
+
+let highlighter: HighlighterCore | null = null;
 let loading = false;
 const queue: Array<() => void> = [];
 
-const SUPPORTED_LANGS = [
-  "typescript", "javascript", "json", "css", "html", "markdown",
-  "python", "go", "rust", "bash", "yaml", "sql", "tsx", "jsx",
-] as const;
-
-async function getHighlighter(): Promise<Highlighter> {
+async function getHighlighter(): Promise<HighlighterCore> {
   if (highlighter) return highlighter;
   if (loading) {
     return new Promise((resolve) => {
@@ -17,18 +34,11 @@ async function getHighlighter(): Promise<Highlighter> {
     });
   }
   loading = true;
-  try {
-    highlighter = await createHighlighter({
-      themes: ["one-dark-pro", "github-light-default"],
-      langs: [...SUPPORTED_LANGS],
-    });
-  } catch {
-    // Fallback if preferred themes aren't available
-    highlighter = await createHighlighter({
-      themes: ["github-dark", "github-light"],
-      langs: [...SUPPORTED_LANGS],
-    });
-  }
+  highlighter = await createHighlighterCore({
+    engine: createOnigurumaEngine(),
+    themes: [themeOneDarkPro],
+    langs: LANGS,
+  });
   loading = false;
   queue.forEach((fn) => fn());
   queue.length = 0;
@@ -62,22 +72,18 @@ const LANG_MAP: Record<string, string> = {
 export async function highlightCode(
   code: string,
   lang: string,
-  theme?: "dark" | "light",
+  _theme?: "dark" | "light",
 ): Promise<string> {
   const h = await getHighlighter();
   const resolvedLang = LANG_MAP[lang] ?? "text";
-  const loadedThemes = h.getLoadedThemes();
-  const darkTheme = loadedThemes.includes("one-dark-pro") ? "one-dark-pro" : loadedThemes[0] ?? "github-dark";
-  const lightTheme = loadedThemes.includes("github-light-default") ? "github-light-default" : loadedThemes.find(t => t.includes("light")) ?? darkTheme;
-  const themeName = theme === "light" ? lightTheme : darkTheme;
   try {
     return h.codeToHtml(code, {
       lang: resolvedLang,
-      theme: themeName,
+      theme: "one-dark-pro",
     });
   } catch {
     try {
-      return h.codeToHtml(code, { lang: "text", theme: themeName });
+      return h.codeToHtml(code, { lang: "text", theme: "one-dark-pro" });
     } catch {
       return "";
     }
