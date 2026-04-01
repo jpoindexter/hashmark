@@ -106,7 +106,7 @@ const MAX_DISPLAY_LINES = 500;
 
 export default function Run() {
   const [searchParams] = useSearchParams();
-  const [task, setTask]         = useState("");
+  const [task, setTask]         = useState(searchParams.get("task") ?? "");
   const [agentId, setAgentId]   = useState<string>(searchParams.get("agent") ?? "");
   const [agents, setAgents]     = useState<AgentDef[]>([]);
   const [phase, setPhase]       = useState<RunPhase>("idle");
