@@ -132,7 +132,7 @@ function MissionCard({ mission, running, onView, onStop }: {
             background: running ? "var(--accent)" : "transparent",
             border: `1px solid ${running ? "var(--accent)" : "var(--border)"}`,
             borderRadius: "var(--radius)",
-            color: running ? "#000" : "var(--text-dim)",
+            color: running ? "var(--bg)" : "var(--text-dim)",
             cursor: "pointer", letterSpacing: "0.04em",
           }}
         >
@@ -312,7 +312,7 @@ function DispatchModal({ onClose, onDispatched }: {
             transition: "background 0.15s",
           }}>
             <div style={{
-              width: 12, height: 12, borderRadius: 6, background: "#000",
+              width: 12, height: 12, borderRadius: 6, background: "var(--text)",
               position: "absolute", top: 2,
               left: attachContext ? "auto" : 2,
               right: attachContext ? 2 : "auto",
@@ -351,7 +351,7 @@ function DispatchModal({ onClose, onDispatched }: {
               fontFamily: "var(--font)", fontSize: 11, padding: "8px 22px", fontWeight: 600,
               background: prompt.trim() && !loading ? "var(--accent)" : "var(--surface-2)",
               border: "none",
-              color: prompt.trim() && !loading ? "#000" : "var(--text-dimmer)",
+              color: prompt.trim() && !loading ? "var(--bg)" : "var(--text-dimmer)",
               borderRadius: "var(--radius)",
               cursor: prompt.trim() && !loading ? "pointer" : "default",
             }}

@@ -348,6 +348,8 @@ function checkSwarmComplete(swarm: SwarmRun, dataDir: string) {
         .prepare("UPDATE swarm_runs SET status = 'complete', ended_at = ? WHERE id = ?")
         .run(Date.now(), swarm.swarmId);
     } catch {}
+    // Evict from in-memory map after 5min grace period (clients can still fetch final state)
+    setTimeout(() => { swarms.delete(swarm.swarmId); }, 5 * 60_000).unref();
   }
 }
 

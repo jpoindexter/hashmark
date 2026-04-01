@@ -539,7 +539,7 @@ export default function Company() {
   }, []);
 
   const loadRuns = useCallback(() => {
-    fetch('/api/company/runs')
+    fetchApi('/api/company/runs')
       .then(r => r.json())
       .then((d: { runs: RunRecord[] }) => setRuns(d.runs ?? []))
       .catch(() => {});
