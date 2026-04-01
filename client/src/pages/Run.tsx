@@ -174,7 +174,7 @@ export default function Run() {
       .then((r) => r.json())
       .then((d: { agents: AgentDef[] }) => setAgents(d.agents ?? []))
       .catch(() => {
-        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load agents", type: "error" } }));
+        toast.error("Failed to load agents");
       });
     setRecentTasks(loadRecent());
   }, []);

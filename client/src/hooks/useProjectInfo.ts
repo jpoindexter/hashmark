@@ -70,7 +70,7 @@ export function useProjectInfo(
       .then(r => r.json())
       .then(setGit)
       .catch(() => {
-        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load git status", type: "error" } }));
+        toast.error("Failed to load git status");
       });
     fetchApi("/api/drift/check")
       .then(r => r.json())
