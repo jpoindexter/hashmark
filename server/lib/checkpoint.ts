@@ -6,6 +6,7 @@
 
 import { execFile as execFileCb } from "child_process";
 import { promisify } from "util";
+import { join } from "path";
 
 const execFile = promisify(execFileCb);
 
@@ -38,7 +39,16 @@ export async function createCheckpoint(
   const refName = `refs/studio-checkpoints/${slug}`;
 
   try {
-    const { stdout: treeHash } = await execFile("git", ["write-tree"], opts);
+    // Use a temp index to capture ALL files (staged + unstaged + untracked)
+    // without polluting the real index
+    const tmpIndex = join(projectDir, ".git", "studio-checkpoint-index");
+    const indexEnv = { ...process.env as Record<string, string>, GIT_INDEX_FILE: tmpIndex };
+    const indexOpts = { cwd: projectDir, env: indexEnv };
+    await execFile("git", ["read-tree", "HEAD"], indexOpts).catch(() => {});
+    await execFile("git", ["add", "-A"], indexOpts);
+    const { stdout: treeHash } = await execFile("git", ["write-tree"], indexOpts);
+    // Clean up temp index
+    try { (await import("fs")).unlinkSync(tmpIndex); } catch {}
 
     let parentArgs: string[] = [];
     try {
