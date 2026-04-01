@@ -122,7 +122,7 @@ export default function Generate() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [pageState, selectedFormats, rescanChanged, maxTokens, includeTests, customRules]);
+  }, [pageState, triggerScan]);
 
   function toggleFormat(id: string) {
     setSelectedFormats(prev => {
@@ -136,13 +136,13 @@ export default function Generate() {
   function selectAll() { setSelectedFormats(new Set(ALL_FORMATS.map(f => f.id))); }
   function clearAll()  { setSelectedFormats(new Set()); }
 
-  function triggerScan() {
+  const triggerScan = useCallback(() => {
     if (selectedFormats.size === 0) return;
     setPageState("scanning");
     setScanResult(null);
     setScanDelta(null);
     setErrorMsg("");
-  }
+  }, [selectedFormats]);
 
   const handleScanComplete = useCallback((result: ScanResult, delta: ScanDelta | null) => {
     setScanResult(result);
