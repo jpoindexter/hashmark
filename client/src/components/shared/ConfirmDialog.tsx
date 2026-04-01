@@ -71,7 +71,7 @@ export default function ConfirmDialog({
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 10000,
+        zIndex: 3000,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

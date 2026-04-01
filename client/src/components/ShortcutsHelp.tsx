@@ -76,7 +76,7 @@ export default function ShortcutsHelp({ onClose }: { onClose: () => void }) {
     <div
       onClick={onClose}
       style={{
-        position: "fixed", inset: 0, zIndex: 10000,
+        position: "fixed", inset: 0, zIndex: 3000,
         background: "var(--overlay-bg)",
         display: "flex", alignItems: "center", justifyContent: "center",
       }}

@@ -485,7 +485,7 @@ export function ToastContainer() {
         position: "fixed",
         bottom: 29,
         right: 7,
-        zIndex: 9999,
+        zIndex: 2000,
         display: "flex",
         flexDirection: "column",
         gap: 8,

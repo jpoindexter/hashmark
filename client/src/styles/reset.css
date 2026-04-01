@@ -112,7 +112,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 .btn-primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--color-on-accent);
   font-weight: 600;
 }
 .btn-primary:hover {
@@ -256,7 +256,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 [data-theme="light"] select:focus { border-color: var(--blue); }
 [data-theme="light"] .btn { background: var(--bg-2); color: var(--text-dim); border-color: var(--border); }
 [data-theme="light"] .btn:hover { background: var(--bg-3); color: var(--text); }
-[data-theme="light"] .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+[data-theme="light"] .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--color-on-accent); }
 [data-theme="light"] .btn-primary:hover { background: var(--accent-dim); border-color: var(--accent-dim); }
 
 /* ---- Reduced motion: accessibility ---- */
