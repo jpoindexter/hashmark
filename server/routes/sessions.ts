@@ -21,6 +21,7 @@ import {
   loadSessionAnalytics,
 } from "../lib/context-analytics.js";
 import { createCheckpoint } from "../lib/checkpoint.js";
+import { microcompact, checkContextUsage } from "../lib/compaction.js";
 import { loadProjectEnvVars } from "../lib/env.js";
 import { createStudioMcpConfig } from "../lib/mcp-studio.js";
 import { findBin, findClaudeBin } from "../lib/bin-resolver.js";
@@ -395,9 +396,13 @@ export function sessionsRoutes(ctx: WorkspaceCtx) {
     await createCheckpoint(ctx.projectDir, `pre-turn-${sessionId.slice(0, 8)}`).catch(() => null);
 
     // Load conversation history (only sent messages)
-    const history = db.prepare(
+    const rawHistory = db.prepare(
       "SELECT role, content FROM session_messages WHERE session_id = ? AND (role = 'assistant' OR sent_at IS NOT NULL) ORDER BY created_at ASC"
     ).all(sessionId) as Array<{ role: string; content: string }>;
+
+    // Microcompact: truncate large assistant messages (tool output) before resending.
+    // Skip for resumed Claude sessions -- they manage their own context window.
+    const history = session.claude_session_id ? rawHistory : microcompact(rawHistory);
 
     // Check for pending (unsent) messages from previous failed attempts
     const pendingMessages = db.prepare(
@@ -539,6 +544,16 @@ export function sessionsRoutes(ctx: WorkspaceCtx) {
               `).run(actualModel, msgInputEstimate, msgOutputEstimate, Date.now(), Date.now(), sessionId);
 
               flushAnalytics(ctx.dataDir, sessionId).catch(() => {});
+
+              // Context usage warning -- read updated totals from DB
+              const updated = db.prepare(
+                "SELECT total_input_tokens, total_output_tokens FROM sessions WHERE id = ?"
+              ).get(sessionId) as { total_input_tokens: number; total_output_tokens: number } | undefined;
+              if (updated) {
+                const warning = checkContextUsage(updated.total_input_tokens, updated.total_output_tokens, actualModel);
+                if (warning) send({ type: "warning", message: warning });
+              }
+
               send({ type: "done", success: true });
               controller.close();
             },
@@ -732,6 +747,17 @@ export function sessionsRoutes(ctx: WorkspaceCtx) {
             `).run(msgInputEstimate, msgOutputEstimate, Date.now(), Date.now(), sessionId);
 
             flushAnalytics(ctx.dataDir, sessionId).catch(() => {});
+
+            // Context usage warning -- read updated totals from DB
+            const cliModel = body.model || "claude-sonnet-4-6";
+            const updated = db.prepare(
+              "SELECT total_input_tokens, total_output_tokens FROM sessions WHERE id = ?"
+            ).get(sessionId) as { total_input_tokens: number; total_output_tokens: number } | undefined;
+            if (updated) {
+              const warning = checkContextUsage(updated.total_input_tokens, updated.total_output_tokens, cliModel);
+              if (warning) send({ type: "warning", message: warning });
+            }
+
             if (code !== 0 && !killed) {
               send({ type: "done", success: false });
             } else if (killed) {
