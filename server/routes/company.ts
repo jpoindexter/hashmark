@@ -249,6 +249,19 @@ Work in the current directory. Make the necessary code changes, create or modify
             proc.stderr.on("data", () => {});
 
             proc.on("close", async (code: number | null) => {
+              // Drain any remaining data in the parser buffer
+              const remaining = parser.flush();
+              for (const ev of remaining) {
+                if (ev.type === "text") {
+                  fullOutput += ev.text;
+                  send({ type: "worker_chunk", id: subtask.id, text: ev.text });
+                } else if (ev.type === "tool_use") {
+                  send({ type: "worker_tool", id: subtask.id, tool: ev.tool });
+                } else if (ev.type === "cost") {
+                  send({ type: "worker_cost", id: subtask.id, cost: ev.totalUsd });
+                }
+              }
+
               if (code !== 0 && code !== null) {
                 send({ type: "worker_error", id: subtask.id, error: `Exit code ${code}` });
                 try {

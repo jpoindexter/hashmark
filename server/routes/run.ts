@@ -310,6 +310,48 @@ export function runRoutes(ctx: WorkspaceCtx) {
                   clearTimeout(timeout);
                   activeProc = null;
 
+                  // Drain any remaining data in the parser buffer
+                  const remaining = parser.flush();
+                  for (const ev of remaining) {
+                    switch (ev.type) {
+                      case "text":
+                        fullOutput += ev.text;
+                        send({ type: "chunk", text: ev.text });
+                        break;
+                      case "tool_use":
+                        send({ type: "tool_use", tool: ev.tool, input: ev.input });
+                        break;
+                      case "tool_result":
+                        send({ type: "tool_result", content: ev.content });
+                        break;
+                      case "tool_progress":
+                        send({ type: "tool_progress", tool: ev.tool, elapsed: ev.elapsed });
+                        break;
+                      case "thinking":
+                        send({ type: "thinking", content: ev.content });
+                        break;
+                      case "cost":
+                        runCostUsd = ev.totalUsd;
+                        send({ type: "cost", totalUsd: ev.totalUsd, durationMs: ev.durationMs });
+                        break;
+                      case "session_id":
+                        capturedSessionId = ev.sessionId;
+                        break;
+                      case "task_started":
+                        send({ type: "task_started", taskId: ev.taskId, description: ev.description });
+                        break;
+                      case "task_progress":
+                        send({ type: "task_progress", taskId: ev.taskId, message: ev.message });
+                        break;
+                      case "error":
+                        send({ type: "error", error: ev.message });
+                        break;
+                      case "progress":
+                        send({ type: "progress", message: ev.message });
+                        break;
+                    }
+                  }
+
                   // Success or intentional kill -- resolve normally
                   if (code === 0 || code === null || signal === "SIGTERM") {
                     resolve();

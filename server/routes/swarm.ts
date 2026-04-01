@@ -195,6 +195,21 @@ async function runAgent(
     proc.stderr.on("data", () => {});
 
     proc.on("close", (code: number | null, signal: string | null) => {
+      // Drain any remaining data in the parser buffer
+      const remaining = parser.flush();
+      for (const ev of remaining) {
+        if (ev.type === "text") {
+          agent.output += ev.text;
+          emit(swarm, agentIndex, { type: "chunk", data: ev.text });
+        } else if (ev.type === "tool_use") {
+          emit(swarm, agentIndex, { type: "tool_use", data: JSON.stringify({ tool: ev.tool, input: ev.input }) });
+        } else if (ev.type === "tool_progress") {
+          emit(swarm, agentIndex, { type: "tool_progress", data: JSON.stringify({ tool: ev.tool, elapsed: ev.elapsed }) });
+        } else if (ev.type === "cost") {
+          emit(swarm, agentIndex, { type: "cost", data: String(ev.totalUsd) });
+        }
+      }
+
       if (code !== 0 && code !== null && signal !== "SIGTERM" && !swarm.cancelled) {
         const msg = `[claude exited with code ${code}]`;
         agent.output += `\n${msg}`;
