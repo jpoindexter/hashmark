@@ -4,6 +4,8 @@
  */
 
 import { Hono } from "hono";
+import { existsSync, unlinkSync } from "fs";
+import { join } from "path";
 import { getDb } from "../db.js";
 import {
   getPermissionMode,
@@ -48,6 +50,37 @@ export function settingsRoutes(ctx: WorkspaceCtx) {
     setPermissionMode(db, body.mode);
 
     return c.json({ ok: true, mode: body.mode });
+  });
+
+  // DELETE /api/settings/data — GDPR data deletion: wipe all user data
+  app.delete("/data", (c) => {
+    try {
+      const db = getDb(ctx.dataDir);
+
+      // Clear all rows from user-data tables (order matters for FK constraints)
+      db.exec("DELETE FROM session_messages");
+      db.exec("DELETE FROM sessions");
+      db.exec("DELETE FROM swarm_workers");
+      db.exec("DELETE FROM swarm_runs");
+      db.exec("DELETE FROM runs");
+      db.exec("DELETE FROM agent_actions");
+      db.exec("DELETE FROM governance_policies");
+      db.exec("DELETE FROM issues");
+
+      // Clear FTS index contents
+      try { db.exec("DELETE FROM sessions_fts"); } catch { /* table may not exist */ }
+
+      // Delete file-based data stores
+      const actionsLog = join(ctx.dataDir, "agent-actions.jsonl");
+      if (existsSync(actionsLog)) unlinkSync(actionsLog);
+
+      const providersFile = join(ctx.dataDir, "providers.json");
+      if (existsSync(providersFile)) unlinkSync(providersFile);
+
+      return c.json({ ok: true, message: "All studio data deleted" });
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    }
   });
 
   return app;
