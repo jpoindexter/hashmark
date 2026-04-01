@@ -17,6 +17,7 @@ import { findClaudeBin, buildClaudeArgs } from "../lib/bin-resolver.js";
 import { z } from "zod";
 import { checkUsage, recordInvocation, getUsageStats } from "../lib/claude-usage.js";
 import { createStreamParser, type StudioEvent } from "../lib/claude-stream.js";
+import { withRetry, isRetryableExit, NonRetryableError } from "../lib/retry.js";
 import type { WorkspaceCtx } from "./workspaces.js";
 
 const execFile = promisify(execFileCb);
@@ -232,90 +233,125 @@ export function runRoutes(ctx: WorkspaceCtx) {
           const agentTools = agentDef?.tools;
           const cliArgs = buildClaudeArgs({ mode, allowedTools: agentTools, resume: resumeSessionId ?? undefined });
 
-          await new Promise<void>((resolve) => {
-            const proc = spawn(claudeBin, cliArgs, {
-              cwd: worktreeDir,
-              stdio: ["pipe", "pipe", "pipe"],
-              env: runEnv,
-            });
-            activeProc = proc;
+          const MAX_SPAWN_RETRIES = 3;
 
-            // Send prompt via stdin
-            proc.stdin.write(prompt + "\n");
-            proc.stdin.end();
+          await withRetry(
+            () =>
+              new Promise<void>((resolve, reject) => {
+                const proc = spawn(claudeBin, cliArgs, {
+                  cwd: worktreeDir,
+                  stdio: ["pipe", "pipe", "pipe"],
+                  env: runEnv,
+                });
+                activeProc = proc;
 
-            const timeout = setTimeout(() => {
-              send({ type: "error", error: "Run timed out after 10 minutes" });
-              try { proc.kill("SIGTERM"); } catch {}
-              activeRun = false;
-              activeProc = null;
-            }, RUN_TIMEOUT_MS);
+                // Send prompt via stdin
+                proc.stdin.write(prompt + "\n");
+                proc.stdin.end();
 
-            const parser = createStreamParser();
+                const timeout = setTimeout(() => {
+                  send({ type: "error", error: "Run timed out after 10 minutes" });
+                  try { proc.kill("SIGTERM"); } catch {}
+                  activeRun = false;
+                  activeProc = null;
+                }, RUN_TIMEOUT_MS);
 
-            proc.stdout.on("data", (chunk: Buffer) => {
-              const events = parser.push(chunk);
-              for (const ev of events) {
-                switch (ev.type) {
-                  case "text":
-                    fullOutput += ev.text;
-                    send({ type: "chunk", text: ev.text });
-                    break;
-                  case "tool_use":
-                    send({ type: "tool_use", tool: ev.tool, input: ev.input });
-                    break;
-                  case "tool_result":
-                    send({ type: "tool_result", content: ev.content });
-                    break;
-                  case "tool_progress":
-                    send({ type: "tool_progress", tool: ev.tool, elapsed: ev.elapsed });
-                    break;
-                  case "thinking":
-                    send({ type: "thinking", content: ev.content });
-                    break;
-                  case "cost":
-                    runCostUsd = ev.totalUsd;
-                    send({ type: "cost", totalUsd: ev.totalUsd, durationMs: ev.durationMs });
-                    break;
-                  case "session_id":
-                    capturedSessionId = ev.sessionId;
-                    break;
-                  case "task_started":
-                    send({ type: "task_started", taskId: ev.taskId, description: ev.description });
-                    break;
-                  case "task_progress":
-                    send({ type: "task_progress", taskId: ev.taskId, message: ev.message });
-                    break;
-                  case "error":
-                    send({ type: "error", error: ev.message });
-                    break;
-                  case "progress":
-                    send({ type: "progress", message: ev.message });
-                    break;
-                }
-              }
-            });
+                const parser = createStreamParser();
 
-            proc.stderr.on("data", (chunk: Buffer) => {
-              const line = chunk.toString().trim();
-              if (line) send({ type: "progress", message: line });
-            });
+                proc.stdout.on("data", (chunk: Buffer) => {
+                  const events = parser.push(chunk);
+                  for (const ev of events) {
+                    switch (ev.type) {
+                      case "text":
+                        fullOutput += ev.text;
+                        send({ type: "chunk", text: ev.text });
+                        break;
+                      case "tool_use":
+                        send({ type: "tool_use", tool: ev.tool, input: ev.input });
+                        break;
+                      case "tool_result":
+                        send({ type: "tool_result", content: ev.content });
+                        break;
+                      case "tool_progress":
+                        send({ type: "tool_progress", tool: ev.tool, elapsed: ev.elapsed });
+                        break;
+                      case "thinking":
+                        send({ type: "thinking", content: ev.content });
+                        break;
+                      case "cost":
+                        runCostUsd = ev.totalUsd;
+                        send({ type: "cost", totalUsd: ev.totalUsd, durationMs: ev.durationMs });
+                        break;
+                      case "session_id":
+                        capturedSessionId = ev.sessionId;
+                        break;
+                      case "task_started":
+                        send({ type: "task_started", taskId: ev.taskId, description: ev.description });
+                        break;
+                      case "task_progress":
+                        send({ type: "task_progress", taskId: ev.taskId, message: ev.message });
+                        break;
+                      case "error":
+                        send({ type: "error", error: ev.message });
+                        break;
+                      case "progress":
+                        send({ type: "progress", message: ev.message });
+                        break;
+                    }
+                  }
+                });
 
-            proc.on("close", (code: number | null, signal: string | null) => {
-              clearTimeout(timeout);
-              activeProc = null;
-              if (code !== 0 && code !== null && signal !== "SIGTERM" && activeRun) {
-                send({ type: "error", error: `Claude exited with code ${code}` });
-              }
-              resolve();
-            });
+                proc.stderr.on("data", (chunk: Buffer) => {
+                  const line = chunk.toString().trim();
+                  if (line) send({ type: "progress", message: line });
+                });
 
-            proc.on("error", (err: Error) => {
-              clearTimeout(timeout);
-              activeProc = null;
-              send({ type: "error", error: err.message });
-              resolve();
-            });
+                proc.on("close", (code: number | null, signal: string | null) => {
+                  clearTimeout(timeout);
+                  activeProc = null;
+
+                  // Success or intentional kill -- resolve normally
+                  if (code === 0 || code === null || signal === "SIGTERM") {
+                    resolve();
+                    return;
+                  }
+
+                  // Retryable failure -- reject so withRetry can retry
+                  if (isRetryableExit(code, signal)) {
+                    reject(new Error(`Claude exited with code ${code}`));
+                    return;
+                  }
+
+                  // Non-retryable failure (e.g. exit 2 = auth error)
+                  send({ type: "error", error: `Claude exited with code ${code}` });
+                  reject(new NonRetryableError(`Claude exited with code ${code}`));
+                });
+
+                proc.on("error", (err: Error) => {
+                  clearTimeout(timeout);
+                  activeProc = null;
+                  send({ type: "error", error: err.message });
+                  reject(new NonRetryableError(err.message));
+                });
+              }),
+            {
+              maxRetries: MAX_SPAWN_RETRIES,
+              baseDelayMs: 1000,
+              maxDelayMs: 30000,
+              onRetry: (attempt, error, delayMs) => {
+                // Reset output for the retry -- previous attempt's partial output is stale
+                fullOutput = "";
+                send({
+                  type: "progress",
+                  message: `Retrying... (attempt ${attempt + 1}/${MAX_SPAWN_RETRIES + 1}, waiting ${(delayMs / 1000).toFixed(1)}s) -- ${error}`,
+                });
+              },
+            },
+          ).catch((err) => {
+            // All retries exhausted or non-retryable -- error already sent via SSE above
+            if (!(err instanceof NonRetryableError)) {
+              send({ type: "error", error: `Claude failed after ${MAX_SPAWN_RETRIES + 1} attempts: ${err.message}` });
+            }
           });
 
           // In plan mode, skip commit + merge entirely
