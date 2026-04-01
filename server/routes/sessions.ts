@@ -20,6 +20,7 @@ import {
   flushAnalytics,
   loadSessionAnalytics,
 } from "../lib/context-analytics.js";
+import { createStreamParser } from "../lib/claude-stream.js";
 import { createCheckpoint } from "../lib/checkpoint.js";
 import { microcompact, checkContextUsage } from "../lib/compaction.js";
 import { loadProjectEnvVars } from "../lib/env.js";
@@ -646,71 +647,54 @@ export function sessionsRoutes(ctx: WorkspaceCtx) {
           proc.stdin.end();
 
           let fullText = "";
-          let jsonBuffer = "";
+          const parser = createStreamParser();
 
           proc.stdout.on("data", (chunk: Buffer) => {
-            jsonBuffer += chunk.toString();
-            const lines = jsonBuffer.split("\n");
-            jsonBuffer = lines.pop() ?? "";
-
-            for (const line of lines) {
-              if (!line.trim()) continue;
-              try {
-                const event = JSON.parse(line) as {
-                  type: string;
-                  session_id?: string;
-                  message?: {
-                    content?: Array<{
-                      type: string;
-                      id?: string;
-                      text?: string;
-                      name?: string;
-                      input?: unknown;
-                      content?: unknown;
-                    }>;
-                  };
-                  total_cost_usd?: number;
-                  usage?: unknown;
-                };
-
-                if (event.type === "assistant" && event.message?.content) {
+            const events = parser.push(chunk);
+            for (const ev of events) {
+              switch (ev.type) {
+                case "text":
                   markMessagesSent();
-                  for (const block of event.message.content) {
-                    if (block.type === "text" && block.text) {
-                      fullText += block.text;
-                      send({ type: "text", text: block.text });
-                      if (claudeSections.length > 0) {
-                        updateAnalytics(ctx.dataDir, sessionId, block.text, claudeSections);
-                      }
-                    }
-                    if (block.type === "thinking") {
-                      send({ type: "thinking", content: block.text ?? "", id: block.id ?? randomUUID() });
-                    }
-                    if (block.type === "tool_use") {
-                      send({ type: "tool_use", tool: block.name, input: block.input });
-                    }
-                    if (block.type === "tool_result") {
-                      send({ type: "tool_result", content: block.content });
-                    }
+                  fullText += ev.text;
+                  send({ type: "text", text: ev.text });
+                  if (claudeSections.length > 0) {
+                    updateAnalytics(ctx.dataDir, sessionId, ev.text, claudeSections);
                   }
-                }
-
-                // Capture Claude's internal session ID for --resume on next turn
-                if (event.type === "result") {
+                  break;
+                case "thinking":
                   markMessagesSent();
-                  if (event.session_id) {
-                    db.prepare("UPDATE sessions SET claude_session_id = ? WHERE id = ?")
-                      .run(event.session_id, sessionId);
-                  }
-                  const cost = event.total_cost_usd ?? 0;
-                  const usage = event.usage ?? {};
-                  send({ type: "done", cost, usage });
+                  send({ type: "thinking", content: ev.content, id: ev.id });
+                  break;
+                case "tool_use":
+                  markMessagesSent();
+                  send({ type: "tool_use", tool: ev.tool, input: ev.input });
+                  break;
+                case "tool_result":
+                  markMessagesSent();
+                  send({ type: "tool_result", content: ev.content });
+                  break;
+                case "tool_progress":
+                  send({ type: "tool_progress", tool: ev.tool, elapsed: ev.elapsed });
+                  break;
+                case "cost": {
+                  markMessagesSent();
+                  send({ type: "done", cost: ev.totalUsd, usage: ev.usage });
+                  break;
                 }
-              } catch {
-                // Not JSON -- plain-text progress line
-                if (line.trim()) {
-                  send({ type: "progress", message: line });
-                }
+                case "session_id":
+                  markMessagesSent();
+                  db.prepare("UPDATE sessions SET claude_session_id = ? WHERE id = ?")
+                    .run(ev.sessionId, sessionId);
+                  break;
+                case "rate_limit":
+                  send({ type: "rate_limit", retryAfter: ev.retryAfter });
+                  break;
+                case "error":
+                  send({ type: "error", error: ev.message });
+                  break;
+                case "progress":
+                  send({ type: "progress", message: ev.message });
+                  break;
               }
             }
           });
@@ -725,6 +709,29 @@ export function sessionsRoutes(ctx: WorkspaceCtx) {
           proc.on("close", (code: number | null) => {
             activeProcesses.delete(sessionId);
             sessionLastActivity.delete(sessionId);
+
+            // Flush any remaining buffered data from the parser
+            for (const ev of parser.flush()) {
+              switch (ev.type) {
+                case "text":
+                  fullText += ev.text;
+                  send({ type: "text", text: ev.text });
+                  if (claudeSections.length > 0) {
+                    updateAnalytics(ctx.dataDir, sessionId, ev.text, claudeSections);
+                  }
+                  break;
+                case "session_id":
+                  db.prepare("UPDATE sessions SET claude_session_id = ? WHERE id = ?")
+                    .run(ev.sessionId, sessionId);
+                  break;
+                case "cost":
+                  send({ type: "done", cost: ev.totalUsd, usage: ev.usage });
+                  break;
+                case "error":
+                  send({ type: "error", error: ev.message });
+                  break;
+              }
+            }
 
             const killed = code === null || code === 130 || code === 143;
             const savedText = fullText.trim() || (killed ? "[interrupted]" : "[no response]");
