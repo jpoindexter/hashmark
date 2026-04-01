@@ -212,6 +212,14 @@ export default function Rail({ agentsBadge = false, theme = "dark", themeSetting
 
       <div style={{ flex: 1 }} />
 
+      <div style={{
+        fontFamily: "var(--font)", fontSize: 9,
+        color: "var(--text-dimmer)", textAlign: "center",
+        padding: "4px 0", userSelect: "none",
+      }}>
+        &#8984;K
+      </div>
+
       {/* Theme toggle */}
       <button
         className="rail-item"
