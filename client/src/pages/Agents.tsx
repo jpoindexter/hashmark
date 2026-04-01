@@ -5,6 +5,8 @@ import ConfirmDialog from "../components/shared/ConfirmDialog.tsx";
 import { fetchApi } from "../lib/api";
 import { MODELS } from "../lib/models";
 import { renderInline } from "../lib/markdown";
+import { useFocusTrap } from "../hooks/useFocusTrap";
+import { toast } from "../hooks/useToast.ts";
 
 type RunStatus = "idle" | "starting" | "running" | "done" | "error" | "stopped" | "interrupted";
 
@@ -74,6 +76,8 @@ export default function Agents() {
   const [createDept, setCreateDept] = useState("engineering");
   const [createTask, setCreateTask] = useState("");
   const [creating, setCreating] = useState(false);
+  const createModalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(createModalRef, showCreate, true);
 
   const [tab, setTab] = useState<"edit" | "run" | "gov">("edit");
   const [runPrompt, setRunPrompt] = useState("");
@@ -121,7 +125,7 @@ export default function Agents() {
       .then((r) => r.json())
       .then((d) => setAgents(d.agents ?? []))
       .catch(() => {
-        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load agents", type: "error" } }));
+        toast.error("Failed to load agents");
       })
       .finally(() => setLoading(false));
   }, []);
@@ -140,6 +144,15 @@ export default function Agents() {
       .catch(() => {});
   }, [agents.length]);
 
+  useEffect(() => {
+    if (!showCreate) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); setShowCreate(false); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showCreate]);
+
   const handleCreate = useCallback(async () => {
     if (!createName.trim()) return;
     setCreating(true);
@@ -155,17 +168,23 @@ export default function Agents() {
           content: frontmatter,
         }),
       });
-      if (res.ok) {
-        const d = await res.json() as { agent?: Agent };
-        if (d.agent) setAgents((prev) => [...prev, d.agent!]);
+      if (!res.ok) {
+        toast.error("Failed to create agent");
+        setCreating(false);
+        return;
       }
-    } catch {}
-    setShowCreate(false);
-    setCreateName(""); setCreateDesc(""); setCreateDept("engineering"); setCreateTask("");
-    fetchApi("/api/agents")
-      .then((r) => r.json())
-      .then((d) => setAgents(d.agents ?? []))
-      .catch(() => {});
+      const d = await res.json() as { agent?: Agent };
+      if (d.agent) setAgents((prev) => [...prev, d.agent!]);
+      toast.success("Agent created");
+      setShowCreate(false);
+      setCreateName(""); setCreateDesc(""); setCreateDept("engineering"); setCreateTask("");
+      fetchApi("/api/agents")
+        .then((r) => r.json())
+        .then((dd) => setAgents(dd.agents ?? []))
+        .catch(() => {});
+    } catch {
+      toast.error("Failed to create agent");
+    }
     setCreating(false);
   }, [createName, createDesc, createDept, createTask]);
 
@@ -265,25 +284,42 @@ export default function Agents() {
     if (!pendingDelete) return;
     const agent = pendingDelete;
     setPendingDelete(null);
-    await fetchApi(`/api/agents/${agent.id}`, { method: "DELETE" }).catch(() => {});
-    setAgents(prev => prev.filter(a => a.id !== agent.id));
-    if (selected?.id === agent.id) setSelected(null);
+    try {
+      const res = await fetchApi(`/api/agents/${agent.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        toast.error("Failed to delete agent");
+        return;
+      }
+      setAgents(prev => prev.filter(a => a.id !== agent.id));
+      if (selected?.id === agent.id) setSelected(null);
+      toast.success("Agent deleted");
+    } catch {
+      toast.error("Failed to delete agent");
+    }
   }
 
   async function duplicateAgent(agent: Agent) {
-    const res = await fetchApi("/api/agents", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: `${agent.name} (copy)`,
-        description: agent.description,
-        department: agent.department,
-        content: agent.content,
-      }),
-    }).catch(() => null);
-    if (!res?.ok) return;
-    const d = await res.json() as { agent?: Agent };
-    if (d.agent) setAgents(prev => [...prev, d.agent!]);
+    try {
+      const res = await fetchApi("/api/agents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `${agent.name} (copy)`,
+          description: agent.description,
+          department: agent.department,
+          content: agent.content,
+        }),
+      });
+      if (!res.ok) {
+        toast.error("Failed to duplicate agent");
+        return;
+      }
+      const d = await res.json() as { agent?: Agent };
+      if (d.agent) setAgents(prev => [...prev, d.agent!]);
+      toast.success("Agent duplicated");
+    } catch {
+      toast.error("Failed to duplicate agent");
+    }
   }
 
   function openAgent(agent: Agent) {
@@ -301,13 +337,21 @@ export default function Agents() {
     if (!selected) return;
     setSaving(true);
     try {
-      await fetchApi(`/api/agents/${selected.id}`, {
+      const res = await fetchApi(`/api/agents/${selected.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: editContent }),
       });
+      if (!res.ok) {
+        toast.error("Failed to save agent");
+        setSaving(false);
+        return;
+      }
       setAgents((prev) => prev.map((a) => a.id === selected.id ? { ...a, content: editContent } : a));
+      toast.success("Agent saved");
       setSelected(null);
+    } catch {
+      toast.error("Failed to save agent");
     } finally {
       setSaving(false);
     }
@@ -1101,6 +1145,10 @@ export default function Agents() {
           }}
         >
           <div
+            ref={createModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="New Agent"
             onClick={(e) => e.stopPropagation()}
             className="fade-in"
             style={{
