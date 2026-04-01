@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowUp, Square, Plus, X, Mic } from "lucide-react";
 import { fetchApi } from "../lib/api";
+import { toast } from "../hooks/useToast";
 
 const PICKER_CONTAINER_STYLE: React.CSSProperties = {
   position: "absolute",
@@ -450,9 +451,8 @@ interface ChatInputBarProps {
   planMode?: boolean;
 }
 
-function toast(message: string, type: "info" | "error" = "error") {
-  window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message, type } }));
-}
+// toast imported from useToast at the top of this file
+// Callers below use toast.error() and toast.success() directly
 
 const DEFAULT_MODEL = "claude-sonnet-4-6";
 
@@ -713,12 +713,12 @@ export default function ChatInputBar({
       window.dispatchEvent(new CustomEvent("studio:stream-failed", {
         detail: { lastUserMessage: messageText },
       }));
-      toast("Stream failed after 2 retries. Use the Retry button to try again.");
+      toast.error("Stream failed after 2 retries. Use the Retry button to try again.");
       return;
     }
     retryCountRef.current = count + 1;
     const attempt = retryCountRef.current;
-    toast(`Stream error. Retrying (${attempt}/2)...`);
+    toast.error(`Stream error. Retrying (${attempt}/2)...`);
     retryTimerRef.current = setTimeout(() => {
       retryTimerRef.current = null;
       void sendMessageWithText(messageText);
@@ -747,7 +747,7 @@ export default function ChatInputBar({
         sid = data.session.id;
         onSessionCreated?.(sid);
       } catch {
-        toast("Failed to create session");
+        toast.error("Failed to create session");
         return;
       }
     }
@@ -760,7 +760,7 @@ export default function ChatInputBar({
     if (selectedModel === "auto") {
       resolvedModel = resolveAutoModel(text);
       const label = AUTO_MODEL_LABELS[resolvedModel] ?? resolvedModel;
-      toast(`Auto-routed to ${label}`, "info");
+      toast.success(`Auto-routed to ${label}`);
     }
 
     let systemPrompt = (localStorage.getItem("studio:system_prompt") ?? "").trim();
@@ -792,7 +792,7 @@ export default function ChatInputBar({
       if (res.status >= 500) {
         scheduleAutoRetry(text);
       } else {
-        toast(`Failed to send message (${res.status})`);
+        toast.error(`Failed to send message (${res.status})`);
       }
       return;
     }
