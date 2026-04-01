@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Search, Zap } from "lucide-react";
 import { DiffPanel } from "../components/DiffPanel.tsx";
 import AgentPicker from "../components/AgentPicker.tsx";
+import PermissionSelector from "../components/PermissionSelector.tsx";
 import { toast } from "../hooks/useToast.ts";
 import { PageShell } from "../components/shared/PageShell.tsx";
 import { fetchApi } from "../lib/api";
@@ -668,6 +669,8 @@ export default function Run() {
                   </button>
                 ))}
               </div>
+
+              <PermissionSelector />
             </div>
           )}
 
