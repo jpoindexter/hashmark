@@ -236,6 +236,20 @@ Work in the current directory. Make the necessary code changes, create or modify
             let fullOutput = "";
             const parser = createStreamParser();
 
+            // Debounce DB writes -- flush every 2s instead of every chunk to reduce WAL churn
+            let outputDirty = false;
+            const flushOutput = () => {
+              if (!outputDirty) return;
+              try {
+                const db = getDb(ctx.dataDir);
+                db.prepare(
+                  "UPDATE swarm_workers SET output = ? WHERE run_id=? AND worker_id=?"
+                ).run(fullOutput, runId, subtask.id);
+                outputDirty = false;
+              } catch (e) { console.error("[company] db write failed:", e); }
+            };
+            const outputTimer = setInterval(flushOutput, 2000);
+
             proc.stdout.on("data", (chunk: Buffer) => {
               const events = parser.push(chunk);
               for (const ev of events) {
@@ -248,17 +262,15 @@ Work in the current directory. Make the necessary code changes, create or modify
                   send({ type: "worker_cost", id: subtask.id, cost: ev.totalUsd });
                 }
               }
-              try {
-                const db = getDb(ctx.dataDir);
-                db.prepare(
-                  "UPDATE swarm_workers SET output = ? WHERE run_id=? AND worker_id=?"
-                ).run(fullOutput, runId, subtask.id);
-              } catch {}
+              outputDirty = true;
             });
 
             proc.stderr.on("data", () => {});
 
             proc.on("close", async (code: number | null) => {
+              // Stop the debounce timer and flush any remaining output to DB
+              clearInterval(outputTimer);
+
               // Drain any remaining data in the parser buffer
               const remaining = parser.flush();
               for (const ev of remaining) {
@@ -271,6 +283,10 @@ Work in the current directory. Make the necessary code changes, create or modify
                   send({ type: "worker_cost", id: subtask.id, cost: ev.totalUsd });
                 }
               }
+
+              // Final DB write with complete output
+              outputDirty = true;
+              flushOutput();
 
               if (code !== 0 && code !== null) {
                 send({ type: "worker_error", id: subtask.id, error: `Exit code ${code}` });
@@ -341,6 +357,8 @@ Work in the current directory. Make the necessary code changes, create or modify
             });
 
             proc.on("error", (err: Error) => {
+              clearInterval(outputTimer);
+              flushOutput();
               send({ type: "worker_error", id: subtask.id, error: err.message });
               try {
                 const db = getDb(ctx.dataDir);
