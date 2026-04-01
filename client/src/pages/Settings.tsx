@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Skeleton, SkeletonCard } from "../components/shared/Skeleton.tsx";
 import { fetchApi } from "../lib/api";
+import { toast } from "../hooks/useToast";
 
 interface InfoData {
   projectName: string;
@@ -706,7 +707,7 @@ export default function Settings() {
 
   useEffect(() => {
     fetchApi("/api/info").then(r => r.json()).then(setInfo).catch(() => {
-      window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load project info", type: "error" } }));
+      toast.error("Failed to load project info");
     });
     fetchApi("/api/mcp/config").then(r => r.json()).then(setMcpConfig).catch(() => {});
     fetchApi("/api/settings/env").then(r => r.json()).then((d: { vars: EnvVar[] }) => setEnvVars(d.vars ?? [])).catch(() => {});
@@ -714,7 +715,7 @@ export default function Settings() {
       setSkipPerms(d.dangerousSkipPermissions ?? false);
     }).catch(() => {});
     fetchApi("/api/providers/detect").then(r => r.json()).then((d: { providers: DetectedCLI[] }) => setDetectedCLIs(d.providers ?? [])).catch(() => {
-      window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to detect providers", type: "error" } }));
+      toast.error("Failed to detect providers");
     });
   }, []);
 
@@ -1299,7 +1300,7 @@ export default function Settings() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ dangerousSkipPermissions: v }),
                   }).catch(() => {
-                    window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to save setting", type: "error" } }));
+                    toast.error("Failed to save setting");
                   });
                 }}
               />
