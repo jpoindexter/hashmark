@@ -280,7 +280,7 @@ Work in the current directory. Make the necessary code changes, create or modify
                 hasChanges = statusOut.trim().length > 0;
                 if (hasChanges) {
                   await execFile("git", ["add", "-A"], { cwd: worktreeDir });
-                  await execFile("git", ["commit", "-m", `feat(swarm/${runId}): agent ${subtask.id} - ${subtask.title}`], { cwd: worktreeDir });
+                  await execFile("git", ["commit", "--no-verify", "-m", `feat(swarm/${runId}): agent ${subtask.id} - ${subtask.title}`], { cwd: worktreeDir });
                   logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "git_commit", target: branchName, outcome: "success" });
                 }
               } catch {}
@@ -356,9 +356,10 @@ Work in the current directory. Make the necessary code changes, create or modify
             ).run(runId, body.task, plan.length, Date.now());
             for (const subtask of plan) {
               const agentDef = agentMap.get(subtask.agentId);
+              const branchName = `studio-swarm-${runId}-${subtask.id}`;
               db.prepare(
-                "INSERT INTO swarm_workers (run_id, worker_id, title, agent_id, agent_name, status) VALUES (?, ?, ?, ?, ?, 'pending')"
-              ).run(runId, subtask.id, subtask.title, subtask.agentId, agentDef?.name ?? subtask.agentId);
+                "INSERT INTO swarm_workers (run_id, worker_id, title, agent_id, agent_name, status, branch) VALUES (?, ?, ?, ?, ?, 'pending', ?)"
+              ).run(runId, subtask.id, subtask.title, subtask.agentId, agentDef?.name ?? subtask.agentId, branchName);
             }
           } catch {}
 
@@ -370,35 +371,31 @@ Work in the current directory. Make the necessary code changes, create or modify
             results.push(...batchResults);
           }
 
-          send({ type: "phase", phase: "merging" });
-
-          const merged: number[] = [];
-          const conflicts: number[] = [];
-          const skipped: number[] = [];
-
+          // Emit ready_to_merge per worker (user triggers merge via POST /api/company/:runId/workers/:workerId/merge)
           for (let i = 0; i < results.length; i++) {
             const result = results[i];
             const subtask = plan[i];
             const branchName = `studio-swarm-${runId}-${subtask.id}`;
 
-            if (result.status === "rejected") { conflicts.push(subtask.id); continue; }
-            if (!result.value.hasChanges) { skipped.push(subtask.id); continue; }
+            if (result.status === "rejected") continue;
+            if (!result.value.hasChanges) continue;
 
+            let filesChanged = 0;
             try {
-              await execFile("git", [
-                "merge", branchName, "--no-ff",
-                "-m", `feat(swarm): merge agent ${subtask.id} - ${subtask.title}`,
-              ], { cwd: ctx.projectDir });
-              merged.push(subtask.id);
-              logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "git_merge", target: branchName, outcome: "success" });
-            } catch {
-              try { await execFile("git", ["merge", "--abort"], { cwd: ctx.projectDir }); } catch {}
-              conflicts.push(subtask.id);
-              logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "git_merge", target: branchName, outcome: "failure", detail: "merge conflict" });
-            }
+              const worktreeDir = worktreeDirs.get(subtask.id);
+              if (worktreeDir) {
+                const { stdout: nameOnly } = await execFile(
+                  "git", ["diff-tree", "--no-commit-id", "-r", "--name-only", "HEAD"],
+                  { cwd: worktreeDir }
+                );
+                filesChanged = nameOnly.trim().split("\n").filter(Boolean).length;
+              }
+            } catch {}
+
+            send({ type: "ready_to_merge", workerId: subtask.id, branch: branchName, filesChanged });
           }
 
-          // Cleanup
+          // Cleanup worktrees but keep branches — user triggers merge
           for (const subtask of plan) {
             const branchName = `studio-swarm-${runId}-${subtask.id}`;
             const worktreeDir = worktreeDirs.get(subtask.id);
@@ -408,18 +405,17 @@ Work in the current directory. Make the necessary code changes, create or modify
                 logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: subtask.agentId, workerId: subtask.id, action: "worktree_remove", target: branchName, outcome: "success" });
               }
             } catch {}
-            try { await execFile("git", ["branch", "-D", branchName], { cwd: ctx.projectDir }); } catch {}
           }
 
-          // Persist merge result
+          // Update run status
           try {
             const db = getDb(ctx.dataDir);
             db.prepare(
-              "UPDATE swarm_runs SET merged_count=?, conflict_count=?, skipped_count=?, status='done', completed_at=? WHERE id=?"
-            ).run(merged.length, conflicts.length, skipped.length, Date.now(), runId);
+              "UPDATE swarm_runs SET status='done', completed_at=? WHERE id=?"
+            ).run(Date.now(), runId);
           } catch {}
 
-          send({ type: "merge_result", merged, conflicts, skipped, testResults: plan.map((s, i) => {
+          send({ type: "complete", runId, testResults: plan.map((s, i) => {
             const r = results[i];
             return {
               id: s.id,
@@ -427,7 +423,6 @@ Work in the current directory. Make the necessary code changes, create or modify
               testSkipped: r.status === "fulfilled" ? r.value.testSkipped : false,
             };
           }) });
-          send({ type: "complete" });
 
           activeRun = false;
           controller.close();
@@ -493,6 +488,54 @@ Work in the current directory. Make the necessary code changes, create or modify
     const db = getDb(ctx.dataDir);
     db.prepare("DELETE FROM swarm_runs WHERE id=?").run(c.req.param("id"));
     return c.json({ ok: true });
+  });
+
+  // POST /api/company/:runId/workers/:workerId/merge — user-triggered merge for a single worker's branch
+  app.post("/runs/:runId/workers/:workerId/merge", async (c) => {
+    const runId = c.req.param("runId");
+    const workerId = parseInt(c.req.param("workerId"), 10);
+    const db = getDb(ctx.dataDir);
+
+    const worker = db.prepare(
+      "SELECT branch, agent_id FROM swarm_workers WHERE run_id = ? AND worker_id = ?"
+    ).get(runId, workerId) as { branch: string | null; agent_id: string } | undefined;
+    if (!worker) return c.json({ error: "Worker not found" }, 404);
+
+    const branch = worker.branch;
+    if (!branch) return c.json({ error: "No branch for this worker" }, 400);
+
+    try {
+      await execFile(
+        "git",
+        ["merge", branch, "--no-ff", "-m", `feat(swarm): merge worker ${workerId} - ${branch}`],
+        { cwd: ctx.projectDir }
+      );
+      logAgentAction(ctx.dataDir, {
+        timestamp: Date.now(),
+        runId,
+        agentId: worker.agent_id ?? "general",
+        workerId,
+        action: "git_merge",
+        target: branch,
+        outcome: "success",
+      });
+      try { await execFile("git", ["branch", "-d", branch], { cwd: ctx.projectDir }); } catch {}
+      return c.json({ ok: true });
+    } catch (err) {
+      try { await execFile("git", ["merge", "--abort"], { cwd: ctx.projectDir }); } catch {}
+      const msg = err instanceof Error ? err.message : String(err);
+      logAgentAction(ctx.dataDir, {
+        timestamp: Date.now(),
+        runId,
+        agentId: worker.agent_id ?? "general",
+        workerId,
+        action: "git_merge",
+        target: branch,
+        outcome: "failure",
+        detail: "merge conflict",
+      });
+      return c.json({ error: "Merge conflict — resolve manually", branch, detail: msg }, 409);
+    }
   });
 
   // POST /api/company/conflicts — detect file-level overlaps from parsed agent output
