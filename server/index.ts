@@ -40,6 +40,7 @@ import { getDb, getStudioSetting, setStudioSetting } from "./db.js";
 import { getPermissionMode, setPermissionMode, isValidPermissionMode } from "./lib/permissions.js";
 import { getStudioToken } from "./lib/studio-token.js";
 import { studioAuthMiddleware } from "./lib/auth-middleware.js";
+import { startDbBackup } from "./lib/backup.js";
 // rate-limit.ts still available for future use but not applied to local desktop routes
 // import { rateLimitMiddleware } from "./lib/rate-limit.js";
 
@@ -301,6 +302,9 @@ export function createServer(opts: ServerOptions) {
     db.prepare("UPDATE sessions SET status = 'crashed', ended_at = ? WHERE status = 'streaming'").run(Date.now());
     db.prepare("UPDATE swarm_runs SET status = 'crashed', ended_at = ? WHERE status = 'running'").run(Date.now());
   } catch {}
+
+  // Hourly DB backup
+  startDbBackup(ctx.dataDir);
 
   // Clean up orphaned studio worktrees from previous crashed runs
   if (opts.projectDir !== "__unset__") {
