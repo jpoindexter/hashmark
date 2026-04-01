@@ -14,7 +14,7 @@ interface AgentDef {
   description: string;
 }
 
-type RunPhase = "idle" | "running" | "done";
+type RunPhase = "idle" | "running" | "done" | "lost";
 
 type RunMode = "plan" | "build";
 
@@ -229,15 +229,36 @@ export default function Run() {
         } catch {}
       }
 
-      // If stream ended without a complete/error event, transition out of running
-      if (!resultRef.current) {
-        setPhase("done");
-        setStatus("Stream ended");
+      // If stream ended without a complete/error event, the connection was lost
+      if (!resultRef.current && !error) {
+        setPhase("lost");
+        setStatus("Connection lost");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      setPhase("idle");
+      // Network error (e.g. fetch failed, connection reset) -- treat as lost if mid-run
+      const msg = err instanceof Error ? err.message : String(err);
+      if (resultRef.current) {
+        // Already got a terminal event before the error -- just surface it
+        setError(msg);
+        setPhase("done");
+      } else {
+        setError(msg);
+        setPhase("lost");
+        setStatus("Connection lost");
+      }
     }
+  }
+
+  function handleRetry() {
+    // Re-run the same task/agent/mode after a connection loss
+    if (!task.trim()) return;
+    setPhase("idle");
+    setStatus("");
+    setError(null);
+    setResult(null);
+    resultRef.current = null;
+    // Kick off a new run on next tick so phase resets first
+    setTimeout(() => void handleRun(), 0);
   }
 
   const handleEvent = useCallback((event: Record<string, unknown>) => {
@@ -423,7 +444,7 @@ export default function Run() {
         </div>
         {phase !== "idle" && (
           <button className="btn btn-sm" onClick={handleReset}>
-            {phase === "done" ? "run another" : "clear"}
+            {phase === "done" || phase === "lost" ? "run another" : "clear"}
           </button>
         )}
       </div>
@@ -642,7 +663,10 @@ export default function Run() {
                     flexShrink: 0,
                   }} />
                 )}
-                {error && (
+                {phase === "lost" && (
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--yellow)", flexShrink: 0 }} />
+                )}
+                {error && phase !== "lost" && (
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--red)", flexShrink: 0 }} />
                 )}
                 <span style={{ fontSize: 12, color: "var(--text)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -712,7 +736,7 @@ export default function Run() {
           )}
 
           {/* Error */}
-          {error && (
+          {error && phase !== "lost" && (
             <div style={{
               padding: "10px 14px",
               background: "rgba(239,68,68,0.08)",
@@ -727,8 +751,38 @@ export default function Run() {
             </div>
           )}
 
+          {/* Connection lost */}
+          {phase === "lost" && (
+            <div style={{
+              padding: "14px 16px",
+              background: "rgba(234,179,8,0.06)",
+              border: "1px solid var(--yellow)",
+              borderRadius: "var(--radius)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}>
+              <div style={{ fontSize: 12, color: "var(--yellow)" }}>
+                Connection lost — the stream ended before the run completed.
+                {error && (
+                  <span style={{ display: "block", marginTop: 4, fontSize: 11, color: "var(--text-dimmer)" }}>
+                    {error}
+                  </span>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button className="btn btn-sm" onClick={handleRetry} style={{ borderColor: "var(--yellow)", color: "var(--yellow)" }}>
+                  retry
+                </button>
+                <button className="btn btn-sm" onClick={handleReset}>
+                  new run
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Live output terminal */}
-          {(phase === "running" || (phase === "done" && output)) && (
+          {(phase === "running" || ((phase === "done" || phase === "lost") && output)) && (
             <div style={{
               background: "var(--bg-2)",
               border: "1px solid var(--border-dim)",

@@ -181,6 +181,11 @@ export function runRoutes(ctx: WorkspaceCtx) {
           try { controller.enqueue(enc.encode(`data: ${JSON.stringify(data)}\n\n`)); } catch {}
         };
 
+        // SSE heartbeat — keeps connection alive through proxies/webviews during long Claude thinking pauses
+        const heartbeat = setInterval(() => {
+          try { controller.enqueue(enc.encode(": heartbeat\n\n")); } catch {}
+        }, 15_000);
+
         const branchName = `studio-run-${runId}`;
         const worktreeDir = join(tmpdir(), branchName);
 
@@ -409,6 +414,7 @@ export function runRoutes(ctx: WorkspaceCtx) {
             try { getDb(ctx.dataDir).prepare("UPDATE runs SET status = ?, ended_at = ?, cost_usd = ?, claude_session_id = ? WHERE id = ?").run("complete", Date.now(), runCostUsd, capturedSessionId, runId); } catch (e) { console.error("[run] db update failed:", e); }
             send({ type: "complete", hasChanges: false, mode: "plan" });
             activeRun = false;
+            clearInterval(heartbeat);
             controller.close();
             // Cleanup worktree
             try { await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: ctx.projectDir }); } catch {}
@@ -467,6 +473,7 @@ export function runRoutes(ctx: WorkspaceCtx) {
 
           send({ type: "complete", hasChanges, mode: "build", runId });
           activeRun = false;
+          clearInterval(heartbeat);
           controller.close();
         }
 
@@ -477,6 +484,7 @@ export function runRoutes(ctx: WorkspaceCtx) {
             try { controller.close(); } catch {}
           })
           .finally(() => {
+            clearInterval(heartbeat);
             activeProc = null;
             activeRun = false;
           });

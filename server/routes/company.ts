@@ -158,6 +158,11 @@ Respond with ONLY a JSON array, no markdown, no explanation:
           try { controller.enqueue(enc.encode(`data: ${JSON.stringify(data)}\n\n`)); } catch {}
         };
 
+        // SSE heartbeat — keeps connection alive through proxies/webviews during long Claude thinking pauses
+        const heartbeat = setInterval(() => {
+          try { controller.enqueue(enc.encode(": heartbeat\n\n")); } catch {}
+        }, 15_000);
+
         const worktreeDirs = new Map<number, string>();
 
         async function runWorker(subtask: Subtask): Promise<{ id: number; output: string; hasChanges: boolean; testPassed: boolean; testSkipped: boolean }> {
@@ -425,6 +430,7 @@ Work in the current directory. Make the necessary code changes, create or modify
           }) });
 
           activeRun = false;
+          clearInterval(heartbeat);
           controller.close();
         }
 
@@ -437,6 +443,7 @@ Work in the current directory. Make the necessary code changes, create or modify
             ).run(Date.now(), runId);
           } catch {}
           activeRun = false;
+          clearInterval(heartbeat);
           controller.close();
         });
       },
