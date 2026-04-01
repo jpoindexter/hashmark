@@ -49,6 +49,25 @@ export interface ServerOptions {
   port: number;
 }
 
+/** Remove orphaned studio worktrees left behind by crashed runs */
+function cleanupOrphanedWorktrees(projectDir: string) {
+  execFile("git", ["worktree", "list", "--porcelain"], { cwd: projectDir })
+    .then(({ stdout }) => {
+      const worktrees = stdout.split("\n\n").filter(Boolean);
+      for (const wt of worktrees) {
+        const pathMatch = wt.match(/^worktree (.+)$/m);
+        const branchMatch = wt.match(/^branch refs\/heads\/(.+)$/m);
+        if (!pathMatch || !branchMatch) continue;
+        const wtPath = pathMatch[1];
+        const branch = branchMatch[1];
+        if (!branch.startsWith("studio-run-") && !branch.startsWith("swarm-") && !branch.startsWith("studio-swarm-")) continue;
+        execFile("git", ["worktree", "remove", wtPath, "--force"], { cwd: projectDir }).catch(() => {});
+        execFile("git", ["branch", "-D", branch], { cwd: projectDir }).catch(() => {});
+      }
+    })
+    .catch(() => {});
+}
+
 export function createServer(opts: ServerOptions) {
   const app = new Hono();
 
@@ -285,23 +304,9 @@ export function createServer(opts: ServerOptions) {
 
   // Clean up orphaned studio worktrees from previous crashed runs
   if (opts.projectDir !== "__unset__") {
-    setImmediate(() => {
-      execFile("git", ["worktree", "list", "--porcelain"], { cwd: opts.projectDir })
-        .then(({ stdout }) => {
-          const worktrees = stdout.split("\n\n").filter(Boolean);
-          for (const wt of worktrees) {
-            const pathMatch = wt.match(/^worktree (.+)$/m);
-            const branchMatch = wt.match(/^branch refs\/heads\/(.+)$/m);
-            if (!pathMatch || !branchMatch) continue;
-            const wtPath = pathMatch[1];
-            const branch = branchMatch[1];
-            if (!branch.startsWith("studio-run-") && !branch.startsWith("swarm-") && !branch.startsWith("studio-swarm-")) continue;
-            execFile("git", ["worktree", "remove", wtPath, "--force"], { cwd: opts.projectDir }).catch(() => {});
-            execFile("git", ["branch", "-D", branch], { cwd: opts.projectDir }).catch(() => {});
-          }
-        })
-        .catch(() => {});
-    });
+    setImmediate(() => cleanupOrphanedWorktrees(opts.projectDir));
+    // Periodic cleanup every 30 minutes
+    setInterval(() => cleanupOrphanedWorktrees(opts.projectDir), 30 * 60_000).unref();
   }
 
   return { app, server };
