@@ -217,6 +217,11 @@ export default function Run() {
     setShowDiff(false);
     setDiff("");
 
+    // Request notification permission on first run start (not on page load)
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
+
     try {
       const res = await fetchApi("/api/run", {
         method: "POST",
@@ -371,6 +376,18 @@ export default function Run() {
         setError(errMsg);
         setPhase("done");
         toast("Run failed", { variant: "error", title: errMsg });
+        break;
+      }
+      case "notify": {
+        if ("Notification" in window && Notification.permission === "granted") {
+          new Notification(event.title as string, { body: event.body as string });
+        } else if ("Notification" in window && Notification.permission !== "denied") {
+          Notification.requestPermission().then((perm) => {
+            if (perm === "granted") {
+              new Notification(event.title as string, { body: event.body as string });
+            }
+          });
+        }
         break;
       }
     }

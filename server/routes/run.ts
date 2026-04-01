@@ -423,6 +423,7 @@ export function runRoutes(ctx: WorkspaceCtx) {
           if (mode === "plan") {
             try { getDb(dataDir).prepare("UPDATE runs SET status = ?, ended_at = ?, cost_usd = ?, claude_session_id = ? WHERE id = ?").run("complete", Date.now(), runCostUsd, capturedSessionId, runId); } catch (e) { console.error("[run] db update failed:", e); }
             send({ type: "complete", hasChanges: false, mode: "plan" });
+            send({ type: "notify", title: "Run complete", body: "Plan analysis finished" });
             activeRun = false;
             clearInterval(heartbeat);
             controller.close();
@@ -454,8 +455,8 @@ export function runRoutes(ctx: WorkspaceCtx) {
           }
 
           // Count files and notify client to review before merging
+          let filesChanged = 0;
           if (hasChanges) {
-            let filesChanged = 0;
             try {
               const { stdout: nameOnly } = await execFile(
                 "git", ["diff-tree", "--no-commit-id", "-r", "--name-only", "HEAD"],
@@ -482,6 +483,13 @@ export function runRoutes(ctx: WorkspaceCtx) {
           } catch { /* non-fatal */ }
 
           send({ type: "complete", hasChanges, mode: "build", runId });
+          send({
+            type: "notify",
+            title: "Run complete",
+            body: hasChanges
+              ? `Task finished with ${filesChanged} file${filesChanged === 1 ? "" : "s"} changed`
+              : "Task finished with no changes",
+          });
           activeRun = false;
           clearInterval(heartbeat);
           controller.close();
