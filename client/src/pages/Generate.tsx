@@ -83,8 +83,6 @@ export default function Generate() {
   const [info, setInfo] = useState<ProjectInfo | null>(null);
   const [staleness, setStaleness] = useState<StalenessInfo | null>(null);
   const [history, setHistory] = useState<ScanHistory | null>(null);
-  const [config, setConfig] = useState<ScanConfig | null>(null);
-
   // Format selection — seeded from config once loaded
   const [selectedFormats, setSelectedFormats] = useState<Set<string>>(
     new Set(["CLAUDE.md", "AGENTS.md", ".cursorrules"])
@@ -112,7 +110,6 @@ export default function Generate() {
       fetchApi("/api/scan/staleness").then(r => r.json() as Promise<StalenessInfo>).then(setStaleness).catch(() => {}),
       fetchApi("/api/scan/history").then(r => r.json() as Promise<ScanHistory>).then(setHistory).catch(() => {}),
       fetchApi("/api/config").then(r => r.json() as Promise<ScanConfig>).then(cfg => {
-        setConfig(cfg);
         if (cfg.formats?.length) setSelectedFormats(new Set(cfg.formats));
         if (cfg.maxTokens && cfg.maxTokens !== 100000) setMaxTokens(String(cfg.maxTokens));
       }).catch(() => {}),
@@ -219,8 +216,6 @@ export default function Generate() {
 
   const freshness = staleness ? freshnessLabel(staleness) : null;
   const lastSnap = history?.snapshots?.[0];
-  const void_ = config; // suppress unused warning
-
   return (
     <PageShell>
     <div ref={containerRef}>
@@ -620,8 +615,6 @@ export default function Generate() {
         </div>
       )}
 
-      {/* suppress unused var warning for config */}
-      {void_ && null}
     </div>
     </PageShell>
   );
