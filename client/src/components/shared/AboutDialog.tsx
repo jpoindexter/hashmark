@@ -12,7 +12,7 @@ interface DetectedCLI {
 interface AboutInfo {
   version: string;
   nodeVersion: string;
-  electronVersion: string;
+  tauriVersion: string;
   clis: DetectedCLI[];
 }
 
@@ -36,15 +36,15 @@ export default function AboutDialog({ open, onClose }: { open: boolean; onClose:
       const infoData = infoRes.status === "fulfilled" ? infoRes.value : {};
       const cliData = cliRes.status === "fulfilled" ? cliRes.value : { tools: [] };
 
-      const electronVersion =
-        typeof window !== "undefined" && (window as Record<string, unknown>).process
-          ? ((window as Record<string, unknown>).process as Record<string, Record<string, string>>)?.versions?.electron ?? ""
+      const tauriVersion =
+        "__TAURI_INTERNALS__" in window
+          ? (infoData.tauriVersion as string) ?? "2.x"
           : "";
 
       setInfo({
         version: infoData.version ?? "0.1.0",
         nodeVersion: infoData.nodeVersion ?? "unknown",
-        electronVersion,
+        tauriVersion,
         clis: (cliData.tools ?? cliData ?? []).filter((c: DetectedCLI) => c.installed),
       });
     };
@@ -158,7 +158,7 @@ export default function AboutDialog({ open, onClose }: { open: boolean; onClose:
           textAlign: "left",
         }}>
           <InfoRow label="Node" value={info?.nodeVersion ?? "..."} />
-          <InfoRow label="Electron" value={info?.electronVersion || "N/A"} last={!info?.clis?.length} />
+          <InfoRow label="Tauri" value={info?.tauriVersion || "N/A"} last={!info?.clis?.length} />
 
           {/* Detected CLIs */}
           {info?.clis && info.clis.length > 0 && (

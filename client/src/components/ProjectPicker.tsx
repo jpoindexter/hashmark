@@ -176,9 +176,9 @@ function loadLocalRecent(): RecentProject[] {
 }
 
 async function openWorkspace(dir: string): Promise<void> {
-  // In Electron, use IPC to persist the project dir in the main process config.
-  // The main process set-project-dir handler writes to ~/.hashmark/studio-config.json,
-  // updates HASHMARK_PROJECT_DIR, and triggers a webContents reload.
+  // In Tauri, use IPC to persist the project dir in the main process config.
+  // The set-project-dir handler writes to ~/.hashmark/studio-config.json,
+  // updates HASHMARK_PROJECT_DIR, and triggers a webview reload.
   if (typeof window.studio?.setProjectDir === "function") {
     // Register the workspace in the server DB first so the activate flow works
     const res = await fetchApi("/api/workspaces", {
@@ -192,7 +192,7 @@ async function openWorkspace(dir: string): Promise<void> {
     const activateRes = await fetchApi(`/api/workspaces/${id}/activate`, { method: "POST" });
     if (!activateRes.ok) throw new Error("Failed to activate workspace");
 
-    // Persist in Electron config and trigger reload from main process
+    // Persist in Tauri config and trigger reload from main process
     await window.studio.setProjectDir(dir);
     return;
   }
@@ -213,7 +213,7 @@ async function openWorkspace(dir: string): Promise<void> {
 
 /** Full-page splash shown when no project is configured */
 export default function ProjectPicker(_props: ProjectPickerProps = {}) {
-  const isElectron = typeof window !== "undefined" && typeof window.studio !== "undefined";
+  const isTauri = typeof window !== "undefined" && typeof window.studio !== "undefined";
   const [recent, setRecent] = useState<RecentProject[]>([]);
   const [showPathInput, setShowPathInput] = useState(false);
   const [showNewWorkspace, setShowNewWorkspace] = useState(false);
@@ -230,7 +230,7 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
 
   useEffect(() => {
     const local = loadLocalRecent();
-    if (isElectron) {
+    if (isTauri) {
       window.studio?.getRecentProjects()
         .then((r) => {
           const merged = [...r, ...local].reduce<RecentProject[]>((acc, item) => {
@@ -244,7 +244,7 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
     } else {
       setRecent(local);
     }
-  }, [isElectron]);
+  }, [isTauri]);
 
   useEffect(() => {
     if (showPathInput) setTimeout(() => pathInputRef.current?.focus(), 20);
@@ -255,7 +255,7 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
   }, [showNewWorkspace]);
 
   const handleOpenProject = async () => {
-    if (isElectron) {
+    if (isTauri) {
       setLoading(true);
       setError(null);
       try {
@@ -323,7 +323,7 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
       if (item.kind === "file") {
         const file = item.getAsFile();
         if (file) {
-          // In Electron, file.path is available
+          // In Tauri, file.path is available
           const filePath = (file as File & { path?: string }).path;
           if (filePath) {
             setPathInput(filePath);
@@ -766,7 +766,7 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
         setSwitching(null);
         return;
       }
-      // Persist in Electron main process so restarts remember the workspace
+      // Persist in Tauri main process so restarts remember the workspace
       if (typeof window.studio?.setProjectDir === "function" && d.path) {
         await window.studio.setProjectDir(d.path);
         return;

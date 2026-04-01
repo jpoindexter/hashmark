@@ -147,12 +147,10 @@
   --cyan-bg: rgba(58, 122, 138, 0.10);
 }
 
-/* Tauri/Electron vibrancy */
-[data-electron="true"],
+/* Tauri vibrancy */
 [data-tauri="true"] {
   --bg-2: rgba(14, 14, 14, 0.92);
 }
-[data-electron="true"][data-theme="light"],
 [data-tauri="true"][data-theme="light"] {
   --bg-2: rgba(243, 243, 243, 0.88);
 }

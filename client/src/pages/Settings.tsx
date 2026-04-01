@@ -1191,7 +1191,7 @@ export default function Settings() {
         {active === "studio" && (
           <SectionView title="About Studio" description="Version information and diagnostic details.">
             <ReadonlyField label="Version" value="0.1.0" mono />
-            <ReadonlyField label="Runtime" value="Electron + Vite + React" />
+            <ReadonlyField label="Runtime" value="Tauri + Vite + React" />
             <ReadonlyField label="Node Version" value={info?.nodeVersion ?? "..."} mono />
 
             {detectedCLIs.length > 0 && (

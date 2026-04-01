@@ -1,5 +1,5 @@
 /**
- * Tauri IPC bridge — sets window.studio with the same API as the Electron preload.
+ * Tauri IPC bridge — sets window.studio for native desktop capabilities.
  * Only activates when running inside a Tauri webview (__TAURI_INTERNALS__ present).
  */
 

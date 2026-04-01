@@ -225,7 +225,7 @@ export default function WorkspaceSetup() {
       if (item.kind === "file") {
         const file = item.getAsFile();
         if (file) {
-          // In Electron, file.path gives the real FS path
+          // In Tauri, file.path gives the real FS path
           const fsPath = (file as File & { path?: string }).path;
           if (fsPath) {
             await submitPath(fsPath);
@@ -262,7 +262,7 @@ export default function WorkspaceSetup() {
   };
 
   const openStudio = async () => {
-    // Persist project dir in Electron main process config so app restarts remember it.
+    // Persist project dir in Tauri main process config so app restarts remember it.
     // setProjectDir triggers a reload from the main process side.
     if (typeof window.studio?.setProjectDir === "function") {
       await window.studio.setProjectDir(path);

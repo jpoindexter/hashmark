@@ -221,7 +221,7 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
   const decreaseFontSize = () => setFontSize(s => Math.max(FONT_MIN, s - 1));
   const increaseFontSize = () => setFontSize(s => Math.min(FONT_MAX, s + 1));
 
-  // Electron menu / command palette events
+  // Tauri menu / command palette events
   useEffect(() => {
     const onNew = () => addTab();
     const onKill = () => killActive();

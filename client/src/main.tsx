@@ -29,9 +29,9 @@ if (savedDensity) {
   } catch { /* noop */ }
 }
 
-// Detect Electron -- enable vibrancy transparency on sidebar/titlebar
-if (window.studio) {
-  document.documentElement.setAttribute("data-electron", "true");
+// Detect Tauri -- enable vibrancy transparency on sidebar/titlebar
+if ("__TAURI_INTERNALS__" in window) {
+  document.documentElement.setAttribute("data-tauri", "true");
 }
 
 const savedFontSize = localStorage.getItem("studio:font_size");
