@@ -57,7 +57,6 @@ function saveRecent(task: string) {
 // ─── Token estimate ───────────────────────────────────────────────────────────
 
 function estimateTokens(text: string): number {
-  // rough: ~4 chars per token
   return Math.max(0, Math.round(text.length / 4));
 }
 
@@ -103,6 +102,8 @@ function groupAgents(agents: AgentDef[]): Map<string, AgentDef[]> {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+const MAX_DISPLAY_LINES = 500;
+
 export default function Run() {
   const [searchParams] = useSearchParams();
   const [task, setTask]         = useState("");
@@ -111,7 +112,8 @@ export default function Run() {
   const [phase, setPhase]       = useState<RunPhase>("idle");
   const [mode, setMode]         = useState<RunMode>("build");
   const [status, setStatus]     = useState("");
-  const [output, setOutput]     = useState("");
+  const [displayOutput, setDisplayOutput] = useState("");
+  const [totalLines, setTotalLines]      = useState(0);
   const [result, setResult]     = useState<RunResult | null>(null);
   const [error, setError]       = useState<string | null>(null);
   const [showDiff, setShowDiff] = useState(false);
@@ -126,10 +128,45 @@ export default function Run() {
   const textareaRef   = useRef<HTMLTextAreaElement>(null);
   const recentRef     = useRef<HTMLDivElement>(null);
   const resultRef     = useRef<RunResult | null>(null);
+  const fullOutputRef = useRef("");
+  const outputDirty   = useRef(false);
+  const rafId         = useRef<number>(0);
+
+  const flushOutput = useCallback(() => {
+    const full = fullOutputRef.current;
+    const lines = full.split("\n");
+    setTotalLines(lines.length);
+    if (lines.length > MAX_DISPLAY_LINES) {
+      setDisplayOutput(lines.slice(-MAX_DISPLAY_LINES).join("\n"));
+    } else {
+      setDisplayOutput(full);
+    }
+    outputDirty.current = false;
+  }, []);
+
+  const appendOutput = useCallback((text: string) => {
+    fullOutputRef.current += text;
+    if (!outputDirty.current) {
+      outputDirty.current = true;
+      cancelAnimationFrame(rafId.current);
+      rafId.current = requestAnimationFrame(flushOutput);
+    }
+  }, [flushOutput]);
+
+  const clearOutput = useCallback(() => {
+    fullOutputRef.current = "";
+    outputDirty.current = false;
+    cancelAnimationFrame(rafId.current);
+    setDisplayOutput("");
+    setTotalLines(0);
+  }, []);
+
+  useEffect(() => {
+    return () => cancelAnimationFrame(rafId.current);
+  }, []);
 
   const elapsed = useElapsed(phase === "running");
 
-  // Keep resultRef in sync (avoids stale closure in handleEvent)
   useEffect(() => { resultRef.current = result; }, [result]);
 
   useEffect(() => {
@@ -142,14 +179,12 @@ export default function Run() {
     setRecentTasks(loadRecent());
   }, []);
 
-  // Auto-scroll output while running
   useEffect(() => {
     if (phase === "running" && outputRef.current) {
       outputRef.current.scrollTop = outputRef.current.scrollHeight;
     }
-  }, [output, phase]);
+  }, [displayOutput, phase]);
 
-  // Auto-resize textarea
   function resizeTextarea() {
     const el = textareaRef.current;
     if (!el) return;
@@ -157,7 +192,6 @@ export default function Run() {
     el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
   }
 
-  // Close recent dropdown on outside click
   useEffect(() => {
     if (!showRecent) return;
     function onDown(e: MouseEvent) {
@@ -175,7 +209,7 @@ export default function Run() {
     setRecentTasks(loadRecent());
     setPhase("running");
     setStatus("Running...");
-    setOutput("");
+    clearOutput();
     setResult(null);
     resultRef.current = null;
     setError(null);
@@ -221,7 +255,6 @@ export default function Run() {
         }
       }
 
-      // Process any remaining data left in the buffer
       if (buffer.trim().startsWith("data: ")) {
         try {
           const event = JSON.parse(buffer.trim().slice(6)) as Record<string, unknown>;
@@ -229,16 +262,13 @@ export default function Run() {
         } catch {}
       }
 
-      // If stream ended without a complete/error event, the connection was lost
       if (!resultRef.current && !error) {
         setPhase("lost");
         setStatus("Connection lost");
       }
     } catch (err) {
-      // Network error (e.g. fetch failed, connection reset) -- treat as lost if mid-run
       const msg = err instanceof Error ? err.message : String(err);
       if (resultRef.current) {
-        // Already got a terminal event before the error -- just surface it
         setError(msg);
         setPhase("done");
       } else {
@@ -250,14 +280,12 @@ export default function Run() {
   }
 
   function handleRetry() {
-    // Re-run the same task/agent/mode after a connection loss
     if (!task.trim()) return;
     setPhase("idle");
     setStatus("");
     setError(null);
     setResult(null);
     resultRef.current = null;
-    // Kick off a new run on next tick so phase resets first
     setTimeout(() => void handleRun(), 0);
   }
 
@@ -267,7 +295,7 @@ export default function Run() {
         setStatus("Running...");
         break;
       case "chunk":
-        setOutput((prev) => prev + (event.text as string));
+        appendOutput(event.text as string);
         break;
       case "tool_use": {
         const tool = event.tool as string;
@@ -277,7 +305,7 @@ export default function Run() {
           : input?.file_path
             ? String(input.file_path).split("/").pop()
             : "";
-        setOutput((prev) => prev + `\n[${tool}] ${summary}\n`);
+        appendOutput(`\n[${tool}] ${summary}\n`);
         setStatus(`${tool}...`);
         break;
       }
@@ -294,11 +322,11 @@ export default function Run() {
         break;
       case "cost": {
         const usd = (event.totalUsd as number).toFixed(4);
-        setOutput((prev) => prev + `\n--- Cost: $${usd} ---\n`);
+        appendOutput(`\n--- Cost: $${usd} ---\n`);
         break;
       }
       case "task_started":
-        setOutput((prev) => prev + `\n[Subagent] ${event.description as string}\n`);
+        appendOutput(`\n[Subagent] ${event.description as string}\n`);
         setStatus("Subagent started");
         break;
       case "task_progress":
@@ -345,7 +373,7 @@ export default function Run() {
         break;
       }
     }
-  }, []);
+  }, [appendOutput]);
 
   async function handleMerge() {
     const rid = result?.runId;
@@ -397,7 +425,7 @@ export default function Run() {
     setAgentId("");
     setPhase("idle");
     setStatus("");
-    setOutput("");
+    clearOutput();
     setResult(null);
     resultRef.current = null;
     setError(null);
@@ -408,11 +436,18 @@ export default function Run() {
   function handleRunAgain() {
     const currentTask = task;
     handleReset();
-    // Restore task so user can re-run immediately
     setTimeout(() => {
       setTask(currentTask);
       setTimeout(resizeTextarea, 0);
     }, 0);
+  }
+
+  function handleCopyOutput() {
+    navigator.clipboard.writeText(fullOutputRef.current).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+      toast("Output copied to clipboard", { variant: "info" });
+    }).catch(() => {});
   }
 
   function handleShare() {
@@ -427,6 +462,7 @@ export default function Run() {
   const busy = phase === "running";
   const tokenEst = estimateTokens(task);
   const grouped = groupAgents(agents);
+  const isCapped = totalLines > MAX_DISPLAY_LINES;
 
   return (
     <PageShell maxWidth={showDiff ? "full" : 900}>
@@ -444,7 +480,7 @@ export default function Run() {
         </div>
         {phase !== "idle" && (
           <button className="btn btn-sm" onClick={handleReset}>
-            {phase === "done" || phase === "lost" ? "run another" : "clear"}
+            {phase === "done" ? "run another" : "clear"}
           </button>
         )}
       </div>
@@ -470,7 +506,6 @@ export default function Run() {
                   }}
                   onBlur={(e) => {
                     if (textareaRef.current) textareaRef.current.style.borderColor = "var(--border-dim)";
-                    // delay so click on dropdown registers
                     setTimeout(() => {
                       if (!recentRef.current?.contains(document.activeElement)) setShowRecent(false);
                     }, 150);
@@ -663,10 +698,7 @@ export default function Run() {
                     flexShrink: 0,
                   }} />
                 )}
-                {phase === "lost" && (
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--yellow)", flexShrink: 0 }} />
-                )}
-                {error && phase !== "lost" && (
+                {error && (
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--red)", flexShrink: 0 }} />
                 )}
                 <span style={{ fontSize: 12, color: "var(--text)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -736,7 +768,7 @@ export default function Run() {
           )}
 
           {/* Error */}
-          {error && phase !== "lost" && (
+          {error && (
             <div style={{
               padding: "10px 14px",
               background: "rgba(239,68,68,0.08)",
@@ -751,38 +783,8 @@ export default function Run() {
             </div>
           )}
 
-          {/* Connection lost */}
-          {phase === "lost" && (
-            <div style={{
-              padding: "14px 16px",
-              background: "rgba(234,179,8,0.06)",
-              border: "1px solid var(--yellow)",
-              borderRadius: "var(--radius)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}>
-              <div style={{ fontSize: 12, color: "var(--yellow)" }}>
-                Connection lost — the stream ended before the run completed.
-                {error && (
-                  <span style={{ display: "block", marginTop: 4, fontSize: 11, color: "var(--text-dimmer)" }}>
-                    {error}
-                  </span>
-                )}
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button className="btn btn-sm" onClick={handleRetry} style={{ borderColor: "var(--yellow)", color: "var(--yellow)" }}>
-                  retry
-                </button>
-                <button className="btn btn-sm" onClick={handleReset}>
-                  new run
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Live output terminal */}
-          {(phase === "running" || ((phase === "done" || phase === "lost") && output)) && (
+          {(phase === "running" || (phase === "done" && displayOutput)) && (
             <div style={{
               background: "var(--bg-2)",
               border: "1px solid var(--border-dim)",
@@ -797,8 +799,29 @@ export default function Run() {
                 color: "var(--text-dimmer)",
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
               }}>
-                OUTPUT
+                <span>OUTPUT</span>
+                {displayOutput && (
+                  <button
+                    onClick={handleCopyOutput}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: copied ? "var(--accent)" : "var(--text-dimmer)",
+                      fontSize: 9,
+                      fontFamily: "var(--font)",
+                      cursor: "pointer",
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      padding: "0 2px",
+                    }}
+                  >
+                    {copied ? "COPIED" : "COPY"}
+                  </button>
+                )}
               </div>
               <div
                 ref={outputRef}
@@ -814,7 +837,18 @@ export default function Run() {
                   wordBreak: "break-word",
                 }}
               >
-                {output || <span style={{ color: "var(--text-dimmer)" }}>Waiting for output...</span>}
+                {isCapped && (
+                  <div style={{
+                    fontSize: 10,
+                    color: "var(--text-dimmer)",
+                    borderBottom: "1px solid var(--border-dim)",
+                    paddingBottom: 6,
+                    marginBottom: 6,
+                  }}>
+                    Showing last {MAX_DISPLAY_LINES} lines ({totalLines} total)
+                  </div>
+                )}
+                {displayOutput || <span style={{ color: "var(--text-dimmer)" }}>Waiting for output...</span>}
                 {phase === "running" && (
                   <span style={{
                     display: "inline-block",
