@@ -46,6 +46,17 @@ function PulsingDot() {
   );
 }
 
+// ── Elapsed timer (re-renders only the timestamp, not the whole card) ────────
+
+function ElapsedTimer({ startTime }: { startTime: number }) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => tick((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return <span>{elapsedStr(startTime)}</span>;
+}
+
 // ── Mission card ─────────────────────────────────────────────────────────────
 
 function MissionCard({ mission, running, onView, onStop }: {
@@ -54,13 +65,6 @@ function MissionCard({ mission, running, onView, onStop }: {
   onView: () => void;
   onStop: () => void;
 }) {
-  const [, tick] = useState(0);
-  useEffect(() => {
-    if (!running) return;
-    const id = setInterval(() => tick((n) => n + 1), 1000);
-    return () => clearInterval(id);
-  }, [running]);
-
   return (
     <div style={{
       background: "var(--surface)",
@@ -83,7 +87,7 @@ function MissionCard({ mission, running, onView, onStop }: {
           {running ? "running" : "done"}
         </span>
         <span style={{ marginLeft: "auto", fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)" }}>
-          {running ? elapsedStr(mission.updated_at) : timeAgo(mission.updated_at * 1000)}
+          {running ? <ElapsedTimer startTime={mission.updated_at} /> : timeAgo(mission.updated_at * 1000)}
         </span>
       </div>
 
