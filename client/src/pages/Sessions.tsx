@@ -4,6 +4,7 @@ import XTerminal from "../components/XTerminal";
 import { ContextHeatmap } from "../components/ContextHeatmap.tsx";
 import { fetchApi } from "../lib/api";
 import { MODELS } from "../lib/models";
+import { fmtTime, fmtTokens, timeAgo } from "../lib/format";
 
 interface Session {
   id: string;
@@ -47,28 +48,6 @@ function providerColor(model: string): string {
 function modelShortLabel(model: string): string {
   const found = MODELS.find(m => m.id === model);
   return found?.label ?? model;
-}
-
-function fmtTime(ts: number) {
-  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
-function fmtTokens(n: number) {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-  return String(n);
-}
-
-function fmtRelative(ts: number): string {
-  const diff = Date.now() - ts;
-  const s = Math.floor(diff / 1000);
-  if (s < 60) return "just now";
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d ago`;
-  return new Date(ts).toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
 function fmtCost(inputTok: number, outputTok: number, model: string) {
@@ -1117,7 +1096,7 @@ function SessionListItem({
           {s.message_count ?? 0} msgs
         </span>
         <span style={{ fontSize: "10px", color: "var(--text-dimmer)", whiteSpace: "nowrap" }}>
-          {fmtRelative(s.updated_at)}
+          {timeAgo(s.updated_at)}
         </span>
         {s.status === "streaming" && (
           <span style={{ color: "var(--accent)", fontSize: "10px" }}>● live</span>

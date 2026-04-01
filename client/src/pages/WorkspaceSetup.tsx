@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { fetchApi } from "../lib/api";
+import { timeAgo } from "../lib/format";
 
 interface RecentProject {
   path: string;
@@ -33,17 +34,6 @@ function saveRecent(path: string, name: string) {
     const updated = [{ path, name, lastOpened: Date.now() }, ...existing].slice(0, 5);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   } catch {}
-}
-
-function relativeTime(ts: number): string {
-  const diff = Date.now() - ts;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
 }
 
 function FolderIcon({ size = 16, dim = false }: { size?: number; dim?: boolean }) {
@@ -476,7 +466,7 @@ export default function WorkspaceSetup() {
                       </div>
                     </div>
                     <div style={{ fontSize: 10, color: "var(--text-dimmer)", flexShrink: 0, whiteSpace: "nowrap" }}>
-                      {relativeTime(proj.lastOpened)}
+                      {timeAgo(proj.lastOpened)}
                     </div>
                   </button>
                 ))}

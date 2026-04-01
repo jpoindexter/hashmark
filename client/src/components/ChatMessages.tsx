@@ -5,6 +5,7 @@ import ToolCallSummary, { FileBadge, getReadFilePath, categorize } from "./chat/
 import ContextMenu, { type ContextMenuItem } from "./shared/ContextMenu";
 import ScrollToBottom from "./shared/ScrollToBottom";
 import { fetchApi } from "../lib/api";
+import { fmtTime, fmtTokens } from "../lib/format";
 
 const CURSOR_STYLE: React.CSSProperties = {
   display: "inline-block",
@@ -106,15 +107,6 @@ interface ChatMessagesProps {
   streamingState?: StreamingState;
   modelLabel?: string;
   planMode?: boolean;
-}
-
-function fmtTime(ts: number) {
-  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
-function fmtTokens(n: number) {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-  return String(n);
 }
 
 function renderInline(text: string): React.ReactNode {

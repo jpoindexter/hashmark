@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { basename } from "../lib/path.js";
 import { fetchApi } from "../lib/api";
+import { timeAgo } from "../lib/format";
 
 declare global {
   interface Window {
@@ -30,16 +31,6 @@ interface ProjectPickerProps {
   currentName?: string;
   onClose?: () => void;
   mode?: "dropdown";
-}
-
-function relativeTime(ts: number): string {
-  const diff = Date.now() - ts;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 function truncatePath(p: string, max = 38): string {
@@ -690,7 +681,7 @@ function RecentProjectRow({
         </div>
       </div>
       <div style={{ fontSize: 10, color: "var(--text-dimmer)", flexShrink: 0 }}>
-        {opening ? "opening..." : relativeTime(proj.lastOpened)}
+        {opening ? "opening..." : timeAgo(proj.lastOpened)}
       </div>
     </button>
   );
@@ -1062,7 +1053,7 @@ function DropdownWorkspaceRow({
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
         {ws.last_opened > 0 && (
           <span style={{ fontSize: 9, color: "var(--text-dimmer)", whiteSpace: "nowrap" }}>
-            {relativeTime(ws.last_opened)}
+            {timeAgo(ws.last_opened)}
           </span>
         )}
 

@@ -3,6 +3,7 @@ import { Play, Edit2, Copy, Trash2 } from "lucide-react";
 import ContextMenu from "./shared/ContextMenu.tsx";
 import type { ContextMenuItem } from "./shared/ContextMenu.tsx";
 import { DEPT_COLORS } from "../lib/constants";
+import { timeAgo } from "../lib/format";
 
 interface Agent {
   id: string;
@@ -27,17 +28,6 @@ interface AgentCardProps {
   onDelete?: () => void;
   onDuplicate?: () => void;
   streaming?: boolean;
-}
-
-function fmtRelative(ts: number): string {
-  const diff = Date.now() - ts;
-  const m = Math.floor(diff / 60_000);
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  if (d < 30) return `${d}d ago`;
-  return new Date(ts).toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
 function StatusDot({ stats }: { stats?: AgentStats }) {
@@ -192,7 +182,7 @@ export default function AgentCard({ agent, stats, onClick, onRun, onDelete, onDu
                 {stats.lastRun && (
                   <>
                     <span style={{ opacity: 0.4 }}>·</span>
-                    <span title={new Date(stats.lastRun).toLocaleString()}>{fmtRelative(stats.lastRun)}</span>
+                    <span title={new Date(stats.lastRun).toLocaleString()}>{timeAgo(stats.lastRun)}</span>
                   </>
                 )}
               </>

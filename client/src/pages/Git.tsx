@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { DiffPanel } from "../components/DiffPanel.tsx";
 import { fetchApi } from "../lib/api";
+import { timeAgo } from "../lib/format";
 
 interface CommitEntry {
   hash: string;
@@ -44,19 +45,6 @@ function branchColor(name: string): string {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffffffff;
   return BRANCH_COLORS[Math.abs(h) % BRANCH_COLORS.length];
-}
-
-function relativeTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const s = Math.floor(diff / 1000);
-  if (s < 60) return `${s}s ago`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
-  const hr = Math.floor(m / 60);
-  if (hr < 24) return `${hr}h ago`;
-  const d = Math.floor(hr / 24);
-  if (d < 30) return `${d}d ago`;
-  return new Date(iso).toLocaleDateString();
 }
 
 function CommitDot({ isMerge }: { isMerge: boolean }) {
@@ -162,7 +150,7 @@ function CommitRow({ commit, isLast, expanded, onToggle, onFileClick, activeDiff
                 {commit.author}
               </span>
               <span style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--text-dimmer)" }}>
-                {relativeTime(commit.date)}
+                {timeAgo(new Date(commit.date).getTime())}
               </span>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { Clock } from "lucide-react";
 import { DiffPanel } from "../components/DiffPanel.tsx";
 import { Skeleton, SkeletonCard } from "../components/shared/Skeleton";
 import { fetchApi } from "../lib/api";
+import { fmtDateTime } from "../lib/format";
 
 interface AgentRun {
   id: string;
@@ -45,16 +46,6 @@ function StatusBadge({ status }: { status: string }) {
       {status}
     </span>
   );
-}
-
-function formatTs(ts: number): string {
-  const d = new Date(ts);
-  return d.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 export default function History() {
@@ -298,7 +289,7 @@ export default function History() {
                     color: "var(--text-dim)",
                     whiteSpace: "nowrap",
                   }}>
-                    {formatTs(run.created_at)}
+                    {fmtDateTime(run.created_at)}
                   </div>
 
                   {/* Status */}

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, type CSSProperties } from "re
 import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu";
 import ConfirmDialog from "../shared/ConfirmDialog";
 import { fetchApi } from "../../lib/api";
+import { timeAgo } from "../../lib/format";
 
 interface ChatSession {
   id: string;
@@ -24,16 +25,6 @@ interface CtxState {
 }
 
 const AGENT_COLORS = ["var(--accent)", "var(--blue)", "var(--yellow)", "var(--purple)"];
-
-function timeAgo(ts: number): string {
-  const diff = Date.now() - ts * 1000;
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
-}
 
 async function renameSession(id: string, title: string) {
   await fetchApi(`/api/sessions/${id}`, {
@@ -263,7 +254,7 @@ export default function SessionsPanel({
                     />
                   ))}
                 </div>
-                {isStreaming ? "running" : timeAgo(s.updated_at)}
+                {isStreaming ? "running" : timeAgo(s.updated_at * 1000)}
               </div>
             </div>
           );

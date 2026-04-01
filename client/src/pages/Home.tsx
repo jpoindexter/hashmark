@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchApi } from "../lib/api";
 import { MODELS } from "../lib/models";
+import { timeAgo } from "../lib/format";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,14 +25,6 @@ function elapsedStr(updatedSec: number): string {
   const h = Math.floor(m / 60);
   if (h > 0) return `${h}:${String(m % 60).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
   return `${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
-}
-
-function timeAgo(sec: number): string {
-  const d = Math.floor(Date.now() / 1000) - sec;
-  if (d < 60) return "just now";
-  if (d < 3600) return `${Math.floor(d / 60)}m ago`;
-  if (d < 86400) return `${Math.floor(d / 3600)}h ago`;
-  return `${Math.floor(d / 86400)}d ago`;
 }
 
 function uuidShort(id: string): string {
@@ -87,7 +80,7 @@ function MissionCard({ mission, running, onView, onStop }: {
           {running ? "running" : "done"}
         </span>
         <span style={{ marginLeft: "auto", fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)" }}>
-          {running ? elapsedStr(mission.updated_at) : timeAgo(mission.updated_at)}
+          {running ? elapsedStr(mission.updated_at) : timeAgo(mission.updated_at * 1000)}
         </span>
       </div>
 

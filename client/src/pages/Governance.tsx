@@ -3,6 +3,7 @@ import { Shield, Activity, FileText } from "lucide-react";
 import { PageShell } from "../components/shared/PageShell.tsx";
 import { Skeleton, SkeletonCard } from "../components/shared/Skeleton";
 import { fetchApi } from "../lib/api";
+import { fmtDateTime, timeAgo } from "../lib/format";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,14 +47,6 @@ interface Summary {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function fmtTime(ts: number) {
-  return new Date(ts).toLocaleString("en-US", {
-    month: "short", day: "numeric",
-    hour: "2-digit", minute: "2-digit", second: "2-digit",
-    hour12: false,
-  });
-}
 
 function OutcomeBadge({ outcome }: { outcome: string }) {
   const map: Record<string, { bg: string; color: string }> = {
@@ -822,7 +815,7 @@ function ActionLogTab() {
     const rows = [
       ["timestamp", "agent", "action_type", "target", "outcome", "session_id", "policy_id"],
       ...displayed.map(a => [
-        fmtTime(a.created_at),
+        fmtDateTime(a.created_at),
         a.agent_id ?? "",
         a.action_type,
         a.target ?? "",
@@ -1026,7 +1019,7 @@ function ActionLogTab() {
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                 >
                   <td style={{ padding: "7px 10px", color: "var(--text-dimmer)", fontSize: 11, fontFamily: "var(--font)", whiteSpace: "nowrap" }}>
-                    {fmtTime(a.created_at)}
+                    {fmtDateTime(a.created_at)}
                   </td>
                   <td style={{ padding: "7px 10px", color: "var(--text-dim)", fontFamily: "var(--font)", fontSize: 11 }}>
                     {a.agent_id ?? <span style={{ opacity: 0.4 }}>—</span>}
@@ -1089,13 +1082,7 @@ interface JournalEvent {
   detail?: string;
 }
 
-function relativeTime(ts: number): string {
-  const diff = Date.now() - ts;
-  if (diff < 60_000) return `${Math.floor(diff / 1000)}s ago`;
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
-  return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
+
 
 function ActionBadge({ action }: { action: string }) {
   const colorMap: Record<string, string> = {
@@ -1260,7 +1247,7 @@ function ActionJournalTab() {
                   title={e.detail}
                 >
                   <td style={{ padding: "7px 10px", color: "var(--text-dimmer)", fontSize: 11, fontFamily: "var(--font)", whiteSpace: "nowrap" }}>
-                    {relativeTime(e.timestamp)}
+                    {timeAgo(e.timestamp)}
                   </td>
                   <td style={{ padding: "7px 10px", color: "var(--text-dim)", fontFamily: "var(--font)", fontSize: 11 }}>
                     {e.runId}

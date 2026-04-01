@@ -3,6 +3,7 @@ import ScanProgress, { type ScanResult, type ScanDelta } from "../components/Sca
 import { toast } from "../hooks/useToast.ts";
 import { PageShell } from "../components/shared/PageShell.tsx";
 import { fetchApi } from "../lib/api";
+import { fmtDateTime } from "../lib/format";
 
 const ALL_FORMATS = [
   { id: "CLAUDE.md",            label: "CLAUDE.md",            hint: "Anthropic Claude" },
@@ -71,11 +72,6 @@ function fmtBytes(b: number): string {
 function fmtTokens(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k tokens`;
   return `${n} tokens`;
-}
-
-function fmtTime(ts: number): string {
-  const d = new Date(ts);
-  return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 export default function Generate() {
@@ -257,7 +253,7 @@ export default function Generate() {
                 </span>
                 <span style={{ color: "var(--border)", fontSize: "11px" }}>·</span>
                 <span style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
-                  last scanned {fmtTime(lastSnap.scannedAt)}
+                  last scanned {fmtDateTime(lastSnap.scannedAt)}
                 </span>
               </>
             )}
