@@ -1,4 +1,4 @@
-import { appendFileSync, mkdirSync } from "fs";
+import { appendFileSync, mkdirSync, statSync, renameSync } from "fs";
 import { join } from "path";
 
 export interface AgentActionEvent {
@@ -12,11 +12,23 @@ export interface AgentActionEvent {
   detail?: string;
 }
 
+/** Rotate log file when it exceeds 10 MB */
+function rotateIfNeeded(logPath: string) {
+  try {
+    const stats = statSync(logPath);
+    if (stats.size > 10 * 1024 * 1024) {
+      renameSync(logPath, logPath + ".1");
+    }
+  } catch {}
+}
+
 export function logAgentAction(dataDir: string, event: AgentActionEvent): void {
   try {
     mkdirSync(dataDir, { recursive: true });
+    const logPath = join(dataDir, "agent-actions.jsonl");
     const line = JSON.stringify(event) + "\n";
-    appendFileSync(join(dataDir, "agent-actions.jsonl"), line);
+    appendFileSync(logPath, line);
+    rotateIfNeeded(logPath);
   } catch { /* never throw */ }
 }
 
