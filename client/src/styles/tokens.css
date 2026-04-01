@@ -36,6 +36,10 @@
   --purple:    #7a6aa8;
   --purple-bg: rgba(122, 106, 168, 0.10);
 
+  /* Badge border tokens (20% of semantic color) */
+  --blue-border:   rgba(136, 136, 136, 0.20);
+  --yellow-border: rgba(154, 122, 50, 0.20);
+
   /* Typography -- monospace throughout */
   --font:    'JetBrains Mono', 'Fira Code', Menlo, monospace;
   --font-ui: 'JetBrains Mono', 'Fira Code', Menlo, monospace;
@@ -152,6 +156,9 @@
   --orange-bg: rgba(122, 74, 32, 0.08);
   --purple:    #5a4a88;
   --purple-bg: rgba(90, 74, 136, 0.08);
+
+  --blue-border:   rgba(102, 102, 102, 0.20);
+  --yellow-border: rgba(122, 96, 32, 0.20);
 
   --overlay-bg:  rgba(0, 0, 0, 0.30);
   --shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.2);

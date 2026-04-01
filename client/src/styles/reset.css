@@ -147,9 +147,9 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
   font-weight: 500;
 }
 .badge-green  { background: var(--accent-bg);  color: var(--accent); border: 1px solid var(--accent-border); }
-.badge-blue   { background: var(--blue-bg);    color: var(--blue);   border: 1px solid rgba(56,139,253,.2); }
+.badge-blue   { background: var(--blue-bg);    color: var(--blue);   border: 1px solid var(--blue-border); }
 .badge-zinc   { background: var(--bg-4);       color: var(--text-dim); border: 1px solid var(--border); }
-.badge-yellow { background: var(--yellow-bg);  color: var(--yellow); border: 1px solid rgba(210,153,34,.2); }
+.badge-yellow { background: var(--yellow-bg);  color: var(--yellow); border: 1px solid var(--yellow-border); }
 
 /* ---- Shiki syntax highlighting ---- */
 .shiki-viewer .shiki {
