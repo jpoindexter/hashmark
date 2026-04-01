@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Play, Edit2, Copy, Trash2 } from "lucide-react";
 import ContextMenu from "./shared/ContextMenu.tsx";
 import type { ContextMenuItem } from "./shared/ContextMenu.tsx";
+import { DEPT_COLORS } from "../lib/constants";
 
 interface Agent {
   id: string;
@@ -27,17 +28,6 @@ interface AgentCardProps {
   onDuplicate?: () => void;
   streaming?: boolean;
 }
-
-const DEPT_COLORS: Record<string, string> = {
-  engineering: "var(--blue)",
-  product: "#8b5cf6",
-  design: "#ec4899",
-  marketing: "var(--yellow)",
-  sales: "var(--accent)",
-  operations: "#6366f1",
-  pr: "var(--cyan)",
-  general: "var(--text-dim)",
-};
 
 function fmtRelative(ts: number): string {
   const diff = Date.now() - ts;

@@ -6,6 +6,7 @@ import AgentPicker from "../components/AgentPicker.tsx";
 import { toast } from "../hooks/useToast.ts";
 import { PageShell } from "../components/shared/PageShell.tsx";
 import { fetchApi } from "../lib/api";
+import { DEPT_COLORS } from "../lib/constants";
 
 interface AgentDef {
   id: string;
@@ -27,20 +28,7 @@ interface RunResult {
   merged?: boolean;
 }
 
-// Department-specific colors (no Grove token equivalent)
-const DEPT_COLORS: Record<string, string> = {
-  engineering: "var(--blue)",
-  product:     "#8b5cf6",
-  design:      "#ec4899",
-  marketing:   "var(--yellow)",
-  sales:       "var(--accent)",
-  operations:  "#6366f1",
-  pr:          "var(--cyan)",
-  general:     "var(--text-dim)",
-};
-
 function deptFromId(id: string): string {
-  // id format: "department-agentname" or "agentname"
   const seg = id.split("-")[0].toLowerCase();
   return DEPT_COLORS[seg] ? seg : "general";
 }

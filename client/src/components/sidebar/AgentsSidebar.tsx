@@ -4,6 +4,7 @@ import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
 import ConfirmDialog from "../shared/ConfirmDialog.tsx";
 import { Skeleton, SkeletonAvatar } from "../shared/Skeleton.tsx";
 import { fetchApi } from "../../lib/api";
+import { DEPT_COLORS } from "../../lib/constants";
 
 interface Agent {
   id: string;
@@ -12,16 +13,6 @@ interface Agent {
   department: string;
   path: string;
 }
-
-const DEPT_COLORS: Record<string, string> = {
-  engineering: "var(--accent)",
-  design: "#8b5cf6",
-  product: "var(--blue)",
-  security: "var(--red)",
-  ops: "var(--yellow)",
-  data: "var(--cyan)",
-  general: "var(--text-dimmer)",
-};
 
 function deptColor(dept: string): string {
   return DEPT_COLORS[dept.toLowerCase()] ?? "var(--text-dimmer)";
