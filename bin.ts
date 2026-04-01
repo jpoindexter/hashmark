@@ -47,3 +47,7 @@ process.on("SIGINT", () => shutdown("SIGINT"));
 process.on("unhandledRejection", (err) => {
   console.error("[studio] unhandled rejection:", err);
 });
+process.on("uncaughtException", (err) => {
+  console.error("[studio] uncaught exception:", err);
+  shutdown("uncaughtException");
+});

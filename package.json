@@ -15,7 +15,7 @@
     "dev:client": "vite client",
     "dev": "lsof -ti :3200 | xargs kill -9 2>/dev/null; npm run build:hono && HASHMARK_NO_OPEN=1 node dist/bin.js & npx wait-on -t 30000 http-get://localhost:3200/api/health && npm run dev:client",
     "tauri:dev": "lsof -ti :3200 | xargs kill -9 2>/dev/null; npm run build:hono && HASHMARK_NO_OPEN=1 node dist/bin.js & npx wait-on -t 30000 http-get://localhost:3200/api/health; npm run dev:client & npx tauri dev",
-    "tauri:build": "npm run build:client && npx tauri build",
+    "tauri:build": "npm run build && npx tauri build",
     "typecheck": "tsc --noEmit",
     "prepare": "husky",
     "test": "cd packages/cli && npm test",
