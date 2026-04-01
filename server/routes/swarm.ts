@@ -159,7 +159,7 @@ async function runAgent(
     recordInvocation();
 
     const agentTools = agent.agentId ? agentMap.get(agent.agentId)?.tools : undefined;
-    const cliArgs = buildClaudeArgs({ mode: swarm.mode, allowedTools: agentTools });
+    const { args: cliArgs } = buildClaudeArgs({ mode: swarm.mode, allowedTools: agentTools });
     const proc = spawn(claudeBin, cliArgs, {
       cwd: worktreeDir,
       stdio: ["pipe", "pipe", "pipe"],

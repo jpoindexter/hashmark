@@ -35,7 +35,9 @@ import { governanceRoutes } from "./routes/governance.js";
 import { workspacesRoutes, type WorkspaceCtx } from "./routes/workspaces.js";
 import { configRoutes } from "./routes/config.js";
 import { sandboxRoutes } from "./routes/sandbox.js";
+import { settingsRoutes } from "./routes/settings.js";
 import { getDb, getStudioSetting, setStudioSetting } from "./db.js";
+import { getPermissionMode, setPermissionMode, isValidPermissionMode } from "./lib/permissions.js";
 import { getStudioToken } from "./lib/studio-token.js";
 import { studioAuthMiddleware } from "./lib/auth-middleware.js";
 // rate-limit.ts still available for future use but not applied to local desktop routes
@@ -163,17 +165,26 @@ export function createServer(opts: ServerOptions) {
   // Studio settings — persisted per project in the DB
   app.get("/api/settings/studio", (c) => {
     const db = getDb(ctx.dataDir);
+    const permMode = getPermissionMode(db);
     return c.json({
-      dangerousSkipPermissions: getStudioSetting(db, "dangerousSkipPermissions", "false") === "true",
+      permissionMode: permMode,
+      // Legacy flag -- derived from permissionMode for backward compat
+      dangerousSkipPermissions: permMode === "bypass",
     });
   });
 
   app.put("/api/settings/studio", async (c) => {
-    const body = await c.req.json<{ dangerousSkipPermissions?: boolean }>();
+    const body = await c.req.json<{ dangerousSkipPermissions?: boolean; permissionMode?: unknown }>();
     const db = getDb(ctx.dataDir);
-    if (typeof body.dangerousSkipPermissions === "boolean") {
-      setStudioSetting(db, "dangerousSkipPermissions", body.dangerousSkipPermissions ? "true" : "false");
+
+    // New path: permission mode (takes precedence)
+    if (isValidPermissionMode(body.permissionMode)) {
+      setPermissionMode(db, body.permissionMode);
+    } else if (typeof body.dangerousSkipPermissions === "boolean") {
+      // Legacy path: binary toggle maps to bypass/auto
+      setPermissionMode(db, body.dangerousSkipPermissions ? "bypass" : "auto");
     }
+
     return c.json({ ok: true });
   });
 
@@ -227,6 +238,7 @@ export function createServer(opts: ServerOptions) {
   app.route("/api/workspaces", workspacesRoutes(globalDataDir, ctx));
   app.route("/api/config", configRoutes(ctx));
   app.route("/api/sandbox", sandboxRoutes(ctx));
+  app.route("/api/settings", settingsRoutes(ctx));
 
   // Serve static client files
   app.use(

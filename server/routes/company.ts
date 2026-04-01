@@ -212,7 +212,7 @@ Work in the current directory. Make the necessary code changes, create or modify
           if (workerSkipPerms) workerEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
 
           return new Promise((resolve, reject) => {
-            const workerArgs = buildClaudeArgs({ mode: "build" });
+            const { args: workerArgs } = buildClaudeArgs({ mode: "build" });
             const proc = spawn(claudeBin, workerArgs, {
               cwd: worktreeDir,
               stdio: ["pipe", "pipe", "pipe"],

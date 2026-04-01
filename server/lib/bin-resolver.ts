@@ -5,6 +5,11 @@
 
 import { existsSync } from "fs";
 import { join } from "path";
+import {
+  type PermissionMode,
+  buildArgsForMode,
+  type PermissionArgs,
+} from "./permissions.js";
 
 export function findBin(name: string, projectDir: string): string {
   const candidates = [
@@ -43,25 +48,48 @@ export const TOOL_PRESETS = {
  * Callers must send the prompt via stdin (proc.stdin.write + proc.stdin.end).
  *
  * Always uses --output-format stream-json for structured event parsing.
+ *
+ * When `permissionMode` is provided, tools and flags are derived from the
+ * permission system. Agent-specific tools (from YAML frontmatter) intersect
+ * with the mode's allowed set -- agents never get more than the mode allows.
+ *
+ * Legacy callers can still pass `allowedTools` / `mode` directly; they take
+ * precedence over `permissionMode` to avoid breaking existing call sites
+ * (swarm, company, sessions) that haven't been migrated yet.
  */
 export function buildClaudeArgs(opts?: {
   resume?: string;
   allowedTools?: string[];
   mode?: "plan" | "build";
-}): string[] {
+  permissionMode?: PermissionMode;
+  agentTools?: string[];
+}): { args: string[]; permissionEnv: Record<string, string> } {
   const args: string[] = ["--print", "--output-format", "stream-json", "--verbose"];
 
-  // Priority: explicit tools > mode-based preset > full default
-  let tools: readonly string[];
-  if (opts?.allowedTools && opts.allowedTools.length > 0) {
-    tools = opts.allowedTools;
-  } else if (opts?.mode === "plan") {
-    tools = TOOL_PRESETS.plan;
+  let permissionEnv: Record<string, string> = {};
+
+  // New path: permission mode drives everything
+  if (opts?.permissionMode && !opts.allowedTools) {
+    const pa: PermissionArgs = buildArgsForMode(
+      opts.permissionMode,
+      opts.agentTools,
+    );
+    args.push("--allowedTools", pa.allowedTools.join(","));
+    if (pa.cliFlags.length > 0) args.push(...pa.cliFlags);
+    permissionEnv = pa.env;
   } else {
-    tools = TOOL_PRESETS.full;
+    // Legacy path: explicit tools > mode preset > full default
+    let tools: readonly string[];
+    if (opts?.allowedTools && opts.allowedTools.length > 0) {
+      tools = opts.allowedTools;
+    } else if (opts?.mode === "plan") {
+      tools = TOOL_PRESETS.plan;
+    } else {
+      tools = TOOL_PRESETS.full;
+    }
+    args.push("--allowedTools", tools.join(","));
   }
 
-  args.push("--allowedTools", tools.join(","));
   if (opts?.resume) args.push("--resume", opts.resume);
-  return args;
+  return { args, permissionEnv };
 }

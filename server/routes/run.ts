@@ -12,8 +12,9 @@ import { promisify } from "util";
 import { tmpdir } from "os";
 import { logAgentAction, parseActionsFromOutput } from "../lib/action-log.js";
 import { loadAgents, type AgentDef } from "../lib/agents.js";
-import { getDb, getStudioSetting } from "../db.js";
+import { getDb } from "../db.js";
 import { findClaudeBin, buildClaudeArgs } from "../lib/bin-resolver.js";
+import { getPermissionMode } from "../lib/permissions.js";
 import { z } from "zod";
 import { checkUsage, recordInvocation, getUsageStats } from "../lib/claude-usage.js";
 import { createStreamParser, type StudioEvent } from "../lib/claude-stream.js";
@@ -221,17 +222,23 @@ export function runRoutes(ctx: WorkspaceCtx) {
 
           const prompt = `${planPrefix}${agentContext}${body.task}\n\nWork in the current directory. Make the necessary code changes, create or modify files as needed.`;
 
-          // Spawn claude and stream output
-          const skipPerms = getStudioSetting(getDb(ctx.dataDir), "dangerousSkipPermissions", "false") === "true";
-          const runEnv: Record<string, string> = { ...process.env as Record<string, string> };
-          if (skipPerms) runEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
+          // Spawn claude and stream output -- permission mode drives tools + env
+          const permMode = getPermissionMode(getDb(ctx.dataDir));
+          const agentTools = agentDef?.tools;
+          const { args: cliArgs, permissionEnv } = buildClaudeArgs({
+            permissionMode: permMode,
+            agentTools,
+            resume: resumeSessionId ?? undefined,
+          });
+          const runEnv: Record<string, string> = {
+            ...process.env as Record<string, string>,
+            ...permissionEnv,
+          };
 
           let fullOutput = "";
           let capturedSessionId: string | null = null;
           let runCostUsd = 0;
           recordInvocation();
-          const agentTools = agentDef?.tools;
-          const cliArgs = buildClaudeArgs({ mode, allowedTools: agentTools, resume: resumeSessionId ?? undefined });
 
           const MAX_SPAWN_RETRIES = 3;
 

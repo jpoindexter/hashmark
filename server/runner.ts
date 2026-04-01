@@ -147,7 +147,7 @@ export function runTask(
   const taskEnv: Record<string, string> = { ...process.env as Record<string, string> };
   if (skipPerms) taskEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
 
-  const cliArgs = buildClaudeArgs({ mode: "build" });
+  const { args: cliArgs } = buildClaudeArgs({ mode: "build" });
   const proc = spawn(claudeBin, cliArgs, {
     cwd: projectDir,
     stdio: ["pipe", "pipe", "pipe"],
