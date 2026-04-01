@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Skeleton, SkeletonCard } from "../components/shared/Skeleton.tsx";
+import Toggle from "../components/shared/Toggle";
 import { fetchApi } from "../lib/api";
 import { toast } from "../hooks/useToast";
 
@@ -106,26 +107,6 @@ function dispatch(key: string, value: unknown) {
   window.dispatchEvent(new CustomEvent("studio:settings-change", { detail: { key, value } }));
 }
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      style={{
-        width: 32, height: 18, borderRadius: 9, border: "none", cursor: "pointer",
-        background: checked ? "var(--accent)" : "var(--bg-4)",
-        position: "relative", transition: "background 0.15s", flexShrink: 0,
-      }}
-    >
-      <span style={{
-        position: "absolute", top: 2, left: checked ? 16 : 2,
-        width: 14, height: 14, borderRadius: "50%", background: "var(--text)",
-        transition: "left 0.15s",
-      }} />
-    </button>
-  );
-}
 
 function ProviderPanel({ envVars }: { envVars: EnvVar[] }) {
   const [data, setData] = useState<ProvidersData | null>(null);

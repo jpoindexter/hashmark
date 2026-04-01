@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Shield, Activity, FileText } from "lucide-react";
 import { PageShell } from "../components/shared/PageShell.tsx";
 import { Skeleton, SkeletonCard } from "../components/shared/Skeleton";
+import Toggle from "../components/shared/Toggle";
 import { fetchApi } from "../lib/api";
 import { fmtDateTime, timeAgo } from "../lib/format";
 
@@ -90,44 +91,6 @@ function TypeBadge({ type }: { type: string }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Toggle switch
-// ---------------------------------------------------------------------------
-
-function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={() => !disabled && onChange(!checked)}
-      aria-checked={checked}
-      role="switch"
-      style={{
-        position: "relative",
-        display: "inline-block",
-        width: 32,
-        height: 18,
-        background: checked ? "var(--accent)" : "var(--bg-4)",
-        border: `1px solid ${checked ? "var(--accent)" : "var(--border)"}`,
-        borderRadius: 9,
-        cursor: disabled ? "not-allowed" : "pointer",
-        transition: "background 0.15s, border-color 0.15s",
-        flexShrink: 0,
-        opacity: disabled ? 0.5 : 1,
-      }}
-    >
-      <span style={{
-        position: "absolute",
-        top: 2,
-        left: checked ? 14 : 2,
-        width: 12,
-        height: 12,
-        borderRadius: "50%",
-        background: "var(--text)",
-        transition: "left 0.15s",
-      }} />
-    </button>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Delete confirm tooltip
