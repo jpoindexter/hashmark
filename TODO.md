@@ -84,14 +84,14 @@
 ### Retry + Backoff (server/lib/retry.ts)
 - [x] Exponential backoff: 500ms base, 10 retries max, 3 for 529 overloaded
 - [x] Fallback model support (try sonnet if opus fails)
-- [ ] Heartbeat every 30s during retries (prevent client timeout)
+- [x] Heartbeat every 30s during retries (prevent client timeout)
 - [x] Wire into all spawn sites (run, swarm, company, sessions)
 
 ### Microcompaction (server/lib/compaction.ts)
 - [x] Truncate large tool results in session history (file reads, bash output)
-- [ ] Trigger at 80% context window (AUTOCOMPACT_BUFFER_TOKENS = 13000)
+- [x] Trigger at 80% context window (AUTOCOMPACT_BUFFER_TOKENS = 13000)
 - [x] Warning UI at 90% context (WARNING_THRESHOLD = 20000)
-- [ ] Track context usage per session, expose via API
+- [x] Track context usage per session, expose via API
 
 ### Permission Cascade
 - [x] 5 levels: default, acceptEdits, plan, auto, bypass
@@ -124,12 +124,12 @@
 - [x] Add --color-on-accent token (text on accent backgrounds)
 - [x] Add z-index token scale (--z-dropdown, --z-modal, --z-toast, --z-overlay)
 - [x] Replace 40+ hardcoded colors with CSS tokens
-- [ ] Standardize page headers (use PageHeader component or remove it)
+- [x] Standardize page headers (use PageHeader component or remove it)
 
 ### Navigation
-- [ ] Add Rail tooltips (title/tooltip on hover)
-- [ ] Add Cmd+K command palette hint for new users
-- [ ] Fix board-to-chat toggle (use URL routing, back button broken)
+- [x] Add Rail tooltips (title/tooltip on hover)
+- [x] Add Cmd+K command palette hint for new users
+- [x] Fix board-to-chat toggle (use URL routing, back button broken)
 - [x] Fix SPA link in Git.tsx (<a> causes full reload, use navigate())
 
 ### Components
@@ -141,7 +141,7 @@
 
 ### Performance
 - [x] Cap Run/Swarm output display to last 500 lines (accumulates unbounded)
-- [ ] Extract MissionCard elapsed timer into tiny component (re-renders every 1s)
+- [x] Extract MissionCard elapsed timer into tiny component (re-renders every 1s)
 - [ ] Deduplicate /api/info call on page load (Shell + Home both fetch it)
 - [ ] Batch status API calls (3 serial calls -> 1 /api/status endpoint)
 - [x] Reduce Shiki grammar chunks (326 -> ~15 used languages, save 8MB)
@@ -149,9 +149,9 @@
 ### Reliability
 - [x] Add SSE heartbeat on run/company streams (prevent proxy timeout)
 - [x] Add SSE reconnection logic (show "disconnected" banner, auto-retry)
-- [ ] Add periodic worktree orphan cleanup (every 30 min)
-- [ ] Add DB backup mechanism (.hashmark/studio.db.bak hourly)
-- [ ] Add action log rotation (agent-actions.jsonl > 10MB -> .1)
+- [x] Add periodic worktree orphan cleanup (every 30 min)
+- [x] Add DB backup mechanism (.hashmark/studio.db.bak hourly)
+- [x] Add action log rotation (agent-actions.jsonl > 10MB -> .1)
 - [x] Flush stream parser on process close (final result event may be lost)
 - [x] Use shared stream parser in sessions.ts (currently inline, missing events)
 
@@ -172,10 +172,10 @@
 
 ### Growth
 - [ ] Add Claude binary pre-flight check at startup (banner if missing)
-- [ ] Add desktop notifications for completed runs (Tauri native)
+- [x] Add desktop notifications for completed runs (Tauri native)
 - [ ] Add template tasks for first-time users ("Fix TypeScript errors", "Add tests", etc.)
 - [ ] Add usage dashboard (total cost, runs per day, success rate)
-- [ ] Add "Delete All Data" button in Settings (GDPR)
+- [x] Add "Delete All Data" button in Settings (GDPR)
 
 ---
 
