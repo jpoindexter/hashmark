@@ -4,6 +4,7 @@ import AgentCard from "../components/AgentCard.tsx";
 import ConfirmDialog from "../components/shared/ConfirmDialog.tsx";
 import { fetchApi } from "../lib/api";
 import { MODELS } from "../lib/models";
+import { renderInline } from "../lib/markdown";
 
 type RunStatus = "idle" | "starting" | "running" | "done" | "error" | "stopped" | "interrupted";
 
@@ -520,28 +521,7 @@ export default function Agents() {
     return result;
   }, [output]);
 
-  function renderInline(text: string) {
-    const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g);
-    return parts.map((part, idx) => {
-      if (part.startsWith("`") && part.endsWith("`")) {
-        return (
-          <code key={idx} style={{
-            background: "var(--bg-3)",
-            border: "1px solid var(--border-dim)",
-            borderRadius: 2,
-            padding: "0 4px",
-            fontSize: 11,
-            fontFamily: "var(--font)",
-            color: "var(--accent)",
-          }}>{part.slice(1, -1)}</code>
-        );
-      }
-      if (part.startsWith("**") && part.endsWith("**")) {
-        return <strong key={idx} style={{ color: "var(--text)", fontWeight: 600 }}>{part.slice(2, -2)}</strong>;
-      }
-      return <span key={idx}>{part}</span>;
-    });
-  }
+
 
   type RecentTrend = "improving" | "stable" | "degrading" | "insufficient_data";
   interface EffectivenessData {

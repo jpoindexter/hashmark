@@ -5,6 +5,7 @@ import { ContextHeatmap } from "../components/ContextHeatmap.tsx";
 import { fetchApi } from "../lib/api";
 import { MODELS } from "../lib/models";
 import { fmtTime, fmtTokens, timeAgo } from "../lib/format";
+import { renderInline } from "../lib/markdown";
 
 interface Session {
   id: string;
@@ -148,30 +149,6 @@ const AssistantContent = memo(function AssistantContent({ text }: { text: string
 
   return <>{nodes}</>;
 });
-
-function renderInline(text: string): React.ReactNode {
-  const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
-      return (
-        <code key={i} style={{
-          background: "var(--bg-3)",
-          border: "1px solid var(--border-dim)",
-          padding: "1px 5px",
-          fontSize: "11px",
-          color: "var(--accent)",
-          fontFamily: "var(--font)",
-        }}>
-          {part.slice(1, -1)}
-        </code>
-      );
-    }
-    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
-      return <strong key={i} style={{ color: "var(--text)", fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
-    }
-    return part;
-  });
-}
 
 interface SearchResult {
   id: string;

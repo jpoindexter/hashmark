@@ -6,6 +6,7 @@ import ContextMenu, { type ContextMenuItem } from "./shared/ContextMenu";
 import ScrollToBottom from "./shared/ScrollToBottom";
 import { fetchApi } from "../lib/api";
 import { fmtTime, fmtTokens } from "../lib/format";
+import { renderInline } from "../lib/markdown";
 
 const CURSOR_STYLE: React.CSSProperties = {
   display: "inline-block",
@@ -107,30 +108,6 @@ interface ChatMessagesProps {
   streamingState?: StreamingState;
   modelLabel?: string;
   planMode?: boolean;
-}
-
-function renderInline(text: string): React.ReactNode {
-  const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
-      return (
-        <code key={i} style={{
-          background: "var(--bg-3)",
-          border: "1px solid var(--border-dim)",
-          padding: "1px 5px",
-          fontSize: "11px",
-          color: "var(--accent)",
-          fontFamily: "var(--font)",
-        }}>
-          {part.slice(1, -1)}
-        </code>
-      );
-    }
-    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
-      return <strong key={i} style={{ color: "var(--text)", fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
-    }
-    return part;
-  });
 }
 
 function DiffLine({ line }: { line: string }) {
