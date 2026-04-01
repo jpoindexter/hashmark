@@ -1,187 +1,246 @@
 # Hashmark Studio Full Audit Report
 **Date: 2026-04-01 | Branch: feature/shell-redesign**
-**5 agents, 234 tool uses, ~19 minutes total analysis**
+**15 agents, 580+ tool uses, ~45 minutes total analysis**
 
 ---
 
 ## Executive Summary
 
-| Area | Score | Critical | High | Medium | Low |
-|------|-------|----------|------|--------|-----|
-| Security | 6/10 | 2 (FIXED) | 5 (3 FIXED) | 6 | 4 |
-| Code Quality | 6/10 | 0 | 5 | 6 | 0 |
-| UX | 5.3/10 | 2 | 5 | 8 | 5 |
-| Architecture | 5/10 | 3 | 6 | 7 | 0 |
-| Frontend | 6/10 | 2 | 5 | 11 | 10 |
-| **Total** | **5.7/10** | **9** | **26** | **38** | **19** |
+| Area | Agent | Score | P0 | P1 | P2 |
+|------|-------|-------|-----|-----|-----|
+| Security | Security Reviewer | 6/10 | 2 FIXED | 5 (3 FIXED) | 6 |
+| Code Quality | Code Reviewer | 6/10 | 2 FIXED | 5 | 6 |
+| UX | UX Auditor | 5.3/10 | 2 | 5 | 8 |
+| Architecture | Backend Architect | 5/10 | 3 (2 FIXED) | 6 | 7 |
+| Frontend | Frontend Dev | 6/10 | 2 (1 FIXED) | 5 | 11 |
+| Database | Database Architect | 6/10 | 3 | 12 | 8 |
+| Visual Design | Design Systems | 4/10 | 2 | 9 | 14 |
+| Product | Product Manager | 5/10 | 1 | 5 | 10 |
+| Reliability | SRE | 5/10 | 4 (2 FIXED) | 8 | 7 |
+| AI Integration | AI Engineer | 6/10 | 1 FIXED | 4 | 8 |
+| Legal | Compliance | 5/10 | 1 | 3 | 4 |
+| Performance | Benchmarker | 7/10 | 1 | 3 | 5 |
+| DevOps | DevOps | 4/10 | 4 | 7 | 4 |
+| Growth | Growth Hacker | 5/10 | 1 | 4 | 5 |
+| Studio Arch | Studio Architect | 6/10 | 1 | 3 | 4 |
+| **TOTAL** | **15 agents** | **5.4/10** | **29** | **84** | **107** |
 
-**Already fixed this session:** 2 CRITICAL + 3 HIGH security issues.
-
----
-
-## P0 -- Must Fix Before Launch
-
-### SEC-1 [FIXED] WebSocket terminal had no auth
-`server/routes/terminal.ts:152` -- Any local process could get a full shell. Fixed: token validation on upgrade.
-
-### SEC-2 [FIXED] Company plan prompt exposed in process listing
-`server/routes/company.ts:129` -- Switched to stdin delivery.
-
-### ARCH-1 No shutdown signal handler
-`bin.ts:34` -- No `process.on('SIGTERM')`. On close: all Claude processes orphaned, sessions stuck at "streaming", worktrees leak, rate limits reset.
-**Fix:** Wire SIGTERM/SIGINT to kill all active processes + mark DB records as crashed.
-
-### ARCH-2 No global concurrency limiter
-11+ concurrent Claude processes possible (1 run + 3 swarm + 2 company + 5 sessions). CLAUDE.md says max 2.
-**Fix:** Shared semaphore in `claude-usage.ts` that all spawn points acquire.
-
-### ARCH-3 In-memory state not recoverable on restart
-`activeRun`, `activeProc`, `swarms` Map, `sessionLastActivity` all lost. DB shows "running" forever.
-**Fix:** Startup recovery marks all running/streaming records as crashed.
-
-### CODE-1 activeRun not reset on timeout
-`run.ts:296` -- Timeout kills process but never sets `activeRun = false`. Permanently blocks future runs.
-**Fix:** Reset activeRun + activeProc in timeout handler.
-
-### CODE-2 Swarm rate-limit denial hangs Promise forever
-`swarm.ts:200` -- Returns without calling `resolve()`. Agent hangs, swarm never completes.
-**Fix:** Call `resolve()` before return.
-
-### UX-1 9 pages hidden -- only 5 in Rail nav
-`Rail.tsx:122` -- /git, /swarm, /company, /history, /governance unreachable without command palette.
-**Fix:** Add at least Swarm and History to Rail.
-
-### UX-2 Agent run deep link broken
-`Run.tsx:119` -- Clicking "Run" from Agents page passes `?agent=id` but Run.tsx never reads it.
-**Fix:** Parse URLSearchParams on mount.
+**Already fixed this session: 12 issues** (2 CRITICAL security, 3 HIGH security, 7 P0/P1 code/arch)
 
 ---
 
-## P1 -- Should Fix Soon
+## ALREADY FIXED (12 issues)
 
-### SEC-3 [FIXED] CSP connect-src was too broad
-Locked WebSocket to localhost:port only.
-
-### SEC-4 [FIXED] providers.json API keys world-readable
-Now written with mode 0o600.
-
-### SEC-5 [FIXED] Legacy checkpoint restore accepted arbitrary git refs
-Now validates hex hash or studio-checkpoint prefix.
-
-### SEC-6 No Zod validation on company routes
-`company.ts:100,157` -- Raw `c.req.json()` with no schema. No max length on task text.
-
-### SEC-7 API keys passed as env vars to Claude subprocess
-`sessions.ts:581` -- All .env vars (DATABASE_URL, STRIPE_SECRET_KEY, etc.) passed to Claude.
-
-### CODE-3 Company activeRun race condition
-`company.ts:80-165` -- Two simultaneous POSTs both pass the `activeRun` check. Flag set async.
-
-### CODE-4 Non-atomic rate-limit check in swarm batch
-`swarm.ts:199-207` -- 3 agents all check before any records. Can exceed hourly budget.
-
-### CODE-5 Checkpoints POST uncaught throws
-`checkpoints.ts:158-174` -- `git write-tree` and `git commit-tree` not wrapped in try/catch.
-
-### CODE-6 DB singleton diverges on workspace switch
-`db.ts:10-30` -- In-flight streams capture old DB ref. New getDb() calls point to new project.
-
-### ARCH-4 FTS orphan rows
-No DELETE trigger on sessions_fts. Deleted sessions leave phantom search results.
-
-### ARCH-5 Swarm SSE listeners never removed
-`swarm.ts:482` -- Dead listeners accumulate. Each reconnect adds another.
-
-### ARCH-6 Swarm Map never pruned
-Module-level Map grows without bound. Completed swarms retained forever.
-
-### ARCH-7 Company auto-merges without user approval
-`company.ts:387` -- Violates CLAUDE.md "never auto-merge" rule.
-
-### ARCH-8 Startup worktree cleanup misses `studio-swarm-` prefix
-`index.ts:273` -- Company worktrees with `studio-swarm-` pattern not matched.
-
-### FE-1 Raw fetch() bypasses auth
-`Sessions.tsx:286` -- Uses bare `fetch()` instead of `fetchApi()`.
-
-### FE-2 Swarm EventSource never cleaned up on unmount
-`Swarm.tsx:62-138` -- Memory leak, setState on unmounted component.
-
-### FE-3 Electron references remain
-`main.tsx:32`, `ProjectPicker.tsx`, `AboutDialog.tsx`, `Settings.tsx:1194` -- Should be Tauri.
-
-### FE-4 z-index chaos
-40+ locations, no scale. Toasts (9999) hidden behind dialogs (10000).
-
-### UX-3 Agent CRUD silently swallows all errors
-`Agents.tsx:166-316` -- Create/delete/save/duplicate have empty catch blocks. No toast feedback.
-
-### UX-4 Dual toast systems
-Some files use `toast()` singleton, others fire `studio:toast` CustomEvent.
-
-### UX-5 Home has no loading state
-`Home.tsx:470` -- Renders empty state immediately before fetch resolves. Flash of wrong content.
-
-### UX-6 No focus trap on modals
-`Home.tsx:223`, `Agents.tsx:1119` -- Tab key escapes modal overlay.
+| ID | What | Commit |
+|----|------|--------|
+| SEC-CRIT-1 | WebSocket terminal auth | aa6fec4 |
+| SEC-CRIT-2 | Company prompt in CLI args | aa6fec4 |
+| SEC-HIGH-1 | CSP connect-src too broad | aa6fec4 |
+| SEC-HIGH-2 | providers.json world-readable | aa6fec4 |
+| SEC-HIGH-3 | Checkpoint ref validation | aa6fec4 |
+| CODE-P0-1 | activeRun not reset on timeout | ab3b38f |
+| CODE-P0-2 | Swarm rate-limit hangs Promise | ab3b38f |
+| ARCH-P0-1 | No SIGTERM shutdown handler | ab3b38f |
+| ARCH-P0-2 | Stuck DB records on crash recovery | ab3b38f |
+| ARCH-P0-3 | Worktree cleanup missing prefix | ab3b38f |
+| UX-P0-1 | Run page ?agent= deep link broken | ab3b38f |
+| FE-P0-1 | Sessions.tsx bare fetch() no auth | ab3b38f |
 
 ---
 
-## P2 -- Nice to Have
+## REMAINING P0 -- Must Fix Before Launch (17 issues)
 
-### Architecture
-- `loadAgents()` duplicated in 3 files -- extract to `server/lib/agents.ts`
-- `sessions.ts` at 907 lines -- extract chat handler, analytics, search
-- Stream parser `flush()` never called -- last event may be lost
-- DB errors silently swallowed everywhere -- add console.error minimum
-- Duplicate `completed_at`/`ended_at` columns on swarm tables
-- Missing SSE heartbeat on run/company streams
-- Missing DB indexes on `runs.issue_id` and `runs.status`
-- Migration has no transaction wrapping -- partial crash leaves corrupt schema
+### Database
+1. **Missing `busy_timeout` PRAGMA** -- concurrent writes throw SQLITE_BUSY instantly (db.ts:27)
+2. **Missing index on `runs.issue_id`** -- full table scan on every issues JOIN
+3. **`swarm_workers.output` loaded in full for effectiveness query** -- megabytes per row (agents.ts:338)
 
-### Code Quality
-- `isDismissed` called as value not function in Shell.tsx:72
+### DevOps
+4. **dist/ tracked in git** -- 402 build artifacts (34MB) committed, polluting every diff
+5. **No Tauri build CI workflow** -- desktop app can't be built/released automatically
+6. **No auto-updater** -- users have no update path after install
+7. **CI `lint` script doesn't exist** -- workflow references nonexistent npm script
+
+### Product
+8. **6 major features hidden from navigation** -- Swarm, Company, Git, Files, History, Governance unreachable from Rail
+
+### Visual Design
+9. **Light mode contrast failure on accent buttons** -- #000 text on #1a1a1a background = invisible (Home.tsx:136,354,565,629)
+10. **Git.tsx string concat colors** -- `${color}18` produces invalid CSS
+
+### Reliability
+11. **swarms Map grows forever** -- no eviction, unbounded memory leak
+12. **taskStore grows forever** -- no delete/eviction, permanent memory retention
+13. **Empty catch blocks everywhere** -- 50+ silent error swallows, zero debug visibility
+14. **No unhandledRejection handler** -- Node 24 crashes on missed await
+
+### Legal
+15. **Anthropic ToS grey area** -- programmatic CLI spawning may violate consumer subscription terms
+16. **No data retention policy** -- sessions/messages stored indefinitely with no cleanup
+
+### Growth
+17. **No first-run onboarding** -- new users see empty folder picker with no explanation
+
+---
+
+## REMAINING P1 -- Should Fix Soon (72 issues)
+
+### Security (2)
+- No Zod validation on company routes (company.ts:100,157)
+- All .env vars passed to Claude subprocess including secrets (sessions.ts:581)
+
+### Database (12)
+- Duplicate completed_at/ended_at on swarm_runs and swarm_workers
+- FTS5 no DELETE trigger -- orphan search results
+- Migrations not transactional -- partial crash leaves corrupt schema
+- schema_migrations table is dead code
+- Unbounded SELECT on sessions list (no LIMIT)
+- N+1 pattern in tokens endpoint (6 correlated subqueries)
+- Full content load for stage breakdown (loads all message bodies)
+- Non-atomic workspace activation (2 UPDATE without transaction)
+- Non-atomic swarm run + worker inserts
+- company.ts writes output on every stdout chunk (WAL churn)
+- Missing indexes on swarm_workers.agent_id, session_messages.sent_at, agent_actions.outcome
+- sessions.model defaults to empty string instead of model name
+
+### Architecture (6)
+- Swarm SSE listeners never removed (listener leak)
+- Company auto-merges without user approval (violates CLAUDE.md)
+- Run.ts single-proc tracking (should be Map keyed by runId)
+- Company has no cancel mechanism
+- 3x duplicated loadAgents() function
+- sessions.ts at 907 lines (extract chat handler)
+
+### Code Quality (5)
+- Company activeRun race condition (async check+set)
+- Non-atomic rate-limit check in swarm batch
+- Checkpoints POST uncaught throws
+- Legacy checkpoint restore checkout on working tree
+- DB singleton diverges on workspace switch
+
+### Frontend (5)
+- Swarm EventSource never cleaned on unmount (memory leak)
+- Electron references remain in 5+ files
+- z-index chaos (40+ values, no scale)
 - Stale closure in Generate.tsx triggerScan
-- Stale runStatus closure in Agents.tsx streaming loop
-- `workspace.ts` splits command on whitespace -- breaks paths with spaces
+- Stale runStatus closure in Agents.tsx streaming
 
-### Frontend
-- `renderInline` duplicated in 3 files
-- MODELS constant duplicated in 4 files (with inconsistent entries)
-- Inline style objects recreated every render (GC pressure)
-- Missing aria-labels on icon-only buttons
-- Dead code: `void_ = config` pattern in Generate.tsx
-- `handleRunAgain` uses double-nested setTimeout(0)
-- Agents.tsx at 1600 lines -- should be 4-5 components
-- useProjectInfo polls without AbortController
-- `@import url(...)` for Google Fonts blocks render
-- Eager session creation on mount even for non-chat pages
+### AI Integration (4)
+- Sessions chat doesn't use shared stream parser (missing events)
+- runner.ts doesn't parse stream-json at all
+- Stream parser flush() never called (final event lost)
+- Company workers ignore per-agent tool scoping
 
-### UX
-- Light mode badge borders use hardcoded saturated colors
-- SPA link `<a href="/source-control">` causes full reload in Git.tsx
+### UX (5)
+- Agent CRUD silently swallows all errors (no toast feedback)
+- Dual toast systems (toast() singleton vs studio:toast event)
+- Home has no loading state (flash of empty content)
+- No focus trap on modals
 - Board-to-chat toggle uses state not URL routing (back button broken)
-- "audit" and "review" buttons do identical thing on mission cards
-- Loading state inconsistent (Agents shows "Loading..." text, others use skeletons)
-- Page headers inconsistent (font sizes, weights, tags vary)
-- No Rail tooltips -- new users must click to discover pages
-- Dept/branch colors hardcoded, don't adapt to light theme
+
+### Visual Design (9)
+- 40+ hardcoded color values bypass token system
+- Zero spacing tokens (every margin/padding is raw pixels)
+- Font size tokens exist but never used in components
+- DEPT_COLORS duplicated 3 times
+- Model lists duplicated 4 times with different entries
+- Toggle component duplicated with different implementations
+- No --color-on-accent token
+- No z-index token scale
+- Mixed icon systems (Lucide + custom SVG + Unicode + emoji)
+
+### DevOps (7)
+- tauri:build skips server build
+- No code signing configured
+- No version bump automation
+- 5 npm vulnerabilities (1 high, 4 moderate)
+- No Node.js version pinned (.nvmrc / engines)
+- macOS-only platform support with targets: "all"
+- No documented first-run path for packaged Tauri app
+
+### Product (5)
+- Company.tsx line 542 bare fetch() without auth
+- WorkspaceSetup drag-and-drop broken on Tauri (Electron file.path API)
+- Terminology overload (missions vs tasks vs runs vs sessions)
+- 6 dead shell components (ActivityBar, AgentDetailViewer, etc.)
+- No SSE reconnection logic
+
+### Growth (4)
+- No Claude binary pre-flight check at startup
+- No usage dashboard / analytics instrumentation
+- No attribution in generated files
+- No desktop notifications for completed runs
+
+### Reliability (8)
+- Swarm SSE listener leak (dead closures accumulate)
+- run.ts activeProc zombie reference race
+- No periodic worktree orphan cleanup
+- No DB backup mechanism
+- agent-actions.jsonl grows without bound (no rotation)
+- Health check too shallow (no disk, memory, active process checks)
+- No structured logging (1 console.log in entire server)
+- Session history grows unbounded (no truncation for non-resume turns)
 
 ---
 
-## Top 10 Fixes by Impact/Effort Ratio
+## REMAINING P2 (107 issues)
 
-| Rank | ID | Effort | Description |
-|------|----|--------|-------------|
-| 1 | CODE-2 | 1 min | Add `resolve()` before return in swarm rate-limit denial |
-| 2 | CODE-1 | 1 min | Reset activeRun in timeout handler |
-| 3 | UX-2 | 5 min | Parse ?agent= query param in Run.tsx |
-| 4 | FE-1 | 1 min | Replace fetch() with fetchApi() in Sessions.tsx |
-| 5 | ARCH-1 | 15 min | Add SIGTERM handler to bin.ts |
-| 6 | UX-3 | 15 min | Add toast feedback to agent CRUD operations |
-| 7 | UX-5 | 10 min | Add loading skeleton to Home page |
-| 8 | ARCH-2 | 20 min | Global concurrency semaphore |
-| 9 | SEC-6 | 10 min | Add Zod schemas to company routes |
-| 10 | ARCH-3 | 10 min | Startup recovery for stuck DB records |
+Too many to list individually. Grouped by category:
 
-**Total for top 10: ~88 minutes of work to fix the worst issues.**
+| Category | Count | Examples |
+|----------|-------|---------|
+| Visual Design | 14 | No elevation system, no easing tokens, no type role classes, identical --font/--font-ui tokens |
+| Frontend | 11 | renderInline duplicated 3x, inline styles recreated every render, missing aria-labels, dead void_ code |
+| Product | 10 | No Cmd+K discoverability, Settings too large (13 sections), no responsive design, PageSkeleton is blank div |
+| Architecture | 7 | SSE heartbeat missing, DB errors swallowed, stream parser flush, duplicate columns |
+| Database | 8 | Missing CHECK constraints, dead schema_migrations, SELECT * on large output columns |
+| UX | 8 | Light mode badge colors, SPA link bug in Git.tsx, inconsistent loading states |
+| Reliability | 7 | WAL file growth, sandbox no eviction, pendingAnalytics leak |
+| AI Integration | 8 | No prompt caching on API path, token estimation inconsistent, Codex full-auto bypasses safety |
+| DevOps | 4 | Duplicate build scripts, stale tsconfig electron reference, @types/ws in wrong deps |
+| Performance | 5 | Font @import blocks render, no virtual scrolling on large outputs |
+| Growth | 5 | No upgrade path placeholder, no viral mechanics, terminology needs simplification |
+| Legal | 4 | EULA needs lawyer review, no accessibility compliance, data retention unclear |
+
+---
+
+## LAUNCH READINESS SCORES BY AGENT
+
+| Agent | Score | Verdict |
+|-------|-------|---------|
+| Growth Hacker | 5/10 | "Need onboarding, analytics, pre-flight checks" |
+| Product Manager | 5/10 | "6 hidden features, naming confusion, dead code" |
+| Visual Design | 4/10 | "40+ hardcoded colors, no spacing system, contrast failures" |
+| DevOps | 4/10 | "No CI for desktop builds, no signing, no updater" |
+| SRE | 5/10 | "Memory leaks, no logging, empty catches everywhere" |
+| UX Auditor | 5.3/10 | "Hidden nav, broken deep links, silent errors" |
+| **Overall** | **5.4/10** | **Not ready for public launch. Early access OK with P0 fixes.** |
+
+---
+
+## TOP 20 FIXES BY IMPACT/EFFORT
+
+| # | Effort | Issue | Impact |
+|---|--------|-------|--------|
+| 1 | 2 min | Add `busy_timeout = 5000` PRAGMA to db.ts | Prevents all SQLITE_BUSY crashes |
+| 2 | 5 min | Remove dist/ from git tracking | -34MB repo, clean diffs |
+| 3 | 5 min | Fix npm audit vulnerabilities | Eliminates 5 security advisories |
+| 4 | 5 min | Add unhandledRejection handler to bin.ts | Prevents silent Node crashes |
+| 5 | 10 min | Add Swarm, Company, Git, History to Rail nav | Unlocks 6 hidden features |
+| 6 | 10 min | Fix light mode accent button contrast | Prevents invisible buttons |
+| 7 | 10 min | Add swarm/taskStore eviction on completion | Fixes 2 memory leaks |
+| 8 | 15 min | Add toast feedback to agent CRUD | Fixes silent error swallowing |
+| 9 | 15 min | Add loading skeleton to Home page | Fixes flash of empty content |
+| 10 | 15 min | Add console.error to top 20 catch blocks | Basic debug visibility |
+| 11 | 15 min | Fix Company.tsx bare fetch + auth | Prevents auth bypass |
+| 12 | 15 min | Add missing DB indexes (4) | Fixes slow queries |
+| 13 | 20 min | Use shared stream parser in sessions.ts | Captures rate_limit, tool_progress events |
+| 14 | 20 min | Extract loadAgents to shared module | Removes 3x code duplication |
+| 15 | 20 min | Fix CI lint script + add tauri:build server step | Working CI pipeline |
+| 16 | 30 min | Extract spacing tokens + apply to top 5 pages | Consistent spacing system |
+| 17 | 30 min | Add first-run welcome screen | New user onboarding |
+| 18 | 30 min | Add --color-on-accent token + fix all accent buttons | Theme-safe contrast |
+| 19 | 45 min | Add Tauri desktop build CI workflow | Automated releases |
+| 20 | 60 min | Add code signing + auto-updater | Required for distribution |
+
+**Total for top 10: ~82 minutes. Top 20: ~6 hours.**
