@@ -377,7 +377,7 @@ export function runRoutes(ctx: WorkspaceCtx) {
             hasChanges = statusOut.trim().length > 0;
             if (hasChanges) {
               await execFile("git", ["add", "-A"], { cwd: worktreeDir });
-              await execFile("git", ["commit", "-m", `feat(run/${runId}): ${body.task.slice(0, 72)}`], { cwd: worktreeDir });
+              await execFile("git", ["commit", "--no-verify", "-m", `feat(run/${runId}): ${body.task.slice(0, 72)}`], { cwd: worktreeDir });
               logAgentAction(ctx.dataDir, { timestamp: Date.now(), runId, agentId: body.agentId ?? "general", action: "git_commit", target: branchName, outcome: "success" });
               send({ type: "committed", hasChanges: true, branch: branchName });
             } else {

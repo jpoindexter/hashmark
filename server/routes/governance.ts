@@ -55,8 +55,8 @@ export function governanceRoutes(ctx: WorkspaceCtx) {
   // GET /api/governance/actions
   app.get("/actions", (c) => {
     const db = getDb(ctx.dataDir);
-    const limit = parseInt(c.req.query("limit") ?? "100");
-    const offset = parseInt(c.req.query("offset") ?? "0");
+    const limit = Math.min(Math.max(parseInt(c.req.query("limit") ?? "100", 10) || 100, 1), 500);
+    const offset = Math.max(parseInt(c.req.query("offset") ?? "0", 10) || 0, 0);
     const agentId = c.req.query("agentId");
     const outcome = c.req.query("outcome");
 
@@ -100,8 +100,8 @@ export function governanceRoutes(ctx: WorkspaceCtx) {
     const logPath = join(ctx.dataDir, "agent-actions.jsonl");
     if (!existsSync(logPath)) return c.json({ events: [], total: 0 });
 
-    const limit = parseInt(c.req.query("limit") ?? "100");
-    const offset = parseInt(c.req.query("offset") ?? "0");
+    const limit = Math.min(Math.max(parseInt(c.req.query("limit") ?? "100", 10) || 100, 1), 500);
+    const offset = Math.max(parseInt(c.req.query("offset") ?? "0", 10) || 0, 0);
     const filterRunId = c.req.query("runId");
     const filterAgentId = c.req.query("agentId");
 
