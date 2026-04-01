@@ -19,6 +19,7 @@ import { useKeyboardNav } from "../../hooks/useKeyboardNav";
 import { useTheme } from "../../hooks/useTheme";
 import { useSessionManager } from "../../hooks/useSessionManager";
 import { useStudioEvents } from "../../hooks/useStudioEvents";
+import { MODELS } from "../../lib/models";
 
 function persist(key: string, val: unknown) {
   try { localStorage.setItem(`studio:${key}`, JSON.stringify(val)); } catch { /* noop */ }
@@ -29,17 +30,6 @@ function restore<T>(key: string, fallback: T): T {
     return raw ? (JSON.parse(raw) as T) : fallback;
   } catch { return fallback; }
 }
-
-const ALL_MODELS: Array<{ id: string; label: string; provider: string }> = [
-  { id: "auto", label: "Auto", provider: "Smart Routing" },
-  { id: "claude-opus-4-6", label: "Opus 4.6", provider: "Claude" },
-  { id: "claude-sonnet-4-6", label: "Sonnet 4.6", provider: "Claude" },
-  { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5", provider: "Claude" },
-  { id: "o3", label: "o3", provider: "Codex" },
-  { id: "gpt-4o", label: "GPT-4o", provider: "OpenAI" },
-  { id: "gemini-2.0-flash", label: "2.0 Flash", provider: "Gemini" },
-  { id: "amp-default", label: "Default", provider: "Amp" },
-];
 
 const rootStyle: CSSProperties = {
   display: "flex",
@@ -123,7 +113,7 @@ export default function Shell() {
     return () => window.removeEventListener("studio:open-diff", handler);
   }, []);
 
-  const currentModelEntry = ALL_MODELS.find((m) => m.id === selectedModel);
+  const currentModelEntry = MODELS.find((m) => m.id === selectedModel);
   const modelLabel = currentModelEntry?.label ?? "Sonnet 4.6";
 
   return (

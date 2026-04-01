@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import AgentCard from "../components/AgentCard.tsx";
 import ConfirmDialog from "../components/shared/ConfirmDialog.tsx";
 import { fetchApi } from "../lib/api";
+import { MODELS } from "../lib/models";
 
 type RunStatus = "idle" | "starting" | "running" | "done" | "error" | "stopped" | "interrupted";
 
@@ -50,12 +51,6 @@ interface AgentStats {
   successRate: number;
   lastRun: number | null;
 }
-
-const MODELS = [
-  { id: "claude-opus-4-6", label: "Opus 4.6", note: "1M ctx" },
-  { id: "claude-sonnet-4-6", label: "Sonnet 4.6", note: "default" },
-  { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5", note: "fast" },
-];
 
 export default function Agents() {
   const navigate = useNavigate();

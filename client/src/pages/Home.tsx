@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchApi } from "../lib/api";
+import { MODELS } from "../lib/models";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -14,14 +15,6 @@ interface ProjectInfo {
   projectName: string;
   projectDir: string;
 }
-
-const MODELS = [
-  { id: "claude-sonnet-4-6", label: "Sonnet 4.6" },
-  { id: "claude-opus-4-6", label: "Opus 4.6" },
-  { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5" },
-  { id: "o3", label: "o3" },
-  { id: "gpt-4o", label: "GPT-4o" },
-];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

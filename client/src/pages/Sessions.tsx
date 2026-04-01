@@ -3,6 +3,7 @@ import { Search, X, Trash2, Plus, Download, Archive, Check, Edit2 } from "lucide
 import XTerminal from "../components/XTerminal";
 import { ContextHeatmap } from "../components/ContextHeatmap.tsx";
 import { fetchApi } from "../lib/api";
+import { MODELS } from "../lib/models";
 
 interface Session {
   id: string;
@@ -27,12 +28,6 @@ interface Message {
   output_tokens: number | null;
   created_at: number;
 }
-
-const MODELS = [
-  { id: "claude-sonnet-4-6", label: "Sonnet 4.6" },
-  { id: "claude-opus-4-6", label: "Opus 4.6" },
-  { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5" },
-];
 
 // Context window limits per model (tokens)
 const CTX_WINDOW: Record<string, number> = {
