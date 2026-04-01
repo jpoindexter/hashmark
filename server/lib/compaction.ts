@@ -29,11 +29,11 @@ export function microcompact(messages: Message[]): Message[] {
 
 /**
  * Context window sizes by model family.
- * Sonnet/Haiku = 200K, Opus = 1M. Default to 200K for unknown models.
+ * Sonnet/Haiku = 200K, Opus = 200K (1M with extended, but default to 200K).
+ * Default to 200K for unknown models.
  */
-function getContextWindow(model: string): number {
-  const lower = model.toLowerCase();
-  if (lower.includes("opus")) return 1_000_000;
+export function getContextWindow(_model: string): number {
+  // All models default to 200K. Opus has 1M extended but we cap at 200K.
   return 200_000;
 }
 
@@ -53,4 +53,13 @@ export function checkContextUsage(
     return `Context is ${pct}% full. Consider starting a new session.`;
   }
   return null;
+}
+
+/**
+ * Check if a session should trigger auto-compaction.
+ * Returns true when total tokens exceed 80% of the model's context window.
+ */
+export function shouldAutoCompact(totalTokens: number, model: string): boolean {
+  const window = getContextWindow(model);
+  return totalTokens > window * 0.8;
 }

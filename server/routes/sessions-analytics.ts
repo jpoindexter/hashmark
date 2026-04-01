@@ -7,6 +7,7 @@ import { Hono } from "hono";
 import { getDb } from "../db.js";
 import { analyzeSessionLoop } from "../lib/loop-detector.js";
 import { loadSessionAnalytics } from "../lib/context-analytics.js";
+import { getContextWindow, shouldAutoCompact } from "../lib/compaction.js";
 import type { WorkspaceCtx } from "./workspaces.js";
 
 export function analyticsRoutes(ctx: WorkspaceCtx) {
@@ -31,6 +32,38 @@ export function analyticsRoutes(ctx: WorkspaceCtx) {
       "SELECT role, content FROM session_messages WHERE session_id = ? ORDER BY created_at ASC"
     ).all(c.req.param("id")) as Array<{ role: string; content: string }>;
     return c.json(analyzeSessionLoop(messages));
+  });
+
+  // GET /api/sessions/:id/context — context window usage summary
+  app.get("/:id/context", (c) => {
+    const db = getDb(ctx.dataDir);
+    const session = db.prepare(
+      "SELECT total_input_tokens, total_output_tokens, model FROM sessions WHERE id = ?"
+    ).get(c.req.param("id")) as {
+      total_input_tokens: number;
+      total_output_tokens: number;
+      model: string;
+    } | undefined;
+
+    if (!session) return c.json({ error: "Not found" }, 404);
+
+    const inputTokens = session.total_input_tokens;
+    const outputTokens = session.total_output_tokens;
+    const totalTokens = inputTokens + outputTokens;
+    const model = session.model || "claude-sonnet-4-6";
+    const contextWindow = getContextWindow(model);
+    const usagePercent = Math.round((totalTokens / contextWindow) * 1000) / 10; // 1 decimal
+    const needsCompaction = shouldAutoCompact(totalTokens, model);
+
+    return c.json({
+      inputTokens,
+      outputTokens,
+      totalTokens,
+      contextWindow,
+      usagePercent,
+      model,
+      needsCompaction,
+    });
   });
 
   // GET /api/sessions/:id/tokens

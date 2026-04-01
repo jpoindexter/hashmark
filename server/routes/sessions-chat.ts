@@ -20,7 +20,7 @@ import {
 } from "../lib/context-analytics.js";
 import { createStreamParser } from "../lib/claude-stream.js";
 import { createCheckpoint } from "../lib/checkpoint.js";
-import { microcompact, checkContextUsage } from "../lib/compaction.js";
+import { microcompact, checkContextUsage, shouldAutoCompact } from "../lib/compaction.js";
 import { loadProjectEnvVars } from "../lib/env.js";
 import { createStudioMcpConfig } from "../lib/mcp-studio.js";
 import { findBin } from "../lib/bin-resolver.js";
@@ -285,6 +285,10 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
               if (updated) {
                 const warning = checkContextUsage(updated.total_input_tokens, updated.total_output_tokens, actualModel);
                 if (warning) send({ type: "warning", message: warning });
+                const totalTokens = updated.total_input_tokens + updated.total_output_tokens;
+                if (shouldAutoCompact(totalTokens, actualModel)) {
+                  send({ type: "context_limit", needsCompaction: true });
+                }
               }
 
               send({ type: "done", success: true });
@@ -490,6 +494,10 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
             if (updated) {
               const warning = checkContextUsage(updated.total_input_tokens, updated.total_output_tokens, cliModel);
               if (warning) send({ type: "warning", message: warning });
+              const totalTokens = updated.total_input_tokens + updated.total_output_tokens;
+              if (shouldAutoCompact(totalTokens, cliModel)) {
+                send({ type: "context_limit", needsCompaction: true });
+              }
             }
 
             if (code !== 0 && !killed) {
