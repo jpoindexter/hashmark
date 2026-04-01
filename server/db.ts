@@ -24,6 +24,7 @@ export function getDb(dataDir: string): Database.Database {
   _db = new Database(dbPath);
   _db.pragma("journal_mode = WAL");
   _db.pragma("foreign_keys = ON");
+  _db.pragma("busy_timeout = 5000");
 
   migrate(_db);
   return _db;
@@ -183,6 +184,9 @@ function migrate(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_agent_actions_created ON agent_actions(created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_agent_actions_agent ON agent_actions(agent_id);
     CREATE INDEX IF NOT EXISTS idx_runs_started ON runs(started_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_runs_issue ON runs(issue_id);
+    CREATE INDEX IF NOT EXISTS idx_runs_status ON runs(status);
+    CREATE INDEX IF NOT EXISTS idx_agent_actions_outcome ON agent_actions(outcome);
   `);
 
   // swarm_runs additive columns (mode + timing for swarm.ts, which previously created a separate schema)

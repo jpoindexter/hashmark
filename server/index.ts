@@ -107,6 +107,7 @@ export function createServer(opts: ServerOptions) {
   app.use("/api/*", studioAuthMiddleware(studioToken));
 
   // Health check — verifies DB write access and claude binary exists
+  let _claudeCheck: boolean | null = null;
   app.get("/api/health", (c) => {
     const checks: Record<string, boolean> = {};
 
@@ -118,13 +119,17 @@ export function createServer(opts: ServerOptions) {
       checks.db = false;
     }
 
-    try {
-      const { spawnSync } = require("child_process") as typeof import("child_process");
-      const r = spawnSync("which", ["claude"], { stdio: "pipe", timeout: 1000 });
-      checks.claude = r.status === 0;
-    } catch {
-      checks.claude = false;
+    // Cache claude binary check (avoid spawnSync on every health poll)
+    if (_claudeCheck === null) {
+      try {
+        const { spawnSync } = require("child_process") as typeof import("child_process");
+        const r = spawnSync("which", ["claude"], { stdio: "pipe", timeout: 1000 });
+        _claudeCheck = r.status === 0;
+      } catch {
+        _claudeCheck = false;
+      }
     }
+    checks.claude = _claudeCheck;
 
     // DB is required for startup; claude binary is optional (only needed for agent runs)
     const ok = checks.db === true;
