@@ -171,5 +171,5 @@ export function loadProviders(dataDir: string): ProvidersStore {
 export function saveProviders(dataDir: string, store: ProvidersStore): void {
   if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
   const filePath = join(dataDir, "providers.json");
-  writeFileSync(filePath, JSON.stringify(store, null, 2), "utf-8");
+  writeFileSync(filePath, JSON.stringify(store, null, 2), { encoding: "utf-8", mode: 0o600 });
 }

@@ -262,10 +262,13 @@ export function checkpointRoutes(ctx: WorkspaceCtx) {
     return c.json({ ok: true, pruned });
   });
 
-  // Keep legacy restore endpoint for backwards compat
+  // Legacy restore endpoint -- validate ref is a hex hash or studio checkpoint ref
   app.post("/restore", async (c) => {
     const body = await c.req.json<{ ref: string }>();
     const ref = body.ref;
+    if (!ref || ref.startsWith("-") || (!/^[0-9a-f]{7,40}$/.test(ref) && !ref.startsWith("refs/studio-checkpoints/"))) {
+      return c.json({ error: "invalid ref" }, 400);
+    }
     const { stdout: objType } = await execFile("git", ["cat-file", "-t", ref], { cwd: ctx.projectDir });
     if (objType.trim() !== "commit") {
       return c.json({ error: "ref is not a commit" }, 400);

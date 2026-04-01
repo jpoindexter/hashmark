@@ -126,10 +126,17 @@ Respond with ONLY a JSON array, no markdown, no explanation:
     if (skipPerms) planEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
 
     try {
-      const { stdout } = await execFile(claudeBin, ["--print", "--allowedTools", "Read,Glob,Grep,WebFetch,WebSearch", prompt], {
-        cwd: ctx.projectDir,
-        env: planEnv,
-        maxBuffer: 1024 * 1024,
+      // Use spawn + stdin to avoid exposing prompt in process listing
+      const stdout = await new Promise<string>((resolve, reject) => {
+        const proc = spawn(claudeBin, ["--print", "--allowedTools", "Read,Glob,Grep,WebFetch,WebSearch"], {
+          cwd: ctx.projectDir, env: planEnv, stdio: ["pipe", "pipe", "pipe"],
+        });
+        proc.stdin.write(prompt + "\n");
+        proc.stdin.end();
+        let out = "";
+        proc.stdout.on("data", (chunk: Buffer) => { out += chunk.toString(); });
+        proc.on("close", (code) => code === 0 ? resolve(out) : reject(new Error(`Exit ${code}`)));
+        proc.on("error", reject);
       });
 
       const jsonMatch = stdout.match(/\[[\s\S]*\]/);

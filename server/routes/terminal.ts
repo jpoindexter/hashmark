@@ -141,7 +141,7 @@ async function spawnPty(projectDir: string) {
   return { proc, cleanup };
 }
 
-export function attachTerminalWS(httpServer: Server, projectDir: string) {
+export function attachTerminalWS(httpServer: Server, projectDir: string, studioToken?: string) {
   // Suppress unused-var warning — kept for documentation
   void OSC633_PROMPT_START;
   void OSC633_PROMPT_END;
@@ -152,6 +152,17 @@ export function attachTerminalWS(httpServer: Server, projectDir: string) {
     httpServer.on("upgrade", (request: IncomingMessage, socket, head) => {
       const url = request.url ?? "";
       if (!url.startsWith("/api/terminal/ws")) return;
+
+      // Authenticate WebSocket upgrades -- extract token from query string
+      if (studioToken) {
+        const parsed = new URL(url, `http://${request.headers.host ?? "localhost"}`);
+        const token = parsed.searchParams.get("token");
+        if (token !== studioToken) {
+          socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+          socket.destroy();
+          return;
+        }
+      }
 
       wss.handleUpgrade(request, socket, head, (ws) => {
         wss.emit("connection", ws, request);

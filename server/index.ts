@@ -97,7 +97,7 @@ export function createServer(opts: ServerOptions) {
     await next();
     c.header("X-Content-Type-Options", "nosniff");
     c.header("X-Frame-Options", "DENY");
-    c.header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; img-src 'self' data: blob:; font-src 'self' data:");
+    c.header("Content-Security-Policy", `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:${opts.port} wss://localhost:${opts.port}; img-src 'self' data: blob:; font-src 'self' data:`);
   });
 
   // Auth token — generated once, persisted to .hashmark/studio.token
@@ -256,7 +256,7 @@ export function createServer(opts: ServerOptions) {
   const server = serve({ fetch: app.fetch, port: opts.port, hostname: "localhost" }, () => {});
 
   // Attach WebSocket terminal (raw ws, not Hono's upgradeWebSocket)
-  attachTerminalWS(server as Parameters<typeof attachTerminalWS>[0], opts.projectDir);
+  attachTerminalWS(server as Parameters<typeof attachTerminalWS>[0], opts.projectDir, studioToken);
 
   // Clean up orphaned studio worktrees from previous crashed runs
   if (opts.projectDir !== "__unset__") {
