@@ -232,6 +232,7 @@ export function sessionsRoutes(ctx: WorkspaceCtx) {
       FROM sessions s
       WHERE s.archived = ?
       ORDER BY s.updated_at DESC
+      LIMIT 100
     `).all(archived);
     return c.json({ sessions });
   });
