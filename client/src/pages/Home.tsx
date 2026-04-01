@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchApi } from "../lib/api";
 import { MODELS } from "../lib/models";
 import { timeAgo } from "../lib/format";
+import { Skeleton } from "../components/shared/Skeleton";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -167,8 +169,18 @@ function DispatchModal({ onClose, onDispatched }: {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, true, true);
 
   useEffect(() => { textareaRef.current?.focus(); }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); onClose(); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
 
   const handleDispatch = async () => {
     if (!prompt.trim() || loading) return;
@@ -215,14 +227,20 @@ function DispatchModal({ onClose, onDispatched }: {
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{
-        width: 540,
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius)",
-        padding: "24px",
-        display: "flex", flexDirection: "column", gap: 16,
-      }}>
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="New mission briefing"
+        style={{
+          width: 540,
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius)",
+          padding: "24px",
+          display: "flex", flexDirection: "column", gap: 16,
+        }}
+      >
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontFamily: "var(--font)", fontSize: 12, color: "var(--text)", letterSpacing: "0.04em" }}>
@@ -455,6 +473,7 @@ function ProjectHeader({ info }: { info: ProjectInfo | null }) {
 
 export default function Home() {
   const [missions, setMissions] = useState<Mission[]>([]);
+  const [loading, setLoading] = useState(true);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [showDispatch, setShowDispatch] = useState(false);
   const [projectInfo, setProjectInfo] = useState<ProjectInfo | null>(null);
@@ -472,7 +491,8 @@ export default function Home() {
       .then((d: { sessions?: Mission[] }) => {
         setMissions((d.sessions ?? []).filter((s) => s.message_count > 0));
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   const [missionsVisible, setMissionsVisible] = useState(() => document.visibilityState === "visible");
@@ -528,8 +548,43 @@ export default function Home() {
 
       <div style={{ flex: 1, overflowY: "auto", padding: "28px" }}>
 
+        {/* Loading skeleton */}
+        {loading && missions.length === 0 && (
+          <div>
+            <Skeleton width={80} height={10} style={{ marginBottom: 16 }} />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} style={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius)",
+                  padding: 16,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                  height: 152,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                    <Skeleton width={7} height={7} borderRadius="50%" />
+                    <Skeleton width={48} height={10} />
+                    <div style={{ flex: 1 }} />
+                    <Skeleton width={40} height={10} />
+                  </div>
+                  <Skeleton width="70%" height={12} />
+                  <Skeleton width={60} height={10} />
+                  <div style={{ flex: 1 }} />
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <Skeleton width="100%" height={28} />
+                    <Skeleton width={56} height={28} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Empty state */}
-        {missions.length === 0 && (
+        {!loading && missions.length === 0 && (
           <div style={{
             display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center",
