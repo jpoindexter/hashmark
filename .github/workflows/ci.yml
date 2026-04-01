@@ -17,6 +17,20 @@ jobs:
           node-version: "20"
           cache: "npm"
 
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust compilation
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: rust-${{ runner.os }}-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            rust-${{ runner.os }}-
+
       - name: Install dependencies
         run: npm ci
 
