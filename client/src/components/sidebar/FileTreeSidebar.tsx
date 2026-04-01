@@ -8,6 +8,7 @@ import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
 import ConfirmDialog from "../shared/ConfirmDialog.tsx";
 import { Skeleton } from "../shared/Skeleton.tsx";
 import { fetchApi } from "../../lib/api";
+import { toast } from "../../hooks/useToast";
 
 interface FileNode {
   name: string;
@@ -232,7 +233,7 @@ export default function FileTreeSidebar() {
         if (d.root) setTreeRoot(d.root);
       })
       .catch(() => {
-        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to refresh file tree", type: "error" } }));
+        toast.error("Failed to refresh file tree");
       });
   }, []);
 
@@ -244,7 +245,7 @@ export default function FileTreeSidebar() {
         if (d.root) setTreeRoot(d.root);
       })
       .catch(() => {
-        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load file tree", type: "error" } }));
+        toast.error("Failed to load file tree");
       })
       .finally(() => setLoading(false));
   }, []);
@@ -258,7 +259,7 @@ export default function FileTreeSidebar() {
         setGitFiles(map);
       })
       .catch(() => {
-        window.dispatchEvent(new CustomEvent("studio:toast", { detail: { message: "Failed to load git status", type: "error" } }));
+        toast.error("Failed to load git status");
       });
   }, []);
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchApi } from "../../lib/api";
+import { toast } from "../../hooks/useToast";
 
 interface GitFile {
   status: string;
@@ -648,11 +649,7 @@ function CreatePrDialog({
     return () => window.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
-  const toast = (message: string, type: "info" | "error") => {
-    window.dispatchEvent(
-      new CustomEvent("studio:toast", { detail: { message, type } })
-    );
-  };
+  // toast() from useToast -- see imports
 
   const submit = async () => {
     if (!title.trim()) return;
@@ -670,7 +667,7 @@ function CreatePrDialog({
       });
       const d = (await r.json()) as { ok?: boolean; url?: string; error?: string };
       if (d.ok && d.url) {
-        toast(`PR created: ${d.url}`, "info");
+        toast.success(`PR created: ${d.url}`);
         onClose();
       } else {
         setError(d.error ?? "Failed to create PR.");
@@ -882,11 +879,7 @@ export default function GitSidebar() {
     );
   }, []);
 
-  const toast = (message: string, type: "info" | "error") => {
-    window.dispatchEvent(
-      new CustomEvent("studio:toast", { detail: { message, type } })
-    );
-  };
+  // toast() from useToast -- see imports
 
   const showStatus = (msg: string) => {
     setStatusMsg(msg);
@@ -1031,13 +1024,13 @@ export default function GitSidebar() {
       const r = await fetchApi("/api/files/push", { method: "POST" });
       const d = (await r.json()) as { ok?: boolean; error?: string };
       if (d.ok) {
-        toast("Pushed to remote.", "info");
+        toast.success("Pushed to remote.");
         refresh();
       } else {
-        toast(d.error ?? "Push failed.", "error");
+        toast.error(d.error ?? "Push failed.");
       }
     } catch {
-      toast("Push failed.", "error");
+      toast.error("Push failed.");
     } finally {
       setPushing(false);
     }
@@ -1049,13 +1042,13 @@ export default function GitSidebar() {
       const r = await fetchApi("/api/files/pull", { method: "POST" });
       const d = (await r.json()) as { ok?: boolean; error?: string };
       if (d.ok) {
-        toast("Pulled from remote.", "info");
+        toast.success("Pulled from remote.");
         refresh();
       } else {
-        toast(d.error ?? "Pull failed.", "error");
+        toast.error(d.error ?? "Pull failed.");
       }
     } catch {
-      toast("Pull failed.", "error");
+      toast.error("Pull failed.");
     } finally {
       setPulling(false);
     }
