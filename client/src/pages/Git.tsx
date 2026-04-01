@@ -37,11 +37,16 @@ interface DiffState {
 }
 
 // Branch-specific colors for visual distinction (no Grove token equivalent)
-const BRANCH_COLORS = [
-  "var(--accent)", "var(--blue)", "#8b5cf6", "#f97316", "var(--cyan)", "var(--yellow)",
+const BRANCH_COLORS: Array<{ fg: string; bg: string; border: string }> = [
+  { fg: "var(--accent)", bg: "var(--accent-bg)", border: "var(--accent)" },
+  { fg: "var(--blue)", bg: "var(--blue-bg)", border: "var(--blue)" },
+  { fg: "#8b5cf6", bg: "#8b5cf618", border: "#8b5cf640" },
+  { fg: "#f97316", bg: "#f9731618", border: "#f9731640" },
+  { fg: "var(--cyan)", bg: "var(--cyan-bg)", border: "var(--cyan)" },
+  { fg: "var(--yellow)", bg: "var(--yellow-bg)", border: "var(--yellow)" },
 ];
 
-function branchColor(name: string): string {
+function branchColorSet(name: string): { fg: string; bg: string; border: string } {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffffffff;
   return BRANCH_COLORS[Math.abs(h) % BRANCH_COLORS.length];
@@ -63,14 +68,14 @@ function CommitDot({ isMerge }: { isMerge: boolean }) {
 function BranchBadge({ name }: { name: string }) {
   const isCurrent = name.startsWith("*");
   const display = isCurrent ? name.slice(1) : name;
-  const color = branchColor(display);
+  const cs = branchColorSet(display);
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 3,
       padding: "1px 6px", borderRadius: 100,
       fontSize: 10, fontFamily: "var(--font)", fontWeight: 600,
-      color, background: `${color}18`,
-      border: `1px solid ${color}40`,
+      color: cs.fg, background: cs.bg,
+      border: `1px solid ${cs.border}`,
       flexShrink: 0,
     }}>
       {isCurrent && <span style={{ fontSize: 8 }}>●</span>}
