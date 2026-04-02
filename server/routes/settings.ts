@@ -13,6 +13,13 @@ import {
   isValidPermissionMode,
   PERMISSION_MODES,
 } from "../lib/permissions.js";
+import {
+  loadProfile,
+  saveProfile,
+  deleteProfile,
+  maskApiKey,
+  type ProviderProfile,
+} from "../lib/provider-profile.js";
 import type { WorkspaceCtx } from "./workspaces.js";
 
 export function settingsRoutes(ctx: WorkspaceCtx) {
@@ -156,10 +163,76 @@ export function settingsRoutes(ctx: WorkspaceCtx) {
       const providersFile = join(ctx.dataDir, "providers.json");
       if (existsSync(providersFile)) unlinkSync(providersFile);
 
+      // Also remove provider profile (contains API keys)
+      deleteProfile(ctx.dataDir);
+
       return c.json({ ok: true, message: "All studio data deleted" });
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
     }
+  });
+
+  // ── Provider profile ─────────────────────────────────────────────────────
+
+  // GET /api/settings/provider-profile — current profile or null
+  app.get("/provider-profile", (c) => {
+    const profile = loadProfile(ctx.dataDir);
+    if (!profile) return c.json({ profile: null });
+
+    // Mask the API key for the response
+    const masked = {
+      ...profile,
+      apiKey: profile.apiKey ? maskApiKey(profile.apiKey) : undefined,
+      hasApiKey: Boolean(profile.apiKey),
+    };
+    return c.json({ profile: masked });
+  });
+
+  // PUT /api/settings/provider-profile — save/update profile
+  app.put("/provider-profile", async (c) => {
+    const body = await c.req.json<Partial<ProviderProfile>>().catch(() => ({} as Partial<ProviderProfile>));
+
+    if (!body.provider || typeof body.provider !== "string") {
+      return c.json({ error: "provider required" }, 400);
+    }
+    if (!body.model || typeof body.model !== "string") {
+      return c.json({ error: "model required" }, 400);
+    }
+
+    const validGoals = ["quality", "speed", "cost", "balanced"];
+    if (body.goal && !validGoals.includes(body.goal)) {
+      return c.json({ error: `Invalid goal. Valid values: ${validGoals.join(", ")}` }, 400);
+    }
+
+    const existing = loadProfile(ctx.dataDir);
+    const now = new Date().toISOString();
+
+    const profile: ProviderProfile = {
+      provider: body.provider,
+      model: body.model,
+      baseUrl: body.baseUrl || undefined,
+      apiKey: body.apiKey || existing?.apiKey || undefined,
+      apiKeyEnvVar: body.apiKeyEnvVar || undefined,
+      goal: body.goal,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    };
+
+    saveProfile(ctx.dataDir, profile);
+
+    return c.json({
+      profile: {
+        ...profile,
+        apiKey: profile.apiKey ? maskApiKey(profile.apiKey) : undefined,
+        hasApiKey: Boolean(profile.apiKey),
+      },
+    }, existing ? 200 : 201);
+  });
+
+  // DELETE /api/settings/provider-profile — remove profile (revert to default)
+  app.delete("/provider-profile", (c) => {
+    deleteProfile(ctx.dataDir);
+    return c.json({ ok: true });
   });
 
   return app;
