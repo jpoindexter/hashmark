@@ -29,6 +29,7 @@ import { mcpRoutes } from "./routes/mcp.js";
 import { companyRoutes } from "./routes/company.js";
 import { runRoutes } from "./routes/run.js";
 import { swarmRoutes } from "./routes/swarm.js";
+import { inboxRoutes } from "./routes/inbox.js";
 import { driftRoutes, checkDrift } from "./routes/drift.js";
 import { providersRoutes } from "./routes/providers.js";
 import { governanceRoutes } from "./routes/governance.js";
@@ -41,9 +42,13 @@ import { getDb, getStudioSetting, setStudioSetting } from "./db.js";
 import { getPermissionMode, setPermissionMode, isValidPermissionMode } from "./lib/permissions.js";
 import { getStudioToken } from "./lib/studio-token.js";
 import { findClaudeBin } from "./lib/bin-resolver.js";
-import { studioAuthMiddleware } from "./lib/auth-middleware.js";
+import { studioAuthMiddleware, setBridgeTokenValidator } from "./lib/auth-middleware.js";
+import { validateBridgeToken } from "./lib/bridge.js";
+import { bridgeRoutes } from "./routes/bridge.js";
 import { startDbBackup } from "./lib/backup.js";
 import { startDreamLoop, getDreamStatus } from "./lib/dream.js";
+import { initKairos } from "./lib/kairos.js";
+import { kairosRoutes } from "./routes/kairos.js";
 import { SmartRouter, type RoutingStrategy } from "./lib/smart-router.js";
 // rate-limit.ts still available for future use but not applied to local desktop routes
 // import { rateLimitMiddleware } from "./lib/rate-limit.js";
@@ -307,6 +312,8 @@ export function createServer(opts: ServerOptions) {
   app.route("/api/sandbox", sandboxRoutes(ctx));
   app.route("/api/settings", settingsRoutes(ctx));
   app.route("/api/tools", toolsRoutes(ctx));
+  app.route("/api/inbox", inboxRoutes(ctx));
+  app.route("/api/kairos", kairosRoutes(ctx));
 
   // Serve static client files
   app.use(
@@ -363,6 +370,9 @@ export function createServer(opts: ServerOptions) {
 
   // Dream mode -- background memory consolidation
   startDreamLoop(ctx.projectDir, ctx.dataDir);
+
+  // Kairos -- persistent intelligent mode (disabled by default, user enables in Settings)
+  initKairos(ctx.projectDir, ctx.dataDir);
 
   return { app, server };
 }
