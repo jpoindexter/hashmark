@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import ThinkingBlock from "./chat/ThinkingBlock";
 import ToolCallSummary, { FileBadge, getReadFilePath, categorize } from "./chat/ToolSummary";
+import { CodeBlock } from "./chat/CodeRendering";
+import { EmptyState, ResumedDivider } from "./chat/ChatEmptyState";
 import ContextMenu, { type ContextMenuItem } from "./shared/ContextMenu";
 import ScrollToBottom from "./shared/ScrollToBottom";
 import { fetchApi } from "../lib/api";
@@ -18,35 +20,7 @@ const CURSOR_STYLE: React.CSSProperties = {
   animation: "cursor-blink 1s step-end infinite",
 };
 
-const CODE_CONTAINER_STYLE: React.CSSProperties = {
-  position: "relative",
-  background: "var(--bg-3)",
-  border: "1px solid var(--border-dim)",
-  margin: "8px 0",
-  overflow: "hidden",
-};
-
-const CODE_ACTIONS_STYLE: React.CSSProperties = {
-  position: "absolute",
-  top: 6,
-  right: 8,
-  display: "flex",
-  gap: 6,
-  alignItems: "center",
-  zIndex: 1,
-};
-
-const LANG_BADGE_STYLE: React.CSSProperties = {
-  fontSize: "9px",
-  fontFamily: "var(--font)",
-  color: "var(--accent)",
-  background: "var(--bg-4)",
-  border: "1px solid var(--border-dim)",
-  padding: "1px 6px",
-  letterSpacing: "0.05em",
-  textTransform: "uppercase",
-  userSelect: "none",
-};
+// Code rendering extracted to ./chat/CodeRendering.tsx
 
 const SECTION_HEADING_STYLE: React.CSSProperties = {
   fontSize: 13,
@@ -108,73 +82,6 @@ interface ChatMessagesProps {
   streamingState?: StreamingState;
   modelLabel?: string;
   planMode?: boolean;
-}
-
-function DiffLine({ line }: { line: string }) {
-  if (line.startsWith("---") || line.startsWith("+++"))
-    return <div style={{ color: "var(--text-dimmer)", fontStyle: "italic" }}>{line}</div>;
-  if (line.startsWith("@@"))
-    return <div style={{ color: "var(--blue, #388bfd)" }}>{line}</div>;
-  if (line.startsWith("+"))
-    return <div style={{ background: "var(--accent-bg, rgba(63,185,80,0.1))", color: "var(--accent)" }}>{line}</div>;
-  if (line.startsWith("-"))
-    return <div style={{ background: "var(--red-bg, rgba(248,81,73,0.1))", color: "var(--red, #f85149)" }}>{line}</div>;
-  return <div style={{ color: "var(--text-dim)" }}>{line}</div>;
-}
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = () => {
-    void navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
-  return (
-    <button
-      onClick={handleCopy}
-      style={{
-        fontSize: "10px",
-        fontFamily: "var(--font-ui)",
-        color: copied ? "var(--accent)" : "var(--text-dim)",
-        background: "var(--bg-3)",
-        border: "1px solid var(--border-dim)",
-        padding: "1px 6px",
-        cursor: "pointer",
-        userSelect: "none",
-        lineHeight: 1.4,
-        transition: "background 0.1s, color 0.1s",
-      }}
-      className="hoverable"
-    >
-      {copied ? "Copied!" : "Copy"}
-    </button>
-  );
-}
-
-function CodeBlock({ lang, code }: { lang: string; code: string }) {
-  const isDiff = lang === "diff";
-  return (
-    <div style={CODE_CONTAINER_STYLE}>
-      <div style={CODE_ACTIONS_STYLE}>
-        {(lang || isDiff) && <span style={LANG_BADGE_STYLE}>{isDiff ? "DIFF" : lang}</span>}
-        <CopyButton text={code} />
-      </div>
-      <pre style={{
-        padding: "28px 12px 10px",
-        overflow: "auto",
-        fontSize: "11px",
-        lineHeight: "1.5",
-        margin: 0,
-        fontFamily: isDiff ? "var(--font)" : undefined,
-      }}>
-        {isDiff ? (
-          code.split("\n").map((line, i) => <DiffLine key={i} line={line} />)
-        ) : (
-          <code style={{ color: "var(--text)", fontFamily: "var(--font)" }}>{code}</code>
-        )}
-      </pre>
-    </div>
-  );
 }
 
 export const AssistantContent = memo(function AssistantContent({ text }: { text: string }) {
@@ -809,141 +716,8 @@ function StreamingTimer({ startTime }: { startTime: number }) {
   return <span>{fmtDuration(elapsed)}</span>;
 }
 
-const START_LINKS = [
-  { label: "New Chat", icon: "\u2b22", action: "new-chat" },
-  { label: "Scan Codebase", icon: "\u21bb", action: "navigate", route: "/generate" },
-  { label: "View Agents", icon: "\u25c6", action: "navigate", route: "/agents" },
-  { label: "Open Settings", icon: "\u2699", action: "navigate", route: "/settings" },
-] as const;
+// Empty state & ResumedDivider extracted to ./chat/ChatEmptyState.tsx
 
-const SUGGESTIONS = [
-  "Explain the architecture of this project",
-  "Review recent changes for issues",
-  "Write tests for the main module",
-  "Commit staged changes with a message",
-];
-
-const LINK_BTN_STYLE: React.CSSProperties = {
-  background: "none",
-  border: "none",
-  cursor: "pointer",
-  fontSize: 13,
-  fontFamily: "var(--font-ui)",
-  color: "var(--blue, #388bfd)",
-};
-
-function underlineHover(e: React.MouseEvent) { (e.currentTarget as HTMLElement).style.textDecoration = "underline"; }
-function underlineUnhover(e: React.MouseEvent) { (e.currentTarget as HTMLElement).style.textDecoration = "none"; }
-
-interface Workspace {
-  id: string;
-  name: string;
-  path: string;
-  last_opened: number;
-}
-
-function WelcomeLink({ icon, label, onClick }: { icon: string; label: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="welcome-link"
-      style={{ ...LINK_BTN_STYLE, display: "flex", alignItems: "center", gap: 8, padding: "4px 0", lineHeight: 1.6 }}
-      onMouseEnter={underlineHover}
-      onMouseLeave={underlineUnhover}
-    >
-      <span style={{ fontSize: 14, opacity: 0.7, width: 20, textAlign: "center", flexShrink: 0 }}>{icon}</span>
-      {label}
-    </button>
-  );
-}
-
-const DISPATCH_SUGGESTIONS = [
-  "scan this project for design violations",
-  "review recent changes and summarize what changed",
-  "run a full audit — violations, hierarchy, contrast",
-  "fix all spacing token mismatches",
-];
-
-function EmptyState({ modelLabel: _modelLabel }: { modelLabel: string }) {
-  return (
-    <div style={{
-      flex: 1,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 28,
-      padding: "0 40px",
-      overflow: "auto",
-    }}>
-      <div style={{
-        fontFamily: "var(--font)",
-        fontSize: 14,
-        color: "var(--text-dimmer)",
-        letterSpacing: "0.02em",
-      }}>
-        what do you want to build?
-      </div>
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 5,
-        width: "100%",
-        maxWidth: 440,
-      }}>
-        {DISPATCH_SUGGESTIONS.map(text => (
-          <button
-            key={text}
-            onClick={() => window.dispatchEvent(new CustomEvent("studio:suggest", { detail: { text } }))}
-            style={{
-              fontSize: 12.5,
-              color: "var(--text-dimmer)",
-              padding: "9px 14px",
-              border: "0.5px solid var(--border-dim)",
-              borderRadius: 7,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              transition: "all 0.12s",
-              background: "transparent",
-              fontFamily: "var(--font-ui)",
-              textAlign: "left",
-            }}
-            className="hoverable"
-          >
-            <span style={{ color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 11, flexShrink: 0 }}>→</span>
-            {text}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ResumedDivider({ timestamp }: { timestamp: number }) {
-  return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      gap: 12,
-      padding: "8px 0",
-      userSelect: "none",
-    }}>
-      <div style={{ flex: 1, height: 1, background: "var(--border-dim)" }} />
-      <span style={{
-        fontSize: 10,
-        color: "var(--text-dimmer)",
-        fontFamily: "var(--font)",
-        letterSpacing: "0.05em",
-        whiteSpace: "nowrap",
-      }}>
-        Resumed session {"\u00b7"} {new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-      </span>
-      <div style={{ flex: 1, height: 1, background: "var(--border-dim)" }} />
-    </div>
-  );
-}
 
 const STREAMING_ID = "__streaming__";
 const RESUME_DIVIDER_ID = "__resume_divider__";
