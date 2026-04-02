@@ -62,7 +62,7 @@
 - [x] Fix tauri:build to include server build (currently skips it)
 - [ ] Add code signing for macOS (Apple Developer ID)
 - [ ] Add Tauri auto-updater (tauri-plugin-updater)
-- [ ] Add version bump script (syncs package.json + Cargo.toml + tauri.conf.json)
+- [x] Add version bump script (syncs package.json + Cargo.toml + tauri.conf.json)
 - [x] Self-host JetBrains Mono font (currently @import blocks render, breaks offline)
 
 ### UX
@@ -100,9 +100,9 @@
 - [x] Cycle shortcut in Run page (like Claude Code's Shift+Tab)
 
 ### Session Memory
-- [ ] Periodic background updates to .session.md
-- [ ] Cross-session learnings (if agent A discovers Prisma, agent B knows)
-- [ ] Gate: every N turns, fork agent to extract learnings
+- [x] Periodic background updates to .session.md
+- [x] Cross-session learnings (if agent A discovers Prisma, agent B knows)
+- [x] Gate: every N turns, fork agent to extract learnings
 
 ### Dream Mode
 - [x] Background agent reviews past sessions every 24h
@@ -111,9 +111,9 @@
 - [x] Uses forked agent pattern (shares prompt cache)
 
 ### Cache Sharing for Swarm
-- [ ] CacheSafeParams pattern from Claude Code
-- [ ] Share system prompt + tools hash across sub-agents
-- [ ] Expected 60-80% cost reduction on swarm runs
+- [x] CacheSafeParams pattern from Claude Code
+- [x] Share system prompt + tools hash across sub-agents
+- [x] Expected 60-80% cost reduction on swarm runs
 
 ---
 
