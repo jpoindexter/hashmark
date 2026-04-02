@@ -149,8 +149,15 @@ export function createServer(opts: ServerOptions) {
     const now = Date.now();
     if (_claudeCheck === null || (!_claudeCheck && now - _claudeCheckTime > 60_000)) {
       try {
+        const resolved = findClaudeBin(ctx.projectDir);
         const { spawnSync } = require("child_process") as typeof import("child_process");
-        const r = spawnSync("claude", ["--version"], { stdio: "pipe", timeout: 5000, shell: true });
+        // Try the resolved binary directly -- works for absolute paths
+        let r = spawnSync(resolved, ["--version"], { stdio: "pipe", timeout: 5000 });
+        if (r.status !== 0) {
+          // Fallback: try via user's login shell which resolves aliases and PATH
+          const shell = process.env.SHELL || "/bin/zsh";
+          r = spawnSync(shell, ["-ilc", "claude --version"], { stdio: "pipe", timeout: 5000 });
+        }
         _claudeCheck = r.status === 0;
         _claudeCheckTime = now;
       } catch {
