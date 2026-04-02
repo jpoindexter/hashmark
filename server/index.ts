@@ -22,14 +22,14 @@ import { tasksRoutes } from "./routes/tasks.js";
 import { sessionsRoutes, killAllActiveSessions, setStudioPort } from "./routes/sessions.js";
 export { killAllActiveSessions };
 import { attachTerminalWS } from "./routes/terminal.js";
-import { filesRoutes } from "./routes/files.js";
+import { filesRoutes, getGitStatus } from "./routes/files.js";
 import { workspaceRoutes } from "./routes/workspace.js";
 import { checkpointRoutes } from "./routes/checkpoints.js";
 import { mcpRoutes } from "./routes/mcp.js";
 import { companyRoutes } from "./routes/company.js";
 import { runRoutes } from "./routes/run.js";
 import { swarmRoutes } from "./routes/swarm.js";
-import { driftRoutes } from "./routes/drift.js";
+import { driftRoutes, checkDrift } from "./routes/drift.js";
 import { providersRoutes } from "./routes/providers.js";
 import { governanceRoutes } from "./routes/governance.js";
 import { workspacesRoutes, type WorkspaceCtx } from "./routes/workspaces.js";
@@ -41,6 +41,7 @@ import { getPermissionMode, setPermissionMode, isValidPermissionMode } from "./l
 import { getStudioToken } from "./lib/studio-token.js";
 import { studioAuthMiddleware } from "./lib/auth-middleware.js";
 import { startDbBackup } from "./lib/backup.js";
+import { startDreamLoop, getDreamStatus } from "./lib/dream.js";
 // rate-limit.ts still available for future use but not applied to local desktop routes
 // import { rateLimitMiddleware } from "./lib/rate-limit.js";
 
@@ -158,28 +159,38 @@ export function createServer(opts: ServerOptions) {
     return c.json({ ok, checks, timestamp: Date.now() }, ok ? 200 : 503);
   });
 
-  // Project info — reads from mutable ctx so it reflects workspace switches
-  app.get("/api/info", async (c) => {
-    const { join: pathJoin, basename: pathBasename } = await import("path");
-    const { existsSync: fsExists, readFileSync: fsRead } = await import("fs");
-
-    const pkgPath = pathJoin(ctx.projectDir, "package.json");
-    let projectName = pathBasename(ctx.projectDir);
-
+  // Shared info helper -- used by /api/info and /api/status
+  function getProjectInfo() {
+    const pkgPath = join(ctx.projectDir, "package.json");
+    let projectName = basename(ctx.projectDir);
     try {
-      if (fsExists(pkgPath)) {
-        const pkg = JSON.parse(fsRead(pkgPath, "utf-8")) as { name?: string };
+      if (existsSync(pkgPath)) {
+        const pkg = JSON.parse(readFileSync(pkgPath, "utf-8")) as { name?: string };
         projectName = pkg.name ?? projectName;
       }
     } catch {}
-
-    return c.json({
+    return {
       projectName,
       projectDir: ctx.projectDir,
       configured: ctx.projectDir !== "__unset__",
       nodeVersion: process.versions.node,
       port: opts.port,
-    });
+    };
+  }
+
+  // Project info — reads from mutable ctx so it reflects workspace switches
+  app.get("/api/info", (c) => {
+    return c.json(getProjectInfo());
+  });
+
+  // Batch status — combines /api/info, /api/files/git, and /api/drift/check
+  app.get("/api/status", async (c) => {
+    const [info, git, drift] = await Promise.all([
+      Promise.resolve(getProjectInfo()),
+      getGitStatus(ctx.projectDir),
+      checkDrift(ctx.projectDir),
+    ]);
+    return c.json({ info, git, drift });
   });
 
   // Studio settings — persisted per project in the DB
@@ -234,6 +245,11 @@ export function createServer(opts: ServerOptions) {
     }
 
     return c.json({ vars });
+  });
+
+  // Dream status — background memory consolidation state
+  app.get("/api/dream/status", (c) => {
+    return c.json(getDreamStatus(ctx.dataDir));
   });
 
   // Rate limiting removed — this is a local desktop app, not a public API.
@@ -312,6 +328,9 @@ export function createServer(opts: ServerOptions) {
     // Periodic cleanup every 30 minutes
     setInterval(() => cleanupOrphanedWorktrees(opts.projectDir), 30 * 60_000).unref();
   }
+
+  // Dream mode -- background memory consolidation
+  startDreamLoop(ctx.projectDir, ctx.dataDir);
 
   return { app, server };
 }
