@@ -6,6 +6,7 @@ import AgentPicker from "../components/AgentPicker.tsx";
 import PermissionSelector from "../components/PermissionSelector.tsx";
 import PlanPhaseBar, { extractPlanSummary, detectPlanPhaseTransition } from "../components/PlanPhaseBar.tsx";
 import { toast } from "../hooks/useToast.ts";
+import ActivityFeed from "../components/ActivityFeed.tsx";
 import { PageShell } from "../components/shared/PageShell.tsx";
 import { fetchApi } from "../lib/api";
 import { DEPT_COLORS } from "../lib/constants";
@@ -120,6 +121,7 @@ export default function Run() {
   const [result, setResult]     = useState<RunResult | null>(null);
   const [error, setError]       = useState<string | null>(null);
   const [showDiff, setShowDiff] = useState(false);
+  const [toolEvents, setToolEvents] = useState<import("../components/ToolEvent").ToolEventData[]>([]);
   const [diff, setDiff]         = useState<string>("");
   const [diffLoading, setDiffLoading] = useState(false);
   const [showRecent, setShowRecent]   = useState(false);
@@ -313,21 +315,39 @@ export default function Run() {
       case "tool_use": {
         const tool = event.tool as string;
         const input = event.input as Record<string, unknown> | undefined;
-        const summary = input?.command
+        const target = input?.command
           ? `$ ${(input.command as string).slice(0, 120)}`
           : input?.file_path
-            ? String(input.file_path).split("/").pop()
-            : "";
-        appendOutput(`\n[${tool}] ${summary}\n`);
+            ? String(input.file_path)
+            : input?.pattern
+              ? String(input.pattern)
+              : input?.description
+                ? String(input.description).slice(0, 80)
+                : "";
+        appendOutput(`\n[${tool}] ${target.split("/").pop() || target.slice(0, 60)}\n`);
         setStatus(`${tool}...`);
+        setToolEvents(prev => [...prev, {
+          id: (event.toolUseId as string) || `te-${Date.now()}`,
+          tool, target, status: "running", startedAt: Date.now(), elapsed: 0,
+        }]);
         break;
       }
-      case "tool_result":
+      case "tool_result": {
+        const resultId = event.toolUseId as string;
+        if (resultId) {
+          setToolEvents(prev => prev.map(te =>
+            te.id === resultId ? { ...te, status: "complete" as const, output: typeof event.content === "string" ? (event.content as string).slice(0, 2000) : undefined } : te
+          ));
+        }
         break;
+      }
       case "tool_progress": {
         const tp = event.tool as string;
-        const elapsed = Math.round(event.elapsed as number);
-        setStatus(`${tp}... ${elapsed}s`);
+        const elapsed = event.elapsed as number;
+        setStatus(`${tp}... ${Math.round(elapsed)}s`);
+        setToolEvents(prev => prev.map(te =>
+          te.status === "running" && te.tool === tp ? { ...te, elapsed } : te
+        ));
         break;
       }
       case "thinking":
@@ -462,6 +482,7 @@ export default function Run() {
     setShowDiff(false);
     setDiff("");
     setPlanPhase(1);
+    setToolEvents([]);
   }
 
   function handleExecutePlan() {
@@ -841,9 +862,24 @@ export default function Run() {
             </div>
           )}
 
-          {/* Live output terminal */}
+          {/* Activity feed + Output split */}
           {(phase === "running" || (phase === "done" && displayOutput)) && (
+            <div style={{ display: "flex", gap: 12 }}>
+
+            {/* Activity feed (left) */}
+            {toolEvents.length > 0 && (
+              <div style={{ flex: "0 0 40%", minWidth: 0 }}>
+                <ActivityFeed
+                  events={toolEvents}
+                  totalElapsed={elapsed}
+                  maxHeight={420}
+                />
+              </div>
+            )}
+
+            {/* Output (right) */}
             <div style={{
+              flex: 1, minWidth: 0,
               background: "var(--bg-2)",
               border: "1px solid var(--border-dim)",
               borderRadius: "var(--radius)",
@@ -919,6 +955,7 @@ export default function Run() {
                 )}
               </div>
             </div>
+            </div>{/* close split flex */}
           )}
 
           {/* Done banner */}

@@ -40,6 +40,21 @@
   --blue-border:   rgba(136, 136, 136, 0.20);
   --yellow-border: rgba(154, 122, 50, 0.20);
 
+  /* Tool event colors */
+  --tool-read: var(--blue);
+  --tool-edit: var(--yellow);
+  --tool-write: var(--green);
+  --tool-bash: var(--orange);
+  --tool-search: var(--text-dimmer);
+  --tool-web: var(--cyan);
+  --tool-agent: var(--purple);
+  --tool-error: var(--red);
+
+  /* Activity feed */
+  --activity-bg: var(--bg);
+  --activity-border: var(--border-dim);
+  --activity-event-hover: var(--bg-2);
+
   /* Typography -- monospace throughout */
   --font:    'JetBrains Mono', 'Fira Code', Menlo, monospace;
   --font-ui: 'JetBrains Mono', 'Fira Code', Menlo, monospace;
