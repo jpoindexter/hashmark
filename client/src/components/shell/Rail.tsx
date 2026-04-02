@@ -163,9 +163,7 @@ export default function Rail({ agentsBadge = false, theme = "dark", themeSetting
 
   const items = [
     { path: "/", icon: <IconSessions />, badge: false, label: "Chat" },
-    { path: "/run", icon: <IconRun />, badge: false, label: "Run" },
     { path: "/agents", icon: <IconAgents />, badge: agentsBadge, label: "Agents" },
-    { path: "/git", icon: <IconGit />, badge: false, label: "Git" },
     { path: "/generate", icon: <IconGenerate />, badge: false, label: "Generate" },
   ];
 

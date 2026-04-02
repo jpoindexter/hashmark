@@ -18,7 +18,6 @@ export function useSessionManager() {
   );
   const [sessionError, setSessionError] = useState(false);
   const [chatHasMessages, setChatHasMessages] = useState(false);
-  const [boardView, setBoardView] = useState(true);
 
   // Persist active session
   useEffect(() => {
@@ -69,32 +68,6 @@ export function useSessionManager() {
     return () => window.removeEventListener("studio:switch-session", handler);
   }, []);
 
-  // Mission board navigation -- push history so browser back button works
-  useEffect(() => {
-    const openHandler = (e: Event) => {
-      const { sessionId } = (e as CustomEvent<{ sessionId: string }>).detail;
-      sessionValidated.current = false;
-      setChatHasMessages(true);
-      setActiveSessionId(sessionId);
-      setBoardView(false);
-      window.history.pushState({ studioChat: true }, "");
-    };
-    const backHandler = () => setBoardView(true);
-    const popHandler = (e: PopStateEvent) => {
-      if (e.state?.studioChat || !e.state) {
-        setBoardView(true);
-      }
-    };
-    window.addEventListener("studio:open-mission", openHandler);
-    window.addEventListener("studio:back-to-board", backHandler);
-    window.addEventListener("popstate", popHandler);
-    return () => {
-      window.removeEventListener("studio:open-mission", openHandler);
-      window.removeEventListener("studio:back-to-board", backHandler);
-      window.removeEventListener("popstate", popHandler);
-    };
-  }, []);
-
   const handleNewSession = useCallback(() => {
     setChatHasMessages(false);
     createSession().then(setActiveSessionId).catch(() => {
@@ -120,8 +93,6 @@ export function useSessionManager() {
     sessionError,
     chatHasMessages,
     setChatHasMessages,
-    boardView,
-    setBoardView,
     handleNewSession,
     handleSessionSelect,
     handleRetry,

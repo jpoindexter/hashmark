@@ -2,9 +2,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import { useNavigate } from "react-router-dom";
 import {
-  Home, FolderTree, GitBranch, Bot, Settings,
+  Home, Bot, Settings,
   Plus, TerminalSquare, FolderOpen, Sun,
-  Play, FileText, Shield, Brain, Layout, RefreshCw, Columns,
+  FileText, Brain, Layout, RefreshCw, Columns,
 } from "lucide-react";
 import type { PaletteProps, Command, FileItem, SymbolItem, ResultItem } from "./command-palette/types";
 import {
@@ -80,9 +80,8 @@ export default function CommandPalette({ open, onClose, mode = "files" }: Palett
   const openFile = useCallback((path: string) => {
     addRecentFile(path);
     window.dispatchEvent(new CustomEvent("studio:open-file", { detail: { path } }));
-    navigate(`/files?path=${encodeURIComponent(path)}`);
     close();
-  }, [navigate, close]);
+  }, [close]);
 
   const goToLine = useCallback((lineNum: number) => {
     window.dispatchEvent(new CustomEvent("studio:go-to-line", { detail: { line: lineNum } }));
@@ -95,14 +94,9 @@ export default function CommandPalette({ open, onClose, mode = "files" }: Palett
   }, [close]);
 
   const COMMANDS: Command[] = [
-    { id: "nav-home", section: "Navigation", label: "Home / Chat", description: "Go to chat", icon: <Home size={15} />, keybind: "\u23181", run: () => navigate("/") },
-    { id: "nav-files", section: "Navigation", label: "File Explorer", description: "Browse project files", icon: <FolderTree size={15} />, keybind: "\u2318\u21E7E", run: () => navigate("/files") },
-    { id: "nav-source-control", section: "Navigation", label: "Source Control", description: "View git changes", icon: <GitBranch size={15} />, keybind: "\u2318\u21E7G", run: () => navigate("/source-control") },
+    { id: "nav-home", section: "Navigation", label: "Chat", description: "Go to chat", icon: <Home size={15} />, keybind: "\u23181", run: () => navigate("/") },
     { id: "nav-agents", section: "Navigation", label: "Agents", description: "Manage AI agents", icon: <Bot size={15} />, keybind: "\u2318\u21E7A", run: () => navigate("/agents") },
-    { id: "nav-run", section: "Navigation", label: "Run", description: "Open run panel", icon: <Play size={15} />, run: () => navigate("/run") },
     { id: "nav-generate", section: "Navigation", label: "Generate", description: "Generate context files", icon: <FileText size={15} />, run: () => navigate("/generate") },
-    { id: "nav-governance", section: "Navigation", label: "Governance", description: "View governance rules", icon: <Shield size={15} />, run: () => navigate("/governance") },
-    { id: "nav-git", section: "Navigation", label: "Git", description: "View git history", icon: <GitBranch size={15} />, run: () => navigate("/git") },
     { id: "nav-settings", section: "Navigation", label: "Settings", description: "Open settings", icon: <Settings size={15} />, keybind: "\u2318,", run: () => navigate("/settings") },
     { id: "action-new-session", section: "Actions", label: "New Chat Session", description: "Start a fresh chat", icon: <Plus size={15} />, run: () => window.dispatchEvent(new CustomEvent("studio:new-session")) },
     { id: "action-toggle-terminal", section: "Actions", label: "Toggle Terminal", description: "Show or hide the terminal", icon: <TerminalSquare size={15} />, keybind: "\u2318`", run: () => window.dispatchEvent(new CustomEvent("studio:toggle-terminal")) },

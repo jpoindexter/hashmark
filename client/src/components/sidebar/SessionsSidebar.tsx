@@ -123,8 +123,8 @@ export default function SessionsSidebar({ activeSessionId, onSessionSelect, info
   }, [sessions, handleSessionClick]);
 
   const handleNewSession = useCallback(() => {
-    navigate("/setup");
-  }, [navigate]);
+    window.dispatchEvent(new CustomEvent("studio:new-session"));
+  }, []);
 
   const handleSessionContextMenu = useCallback((e: React.MouseEvent, session: ChatSession) => {
     e.preventDefault();

@@ -14,11 +14,8 @@ interface UseKeyboardNavParams {
 
 const G_NAV: Record<string, string> = {
   s: "/",
-  r: "/run",
-  c: "/company",
   a: "/agents",
-  g: "/git",
-  f: "/files",
+  g: "/generate",
 };
 
 /**
@@ -112,12 +109,6 @@ export function useKeyboardNav({
         return;
       }
 
-      // Cmd+Shift+E: Explorer
-      if (mod && e.shiftKey && e.key === "E") { e.preventDefault(); navigate("/files"); return; }
-      // Cmd+Shift+G: Source Control
-      if (mod && e.shiftKey && e.key === "G") { e.preventDefault(); navigate("/source-control"); return; }
-      // Cmd+Shift+F: Search
-      if (mod && e.shiftKey && e.key === "F") { e.preventDefault(); navigate("/search"); return; }
       // Cmd+Shift+A: Agents
       if (mod && e.shiftKey && e.key === "A") { e.preventDefault(); navigate("/agents"); return; }
       // Cmd+,: Settings

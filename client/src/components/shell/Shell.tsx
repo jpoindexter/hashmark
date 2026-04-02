@@ -72,8 +72,6 @@ export default function Shell() {
     sessionError,
     chatHasMessages,
     setChatHasMessages,
-    boardView,
-    setBoardView,
     handleNewSession,
     handleSessionSelect,
     handleRetry,
@@ -143,17 +141,8 @@ export default function Shell() {
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
         <Rail theme={theme === "light" ? "light" : "dark"} themeSetting={setting} />
 
-        {/* Mission board: full canvas, no sidepanels */}
-        {isHome && boardView && (
-          <ErrorBoundary>
-            <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", minWidth: 0 }}>
-              <Outlet />
-            </div>
-          </ErrorBoundary>
-        )}
-
-        {/* Mission canvas: sessions panel + chat */}
-        {isHome && !boardView && (
+        {/* Chat-first home: sessions panel + chat */}
+        {isHome && (
           <>
             <SessionsPanel
               activeSessionId={activeSessionId}
@@ -164,87 +153,66 @@ export default function Shell() {
             />
 
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
-              {/* Back to board breadcrumb */}
-              <div style={{
-                height: 34, borderBottom: "0.5px solid var(--border-dim)",
-                display: "flex", alignItems: "center", padding: "0 14px", flexShrink: 0,
-                background: "var(--bg)",
-              }}>
-                <button
-                  onClick={() => setBoardView(true)}
-                  style={{
-                    background: "none", border: "none", cursor: "pointer",
-                    fontFamily: "var(--font)", fontSize: 10, color: "var(--text-dimmer)",
-                    display: "flex", alignItems: "center", gap: 6,
-                    letterSpacing: "0.04em", padding: 0,
-                  }}
-                >
-                  ← missions
-                </button>
-              </div>
-
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}>
-                {sessionError && (
-                  <div style={{ padding: 20, textAlign: "center", color: "var(--red)" }}>
-                    <div>Failed to create session</div>
-                    <button
-                      onClick={handleRetry}
-                      style={{
-                        marginTop: 8, padding: "4px 12px",
-                        background: "var(--bg-3)", border: "1px solid var(--border)",
-                        borderRadius: "var(--radius)", color: "var(--text-dim)", cursor: "pointer",
-                        fontFamily: "var(--font-ui)", fontSize: 12,
-                      }}
-                    >
-                      Retry
-                    </button>
-                  </div>
-                )}
-                <ErrorBoundary>
-                  <div style={{
-                    flex: termBig ? 0 : 1,
-                    overflow: "hidden",
-                    display: termBig ? "none" : "flex",
-                    flexDirection: "column",
-                    minHeight: 0,
-                  }}>
-                    <ChatMessages
-                      sessionId={activeSessionId}
-                      streamText={streamText}
-                      streaming={streaming}
-                      streamingState={streamingState ?? undefined}
-                      modelLabel={modelLabel}
-                      planMode={planMode}
-                    />
-                  </div>
-                </ErrorBoundary>
-
-                <ResizableDrawer open={termOpen} onToggle={() => setTermOpen((v) => !v)} defaultHeight={280}>
-                  <TerminalPanel
-                    activeTab={activeTab}
-                    onTabChange={setActiveTab}
-                    termBig={termBig}
-                    onToggleBig={() => setTermBig((v) => !v)}
-                    onClose={() => setTermOpen(false)}
-                    onCwdChange={setTerminalCwd}
+              {sessionError && (
+                <div style={{ padding: 20, textAlign: "center", color: "var(--red)" }}>
+                  <div>Failed to create session</div>
+                  <button
+                    onClick={handleRetry}
+                    style={{
+                      marginTop: 8, padding: "4px 12px",
+                      background: "var(--bg-3)", border: "1px solid var(--border)",
+                      borderRadius: "var(--radius)", color: "var(--text-dim)", cursor: "pointer",
+                      fontFamily: "var(--font-ui)", fontSize: 12,
+                    }}
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+              <ErrorBoundary>
+                <div style={{
+                  flex: termBig ? 0 : 1,
+                  overflow: "hidden",
+                  display: termBig ? "none" : "flex",
+                  flexDirection: "column",
+                  minHeight: 0,
+                }}>
+                  <ChatMessages
+                    sessionId={activeSessionId}
+                    streamText={streamText}
+                    streaming={streaming}
+                    streamingState={streamingState ?? undefined}
+                    modelLabel={modelLabel}
+                    planMode={planMode}
                   />
-                </ResizableDrawer>
+                </div>
+              </ErrorBoundary>
 
-                <ChatInputBar
-                  sessionId={activeSessionId}
-                  hasMessages={chatHasMessages}
-                  onNewSession={handleNewSession}
-                  onSessionCreated={() => {}}
-                  onStreamText={setStreamText}
-                  onStreamingState={setStreamingState}
-                  onStreamingChange={setStreaming}
-                  streaming={streaming}
-                  terminalCwd={terminalCwd || undefined}
-                  selectedModel={selectedModel}
-                  thinking={thinking}
-                  planMode={planMode}
+              <ResizableDrawer open={termOpen} onToggle={() => setTermOpen((v) => !v)} defaultHeight={280}>
+                <TerminalPanel
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+                  termBig={termBig}
+                  onToggleBig={() => setTermBig((v) => !v)}
+                  onClose={() => setTermOpen(false)}
+                  onCwdChange={setTerminalCwd}
                 />
-              </div>
+              </ResizableDrawer>
+
+              <ChatInputBar
+                sessionId={activeSessionId}
+                hasMessages={chatHasMessages}
+                onNewSession={handleNewSession}
+                onSessionCreated={() => {}}
+                onStreamText={setStreamText}
+                onStreamingState={setStreamingState}
+                onStreamingChange={setStreaming}
+                streaming={streaming}
+                terminalCwd={terminalCwd || undefined}
+                selectedModel={selectedModel}
+                thinking={thinking}
+                planMode={planMode}
+              />
             </div>
           </>
         )}

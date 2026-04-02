@@ -16,7 +16,7 @@ export function EmptyState({ modelLabel: _modelLabel }: { modelLabel: string }) 
           <button key={text} className="hoverable"
             onClick={() => window.dispatchEvent(new CustomEvent("studio:suggest", { detail: { text } }))}
             style={{ fontSize: 12.5, color: "var(--text-dimmer)", padding: "9px 14px", border: "0.5px solid var(--border-dim)", borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, transition: "all 0.12s", background: "transparent", fontFamily: "var(--font-ui)", textAlign: "left" }}>
-            <span style={{ color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 11, flexShrink: 0 }}>-></span>
+            <span style={{ color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 11, flexShrink: 0 }}>{"->"}</span>
             {text}
           </button>
         ))}

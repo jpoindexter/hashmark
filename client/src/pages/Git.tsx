@@ -352,7 +352,7 @@ export default function GitPage() {
               {/* Uncommitted changes */}
               {uncommittedCount > 0 && (
                 <span
-                  onClick={() => navigate("/source-control")}
+                  onClick={() => navigate("/git")}
                   className="hoverable"
                   style={{
                     fontFamily: "var(--font-ui)", fontSize: 11,
@@ -360,7 +360,7 @@ export default function GitPage() {
                     background: "rgba(210,153,34,0.08)",
                     padding: "1px 8px", borderRadius: 100,
                     border: "1px solid rgba(210,153,34,0.25)",
-                  }
+                  }}
                 >
                   {uncommittedCount} uncommitted {uncommittedCount === 1 ? "change" : "changes"}
                 </span>
