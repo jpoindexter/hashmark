@@ -130,6 +130,22 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
           )}
         </span>
         <span className="flex-row" style={{ gap: 6 }}>
+          {pct > 70 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                window.dispatchEvent(new CustomEvent("studio:suggest", { detail: { text: "/compact" } }));
+              }}
+              className="hoverable"
+              style={{
+                fontSize: 9, fontFamily: "var(--font)", fontWeight: 600,
+                color: "var(--accent)", background: "none", border: "1px solid var(--accent)",
+                padding: "1px 6px", borderRadius: 3, cursor: "pointer",
+              }}
+            >
+              compact
+            </button>
+          )}
           <span>{info.messageCount} msgs</span>
           {expanded
             ? <ChevronDown size={10} />
