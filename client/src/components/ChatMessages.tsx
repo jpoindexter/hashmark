@@ -10,15 +10,12 @@ import StreamingBubble from "./chat/StreamingBubble";
 import { buildUserMenuItems, buildAssistantMenuItems } from "./chat/chatMenuItems";
 export { AssistantContent } from "./chat/AssistantContent";
 
-// Re-export ASSISTANT_CONTENT_STYLE and fmtDuration so StreamingBubble can import them
 export { ASSISTANT_CONTENT_STYLE, fmtDuration };
 
 interface ContextMenuState {
   items: ContextMenuItem[];
   position: { x: number; y: number };
 }
-
-// Message type re-exported from ./chat/MessageBubbles
 
 export interface TextBlock {
   type: "text";

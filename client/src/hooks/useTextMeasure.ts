@@ -9,7 +9,6 @@ import { prepare, layout } from "@chenglou/pretext";
  * Container width should be the actual text container width minus padding.
  */
 
-// Cache prepared text by content hash to avoid re-preparing on every render
 const preparedCache = new Map<string, ReturnType<typeof prepare>>();
 const MAX_CACHE = 500;
 

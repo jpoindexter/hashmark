@@ -236,5 +236,4 @@ export default function ToolCallSummary({ groups }: ToolCallSummaryProps) {
   );
 }
 
-// Re-export FileBadge for use in streaming file-read rendering
 export { FileBadge, getReadFilePath, categorize };
