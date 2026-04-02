@@ -1,163 +1,14 @@
-import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
-import { Search, X, Trash2, Plus, Download, Archive, Check, Edit2 } from "lucide-react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Search, X, Plus, Download, Archive, Edit2 } from "lucide-react";
 import XTerminal from "../components/XTerminal";
 import { ContextHeatmap } from "../components/ContextHeatmap.tsx";
 import { fetchApi } from "../lib/api";
 import { MODELS } from "../lib/models";
-import { fmtTime, fmtTokens, timeAgo } from "../lib/format";
-import { renderInline } from "../lib/markdown";
-
-interface Session {
-  id: string;
-  title: string;
-  agent_name: string | null;
-  model: string;
-  status: "idle" | "streaming";
-  total_input_tokens: number;
-  total_output_tokens: number;
-  message_count: number;
-  created_at: number;
-  updated_at: number;
-  archived: number;
-}
-
-interface Message {
-  id: string;
-  session_id: string;
-  role: "user" | "assistant";
-  content: string;
-  input_tokens: number | null;
-  output_tokens: number | null;
-  created_at: number;
-}
-
-// Context window limits per model (tokens)
-const CTX_WINDOW: Record<string, number> = {
-  "claude-opus-4-6": 200_000,
-  "claude-sonnet-4-6": 200_000,
-  "claude-haiku-4-5-20251001": 200_000,
-};
-
-// Provider dot color per model family
-function providerColor(model: string): string {
-  if (model.includes("opus")) return "var(--yellow)";   // yellow — premium
-  if (model.includes("sonnet")) return "var(--blue)";  // blue — standard
-  if (model.includes("haiku")) return "var(--accent)";   // green — fast
-  return "var(--text-dimmer)";
-}
-
-function modelShortLabel(model: string): string {
-  const found = MODELS.find(m => m.id === model);
-  return found?.label ?? model;
-}
-
-function fmtCost(inputTok: number, outputTok: number, model: string) {
-  const rates: Record<string, [number, number]> = {
-    "claude-opus-4-6": [15, 75],
-    "claude-sonnet-4-6": [3, 15],
-    "claude-haiku-4-5-20251001": [0.8, 4],
-  };
-  const [i, o] = rates[model] ?? [3, 15];
-  const cost = (inputTok * i + outputTok * o) / 1_000_000;
-  if (cost < 0.01) return `<$0.01`;
-  return `$${cost.toFixed(3)}`;
-}
-
-// Token usage bar color based on % used
-function tokenBarColor(pct: number): string {
-  if (pct < 50) return "var(--accent)";
-  if (pct < 80) return "var(--yellow)";
-  return "var(--red)";
-}
-
-// Renderer that returns React nodes from assistant markdown text
-const AssistantContent = memo(function AssistantContent({ text }: { text: string }) {
-  const lines = text.split("\n");
-  const nodes: React.ReactNode[] = [];
-  let i = 0;
-  let key = 0;
-
-  while (i < lines.length) {
-    const line = lines[i];
-
-    if (line.startsWith("```")) {
-      const lang = line.slice(3).trim();
-      const codeLines: string[] = [];
-      i++;
-      while (i < lines.length && !lines[i].startsWith("```")) {
-        codeLines.push(lines[i]);
-        i++;
-      }
-      nodes.push(
-        <pre key={key++} style={{
-          background: "var(--bg-3)",
-          border: "1px solid var(--border-dim)",
-          padding: "10px 12px",
-          margin: "8px 0",
-          overflow: "auto",
-          fontSize: "11px",
-          lineHeight: "1.5",
-        }}>
-          {lang && <div style={{ color: "var(--text-dimmer)", fontSize: "10px", marginBottom: "6px", textTransform: "uppercase" }}>{lang}</div>}
-          <code style={{ color: "var(--text)", fontFamily: "var(--font)" }}>{codeLines.join("\n")}</code>
-        </pre>
-      );
-      i++;
-      continue;
-    }
-
-    if (line.startsWith("### ")) {
-      nodes.push(<h4 key={key++} style={{ color: "var(--text)", fontSize: "12px", fontWeight: 600, margin: "12px 0 4px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{line.slice(4)}</h4>);
-      i++;
-      continue;
-    }
-    if (line.startsWith("## ")) {
-      nodes.push(<h3 key={key++} style={{ color: "var(--text)", fontSize: "13px", fontWeight: 600, margin: "12px 0 4px" }}>{line.slice(3)}</h3>);
-      i++;
-      continue;
-    }
-    if (line.startsWith("# ")) {
-      nodes.push(<h2 key={key++} style={{ color: "var(--accent)", fontSize: "14px", fontWeight: 600, margin: "12px 0 6px" }}>{line.slice(2)}</h2>);
-      i++;
-      continue;
-    }
-
-    if (line.match(/^[-*] /)) {
-      nodes.push(
-        <div key={key++} style={{ display: "flex", gap: "8px", margin: "2px 0" }}>
-          <span style={{ color: "var(--accent)", flexShrink: 0 }}>›</span>
-          <span>{renderInline(line.slice(2))}</span>
-        </div>
-      );
-      i++;
-      continue;
-    }
-
-    if (!line.trim()) {
-      nodes.push(<div key={key++} style={{ height: "6px" }} />);
-      i++;
-      continue;
-    }
-
-    nodes.push(
-      <div key={key++} style={{ lineHeight: "1.6" }}>
-        {renderInline(line)}
-      </div>
-    );
-    i++;
-  }
-
-  return <>{nodes}</>;
-});
-
-interface SearchResult {
-  id: string;
-  title: string;
-  model: string;
-  updatedAt: number;
-  snippet: string | null;
-  snippetRole: string | null;
-}
+import { fmtTokens } from "../lib/format";
+import type { Session, Message, SearchResult } from "./sessions/types";
+import { CTX_WINDOW, providerColor, modelShortLabel, fmtCost, tokenBarColor } from "./sessions/types";
+import SessionListItem from "./sessions/SessionListItem";
+import MessageBubble, { AvatarBadge } from "./sessions/MessageBubble";
 
 export default function Sessions() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -182,7 +33,6 @@ export default function Sessions() {
   const abortRef = useRef<(() => void) | null>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
-  // Debounced search
   const handleSearchChange = (q: string) => {
     setSearchQuery(q);
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
@@ -247,7 +97,6 @@ export default function Sessions() {
     loadSessions();
   }, [loadSessions]);
 
-  // Cmd+N shortcut
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "n") {
@@ -260,7 +109,6 @@ export default function Sessions() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newModel]);
 
-  // Dismiss delete confirm on outside click
   useEffect(() => {
     if (!deleteConfirm) return;
     const handler = () => setDeleteConfirm(null);
@@ -272,7 +120,6 @@ export default function Sessions() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamText]);
 
-  // Focus title input when editing starts
   useEffect(() => {
     if (editingTitle) {
       titleInputRef.current?.focus();
@@ -479,7 +326,6 @@ export default function Sessions() {
     }
   };
 
-  // Token stats for active session
   const totalTokens = activeSession
     ? activeSession.total_input_tokens + activeSession.total_output_tokens
     : 0;
@@ -521,7 +367,6 @@ export default function Sessions() {
           flexDirection: "column",
           overflow: "hidden",
         }}>
-          {/* Top controls */}
           <div style={{
             padding: "8px",
             borderBottom: "1px solid var(--border-dim)",
@@ -529,7 +374,6 @@ export default function Sessions() {
             flexDirection: "column",
             gap: "6px",
           }}>
-            {/* New session row */}
             <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
               <select
                 value={newModel}
@@ -559,7 +403,6 @@ export default function Sessions() {
               </button>
             </div>
 
-            {/* Search bar */}
             <div style={{
               display: "flex",
               alignItems: "center",
@@ -592,7 +435,6 @@ export default function Sessions() {
               )}
             </div>
 
-            {/* Archive toggle */}
             <button
               onClick={() => { setShowArchived(v => !v); setActiveId(null); setActiveSession(null); setMessages([]); }}
               style={{
@@ -729,7 +571,6 @@ export default function Sessions() {
               background: "var(--bg-2)",
             }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                {/* Title row */}
                 {editingTitle ? (
                   <input
                     ref={titleInputRef}
@@ -764,9 +605,7 @@ export default function Sessions() {
                   </div>
                 )}
 
-                {/* Token row */}
                 <div style={{ marginTop: "4px", display: "flex", alignItems: "center", gap: "8px" }}>
-                  {/* Token usage bar */}
                   <div style={{
                     width: "60px", height: "3px",
                     background: "var(--bg-4)",
@@ -795,7 +634,6 @@ export default function Sessions() {
                 </div>
               </div>
 
-              {/* Model badge */}
               {activeSession && (
                 <div style={{
                   display: "flex", alignItems: "center", gap: "5px",
@@ -813,7 +651,6 @@ export default function Sessions() {
                 </div>
               )}
 
-              {/* Action buttons */}
               <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
                 <button
                   className="btn"
@@ -942,193 +779,6 @@ export default function Sessions() {
             50% { opacity: 0; }
           }
         `}</style>
-      </div>
-    </div>
-  );
-}
-
-interface SessionListItemProps {
-  s: Session;
-  isActive: boolean;
-  sPct: number;
-  isDelConfirm: boolean;
-  onSelect: () => void;
-  onDeleteRequest: (e: React.MouseEvent) => void;
-  onDeleteConfirm: (e: React.MouseEvent) => void;
-  onDeleteCancel: (e: React.MouseEvent) => void;
-}
-
-function SessionListItem({
-  s, isActive, sPct, isDelConfirm,
-  onSelect, onDeleteRequest, onDeleteConfirm, onDeleteCancel,
-}: SessionListItemProps) {
-  const trashBtnRef = useRef<HTMLButtonElement>(null);
-  const barColor = tokenBarColor(sPct);
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-current={isActive ? "true" : undefined}
-      onClick={onSelect}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(); } }}
-      className={isActive ? "" : "hoverable"}
-      onMouseEnter={() => {
-        if (trashBtnRef.current) trashBtnRef.current.style.visibility = "visible";
-      }}
-      onMouseLeave={() => {
-        if (!isActive && trashBtnRef.current) trashBtnRef.current.style.visibility = "hidden";
-      }}
-      style={{
-        padding: "9px 10px 9px 12px",
-        cursor: "pointer",
-        background: isActive ? "var(--accent-bg)" : "transparent",
-        borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
-        borderBottom: "1px solid var(--border-dim)",
-        transition: "background 0.1s",
-        position: "relative",
-      }}
-    >
-      {/* Title row */}
-      <div style={{ display: "flex", alignItems: "center", gap: "5px", minWidth: 0 }}>
-        {/* Provider dot */}
-        <div style={{
-          width: "6px", height: "6px", borderRadius: "50%",
-          background: providerColor(s.model),
-          flexShrink: 0,
-        }} />
-        <div style={{
-          fontSize: "11px",
-          color: isActive ? "var(--text)" : "var(--text-dim)",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-          flex: 1,
-        }}>
-          {s.title}
-        </div>
-
-        {/* Trash / confirm buttons */}
-        {isDelConfirm ? (
-          <div style={{ display: "flex", gap: "3px", flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={onDeleteConfirm}
-              title="Confirm delete"
-              style={{
-                background: "rgba(248,81,73,0.15)", border: "1px solid var(--red)",
-                color: "var(--red)", cursor: "pointer", borderRadius: "var(--radius-sm)",
-                padding: "2px 5px", fontSize: "10px", display: "flex", alignItems: "center",
-              }}
-            >
-              <Check size={10} />
-            </button>
-            <button
-              onClick={onDeleteCancel}
-              style={{
-                background: "none", border: "1px solid var(--border)",
-                color: "var(--text-dimmer)", cursor: "pointer", borderRadius: "var(--radius-sm)",
-                padding: "2px 5px", fontSize: "10px", display: "flex", alignItems: "center",
-              }}
-            >
-              <X size={10} />
-            </button>
-          </div>
-        ) : (
-          <button
-            ref={trashBtnRef}
-            onClick={onDeleteRequest}
-            title="Delete mission"
-            style={{
-              background: "none", border: "none", cursor: "pointer",
-              color: "var(--text-dimmer)", display: "flex", alignItems: "center",
-              padding: "1px", flexShrink: 0, borderRadius: "var(--radius-sm)",
-              visibility: isActive ? "visible" : "hidden",
-            }}
-            className="hoverable"
-          >
-            <Trash2 size={11} />
-          </button>
-        )}
-      </div>
-
-      {/* Meta row */}
-      <div style={{ marginTop: "5px", display: "flex", alignItems: "center", gap: "6px" }}>
-        {/* Token bar */}
-        <div style={{
-          flex: 1, height: "2px",
-          background: "var(--bg-4)",
-          borderRadius: "1px",
-          overflow: "hidden",
-        }}>
-          <div style={{
-            width: `${sPct}%`,
-            height: "100%",
-            background: barColor,
-            borderRadius: "1px",
-          }} />
-        </div>
-        <span style={{ fontSize: "10px", color: "var(--text-dimmer)", whiteSpace: "nowrap" }}>
-          {s.message_count ?? 0} msgs
-        </span>
-        <span style={{ fontSize: "10px", color: "var(--text-dimmer)", whiteSpace: "nowrap" }}>
-          {timeAgo(s.updated_at)}
-        </span>
-        {s.status === "streaming" && (
-          <span style={{ color: "var(--accent)", fontSize: "10px" }}>● live</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function AvatarBadge({ role }: { role: "user" | "assistant" }) {
-  const isUser = role === "user";
-  return (
-    <div style={{
-      width: "28px", height: "28px",
-      background: isUser ? "var(--bg-3)" : "var(--accent-bg)",
-      border: `1px solid ${isUser ? "var(--border)" : "var(--accent)"}`,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: "9px", color: isUser ? "var(--text-dim)" : "var(--accent)",
-      flexShrink: 0, fontFamily: "var(--font)", letterSpacing: "0.05em",
-      fontWeight: 600,
-    }}>
-      {isUser ? "YOU" : "AI"}
-    </div>
-  );
-}
-
-function MessageBubble({ msg }: { msg: Message }) {
-  const isUser = msg.role === "user";
-  return (
-    <div style={{
-      display: "flex", gap: "12px", alignItems: "flex-start",
-      flexDirection: isUser ? "row-reverse" : "row",
-    }}>
-      <AvatarBadge role={msg.role} />
-      <div style={{ flex: 1, maxWidth: "85%" }}>
-        {isUser ? (
-          <div style={{
-            background: "var(--bg-3)", border: "1px solid var(--border)",
-            padding: "8px 12px", fontSize: "12px", color: "var(--text)",
-            lineHeight: "1.6", whiteSpace: "pre-wrap", fontFamily: "var(--font)",
-          }}>
-            {msg.content}
-          </div>
-        ) : (
-          <div style={{ fontSize: "12px", color: "var(--text)", lineHeight: "1.6", fontFamily: "var(--font)" }}>
-            <AssistantContent text={msg.content} />
-          </div>
-        )}
-        <div style={{
-          marginTop: "4px", fontSize: "10px", color: "var(--text-dimmer)",
-          display: "flex", gap: "8px", justifyContent: isUser ? "flex-end" : "flex-start",
-        }}>
-          <span>{fmtTime(msg.created_at)}</span>
-          {msg.output_tokens != null && msg.output_tokens > 0 && (
-            <span>{fmtTokens(msg.output_tokens)} tok</span>
-          )}
-        </div>
       </div>
     </div>
   );
