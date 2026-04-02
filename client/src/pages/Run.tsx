@@ -955,7 +955,7 @@ export default function Run() {
                 )}
               </div>
             </div>
-            </div>{/* close split flex */}
+            </div>
           )}
 
           {/* Done banner */}
