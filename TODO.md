@@ -105,10 +105,10 @@
 - [ ] Gate: every N turns, fork agent to extract learnings
 
 ### Dream Mode
-- [ ] Background agent reviews past sessions every 24h
-- [ ] 4-phase prompt: Orient, Gather, Consolidate, Prune
-- [ ] Gates: >= 24h since last + >= 5 sessions + file lock
-- [ ] Uses forked agent pattern (shares prompt cache)
+- [x] Background agent reviews past sessions every 24h
+- [x] 4-phase prompt: Orient, Gather, Consolidate, Prune
+- [x] Gates: >= 24h since last + >= 5 sessions + file lock
+- [x] Uses forked agent pattern (shares prompt cache)
 
 ### Cache Sharing for Swarm
 - [ ] CacheSafeParams pattern from Claude Code
@@ -142,8 +142,8 @@
 ### Performance
 - [x] Cap Run/Swarm output display to last 500 lines (accumulates unbounded)
 - [x] Extract MissionCard elapsed timer into tiny component (re-renders every 1s)
-- [ ] Deduplicate /api/info call on page load (Shell + Home both fetch it)
-- [ ] Batch status API calls (3 serial calls -> 1 /api/status endpoint)
+- [x] Deduplicate /api/info call on page load (Shell + Home both fetch it)
+- [x] Batch status API calls (3 serial calls -> 1 /api/status endpoint)
 - [x] Reduce Shiki grammar chunks (326 -> ~15 used languages, save 8MB)
 
 ### Reliability
@@ -174,7 +174,7 @@
 - [x] Add Claude binary pre-flight check at startup (banner if missing)
 - [x] Add desktop notifications for completed runs (Tauri native)
 - [x] Add template tasks for first-time users ("Fix TypeScript errors", "Add tests", etc.)
-- [ ] Add usage dashboard (total cost, runs per day, success rate)
+- [x] Add usage dashboard (total cost, runs per day, success rate)
 - [x] Add "Delete All Data" button in Settings (GDPR)
 
 ---
