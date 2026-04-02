@@ -162,14 +162,11 @@ export default function Rail({ agentsBadge = false, theme = "dark", themeSetting
   };
 
   const items = [
-    { path: "/", icon: <IconSessions />, badge: false, label: "Sessions" },
-    { path: "/agents", icon: <IconAgents />, badge: agentsBadge, label: "Agents" },
-    { path: "/generate", icon: <IconGenerate />, badge: false, label: "Generate" },
+    { path: "/", icon: <IconSessions />, badge: false, label: "Chat" },
     { path: "/run", icon: <IconRun />, badge: false, label: "Run" },
-    { path: "/swarm", icon: <IconSwarm />, badge: false, label: "Swarm" },
-    { path: "/company", icon: <IconCompany />, badge: false, label: "Company" },
+    { path: "/agents", icon: <IconAgents />, badge: agentsBadge, label: "Agents" },
     { path: "/git", icon: <IconGit />, badge: false, label: "Git" },
-    { path: "/history", icon: <IconHistory />, badge: false, label: "History" },
+    { path: "/generate", icon: <IconGenerate />, badge: false, label: "Generate" },
   ];
 
   return (
