@@ -220,7 +220,7 @@ export default function Generate() {
       <div style={{ marginBottom: "24px" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
           <div>
-            <h1 style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: "4px" }}>
+            <h1 style={{ fontSize: "18px", fontWeight: 600, letterSpacing: "-0.02em", marginBottom: "4px" }}>
               {info?.projectName ?? "Generate Context"}
             </h1>
             {info?.projectDir && (
@@ -238,7 +238,7 @@ export default function Generate() {
                 style={freshness.cls === "badge-red" ? {
                   display: "inline-flex", alignItems: "center",
                   padding: "1px 7px", borderRadius: "100px",
-                  fontSize: "11px", fontWeight: 500,
+                  fontSize: "11px", fontWeight: 600,
                   background: "rgba(248,81,73,.1)", color: "var(--red)",
                   border: "1px solid rgba(248,81,73,.25)",
                 } : undefined}

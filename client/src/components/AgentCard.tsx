@@ -198,7 +198,7 @@ export default function AgentCard({ agent, stats, onClick, onRun, onDelete, onDu
                 padding: "2px 8px",
                 fontSize: "9px",
                 fontFamily: "var(--font)",
-                fontWeight: 700,
+                fontWeight: 600,
                 letterSpacing: "0.06em",
                 textTransform: "uppercase",
                 background: "var(--accent-bg)",

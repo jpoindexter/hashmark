@@ -42,7 +42,7 @@ export default function SecurityBanner({ findings, dismissed, onDismiss, agents,
               }}
             >
               <span style={{
-                fontSize: 9, fontFamily: "var(--font)", fontWeight: 700, letterSpacing: "0.06em",
+                fontSize: 9, fontFamily: "var(--font)", fontWeight: 600, letterSpacing: "0.06em",
                 padding: "2px 5px", borderRadius: 2, flexShrink: 0, marginTop: 1,
                 background: f.severity === "critical" ? "rgba(248,81,73,0.15)" : f.severity === "high" ? "rgba(210,153,34,0.15)" : "rgba(56,139,253,0.1)",
                 color: f.severity === "critical" ? "var(--red)" : f.severity === "high" ? "var(--yellow)" : "var(--blue)",

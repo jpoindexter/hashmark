@@ -139,7 +139,7 @@ function HighlightedText({
       if (run) {
         parts.push(
           runHighlighted
-            ? <span key={i} style={{ fontWeight: 700, color: "var(--accent)" }}>{run}</span>
+            ? <span key={i} style={{ fontWeight: 600, color: "var(--accent)" }}>{run}</span>
             : <span key={i}>{run}</span>,
         );
       }
@@ -152,7 +152,7 @@ function HighlightedText({
   if (run) {
     parts.push(
       runHighlighted
-        ? <span key="end" style={{ fontWeight: 700, color: "var(--accent)" }}>{run}</span>
+        ? <span key="end" style={{ fontWeight: 600, color: "var(--accent)" }}>{run}</span>
         : <span key="end">{run}</span>,
     );
   }

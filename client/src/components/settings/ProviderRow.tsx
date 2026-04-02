@@ -63,7 +63,7 @@ export default function ProviderRow({
         }}
       >
         <span style={{ fontSize: 14, color: isActive ? "var(--accent)" : "var(--text-dimmer)", flexShrink: 0 }}>{icon}</span>
-        <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: isActive ? "var(--accent)" : "var(--text)" }}>{provider.name}</span>
+        <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: isActive ? "var(--accent)" : "var(--text)" }}>{provider.name}</span>
         {isActive && (
           <span className="badge badge-green" style={{ flexShrink: 0 }}>active</span>
         )}

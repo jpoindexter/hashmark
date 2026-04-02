@@ -264,7 +264,7 @@ export default function Swarm() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <h1 style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text)", marginBottom: 4 }}>
+          <h1 style={{ fontSize: 16, fontWeight: 600, letterSpacing: "-0.01em", color: "var(--text)", marginBottom: 4 }}>
             SWARM
           </h1>
           <div style={{ fontSize: 11, color: "var(--text-dimmer)" }}>

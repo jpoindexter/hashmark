@@ -79,10 +79,10 @@
   --weight-normal:   400;
   --weight-semibold: 600;
 
-  /* Border radius -- sharp */
-  --radius:    2px;
+  /* Border radius -- slightly softened */
+  --radius:    3px;
   --radius-sm: 2px;
-  --radius-lg: 3px;
+  --radius-lg: 5px;
 
   /* Typography scale (xs/sm/lg defined above near font declarations) */
   --font-size-base: 13px;
@@ -100,9 +100,9 @@
 
   /* Modal overlay + shadow */
   --overlay-bg:  rgba(0, 0, 0, 0.55);
-  --shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-md:   0 4px 20px rgba(0, 0, 0, 0.5);
-  --shadow-sm:   0 2px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.35);
+  --shadow-md:   0 4px 20px rgba(0, 0, 0, 0.3);
+  --shadow-sm:   0 2px 12px rgba(0, 0, 0, 0.25);
 
   /* Interactive surface overlays (theme-aware) */
   --hover-bg:        rgba(255, 255, 255, 0.04);
@@ -190,9 +190,9 @@
   --yellow-border: rgba(122, 96, 32, 0.20);
 
   --overlay-bg:  rgba(0, 0, 0, 0.30);
-  --shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.2);
-  --shadow-md:   0 4px 20px rgba(0, 0, 0, 0.2);
-  --shadow-sm:   0 2px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.15);
+  --shadow-md:   0 4px 20px rgba(0, 0, 0, 0.12);
+  --shadow-sm:   0 2px 12px rgba(0, 0, 0, 0.08);
 
   --hover-bg:        rgba(0, 0, 0, 0.04);
   --hover-bg-strong: rgba(0, 0, 0, 0.08);
@@ -226,7 +226,7 @@
   --font-size-base:     11px;
   --radius:             3px;
   --radius-sm:          2px;
-  --radius-lg:          4px;
+  --radius-lg:          5px;
   --activity-bar-width: 140px;
   --sidebar-default-width: 200px;
   --sidebar-min-width:  140px;

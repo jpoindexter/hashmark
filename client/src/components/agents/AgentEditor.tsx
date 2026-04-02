@@ -132,7 +132,7 @@ function SkillChecksPanel({ checks, passingCount, overallStatus, overallColor, s
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{
-            fontSize: 9, fontFamily: "var(--font)", fontWeight: 700, letterSpacing: "0.1em",
+            fontSize: 9, fontFamily: "var(--font)", fontWeight: 600, letterSpacing: "0.1em",
             textTransform: "uppercase", padding: "2px 6px", borderRadius: 2, color: overallColor,
             background: hasErrors ? "rgba(248,81,73,0.1)" : hasWarnings ? "rgba(210,153,34,0.1)" : "rgba(63,185,80,0.1)",
             border: `1px solid ${hasErrors ? "rgba(248,81,73,0.25)" : hasWarnings ? "rgba(210,153,34,0.25)" : "rgba(63,185,80,0.25)"}`,
@@ -165,7 +165,7 @@ function SkillChecksPanel({ checks, passingCount, overallStatus, overallColor, s
                 {c.status === "pass" ? "✓" : c.status === "warn" ? "⚠" : "✗"}
               </span>
               <span style={{
-                fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0, fontSize: 9, marginTop: 1,
+                fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0, fontSize: 9, marginTop: 1,
                 color: c.status === "pass" ? "var(--text-dimmer)" : c.status === "warn" ? "var(--yellow)" : "var(--red)",
               }}>
                 {c.label}
@@ -187,7 +187,7 @@ function EffectivenessPanel({ data }: { data: EffectivenessData }) {
   return (
     <div style={{ borderTop: "1px solid var(--border-dim)", background: "var(--bg-2)", flexShrink: 0, padding: "8px 14px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-        <span style={{ fontSize: 9, fontFamily: "var(--font)", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dimmer)" }}>
+        <span style={{ fontSize: 9, fontFamily: "var(--font)", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dimmer)" }}>
           Effectiveness
         </span>
         {data.totalRuns === 0 ? (

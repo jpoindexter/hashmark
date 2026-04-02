@@ -155,7 +155,7 @@ export default function Rail({ agentsBadge = false, theme = "dark", themeSetting
     fontFamily: "var(--font)",
     color: "var(--accent)",
     fontSize: 15,
-    fontWeight: 500,
+    fontWeight: 600,
     marginBottom: 18,
     userSelect: "none",
     cursor: "default",

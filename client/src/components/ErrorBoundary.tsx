@@ -72,7 +72,7 @@ const btnBase: CSSProperties = {
   padding: "6px 14px",
   fontSize: 12,
   fontFamily: "var(--font)",
-  fontWeight: 500,
+  fontWeight: 600,
   border: "1px solid var(--border)",
   borderRadius: "var(--radius-sm)",
   cursor: "pointer",

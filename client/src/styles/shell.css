@@ -34,7 +34,7 @@
 }
 
 /* Button press feedback */
-button:active:not(:disabled) { transform: scale(0.97); }
+button:active:not(:disabled) { transform: scale(0.98); }
 
 /* Dropdown fade-in animation */
 @keyframes dropdownIn {

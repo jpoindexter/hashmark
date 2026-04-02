@@ -278,7 +278,7 @@ export default function WorkspaceSetup() {
     alignItems: "center",
     justifyContent: "center",
     fontSize: 11,
-    fontWeight: 700,
+    fontWeight: 600,
     fontFamily: "var(--font-ui)",
     background: step === n ? "var(--accent)" : step > n ? "var(--accent-bg)" : "var(--bg-4)",
     color: step === n ? "var(--bg)" : step > n ? "var(--accent)" : "var(--text-dimmer)",
@@ -315,10 +315,10 @@ export default function WorkspaceSetup() {
     }}>
       {/* Logo */}
       <div style={{ marginBottom: 40, textAlign: "center", userSelect: "none" }}>
-        <div style={{ fontSize: 38, fontWeight: 900, color: "var(--accent)", letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 8 }}>
+        <div style={{ fontSize: 38, fontWeight: 600, color: "var(--accent)", letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 8 }}>
           #
         </div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-dim)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-dim)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
           hashmark studio
         </div>
       </div>
@@ -335,7 +335,7 @@ export default function WorkspaceSetup() {
       {/* ── Step 1: Open project ── */}
       {step === 1 && (
         <div style={card}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 6 }}>
             Open a project
           </div>
           <div style={{ fontSize: 12, color: "var(--text-dimmer)", marginBottom: 24 }}>
@@ -479,7 +479,7 @@ export default function WorkspaceSetup() {
       {/* ── Step 2: Configure ── */}
       {step === 2 && (
         <div style={card}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 6 }}>
             Configure project
           </div>
           <div style={{ fontSize: 12, color: "var(--text-dimmer)", marginBottom: 24 }}>
@@ -625,7 +625,7 @@ export default function WorkspaceSetup() {
       {/* ── Step 3: Ready ── */}
       {step === 3 && (
         <div style={card}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 6 }}>
             You're all set
           </div>
           <div style={{ fontSize: 12, color: "var(--text-dimmer)", marginBottom: 28 }}>
@@ -674,7 +674,7 @@ export default function WorkspaceSetup() {
               padding: "10px 0",
               justifyContent: "center",
               letterSpacing: "0.04em",
-              fontWeight: 700,
+              fontWeight: 600,
             }}
             onClick={openStudio}
           >

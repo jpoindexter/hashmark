@@ -107,17 +107,17 @@ const AssistantContent = memo(function AssistantContent({ text }: { text: string
     }
 
     if (line.startsWith("### ")) {
-      nodes.push(<h4 key={key++} style={{ color: "var(--text)", fontSize: "12px", fontWeight: 700, margin: "12px 0 4px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{line.slice(4)}</h4>);
+      nodes.push(<h4 key={key++} style={{ color: "var(--text)", fontSize: "12px", fontWeight: 600, margin: "12px 0 4px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{line.slice(4)}</h4>);
       i++;
       continue;
     }
     if (line.startsWith("## ")) {
-      nodes.push(<h3 key={key++} style={{ color: "var(--text)", fontSize: "13px", fontWeight: 700, margin: "12px 0 4px" }}>{line.slice(3)}</h3>);
+      nodes.push(<h3 key={key++} style={{ color: "var(--text)", fontSize: "13px", fontWeight: 600, margin: "12px 0 4px" }}>{line.slice(3)}</h3>);
       i++;
       continue;
     }
     if (line.startsWith("# ")) {
-      nodes.push(<h2 key={key++} style={{ color: "var(--accent)", fontSize: "14px", fontWeight: 700, margin: "12px 0 6px" }}>{line.slice(2)}</h2>);
+      nodes.push(<h2 key={key++} style={{ color: "var(--accent)", fontSize: "14px", fontWeight: 600, margin: "12px 0 6px" }}>{line.slice(2)}</h2>);
       i++;
       continue;
     }
@@ -504,7 +504,7 @@ export default function Sessions() {
           gap: "8px",
           flexShrink: 0,
         }}>
-          <span style={{ color: "var(--red)", fontWeight: 700 }}>✗ claude CLI not found.</span>
+          <span style={{ color: "var(--red)", fontWeight: 600 }}>✗ claude CLI not found.</span>
           Install Claude Code: <code style={{ background: "var(--bg-3)", padding: "1px 5px", borderRadius: "var(--radius-sm)" }}>npm install -g @anthropic-ai/claude-code</code>
         </div>
       )}
@@ -1091,7 +1091,7 @@ function AvatarBadge({ role }: { role: "user" | "assistant" }) {
       display: "flex", alignItems: "center", justifyContent: "center",
       fontSize: "9px", color: isUser ? "var(--text-dim)" : "var(--accent)",
       flexShrink: 0, fontFamily: "var(--font)", letterSpacing: "0.05em",
-      fontWeight: 700,
+      fontWeight: 600,
     }}>
       {isUser ? "YOU" : "AI"}
     </div>

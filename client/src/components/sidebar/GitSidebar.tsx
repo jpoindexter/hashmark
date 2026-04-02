@@ -68,7 +68,7 @@ function FileTypeIcon({ filename }: { filename: string }) {
     return (
       <span style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center",
-        width: 16, height: 16, fontSize: 8, fontWeight: 700, flexShrink: 0,
+        width: 16, height: 16, fontSize: 8, fontWeight: 600, flexShrink: 0,
         color: "var(--blue)", fontFamily: "var(--font)",
       }}>
         TS
@@ -81,7 +81,7 @@ function FileTypeIcon({ filename }: { filename: string }) {
     return (
       <span style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center",
-        width: 16, height: 16, fontSize: 8, fontWeight: 700, flexShrink: 0,
+        width: 16, height: 16, fontSize: 8, fontWeight: 600, flexShrink: 0,
         color: "var(--yellow)", fontFamily: "var(--font)",
       }}>
         JS
@@ -94,7 +94,7 @@ function FileTypeIcon({ filename }: { filename: string }) {
     return (
       <span style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center",
-        width: 16, height: 16, fontSize: 9, fontWeight: 700, flexShrink: 0,
+        width: 16, height: 16, fontSize: 9, fontWeight: 600, flexShrink: 0,
         color: "var(--yellow)", fontFamily: "var(--font)",
       }}>
         {"{}"}
@@ -107,7 +107,7 @@ function FileTypeIcon({ filename }: { filename: string }) {
     return (
       <span style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center",
-        width: 16, height: 16, fontSize: 8, fontWeight: 700, flexShrink: 0,
+        width: 16, height: 16, fontSize: 8, fontWeight: 600, flexShrink: 0,
         color: "var(--purple)", fontFamily: "var(--font)",
       }}>
         MD
@@ -120,7 +120,7 @@ function FileTypeIcon({ filename }: { filename: string }) {
     return (
       <span style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center",
-        width: 16, height: 16, fontSize: 10, fontWeight: 700, flexShrink: 0,
+        width: 16, height: 16, fontSize: 10, fontWeight: 600, flexShrink: 0,
         color: "var(--accent)", fontFamily: "var(--font)",
       }}>
         #
@@ -133,7 +133,7 @@ function FileTypeIcon({ filename }: { filename: string }) {
     return (
       <span style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center",
-        width: 16, height: 16, fontSize: 7, fontWeight: 700, flexShrink: 0,
+        width: 16, height: 16, fontSize: 7, fontWeight: 600, flexShrink: 0,
         color: "var(--orange)", fontFamily: "var(--font)",
       }}>
         {"<>"}
@@ -146,7 +146,7 @@ function FileTypeIcon({ filename }: { filename: string }) {
     return (
       <span style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center",
-        width: 16, height: 16, fontSize: 8, fontWeight: 700, flexShrink: 0,
+        width: 16, height: 16, fontSize: 8, fontWeight: 600, flexShrink: 0,
         color: "var(--blue)", fontFamily: "var(--font)",
       }}>
         PY
@@ -255,7 +255,7 @@ function ActionBtn({
         color: color ?? "var(--text-dimmer)",
         fontFamily: "var(--font)",
         fontSize: 12,
-        fontWeight: 700,
+        fontWeight: 600,
         lineHeight: 1,
         width: 16,
         height: 16,
@@ -762,7 +762,7 @@ function CreatePrDialog({
             onClick={onClose}
             className="hoverable"
             style={{
-              padding: "6px 16px", fontSize: 12, fontFamily: "var(--font-ui)", fontWeight: 500,
+              padding: "6px 16px", fontSize: 12, fontFamily: "var(--font-ui)", fontWeight: 600,
               background: "var(--bg-3)", border: "1px solid var(--border)",
               borderRadius: "var(--radius)", color: "var(--text-dim)",
             }}
@@ -1159,7 +1159,7 @@ export default function GitSidebar() {
                   onToggle={() => setStagedExpanded((v) => !v)}
                   actions={
                     <HeaderIconBtn title="Unstage all" onClick={() => void unstageAll()}>
-                      <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1 }}>{"\u2212"}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, lineHeight: 1 }}>{"\u2212"}</span>
                     </HeaderIconBtn>
                   }
                 />

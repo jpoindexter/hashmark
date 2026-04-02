@@ -117,7 +117,7 @@ export default function AboutDialog({ open, onClose }: { open: boolean; onClose:
         {/* Logo */}
         <div style={{
           fontSize: 48,
-          fontWeight: 700,
+          fontWeight: 600,
           fontFamily: "var(--font)",
           color: "var(--accent)",
           lineHeight: 1,
@@ -270,7 +270,7 @@ function LinkButton({ label, onClick }: { label: string; onClick: () => void }) 
         padding: "4px 12px",
         fontSize: 11,
         fontFamily: "var(--font-ui)",
-        fontWeight: 500,
+        fontWeight: 600,
         background: "transparent",
         border: "1px solid var(--border-dim)",
         borderRadius: "var(--radius)",

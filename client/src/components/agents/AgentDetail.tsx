@@ -116,7 +116,7 @@ function GovTab({ agent }: { agent: Agent }) {
 
         <GovSection label="Risk Class">
           <span style={{
-            display: "inline-block", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
+            display: "inline-block", fontSize: 11, fontWeight: 600, letterSpacing: "0.08em",
             padding: "2px 8px", borderRadius: 2,
             color: govInfo.riskClass === "HIGH" ? "var(--red)" : govInfo.riskClass === "MEDIUM" ? "var(--yellow)" : "var(--accent)",
             background: govInfo.riskClass === "HIGH" ? "var(--red-bg)" : govInfo.riskClass === "MEDIUM" ? "rgba(210,153,34,0.1)" : "var(--accent-bg)",

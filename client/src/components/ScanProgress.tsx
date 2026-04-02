@@ -117,7 +117,7 @@ export default function ScanProgress({ onComplete, onError, onCancel }: ScanProg
             fontSize: "11px",
             textTransform: "uppercase",
             letterSpacing: "0.12em",
-            fontWeight: 700,
+            fontWeight: 600,
             color: "var(--accent)",
           }}>
             {finished ? "Done" : "Scanning..."}

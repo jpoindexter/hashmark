@@ -305,7 +305,7 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
                 <div key={f.pattern} style={{ marginBottom: 5 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 1 }}>
                     <span style={{
-                      fontSize: 10, fontWeight: 700, padding: "1px 4px",
+                      fontSize: 10, fontWeight: 600, padding: "1px 4px",
                       background: f.severity === "critical" ? "rgba(248,81,73,0.15)" : "rgba(226,197,65,0.15)",
                       color: f.severity === "critical" ? "var(--red)" : "var(--yellow)",
                     }}>

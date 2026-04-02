@@ -92,7 +92,7 @@ export default function AgentList({
     <div style={{ flex: 1, overflow: "auto", padding: "28px" }}>
       <div style={{ marginBottom: "20px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
         <div>
-          <h1 style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: "4px" }}>Agent Company</h1>
+          <h1 style={{ fontSize: "18px", fontWeight: 600, letterSpacing: "-0.02em", marginBottom: "4px" }}>Agent Company</h1>
           <div style={{ fontSize: "11px", color: "var(--text-dimmer)" }}>
             {agents.length} agents across {departments.length} departments
           </div>

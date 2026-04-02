@@ -314,7 +314,7 @@ function MentionPicker({
             onMouseEnter={() => setActiveIdx(idx)}
             style={{ ...pickerRowStyle(isActive), gap: 8, padding: "5px 12px" }}
           >
-            <span style={{ fontFamily: "var(--font)", fontSize: 10, fontWeight: 700, color, minWidth: 22, textAlign: "center", flexShrink: 0 }}>
+            <span style={{ fontFamily: "var(--font)", fontSize: 10, fontWeight: 600, color, minWidth: 22, textAlign: "center", flexShrink: 0 }}>
               {file.ext ? file.ext.toUpperCase().slice(0, 2) : "  "}
             </span>
             <span style={{ fontFamily: "var(--font)", fontSize: 12, color: isActive ? "var(--text)" : "var(--text-dim)", flexShrink: 0 }}>

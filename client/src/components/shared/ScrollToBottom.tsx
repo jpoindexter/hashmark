@@ -28,7 +28,7 @@ const buttonBase: CSSProperties = {
   color: "var(--text-dim)",
   fontSize: 12,
   fontFamily: "var(--font-ui)",
-  fontWeight: 500,
+  fontWeight: 600,
   cursor: "pointer",
   pointerEvents: "auto",
   transition: "background 0.1s ease, border-color 0.1s ease, color 0.1s ease",

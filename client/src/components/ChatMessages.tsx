@@ -200,15 +200,15 @@ export const AssistantContent = memo(function AssistantContent({ text }: { text:
     }
 
     if (line.startsWith("### ")) {
-      nodes.push(<h4 key={key++} style={{ color: "var(--text)", fontSize: "12px", fontWeight: 700, margin: "12px 0 4px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{line.slice(4)}</h4>);
+      nodes.push(<h4 key={key++} style={{ color: "var(--text)", fontSize: "12px", fontWeight: 600, margin: "12px 0 4px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{line.slice(4)}</h4>);
       i++; continue;
     }
     if (line.startsWith("## ")) {
-      nodes.push(<h3 key={key++} style={{ color: "var(--text)", fontSize: "13px", fontWeight: 700, margin: "12px 0 4px" }}>{line.slice(3)}</h3>);
+      nodes.push(<h3 key={key++} style={{ color: "var(--text)", fontSize: "13px", fontWeight: 600, margin: "12px 0 4px" }}>{line.slice(3)}</h3>);
       i++; continue;
     }
     if (line.startsWith("# ")) {
-      nodes.push(<h2 key={key++} style={{ color: "var(--accent)", fontSize: "14px", fontWeight: 700, margin: "12px 0 6px" }}>{line.slice(2)}</h2>);
+      nodes.push(<h2 key={key++} style={{ color: "var(--accent)", fontSize: "14px", fontWeight: 600, margin: "12px 0 6px" }}>{line.slice(2)}</h2>);
       i++; continue;
     }
 
@@ -277,7 +277,7 @@ export function ToolUseBlock({ block }: { block: ToolUseBlockData }) {
       margin: "4px 0",
       lineHeight: 1.4,
     }}>
-      <span style={{ color: accent, fontWeight: 700, flexShrink: 0 }}>[{block.tool}]</span>
+      <span style={{ color: accent, fontWeight: 600, flexShrink: 0 }}>[{block.tool}]</span>
       {arg && (
         <span style={{
           color: "var(--text-dim)",
@@ -334,7 +334,7 @@ const USER_AVATAR_STYLE: React.CSSProperties = {
   color: "var(--text-dim)",
   flexShrink: 0,
   fontFamily: "var(--font)",
-  fontWeight: 700,
+  fontWeight: 600,
   letterSpacing: "0.05em",
   marginTop: 2,
 };

@@ -62,7 +62,7 @@ function OutcomeBadge({ outcome }: { outcome: string }) {
       padding: "1px 7px",
       fontSize: 10,
       fontFamily: "var(--font)",
-      fontWeight: 700,
+      fontWeight: 600,
       letterSpacing: "0.06em",
       textTransform: "uppercase",
       background: s.bg,
@@ -144,7 +144,7 @@ function DeleteButton({ onConfirm }: { onConfirm: () => void }) {
               style={{
                 background: "var(--red)", border: "none", color: "var(--text)",
                 padding: "3px 10px", fontFamily: "var(--font)", fontSize: 10,
-                fontWeight: 700, cursor: "pointer", letterSpacing: "0.04em",
+                fontWeight: 600, cursor: "pointer", letterSpacing: "0.04em",
               }}
             >
               DELETE
@@ -312,7 +312,7 @@ function PolicyDrawer({ policy, onSave, onClose }: PolicyDrawerProps) {
           borderBottom: "1px solid var(--border-dim)",
           background: "var(--bg-3)",
         }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", letterSpacing: "0.06em" }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "var(--accent)", letterSpacing: "0.06em" }}>
             {isEdit ? "EDIT POLICY" : "NEW POLICY"}
           </span>
           <button
@@ -816,7 +816,7 @@ function ActionLogTab() {
               <div style={{ fontSize: 10, letterSpacing: "0.06em", color: "var(--text-dimmer)", marginBottom: 4 }}>
                 {s.label}
               </div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: s.color, fontFamily: "var(--font)" }}>
+              <div style={{ fontSize: 22, fontWeight: 600, color: s.color, fontFamily: "var(--font)" }}>
                 {s.value}
               </div>
             </div>
@@ -1041,7 +1041,7 @@ function ActionBadge({ action }: { action: string }) {
       padding: "1px 7px",
       fontSize: 10,
       fontFamily: "var(--font)",
-      fontWeight: 700,
+      fontWeight: 600,
       letterSpacing: "0.05em",
       textTransform: "uppercase",
       background: `${color}1a`,
@@ -1066,7 +1066,7 @@ function JournalOutcomeBadge({ outcome }: { outcome: string }) {
       padding: "1px 7px",
       fontSize: 10,
       fontFamily: "var(--font)",
-      fontWeight: 700,
+      fontWeight: 600,
       letterSpacing: "0.06em",
       textTransform: "uppercase",
       background: s.bg,
@@ -1269,7 +1269,7 @@ export default function Governance() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
         <Shield size={16} style={{ color: "var(--accent)" }} />
-        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", letterSpacing: "0.02em" }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", letterSpacing: "0.02em" }}>
           GOVERNANCE
         </span>
         <span style={{ fontSize: 11, color: "var(--text-dimmer)", marginLeft: 4 }}>

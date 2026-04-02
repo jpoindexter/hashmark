@@ -41,7 +41,7 @@ function FileBadge({ status }: { status: string }) {
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", justifyContent: "center",
-      width: 16, height: 16, fontSize: 10, fontWeight: 700,
+      width: 16, height: 16, fontSize: 10, fontWeight: 600,
       color: STATUS_COLOR[char] ?? "var(--text-dimmer)",
       background: "var(--bg-3)", borderRadius: "var(--radius-sm)", flexShrink: 0,
       fontFamily: "var(--font)",
@@ -66,7 +66,7 @@ function FileActionBtn({
       className="btn-icon"
       style={{
         color: color ?? "var(--text-dimmer)",
-        fontFamily: "var(--font)", fontSize: 12, fontWeight: 700, lineHeight: 1,
+        fontFamily: "var(--font)", fontSize: 12, fontWeight: 600, lineHeight: 1,
         width: 18, height: 18,
       }}
     >

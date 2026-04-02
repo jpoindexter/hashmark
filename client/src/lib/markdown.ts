@@ -20,7 +20,7 @@ export function renderInline(text: string): ReactNode {
     if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
       return createElement("strong", {
         key: i,
-        style: { color: "var(--text)", fontWeight: 700 },
+        style: { color: "var(--text)", fontWeight: 600 },
       }, part.slice(2, -2));
     }
     return part;

@@ -77,7 +77,7 @@ export default function ScanConfigPanel() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
       <div style={{ padding: "14px 0", borderBottom: "1px solid var(--border-dim)" }}>
-        <div style={{ fontSize: 13, color: "var(--text)", fontWeight: 500, marginBottom: 2 }}>Default Formats</div>
+        <div style={{ fontSize: 13, color: "var(--text)", fontWeight: 600, marginBottom: 2 }}>Default Formats</div>
         <div style={{ fontSize: 11, color: "var(--text-dimmer)", marginBottom: 12 }}>Which output files to generate on each scan</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {ALL_FORMATS.map(fmt => {

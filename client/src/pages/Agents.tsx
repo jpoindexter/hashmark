@@ -214,7 +214,7 @@ function CreateAgentModal({ modalRef, createName, createDesc, createDept, create
           width: "440px", padding: "24px", display: "flex", flexDirection: "column", gap: "16px",
         }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "-0.01em" }}>New Agent</span>
+          <span style={{ fontSize: "13px", fontWeight: 600, letterSpacing: "-0.01em" }}>New Agent</span>
           <button onClick={onClose} style={{ color: "var(--text-dimmer)", fontSize: "14px", lineHeight: 1 }}>✕</button>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>

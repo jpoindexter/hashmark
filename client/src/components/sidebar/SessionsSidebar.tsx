@@ -221,7 +221,7 @@ function SectionHeader({ onAdd }: { onAdd: () => void }) {
       <span style={{
         flex: 1,
         fontSize: 11,
-        fontWeight: 700,
+        fontWeight: 600,
         color: "var(--text-dim)",
         textTransform: "uppercase",
         letterSpacing: "0.06em",
@@ -364,7 +364,7 @@ function LetterAvatar({ name }: { name: string }) {
       alignItems: "center",
       justifyContent: "center",
       fontSize: 9,
-      fontWeight: 700,
+      fontWeight: 600,
       color: avatarColor(),
       flexShrink: 0,
     }}>

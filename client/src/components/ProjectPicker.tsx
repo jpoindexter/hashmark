@@ -345,7 +345,7 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
       <div style={{ textAlign: "center", userSelect: "none" }}>
         <div style={{
           fontSize: 44,
-          fontWeight: 900,
+          fontWeight: 600,
           color: "var(--accent)",
           letterSpacing: "-0.04em",
           lineHeight: 1,
@@ -355,7 +355,7 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
         </div>
         <div style={{
           fontSize: 13,
-          fontWeight: 700,
+          fontWeight: 600,
           color: "var(--text)",
           letterSpacing: "0.1em",
           textTransform: "uppercase",
@@ -459,7 +459,7 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
                   color: "var(--bg)",
                   fontFamily: "var(--font)",
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 600,
                   letterSpacing: "0.06em",
                   cursor: loading || !pathInput.trim() ? "default" : "pointer",
                   opacity: loading || !pathInput.trim() ? 0.5 : 1,
@@ -542,7 +542,7 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
                   color: "var(--bg)",
                   fontFamily: "var(--font)",
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 600,
                   letterSpacing: "0.06em",
                   cursor: loading || !newWsInput.trim() ? "default" : "pointer",
                   opacity: loading || !newWsInput.trim() ? 0.5 : 1,
@@ -1018,7 +1018,7 @@ function DropdownWorkspaceRow({
           </span>
           {isActive && (
             <span style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: "0.06em",
+              fontSize: 9, fontWeight: 600, letterSpacing: "0.06em",
               color: "var(--accent)", opacity: 0.7,
             }}>
               ACTIVE

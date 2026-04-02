@@ -124,7 +124,7 @@ export function StructuredOutput({ segments, running, output, runStatus }: {
       )}
       {segments.length > 0 && segments.map((seg, idx) => {
         if (seg.type === "h1") return (
-          <div key={idx} style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 8, marginTop: idx > 0 ? 20 : 0, paddingBottom: 6, borderBottom: "1px solid var(--border-dim)", fontFamily: "var(--font-ui, var(--font))" }}>{seg.text}</div>
+          <div key={idx} style={{ fontSize: 15, fontWeight: 600, color: "var(--text)", marginBottom: 8, marginTop: idx > 0 ? 20 : 0, paddingBottom: 6, borderBottom: "1px solid var(--border-dim)", fontFamily: "var(--font-ui, var(--font))" }}>{seg.text}</div>
         );
         if (seg.type === "h2") return (
           <div key={idx} className="label" style={{ fontSize: 12, color: "var(--text)", marginBottom: 6, marginTop: idx > 0 ? 16 : 0 }}>{seg.text}</div>
@@ -155,7 +155,7 @@ export function StructuredOutput({ segments, running, output, runStatus }: {
         );
         if (seg.type === "tool_event") return (
           <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 8px", background: "rgba(56,139,253,0.06)", border: "1px solid rgba(56,139,253,0.18)", borderRadius: 2, margin: "3px 0" }}>
-            <span style={{ color: "var(--blue)", fontWeight: 700, fontSize: 9, letterSpacing: "0.08em", fontFamily: "var(--font)", flexShrink: 0 }}>{seg.tool}</span>
+            <span style={{ color: "var(--blue)", fontWeight: 600, fontSize: 9, letterSpacing: "0.08em", fontFamily: "var(--font)", flexShrink: 0 }}>{seg.tool}</span>
             <span style={{ color: "var(--text-dimmer)", fontSize: 10, fontFamily: "var(--font)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{seg.detail}</span>
           </div>
         );
