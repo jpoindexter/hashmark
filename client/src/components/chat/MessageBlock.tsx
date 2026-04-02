@@ -60,15 +60,11 @@ function SkillRow({ name }: { name: string }) {
     }}>
       <RefreshCw size={14} style={{ color: "var(--text-dim)", flexShrink: 0 }} />
       <span style={{ color: "var(--text-dim)" }}>{name}</span>
-      <span style={{
-        fontSize: 9,
-        fontWeight: 600,
+      <span className="text-micro" style={{
         color: "var(--accent)",
         background: "var(--accent-bg)",
         padding: "1px 5px",
         borderRadius: 3,
-        textTransform: "uppercase",
-        letterSpacing: "0.05em",
       }}>
         activated
       </span>

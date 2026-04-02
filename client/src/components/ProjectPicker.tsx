@@ -163,12 +163,9 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
         }}>
           #
         </div>
-        <div style={{
+        <div className="label" style={{
           fontSize: 13,
-          fontWeight: 600,
           color: "var(--text)",
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
           marginBottom: 4,
         }}>
           HASHMARK STUDIO
@@ -383,11 +380,7 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
           ref={recentRef}
           style={{ ...noInteract, width: "100%", maxWidth: 480, padding: "0 20px", boxSizing: "border-box" }}
         >
-          <div style={{
-            fontSize: 10,
-            color: "var(--text-dimmer)",
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
+          <div className="label" style={{
             marginBottom: 8,
             paddingLeft: 2,
           }}>
