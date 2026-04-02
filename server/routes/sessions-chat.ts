@@ -25,6 +25,7 @@ import { loadProjectEnvVars } from "../lib/env.js";
 import { createStudioMcpConfig } from "../lib/mcp-studio.js";
 import { findBin } from "../lib/bin-resolver.js";
 import { onTurnComplete, loadSessionMemory } from "../lib/session-memory.js";
+import { loadToolPlugins, buildToolPluginPrompt } from "../lib/tool-plugins.js";
 import type { WorkspaceCtx } from "./workspaces.js";
 import type { SessionSharedState } from "./sessions-shared.js";
 
@@ -188,7 +189,11 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
     const agentIdentity = session.agent_name ? `You are ${session.agent_name}, an AI assistant.` : null;
     const userSystemPrompt = body.systemPrompt ?? null;
 
-    const effectiveSystemPrompt = [scanContext, sessionMemory, agentIdentity, userSystemPrompt]
+    // Inject custom tool definitions so Claude knows about project-specific commands
+    const toolPlugins = loadToolPlugins(projectDir);
+    const toolContext = buildToolPluginPrompt(toolPlugins) || null;
+
+    const effectiveSystemPrompt = [scanContext, sessionMemory, agentIdentity, toolContext, userSystemPrompt]
       .filter(Boolean)
       .join("\n\n---\n\n") || undefined;
 
@@ -432,7 +437,37 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
           proc.stdin.write(fullPrompt + "\n");
           proc.stdin.end();
 
-          let fullText = "";
+          // Delta-aware message storage for CLI path
+          let cliMsgId: string | null = null;
+          let cliTotalLength = 0;
+          let cliPendingDelta = "";
+          let cliFlushTimer: ReturnType<typeof setTimeout> | null = null;
+          const CLI_FLUSH_INTERVAL = 500;
+
+          const cliFlushDelta = () => {
+            if (cliFlushTimer) { clearTimeout(cliFlushTimer); cliFlushTimer = null; }
+            if (cliPendingDelta && cliMsgId) {
+              db.prepare("UPDATE session_messages SET content = content || ? WHERE id = ?")
+                .run(cliPendingDelta, cliMsgId);
+              cliPendingDelta = "";
+            }
+          };
+
+          const cliAppendDelta = (text: string) => {
+            cliTotalLength += text.length;
+            if (!cliMsgId) {
+              cliMsgId = randomUUID();
+              db.prepare(
+                "INSERT INTO session_messages (id, session_id, role, content, created_at, sent_at) VALUES (?, ?, 'assistant', ?, ?, ?)"
+              ).run(cliMsgId, sessionId, text, Date.now(), Date.now());
+            } else {
+              cliPendingDelta += text;
+              if (!cliFlushTimer) {
+                cliFlushTimer = setTimeout(cliFlushDelta, CLI_FLUSH_INTERVAL);
+              }
+            }
+          };
+
           const parser = createStreamParser();
 
           proc.stdout.on("data", (chunk: Buffer) => {
@@ -441,7 +476,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
               switch (ev.type) {
                 case "text":
                   markMessagesSent();
-                  fullText += ev.text;
+                  cliAppendDelta(ev.text);
                   send({ type: "text", text: ev.text });
                   if (claudeSections.length > 0) {
                     updateAnalytics(dataDir, sessionId, ev.text, claudeSections);
@@ -500,7 +535,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
             for (const ev of parser.flush()) {
               switch (ev.type) {
                 case "text":
-                  fullText += ev.text;
+                  cliAppendDelta(ev.text);
                   send({ type: "text", text: ev.text });
                   if (claudeSections.length > 0) {
                     updateAnalytics(dataDir, sessionId, ev.text, claudeSections);
@@ -519,15 +554,26 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
               }
             }
 
-            const killed = code === null || code === 130 || code === 143;
-            const savedText = fullText.trim() || (killed ? "[interrupted]" : "[no response]");
-            const msgInputEstimate = Math.ceil(body.message.length / 4);
-            const msgOutputEstimate = Math.ceil(savedText.length / 4);
+            // Flush any remaining debounced delta before finalizing
+            cliFlushDelta();
 
-            db.prepare(`
-              INSERT INTO session_messages (id, session_id, role, content, input_tokens, output_tokens, created_at, sent_at)
-              VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?)
-            `).run(randomUUID(), sessionId, savedText, msgInputEstimate, msgOutputEstimate, Date.now(), Date.now());
+            const killed = code === null || code === 130 || code === 143;
+            const msgInputEstimate = Math.ceil(body.message.length / 4);
+            const msgOutputEstimate = Math.ceil(cliTotalLength / 4);
+
+            if (!cliMsgId) {
+              // No text chunks arrived -- insert placeholder
+              cliMsgId = randomUUID();
+              const placeholder = killed ? "[interrupted]" : "[no response]";
+              db.prepare(
+                "INSERT INTO session_messages (id, session_id, role, content, input_tokens, output_tokens, created_at, sent_at) VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?)"
+              ).run(cliMsgId, sessionId, placeholder, msgInputEstimate, msgOutputEstimate, Date.now(), Date.now());
+            } else {
+              // Update token counts on the already-inserted message
+              db.prepare(
+                "UPDATE session_messages SET input_tokens = ?, output_tokens = ? WHERE id = ?"
+              ).run(msgInputEstimate, msgOutputEstimate, cliMsgId);
+            }
 
             db.prepare(`
               UPDATE sessions
@@ -566,12 +612,17 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
           proc.on("error", (err: Error) => {
             shared.activeProcesses.delete(sessionId);
             shared.sessionLastActivity.delete(sessionId);
+            cliFlushDelta();
             send({ type: "error", message: err.message });
 
-            db.prepare(`
-              INSERT INTO session_messages (id, session_id, role, content, created_at, sent_at)
-              VALUES (?, ?, 'assistant', ?, ?, ?)
-            `).run(randomUUID(), sessionId, `Error: ${err.message}`, Date.now(), Date.now());
+            if (!cliMsgId) {
+              db.prepare(
+                "INSERT INTO session_messages (id, session_id, role, content, created_at, sent_at) VALUES (?, ?, 'assistant', ?, ?, ?)"
+              ).run(randomUUID(), sessionId, `Error: ${err.message}`, Date.now(), Date.now());
+            } else {
+              db.prepare("UPDATE session_messages SET content = content || ? WHERE id = ?")
+                .run(`\n\nError: ${err.message}`, cliMsgId);
+            }
 
             db.prepare("UPDATE sessions SET status = 'idle', ended_at = ?, error_count = error_count + 1, updated_at = ? WHERE id = ?")
               .run(Date.now(), Date.now(), sessionId);
