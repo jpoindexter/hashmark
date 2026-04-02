@@ -147,12 +147,11 @@ export default function Settings() {
 
       <div
         onMouseDown={onDragStart}
+        className="hoverable-accent"
         style={{
           width: 4, cursor: "col-resize", background: "transparent",
-          flexShrink: 0, zIndex: 10, transition: "background 0.1s",
+          flexShrink: 0, zIndex: 10,
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "var(--accent)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
       />
 
       <div style={{ flex: 1, overflowY: "auto", padding: "28px 36px", minWidth: 0 }}>

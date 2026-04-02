@@ -182,6 +182,7 @@ export function DiffPanel({ diff, filename, onClose, fullWidth }: DiffPanelProps
           <button
             onClick={onClose}
             title="Close"
+            className="hoverable"
             style={{
               background: "none",
               border: "none",
@@ -191,10 +192,7 @@ export function DiffPanel({ diff, filename, onClose, fullWidth }: DiffPanelProps
               padding: "0 4px",
               lineHeight: 1,
               flexShrink: 0,
-              transition: "color 0.1s",
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)"; }}
           >
             ×
           </button>

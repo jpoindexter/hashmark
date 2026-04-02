@@ -260,15 +260,13 @@ export default function ProviderSelector() {
               <div
                 key={p.id}
                 onClick={() => void selectProvider(p.id)}
+                className={isActive ? "" : "hoverable"}
                 style={{
                   display: "flex", alignItems: "center", gap: 8,
                   padding: "7px 12px", cursor: "pointer",
                   background: isActive ? "var(--accent-bg)" : "transparent",
                   borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
-                  transition: "background 0.05s",
                 }}
-                onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "var(--hover-bg)"; }}
-                onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
               >
                 <span style={{ fontSize: 13, color: isActive ? "var(--accent)" : "var(--text-dimmer)", flexShrink: 0 }}>
                   {PROVIDER_ICONS[p.id] ?? "◎"}
@@ -334,16 +332,14 @@ export default function ProviderSelector() {
                   <div
                     key={m}
                     onClick={() => void saveModel(m)}
+                    className={isActiveModel ? "" : "hoverable"}
                     style={{
                       display: "flex", alignItems: "center", justifyContent: "space-between",
                       padding: "5px 12px", cursor: "pointer", fontSize: 11,
                       color: isActiveModel ? "var(--accent)" : "var(--text-dim)",
                       background: isActiveModel ? "var(--accent-bg)" : "transparent",
                       borderLeft: isActiveModel ? "2px solid var(--accent)" : "2px solid transparent",
-                      transition: "background 0.05s",
                     }}
-                    onMouseEnter={e => { if (!isActiveModel) (e.currentTarget as HTMLDivElement).style.background = "var(--hover-bg)"; }}
-                    onMouseLeave={e => { if (!isActiveModel) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
                   >
                     <span style={{ fontFamily: "var(--font)", fontWeight: isActiveModel ? 600 : 400 }}>{m}</span>
                     {isActiveModel && <span style={{ fontSize: 9, opacity: 0.7 }}>active</span>}

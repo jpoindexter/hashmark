@@ -200,12 +200,11 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
               onClick={handlePrune}
               disabled={pruning}
               title="Prune old checkpoints"
+              className="hoverable-red"
               style={{
                 ...iconBtn,
                 opacity: pruning ? 0.4 : 1,
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--red)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)"; }}
             >
               <Trash2 size={12} />
             </button>
@@ -331,9 +330,8 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
                   <button
                     onClick={() => handleViewDiff(cp)}
                     title={isActive ? "Hide diff" : "View diff"}
+                    className="hoverable-blue"
                     style={{ ...iconBtn, opacity: isLoadingDiff ? 0.5 : 1 }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--blue)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)"; }}
                   >
                     {isActive ? <EyeOff size={11} /> : <Eye size={11} />}
                   </button>
@@ -343,9 +341,8 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
                     onClick={() => handleRestore(cp)}
                     disabled={isRestoring}
                     title="Restore (creates branch)"
+                    className="hoverable-accent"
                     style={{ ...iconBtn, opacity: isRestoring ? 0.4 : 1 }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--accent)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)"; }}
                   >
                     {isRestoring ? <RotateCcw size={11} style={{ animation: "spin 0.8s linear infinite" }} /> : <RotateCcw size={11} />}
                   </button>
@@ -354,9 +351,8 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
                   <button
                     onClick={() => handleDelete(cp)}
                     title="Delete checkpoint"
+                    className="hoverable-red"
                     style={iconBtn}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--red)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dimmer)"; }}
                   >
                     <X size={11} />
                   </button>

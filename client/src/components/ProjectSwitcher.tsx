@@ -23,15 +23,14 @@ export default function ProjectSwitcher({ projectName }: { projectName: string |
     <div ref={ref} style={{ position: "relative", height: "100%", display: "flex", alignItems: "center" }}>
       <div
         onClick={() => setOpen(v => !v)}
+        className="hoverable"
         style={{
           display: "flex", alignItems: "center", gap: 4,
           padding: "2px 8px", height: 22, borderRadius: 3,
           background: open ? "var(--active-bg)" : "transparent",
           cursor: "pointer", fontSize: 11, color: "var(--text-dim)",
-          transition: "background 0.1s", whiteSpace: "nowrap",
+          whiteSpace: "nowrap",
         }}
-        onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "var(--active-bg)"}
-        onMouseLeave={e => { if (!open) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
       >
         {projectName ?? "project"}
         <ChevronRight size={10} style={{ transform: open ? "rotate(-90deg)" : "rotate(90deg)", transition: "transform 0.1s", opacity: 0.5 }} />
@@ -54,9 +53,8 @@ export default function ProjectSwitcher({ projectName }: { projectName: string |
                 <div
                   key={path}
                   onClick={() => void openRecent(path)}
-                  style={{ display: "flex", flexDirection: "column", padding: "6px 12px", cursor: "pointer", borderBottom: "1px solid var(--border-dim)", transition: "background 0.1s" }}
-                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "var(--accent-bg)"}
-                  onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
+                  className="hoverable"
+                  style={{ display: "flex", flexDirection: "column", padding: "6px 12px", cursor: "pointer", borderBottom: "1px solid var(--border-dim)" }}
                 >
                   <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text)" }}>{lastName(path)}</span>
                   <span style={{ fontSize: 10, color: "var(--text-dimmer)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{path}</span>
@@ -66,9 +64,8 @@ export default function ProjectSwitcher({ projectName }: { projectName: string |
           )}
           <div
             onClick={() => void pickFolder()}
-            style={{ padding: "8px 12px", fontSize: 12, color: "var(--accent)", cursor: "pointer", transition: "background 0.1s" }}
-            onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "var(--accent-bg)"}
-            onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
+            className="hoverable"
+            style={{ padding: "8px 12px", fontSize: 12, color: "var(--accent)", cursor: "pointer" }}
           >
             Open Different Project...
           </div>
