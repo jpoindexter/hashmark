@@ -39,6 +39,7 @@ import { settingsRoutes } from "./routes/settings.js";
 import { getDb, getStudioSetting, setStudioSetting } from "./db.js";
 import { getPermissionMode, setPermissionMode, isValidPermissionMode } from "./lib/permissions.js";
 import { getStudioToken } from "./lib/studio-token.js";
+import { findClaudeBin } from "./lib/bin-resolver.js";
 import { studioAuthMiddleware } from "./lib/auth-middleware.js";
 import { startDbBackup } from "./lib/backup.js";
 import { startDreamLoop, getDreamStatus } from "./lib/dream.js";
@@ -131,6 +132,7 @@ export function createServer(opts: ServerOptions) {
 
   // Health check — verifies DB write access and claude binary exists
   let _claudeCheck: boolean | null = null;
+  let _claudeCheckTime = 0;
   app.get("/api/health", (c) => {
     const checks: Record<string, boolean> = {};
 
@@ -142,12 +144,14 @@ export function createServer(opts: ServerOptions) {
       checks.db = false;
     }
 
-    // Cache claude binary check (avoid spawnSync on every health poll)
-    if (_claudeCheck === null) {
+    // Cache claude binary check for 60s (re-check if previously false or stale)
+    const now = Date.now();
+    if (_claudeCheck === null || (!_claudeCheck && now - _claudeCheckTime > 60_000)) {
       try {
-        const { spawnSync } = require("child_process") as typeof import("child_process");
-        const r = spawnSync("which", ["claude"], { stdio: "pipe", timeout: 1000 });
-        _claudeCheck = r.status === 0;
+        const { existsSync } = require("fs") as typeof import("fs");
+        const resolved = findClaudeBin(ctx.projectDir);
+        _claudeCheck = resolved !== "claude" || existsSync("/usr/local/bin/claude") || existsSync("/opt/homebrew/bin/claude");
+        _claudeCheckTime = now;
       } catch {
         _claudeCheck = false;
       }
