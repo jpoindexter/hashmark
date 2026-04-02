@@ -14,6 +14,8 @@ export default function AgentRunner({ agent }: AgentRunnerProps) {
   const [runModel, setRunModel] = useState("claude-sonnet-4-6");
   const [output, setOutput] = useState("");
   const [runStatus, dispatchRunStatus] = useReducer(runStatusReducer, "idle" as RunStatus);
+  const runStatusRef = useRef(runStatus);
+  runStatusRef.current = runStatus;
   const running = runStatus === "starting" || runStatus === "running";
   const [runMeta, setRunMeta] = useState<{ startedAt: number; durationMs?: number; wordCount?: number } | null>(null);
   const [loopDetected, setLoopDetected] = useState<{ count: number; pattern: string } | null>(null);
@@ -124,7 +126,7 @@ export default function AgentRunner({ agent }: AgentRunnerProps) {
             try {
               const evt = JSON.parse(raw) as { type: string; text?: string; success?: boolean };
               if (evt.type === "text" && evt.text) {
-                if (runStatus === "starting") dispatchRunStatus({ type: "FIRST_CHUNK" });
+                if (runStatusRef.current === "starting") dispatchRunStatus({ type: "FIRST_CHUNK" });
                 assembled += evt.text;
                 setOutput(assembled);
                 if (assembled.length > 600) {
