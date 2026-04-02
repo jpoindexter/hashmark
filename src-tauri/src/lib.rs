@@ -1,11 +1,41 @@
 use std::fs;
 use std::path::PathBuf;
+use std::process::{Child, Command};
 use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_dialog::DialogExt;
+
+// ── Server Process ───────────────────────────────────────────────────────────
+
+struct ServerProcess(Mutex<Option<Child>>);
+
+/// Spawn the Node.js Hono server as a managed child process.
+/// The server binary is at `dist/bin.js` relative to the app resource dir.
+fn spawn_server(app: &AppHandle, project_dir: &str) -> Option<Child> {
+    let resource_dir = app.path().resource_dir().ok()?;
+    let bin_path = resource_dir.join("dist").join("bin.js");
+
+    // In dev mode, bin.js is at the project root
+    let bin_path = if bin_path.exists() {
+        bin_path
+    } else {
+        // Fallback: look relative to current exe (dev mode)
+        let exe_dir = std::env::current_exe().ok()?.parent()?.to_path_buf();
+        let dev_path = exe_dir.ancestors().nth(3)?.join("dist").join("bin.js");
+        if dev_path.exists() { dev_path } else { return None; }
+    };
+
+    Command::new("node")
+        .arg(&bin_path)
+        .env("STUDIO_PORT", "3200")
+        .env("HASHMARK_PROJECT_DIR", project_dir)
+        .env("HASHMARK_NO_OPEN", "1")
+        .spawn()
+        .ok()
+}
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -400,10 +430,12 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
-        .manage(ProjectDir(Mutex::new({
+        .manage({
             let cfg = read_config();
-            cfg.project_dir.unwrap_or_else(|| "__unset__".to_string())
-        })))
+            let dir = cfg.project_dir.unwrap_or_else(|| "__unset__".to_string());
+            ProjectDir(Mutex::new(dir))
+        })
+        .manage(ServerProcess(Mutex::new(None)))
         .setup(|app| {
             let menu = build_menu(&app.handle())?;
             app.set_menu(menu)?;
@@ -481,7 +513,24 @@ pub fn run() {
                 });
             }
 
+            // Spawn the Node.js server as a managed child process
+            let project_dir = app.state::<ProjectDir>().0.lock().unwrap().clone();
+            if let Some(child) = spawn_server(&app.handle(), &project_dir) {
+                let server = app.state::<ServerProcess>();
+                *server.0.lock().unwrap() = Some(child);
+            }
+
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            // Kill the server when the app window closes
+            if let tauri::WindowEvent::Destroyed = event {
+                if let Some(server) = window.app_handle().try_state::<ServerProcess>() {
+                    if let Some(mut child) = server.0.lock().unwrap().take() {
+                        let _ = child.kill();
+                    }
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![
             show_in_finder,

@@ -8,6 +8,9 @@
     "core:window:allow-start-dragging",
     "shell:default",
     "shell:allow-open",
+    "shell:allow-execute",
+    "shell:allow-spawn",
+    "shell:allow-stdin-write",
     "dialog:default",
     "dialog:allow-open"
   ]
