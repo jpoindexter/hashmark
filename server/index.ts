@@ -50,6 +50,7 @@ import { validateBridgeToken } from "./lib/bridge.js";
 import { bridgeRoutes } from "./routes/bridge.js";
 import { startDbBackup } from "./lib/backup.js";
 import { startDreamLoop, getDreamStatus } from "./lib/dream.js";
+import { startMagicDocsLoop, getMagicDocsStatus } from "./lib/magic-docs.js";
 import { initKairos } from "./lib/kairos.js";
 import { kairosRoutes } from "./routes/kairos.js";
 import { SmartRouter, type RoutingStrategy } from "./lib/smart-router.js";
@@ -297,6 +298,9 @@ export function createServer(opts: ServerOptions) {
     return c.json(smartRouter.recommend(strategy));
   });
 
+  // Magic docs status
+  app.get("/api/magic-docs/status", (c) => c.json(getMagicDocsStatus(ctx.projectDir)));
+
   // Rate limiting removed — this is a local desktop app, not a public API.
   // Claude CLI spawn rate limiting lives in server/lib/claude-usage.ts instead.
 
@@ -382,6 +386,7 @@ export function createServer(opts: ServerOptions) {
 
   // Dream mode -- background memory consolidation
   startDreamLoop(ctx.projectDir, ctx.dataDir);
+  startMagicDocsLoop(ctx.projectDir, ctx.dataDir);
 
   // Kairos -- persistent intelligent mode (disabled by default, user enables in Settings)
   initKairos(ctx.projectDir, ctx.dataDir);
