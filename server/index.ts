@@ -26,16 +26,10 @@ import { filesRoutes, getGitStatus } from "./routes/files.js";
 import { workspaceRoutes } from "./routes/workspace.js";
 import { checkpointRoutes } from "./routes/checkpoints.js";
 import { mcpRoutes } from "./routes/mcp.js";
-import { companyRoutes } from "./routes/company.js";
-import { runRoutes } from "./routes/run.js";
-import { swarmRoutes } from "./routes/swarm.js";
-import { inboxRoutes } from "./routes/inbox.js";
 import { driftRoutes, checkDrift } from "./routes/drift.js";
 import { providersRoutes } from "./routes/providers.js";
-import { governanceRoutes } from "./routes/governance.js";
 import { workspacesRoutes, type WorkspaceCtx } from "./routes/workspaces.js";
 import { configRoutes } from "./routes/config.js";
-import { sandboxRoutes } from "./routes/sandbox.js";
 import { settingsRoutes } from "./routes/settings.js";
 import { toolsRoutes } from "./routes/tools.js";
 import { promptsRoutes } from "./routes/prompts.js";
@@ -45,14 +39,9 @@ import { getDb, getStudioSetting, setStudioSetting } from "./db.js";
 import { getPermissionMode, setPermissionMode, isValidPermissionMode } from "./lib/permissions.js";
 import { getStudioToken } from "./lib/studio-token.js";
 import { findClaudeBin } from "./lib/bin-resolver.js";
-import { studioAuthMiddleware, setBridgeTokenValidator } from "./lib/auth-middleware.js";
-import { validateBridgeToken } from "./lib/bridge.js";
-import { bridgeRoutes } from "./routes/bridge.js";
+import { studioAuthMiddleware } from "./lib/auth-middleware.js";
 import { startDbBackup } from "./lib/backup.js";
-import { startDreamLoop, getDreamStatus } from "./lib/dream.js";
 import { startMagicDocsLoop, getMagicDocsStatus } from "./lib/magic-docs.js";
-import { initKairos } from "./lib/kairos.js";
-import { kairosRoutes } from "./routes/kairos.js";
 import { SmartRouter, type RoutingStrategy } from "./lib/smart-router.js";
 // rate-limit.ts still available for future use but not applied to local desktop routes
 // import { rateLimitMiddleware } from "./lib/rate-limit.js";
@@ -137,12 +126,6 @@ export function createServer(opts: ServerOptions) {
 
   // Auth token — generated once, persisted to .hashmark/studio.token
   const studioToken = getStudioToken(ctx.dataDir);
-
-  // Bridge token validator -- allows remote devices to authenticate
-  setBridgeTokenValidator((token) => {
-    const db = getDb(ctx.dataDir);
-    return validateBridgeToken(db, token);
-  });
 
   // Auth middleware — protects all /api/* except /api/health, /api/info, /api/bridge/pair
   app.use("/api/*", studioAuthMiddleware(studioToken));
@@ -275,11 +258,6 @@ export function createServer(opts: ServerOptions) {
     return c.json({ vars });
   });
 
-  // Dream status — background memory consolidation state
-  app.get("/api/dream/status", (c) => {
-    return c.json(getDreamStatus(ctx.dataDir));
-  });
-
   // Smart router — cost/latency/quality-aware provider selection
   const smartRouter = new SmartRouter();
   // Non-blocking health check on startup
@@ -314,20 +292,12 @@ export function createServer(opts: ServerOptions) {
   app.route("/api/workspace", workspaceRoutes(ctx));
   app.route("/api/checkpoints", checkpointRoutes(ctx));
   app.route("/api/mcp", mcpRoutes(ctx));
-  app.route("/api/run", runRoutes(ctx));
-  app.route("/api/swarm", swarmRoutes(ctx));
-  app.route("/api/company", companyRoutes(ctx));
   app.route("/api/drift", driftRoutes(ctx));
   app.route("/api/providers", providersRoutes(ctx));
-  app.route("/api/governance", governanceRoutes(ctx));
   app.route("/api/workspaces", workspacesRoutes(globalDataDir, ctx));
   app.route("/api/config", configRoutes(ctx));
-  app.route("/api/sandbox", sandboxRoutes(ctx));
   app.route("/api/settings", settingsRoutes(ctx));
   app.route("/api/tools", toolsRoutes(ctx));
-  app.route("/api/inbox", inboxRoutes(ctx));
-  app.route("/api/kairos", kairosRoutes(ctx));
-  app.route("/api/bridge", bridgeRoutes(ctx, opts.port));
   app.route("/api/daemon", daemonRoutes(ctx));
   app.route("/api/prompts", promptsRoutes(ctx));
 
@@ -384,12 +354,7 @@ export function createServer(opts: ServerOptions) {
     setInterval(() => cleanupOrphanedWorktrees(opts.projectDir), 30 * 60_000).unref();
   }
 
-  // Dream mode -- background memory consolidation
-  startDreamLoop(ctx.projectDir, ctx.dataDir);
   startMagicDocsLoop(ctx.projectDir, ctx.dataDir);
-
-  // Kairos -- persistent intelligent mode (disabled by default, user enables in Settings)
-  initKairos(ctx.projectDir, ctx.dataDir);
 
   return { app, server };
 }
