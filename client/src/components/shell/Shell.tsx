@@ -11,7 +11,7 @@ import ResizableDrawer from "../ResizableDrawer";
 import CommandPalette from "../CommandPalette";
 import DiffDrawer from "../DiffDrawer";
 import { DriftBanner, isDismissed, dismissFor24h } from "../DriftIndicator";
-import ClaudeBanner from "./ClaudeBanner";
+// ClaudeBanner removed -- false positives with aliases/npx shims make it more annoying than helpful
 import ErrorBoundary from "../ErrorBoundary";
 import ShortcutsHelp from "../ShortcutsHelp";
 import AboutDialog from "../shared/AboutDialog";
@@ -138,7 +138,7 @@ export default function Shell() {
         <DriftBanner drift={drift} onDismiss={() => { dismissFor24h(); setDriftDismissed(true); }} />
       )}
 
-      <ClaudeBanner />
+      {/* ClaudeBanner removed -- false positives with aliases/npx shims */}
 
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
         <Rail theme={theme === "light" ? "light" : "dark"} themeSetting={setting} />
