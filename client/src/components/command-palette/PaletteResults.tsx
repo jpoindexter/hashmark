@@ -140,7 +140,7 @@ export default function PaletteResults({
                 onMouseEnter={() => onActiveIdxChange(i)}
                 left={symbolKindIcon(item.symbol.kind)}
                 center={
-                  <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                  <span className="flex-row gap-2" style={{ minWidth: 0 }}>
                     <span style={{ fontSize: 13, color: "var(--text)", whiteSpace: "nowrap" }}>{item.symbol.name}</span>
                     <span style={{ fontSize: 11, color: "var(--text-dimmer)" }}>{item.symbol.kind}</span>
                   </span>

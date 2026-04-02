@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { AssistantContent } from "../ChatMessages";
+import { AssistantContent } from "./AssistantContent";
 import PlanReviewGate from "./PlanReviewGate";
 import { fmtTime, fmtTokens } from "../../lib/format";
 

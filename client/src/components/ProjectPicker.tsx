@@ -134,10 +134,9 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
 
   return (
     <div
+      className="flex-col"
       style={{
         height: "100vh",
-        display: "flex",
-        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         gap: 32,
@@ -251,7 +250,7 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
                 {error}
               </div>
             )}
-            <div style={{ display: "flex", gap: 8 }}>
+            <div className="flex-row gap-2">
               <button
                 onClick={() => void handleSubmitPath()}
                 disabled={loading || !pathInput.trim()}
@@ -333,7 +332,7 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
                 {newWsError}
               </div>
             )}
-            <div style={{ display: "flex", gap: 8 }}>
+            <div className="flex-row gap-2">
               <button
                 onClick={() => void handleNewWorkspace()}
                 disabled={loading || !newWsInput.trim()}
@@ -386,7 +385,7 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
           }}>
             RECENT
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <div className="flex-col" style={{ gap: 2 }}>
             {recent.map((proj) => (
               <RecentProjectRow
                 key={proj.dir}

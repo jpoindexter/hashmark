@@ -16,13 +16,12 @@ export default function AgentDetail({ agent, editContent, onEditContent, onSave,
   const [tab, setTab] = useState<"edit" | "run" | "gov">("edit");
 
   return (
-    <div style={{
-      width: "480px", minWidth: "480px", display: "flex", flexDirection: "column",
+    <div className="flex-col" style={{
+      width: "480px", minWidth: "480px",
       overflow: "hidden", background: "var(--bg-2)",
     }}>
-      <div style={{
+      <div className="flex-between" style={{
         padding: "16px 20px", borderBottom: "1px solid var(--border-dim)",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <div>
           <div style={{ fontSize: "13px", fontWeight: 600 }}>{agent.name}</div>
@@ -30,7 +29,7 @@ export default function AgentDetail({ agent, editContent, onEditContent, onSave,
             .claude/agents/{agent.path}
           </div>
         </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <div className="flex-row gap-2">
           <div style={{ display: "flex", border: "1px solid var(--border-dim)", borderRadius: "var(--radius)", overflow: "hidden" }}>
             {(["edit", "run", "gov"] as const).map((t) => (
               <button
@@ -107,7 +106,7 @@ function GovTab({ agent }: { agent: Agent }) {
 
   return (
     <div style={{ flex: 1, overflow: "auto", padding: "20px" }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div className="flex-col" style={{ gap: 16 }}>
         <GovSection label="Role">
           <div style={{ fontSize: 12, color: govInfo.role ? "var(--text)" : "var(--text-dimmer)", fontStyle: govInfo.role ? "normal" : "italic" }}>
             {govInfo.role ?? "No role definition found"}
@@ -133,7 +132,7 @@ function GovTab({ agent }: { agent: Agent }) {
           {govInfo.tools.length === 0 ? (
             <div style={{ fontSize: 11, color: "var(--text-dimmer)", fontStyle: "italic" }}>None detected</div>
           ) : (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+            <div className="flex-row flex-wrap gap-1">
               {govInfo.tools.map((t) => (
                 <span key={t} style={{
                   fontSize: 10, padding: "2px 7px", background: "var(--bg-4)", color: "var(--text-dim)",
@@ -148,7 +147,7 @@ function GovTab({ agent }: { agent: Agent }) {
           {govInfo.constraints.length === 0 ? (
             <div style={{ fontSize: 11, color: "var(--text-dimmer)", fontStyle: "italic" }}>None found</div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <div className="flex-col gap-1">
               {govInfo.constraints.map((c, i) => (
                 <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-start", fontSize: 11 }}>
                   <span style={{ color: "var(--red)", flexShrink: 0 }}>✕</span>
@@ -161,7 +160,7 @@ function GovTab({ agent }: { agent: Agent }) {
 
         {govInfo.nonDelegation.length > 0 && (
           <GovSection label="Non-Delegation Zones">
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <div className="flex-col gap-1">
               {govInfo.nonDelegation.map((n, i) => (
                 <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-start", fontSize: 11 }}>
                   <span style={{ color: "var(--yellow)", flexShrink: 0 }}>⚠</span>

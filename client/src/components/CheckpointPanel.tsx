@@ -162,9 +162,7 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
   return (
     <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
       {/* Left pane: checkpoint list */}
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
+      <div className="flex-col" style={{
         width: diffFor ? 280 : "100%",
         minWidth: 220,
         height: "100%",
@@ -174,19 +172,16 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
         flexShrink: 0,
       }}>
         {/* Header */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+        <div className="flex-between" style={{
           padding: "10px 12px 8px",
           borderBottom: "1px solid var(--border-dim)",
           flexShrink: 0,
         }}>
-          <span className="label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span className="label flex-row gap-2">
             <Clock size={12} />
             CHECKPOINTS
           </span>
-          <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
+          <div className="flex-row gap-1">
             <button
               onClick={handlePrune}
               disabled={pruning}
@@ -202,6 +197,7 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
             <button
               onClick={handleSave}
               disabled={saving}
+              className="flex-row gap-1"
               style={{
                 background: "none",
                 border: "1px solid var(--border)",
@@ -211,9 +207,6 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
                 fontSize: 11,
                 fontFamily: "var(--font)",
                 padding: "2px 8px",
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
                 opacity: saving ? 0.5 : 1,
                 transition: "opacity 0.1s",
               }}
@@ -274,9 +267,8 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
             return (
               <div
                 key={cp.ref}
+                className="flex-col"
                 style={{
-                  display: "flex",
-                  flexDirection: "column",
                   padding: "7px 12px",
                   borderBottom: "1px solid var(--border-dim)",
                   fontSize: 11,
@@ -293,7 +285,7 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
                 }}
               >
                 {/* Row 1: dot + hash + label + actions */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div className="flex-row gap-2">
                   <span
                     title={dot.title}
                     style={{
@@ -350,7 +342,7 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
                 </div>
 
                 {/* Row 2: timestamp + file count + status badge */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, paddingLeft: 12 }}>
+                <div className="flex-row gap-2" style={{ marginTop: 3, paddingLeft: 12 }}>
                   <span style={{ color: "var(--text-dimmer)", fontSize: 10 }}>
                     {formatTime(cp.timestamp)}
                   </span>

@@ -97,7 +97,7 @@ export default function AgentList({
             {agents.length} agents across {departments.length} departments
           </div>
         </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexShrink: 0 }}>
+        <div className="flex-row gap-2" style={{ flexShrink: 0 }}>
           <button className="btn btn-sm" onClick={onRunSecurityScan} disabled={secScanRunning}>
             {secScanRunning ? "scanning..." : "security scan"}
           </button>
@@ -107,7 +107,7 @@ export default function AgentList({
 
       <SecurityBanner findings={secFindings} dismissed={secDismissed} onDismiss={onDismissFindings} agents={agents} onOpenAgent={onOpenAgent} />
 
-      <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
+      <div className="flex-row flex-wrap gap-2" style={{ marginBottom: "20px" }}>
         <input placeholder="Search agents..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ flex: "1", minWidth: "160px", maxWidth: "240px" }} />
         <DeptDropdown
           selectedDepts={selectedDepts} departments={departments} deptCounts={deptCounts}
@@ -115,7 +115,7 @@ export default function AgentList({
           onToggle={() => setDeptDropdownOpen((v) => !v)} onToggleDept={toggleDept}
           onSelectAll={() => setSelectedDepts(new Set(departments))} onClear={() => setSelectedDepts(new Set())}
         />
-        <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
+        <div className="flex-row gap-1" style={{ flexShrink: 0 }}>
           {(["name", "lastRun", "runCount"] as SortKey[]).map((k) => (
             <button key={k} onClick={() => setSortKey(k)} className="text-micro" style={{
               padding: "4px 8px",
@@ -164,13 +164,12 @@ export default function AgentList({
 
 function EmptyState({ onShowCreate }: { onShowCreate: () => void }) {
   return (
-    <div style={{
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      padding: "64px 24px", textAlign: "center", gap: "16px",
+    <div className="flex-col gap-4" style={{
+      alignItems: "center", justifyContent: "center",
+      padding: "64px 24px", textAlign: "center",
     }}>
-      <div style={{
+      <div className="flex-center" style={{
         width: 48, height: 48, border: "1px solid var(--border)", borderRadius: "var(--radius-lg)",
-        display: "flex", alignItems: "center", justifyContent: "center",
         color: "var(--text-dimmer)", fontSize: "22px", background: "var(--bg-2)",
       }}>⬡</div>
       <div>
@@ -191,8 +190,8 @@ function DeptDropdown({ selectedDepts, departments, deptCounts, open, dropdownRe
 }) {
   return (
     <div ref={dropdownRef} style={{ position: "relative" }}>
-      <button onClick={onToggle} className="label" style={{
-        display: "flex", alignItems: "center", gap: 6, padding: "5px 10px",
+      <button onClick={onToggle} className="label flex-row gap-2" style={{
+        padding: "5px 10px",
         border: "1px solid",
         borderColor: selectedDepts.size > 0 ? "var(--accent)" : "var(--border-dim)", borderRadius: "var(--radius)",
         background: selectedDepts.size > 0 ? "var(--accent-bg)" : "var(--bg-3)",
@@ -210,21 +209,21 @@ function DeptDropdown({ selectedDepts, departments, deptCounts, open, dropdownRe
           background: "var(--bg-3)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)",
           minWidth: 200, maxHeight: 320, overflowY: "auto", boxShadow: "var(--shadow-md)",
         }}>
-          <div className="text-micro" style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", borderBottom: "1px solid var(--border-dim)", fontFamily: "var(--font)" }}>
+          <div className="text-micro flex-between" style={{ padding: "6px 10px", borderBottom: "1px solid var(--border-dim)", fontFamily: "var(--font)" }}>
             <button onClick={onSelectAll} className="hoverable text-micro" style={{ background: "none", border: "none", fontFamily: "var(--font)", padding: 0 }}>select all</button>
             <button onClick={onClear} className="hoverable text-micro" style={{ background: "none", border: "none", fontFamily: "var(--font)", padding: 0 }}>clear</button>
           </div>
           {departments.map((dept) => {
             const checked = selectedDepts.has(dept);
             return (
-              <button key={dept} onClick={() => onToggleDept(dept)} className="hoverable" style={{
-                display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "6px 10px",
+              <button key={dept} onClick={() => onToggleDept(dept)} className="hoverable flex-row gap-2" style={{
+                width: "100%", padding: "6px 10px",
                 background: "none", border: "none", fontSize: 11, fontFamily: "var(--font)",
                 color: checked ? "var(--text)" : "var(--text-dim)", textAlign: "left",
               }}>
-                <span style={{
+                <span className="flex-center" style={{
                   width: 14, height: 14, borderRadius: 2, border: `1px solid ${checked ? "var(--accent)" : "var(--border)"}`,
-                  background: checked ? "var(--accent-bg)" : "none", display: "flex", alignItems: "center", justifyContent: "center",
+                  background: checked ? "var(--accent-bg)" : "none",
                   flexShrink: 0, fontSize: 10, color: "var(--accent)", transition: "all 0.1s",
                 }}>{checked ? "✓" : ""}</span>
                 <span style={{ flex: 1, textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dept}</span>

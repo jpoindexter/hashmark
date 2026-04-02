@@ -82,8 +82,8 @@ export function RunMetaStrip({ runMeta, runStatus, currentModel, running, loopDe
 }) {
   if (!runMeta) return null;
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 8, padding: "6px 16px",
+    <div className="flex-row gap-2" style={{
+      padding: "6px 16px",
       borderBottom: "1px solid var(--border-dim)", fontSize: 10, fontFamily: "var(--font)",
       color: "var(--text-dimmer)", background: "var(--bg-2)", flexShrink: 0,
     }}>
@@ -96,13 +96,13 @@ export function RunMetaStrip({ runMeta, runStatus, currentModel, running, loopDe
       {runMeta.wordCount != null && (<><span>·</span><span>{runMeta.wordCount.toLocaleString()} words</span></>)}
       {running && !loopDetected && <span style={{ color: "var(--accent)", marginLeft: "auto" }}>● streaming</span>}
       {running && loopDetected && (
-        <span style={{ color: "var(--yellow)", marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
+        <span className="flex-row gap-1" style={{ color: "var(--yellow)", marginLeft: "auto" }}>
           <span style={{ fontWeight: 600 }}>⟳ LOOP ×{loopDetected.count}</span>
           {loopDetected.count >= 3 && <span style={{ opacity: 0.7 }}>— auto-stopped</span>}
         </span>
       )}
       {!running && failureClass && (
-        <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 5 }}>
+        <span className="flex-row gap-1" style={{ marginLeft: "auto" }}>
           <span style={{ color: failureClass.color, fontWeight: 600, letterSpacing: "0.08em" }}>{failureClass.label}</span>
           <span style={{ color: "var(--text-dimmer)" }}>—</span>
           <span style={{ color: "var(--text-dimmer)" }}>{failureClass.detail}</span>
@@ -154,7 +154,7 @@ export function StructuredOutput({ segments, running, output, runStatus }: {
           <p key={idx} style={{ margin: "0 0 8px", fontSize: 12, lineHeight: "1.65", color: "var(--text-dim)", fontFamily: "var(--font-ui, var(--font))" }}>{renderInline(seg.text)}</p>
         );
         if (seg.type === "tool_event") return (
-          <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 8px", background: "rgba(56,139,253,0.06)", border: "1px solid rgba(56,139,253,0.18)", borderRadius: 2, margin: "3px 0" }}>
+          <div key={idx} className="flex-row gap-2" style={{ padding: "3px 8px", background: "rgba(56,139,253,0.06)", border: "1px solid rgba(56,139,253,0.18)", borderRadius: 2, margin: "3px 0" }}>
             <span style={{ color: "var(--blue)", fontWeight: 600, fontSize: 9, letterSpacing: "0.08em", fontFamily: "var(--font)", flexShrink: 0 }}>{seg.tool}</span>
             <span style={{ color: "var(--text-dimmer)", fontSize: 10, fontFamily: "var(--font)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{seg.detail}</span>
           </div>

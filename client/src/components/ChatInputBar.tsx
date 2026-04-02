@@ -1,52 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ArrowUp, Square, Plus, X, Mic, AlertTriangle } from "lucide-react";
 import { fetchApi } from "../lib/api";
-import { toast } from "../hooks/useToast";
 import type { SlashCommand } from "./chat-input/SlashPicker";
 import { useSlashCommands, SlashPicker } from "./chat-input/SlashPicker";
 import type { FileEntry, AgentEntry } from "./chat-input/MentionPicker";
 import { useMentionFiles, useMentionAgents, MentionPicker, getAtQuery } from "./chat-input/MentionPicker";
 import { useAgentSuggestion, AgentChip } from "./chat-input/AgentChip";
-import { ModelPickerDropdown } from "./chat-input/ModelPicker";
-
-const ICON_BTN_BASE: React.CSSProperties = {
-  width: 28,
-  height: 28,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: 6,
-  cursor: "pointer",
-  flexShrink: 0,
-};
-
-function dimBorderHover(e: React.MouseEvent<HTMLButtonElement>) {
-  e.currentTarget.style.borderColor = "var(--border)";
-  e.currentTarget.style.color = "var(--text-dim)";
-}
-
-function dimBorderUnhover(e: React.MouseEvent<HTMLButtonElement>) {
-  e.currentTarget.style.borderColor = "var(--border-dim)";
-  e.currentTarget.style.color = "var(--text-dimmer)";
-}
-
-const CLOSE_BTN_STYLE: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "none",
-  border: "none",
-  color: "var(--text-dimmer)",
-  cursor: "pointer",
-  flexShrink: 0,
-  padding: 0,
-};
-
-interface Session {
-  id: string;
-  title: string;
-  status: "idle" | "streaming";
-}
+import { useStreamChat } from "./chat-input/useStreamChat";
+import { useVoiceInput } from "./chat-input/useVoiceInput";
+import { ChatBottomBar } from "./chat-input/ChatBottomBar";
+import { ChatInputBanners } from "./chat-input/ChatInputBanners";
 
 interface ChatInputBarProps {
   sessionId: string | null;
@@ -66,19 +28,6 @@ interface ChatInputBarProps {
 
 const DEFAULT_MODEL = "claude-sonnet-4-6";
 
-const AUTO_MODEL_LABELS: Record<string, string> = {
-  "claude-haiku-4-5-20251001": "Haiku 4.5",
-  "claude-sonnet-4-6": "Sonnet 4.6",
-  "claude-opus-4-6": "Opus 4.6",
-};
-
-function resolveAutoModel(message: string): string {
-  const len = message.trim().length;
-  if (len < 100) return "claude-haiku-4-5-20251001";
-  if (len < 500) return "claude-sonnet-4-6";
-  return "claude-opus-4-6";
-}
-
 const LINE_HEIGHT = 20;
 const MAX_ROWS = 6;
 
@@ -95,13 +44,7 @@ export default function ChatInputBar({
   const [pendingDismissed, setPendingDismissed] = useState(false);
   const skipContextRef = useRef(false);
   const [attachedImage, setAttachedImage] = useState<{ name: string; dataUrl: string } | null>(null);
-  const [listening, setListening] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const abortRef = useRef<(() => void) | null>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const retryCountRef = useRef(0);
-  const lastSentMessageRef = useRef<string | null>(null);
-  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [contextWarning, setContextWarning] = useState<string | null>(null);
   const lastWarningPctRef = useRef(0);
 
@@ -114,6 +57,35 @@ export default function ChatInputBar({
   const mentionFiles = useMentionFiles();
   const mentionAgents = useMentionAgents();
   const [selectedAgent, setSelectedAgent] = useState<AgentEntry | null>(null);
+
+  const clearInput = useCallback(() => {
+    setInput("");
+    setAttachedImage(null);
+    setSelectedAgent(null);
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
+  }, []);
+
+  const { sendMessageWithText, abortRef, retryCountRef, lastSentMessageRef, retryTimerRef } = useStreamChat({
+    sessionId,
+    selectedModel,
+    thinking,
+    planMode,
+    selectedAgent,
+    skipContextRef,
+    onStreamText,
+    onStreamingState,
+    onStreamingChange,
+    onSessionCreated,
+    onSent: () => { setPendingMessage(null); setPendingDismissed(true); },
+    onClearInput: clearInput,
+    onWarning: (msg) => setContextWarning(msg),
+    lastWarningPctRef,
+  });
+
+  const { listening, speechAvailable, toggleVoiceInput } = useVoiceInput({
+    input,
+    onTranscript: (text) => setInput(text),
+  });
 
   useEffect(() => {
     setPendingDismissed(false);
@@ -207,49 +179,13 @@ export default function ChatInputBar({
     e.preventDefault();
   }, []);
 
-  const speechAvailable = typeof window !== "undefined" &&
-    !!(window.SpeechRecognition || window.webkitSpeechRecognition);
-
-  const toggleVoiceInput = useCallback(() => {
-    if (listening) {
-      recognitionRef.current?.stop();
-      setListening(false);
-      return;
-    }
-
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
-
-    const recognition = new SR();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
-
-      const prefix = input.trim() ? input.trimEnd() + " " : "";
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let transcript = "";
-      for (let i = 0; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript;
-      }
-      setInput(prefix + transcript);
-    };
-
-    recognition.onend = () => setListening(false);
-    recognition.onerror = () => setListening(false);
-
-    recognitionRef.current = recognition;
-    recognition.start();
-    setListening(true);
-  }, [listening, input]);
-
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<{ text: string }>).detail;
       if (detail?.text) {
         retryCountRef.current = 0;
         lastSentMessageRef.current = detail.text;
-        void sendMessageWithText(detail.text);
+        void sendMessageWithText(detail.text, attachedImage);
       }
     };
     window.addEventListener("studio:retry-message", handler);
@@ -296,7 +232,7 @@ export default function ChatInputBar({
       requestAnimationFrame(() => textareaRef.current?.focus());
     } else {
       setInput(`/${cmd.name}`);
-      requestAnimationFrame(() => void sendMessageWithText(`/${cmd.name}`));
+      requestAnimationFrame(() => void sendMessageWithText(`/${cmd.name}`, null));
     }
   }, [streaming]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -322,215 +258,7 @@ export default function ChatInputBar({
   const sendMessage = async () => {
     if ((!input.trim() && !attachedImage) || streaming) return;
     retryCountRef.current = 0;
-    return sendMessageWithText();
-  };
-
-  const scheduleAutoRetry = useCallback((messageText: string) => {
-    const count = retryCountRef.current;
-    if (count >= 2) {
-      window.dispatchEvent(new CustomEvent("studio:stream-failed", {
-        detail: { lastUserMessage: messageText },
-      }));
-      toast.error("Stream failed after 2 retries. Use the Retry button to try again.");
-      return;
-    }
-    retryCountRef.current = count + 1;
-    const attempt = retryCountRef.current;
-    toast.error(`Stream error. Retrying (${attempt}/2)...`);
-    retryTimerRef.current = setTimeout(() => {
-      retryTimerRef.current = null;
-      void sendMessageWithText(messageText);
-    }, 2000);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const sendMessageWithText = async (overrideText?: string) => {
-    const raw = overrideText ?? input.trim();
-    const text = attachedImage
-      ? `${raw}\n\n[Image attached: ${attachedImage.name}]`
-      : raw;
-    if ((!raw && !attachedImage) || streaming) return;
-
-    lastSentMessageRef.current = text;
-
-    let sid = sessionId;
-    if (!sid) {
-      try {
-        const res = await fetchApi("/api/sessions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        });
-        if (!res.ok) throw new Error("Session creation failed");
-        const data = await res.json() as { session: Session };
-        sid = data.session.id;
-        onSessionCreated?.(sid);
-      } catch {
-        toast.error("Failed to create session");
-        return;
-      }
-    }
-
-    onStreamingChange(true);
-    onStreamText("");
-    onStreamingState?.(null);
-
-    let resolvedModel = selectedModel;
-    if (selectedModel === "auto") {
-      resolvedModel = resolveAutoModel(text);
-      const label = AUTO_MODEL_LABELS[resolvedModel] ?? resolvedModel;
-      toast.success(`Auto-routed to ${label}`);
-    }
-
-    let systemPrompt = (localStorage.getItem("studio:system_prompt") ?? "").trim();
-    if (thinking) systemPrompt += "\n\nUse extended thinking before responding.";
-    if (planMode) systemPrompt += "\n\nEnter plan mode: respond with a structured plan only, do not write code.";
-
-    let res: Response;
-    try {
-      res = await fetchApi(`/api/sessions/${sid}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: text,
-          model: resolvedModel,
-          thinking,
-          planMode,
-          ...(systemPrompt && { systemPrompt }),
-          ...(skipContextRef.current && { skipContext: true }),
-          ...(selectedAgent && { agentId: selectedAgent.id }),
-        }),
-      });
-    } catch {
-      onStreamingChange(false);
-      scheduleAutoRetry(text);
-      return;
-    }
-
-    if (!res.ok || !res.body) {
-      onStreamingChange(false);
-      if (res.status >= 500) {
-        scheduleAutoRetry(text);
-      } else {
-        toast.error(`Failed to send message (${res.status})`);
-      }
-      return;
-    }
-
-    skipContextRef.current = false;
-    setPendingMessage(null);
-    setPendingDismissed(true);
-    if (!overrideText) {
-      setInput("");
-      setAttachedImage(null);
-      setSelectedAgent(null);
-      if (textareaRef.current) textareaRef.current.style.height = "auto";
-    }
-
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "";
-    let assembled = "";
-
-    abortRef.current = () => {
-      reader.cancel().catch(() => {});
-      fetchApi(`/api/sessions/${sid}/interrupt`, { method: "POST" }).catch(() => {});
-    };
-
-    type SBlock = import("./ChatMessages").ContentBlock;
-    const blocks: SBlock[] = [];
-    let activeThinkingIdx = -1;
-
-    let streamCompleted = false;
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) { streamCompleted = true; break; }
-        buf += dec.decode(value, { stream: true });
-        const lines = buf.split("\n");
-        buf = lines.pop() ?? "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const rawLine = line.slice(6).trim();
-          if (!rawLine) continue;
-          try {
-            const evt = JSON.parse(rawLine) as Record<string, unknown>;
-            const evtType = evt.type as string;
-
-            if (evtType === "text" && evt.text) {
-              assembled += evt.text as string;
-              onStreamText(assembled);
-
-              const lastBlock = blocks[blocks.length - 1];
-              if (lastBlock && lastBlock.type === "text") {
-                (lastBlock as { text: string }).text += evt.text as string;
-              } else {
-                blocks.push({ type: "text", text: evt.text as string });
-              }
-              activeThinkingIdx = -1;
-            } else if (evtType === "thinking" || evtType === "thinking_delta") {
-              const content = (evt.content ?? evt.text ?? "") as string;
-              if (activeThinkingIdx >= 0 && blocks[activeThinkingIdx]?.type === "thinking") {
-                (blocks[activeThinkingIdx] as { content: string }).content += content;
-              } else {
-                activeThinkingIdx = blocks.length;
-                blocks.push({ type: "thinking", content, id: (evt.id as string) ?? undefined });
-              }
-            } else if (evtType === "tool_use" || evtType === "tool_call") {
-              activeThinkingIdx = -1;
-              blocks.push({
-                type: "tool_use",
-                tool: (evt.tool ?? evt.name ?? "unknown") as string,
-                input: (evt.input ?? {}) as Record<string, unknown>,
-                toolUseId: (evt.toolUseId ?? evt.id ?? "") as string,
-              });
-            } else if (evtType === "tool_result") {
-              activeThinkingIdx = -1;
-              const content = typeof evt.content === "string"
-                ? evt.content
-                : JSON.stringify(evt.content ?? "");
-              if (content.length > 0) {
-                blocks.push({
-                  type: "tool_result",
-                  toolUseId: (evt.toolUseId ?? "") as string,
-                  content: content.slice(0, 4000),
-                  isError: evt.is_error === true,
-                });
-              }
-            } else if (evtType === "progress") {
-              activeThinkingIdx = -1;
-              blocks.push({ type: "progress", text: (evt.text ?? "") as string });
-            } else if (evtType === "warning") {
-              const msg = (evt.message ?? "") as string;
-              const pctMatch = msg.match(/(\d+)%/);
-              const pct = pctMatch ? parseInt(pctMatch[1], 10) : 0;
-              if (pct > lastWarningPctRef.current) {
-                setContextWarning(msg);
-              }
-              lastWarningPctRef.current = pct;
-            }
-
-            onStreamingState?.({
-              blocks: [...blocks],
-              cost: evt.cost as number | undefined,
-              usage: evt.usage as { input_tokens: number; output_tokens: number } | undefined,
-            });
-          } catch {
-            console.warn("Failed to parse SSE event:", rawLine);
-          }
-        }
-      }
-    } catch {
-      onStreamingChange(false);
-      scheduleAutoRetry(text);
-      return;
-    } finally {
-      abortRef.current = null;
-      if (streamCompleted) {
-        retryCountRef.current = 0;
-        onStreamingChange(false);
-        onStreamText("");
-      }
-    }
+    return sendMessageWithText(input.trim(), attachedImage);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -576,7 +304,6 @@ export default function ChatInputBar({
               onSelect={selectMentionFile}
               onSelectAgent={(agent) => {
                 setSelectedAgent(agent);
-                // Replace @query with @agent-name in input
                 const before = input.slice(0, input.lastIndexOf("@"));
                 setInput(`${before}@${agent.name} `);
                 setAtQuery(null);
@@ -597,124 +324,19 @@ export default function ChatInputBar({
           </div>
         )}
 
-        {contextWarning && !streaming && (
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "6px 14px",
-            fontSize: 11,
-            fontFamily: "var(--font-ui)",
-            color: "var(--yellow)",
-            background: "rgba(234, 179, 8, 0.08)",
-            borderBottom: "1px solid rgba(234, 179, 8, 0.2)",
-          }}>
-            <AlertTriangle size={12} style={{ flexShrink: 0 }} />
-            <span style={{ flex: 1, color: "var(--text-dim)" }}>
-              {contextWarning}
-            </span>
-            <button
-              onClick={() => setContextWarning(null)}
-              title="Dismiss"
-              style={{ ...CLOSE_BTN_STYLE, width: 18, height: 18 }}
-            >
-              <X size={12} />
-            </button>
-          </div>
-        )}
-
-        {pendingMessage && !streaming && !pendingDismissed && (
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "6px 14px",
-            fontSize: 11,
-            fontFamily: "var(--font-ui)",
-            color: "var(--yellow)",
-            background: "rgba(234, 179, 8, 0.06)",
-            borderBottom: "1px solid rgba(234, 179, 8, 0.15)",
-          }}>
-            <span style={{ flexShrink: 0, fontSize: 13, lineHeight: 1 }}>!</span>
-            <span style={{ flex: 1, color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              Unsent message will be included: {pendingMessage.slice(0, 60)}{pendingMessage.length > 60 ? "..." : ""}
-            </span>
-            <button
-              onClick={() => { setPendingMessage(null); setPendingDismissed(true); }}
-              title="Dismiss"
-              style={{ ...CLOSE_BTN_STYLE, width: 18, height: 18 }}
-            >
-              <X size={12} />
-            </button>
-          </div>
-        )}
-
-        {attachedImage && (
-          <div style={{
-            padding: "8px 14px",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            borderBottom: "1px solid var(--border-dim)",
-          }}>
-            <img
-              src={attachedImage.dataUrl}
-              alt=""
-              style={{
-                height: 40,
-                borderRadius: "var(--radius)",
-                border: "1px solid var(--border-dim)",
-                objectFit: "cover",
-              }}
-            />
-            <span style={{
-              fontSize: 11,
-              color: "var(--text-dim)",
-              fontFamily: "var(--font-ui)",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              flex: 1,
-            }}>
-              {attachedImage.name}
-            </span>
-            <button
-              onClick={() => setAttachedImage(null)}
-              title="Remove image"
-              style={{ ...CLOSE_BTN_STYLE, width: 20, height: 20, borderRadius: "var(--radius-sm)" }}
-            >
-              <X size={12} />
-            </button>
-          </div>
-        )}
-
-        {selectedAgent && (
-          <div style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "6px 14px",
-            borderBottom: "1px solid var(--border-dim)",
-          }}>
-            <span style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--font)", fontWeight: 600 }}>
-              @{selectedAgent.name}
-            </span>
-            {selectedAgent.description && (
-              <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>
-                {selectedAgent.description.slice(0, 50)}
-              </span>
-            )}
-            <button
-              onClick={() => {
-                setSelectedAgent(null);
-                const cleaned = input.replace(/@\S+\s?/, "");
-                setInput(cleaned);
-              }}
-              title="Remove agent"
-              style={{ ...CLOSE_BTN_STYLE, width: 16, height: 16, marginLeft: "auto" }}
-            >
-              <X size={10} />
-            </button>
-          </div>
-        )}
+        <ChatInputBanners
+          contextWarning={contextWarning}
+          streaming={streaming}
+          pendingMessage={pendingMessage}
+          pendingDismissed={pendingDismissed}
+          attachedImage={attachedImage}
+          selectedAgent={selectedAgent}
+          input={input}
+          onDismissWarning={() => setContextWarning(null)}
+          onDismissPending={() => { setPendingMessage(null); setPendingDismissed(true); }}
+          onRemoveImage={() => setAttachedImage(null)}
+          onRemoveAgent={(cleaned) => { setSelectedAgent(null); setInput(cleaned); }}
+        />
 
         <div style={{
           display: "flex",
@@ -765,108 +387,21 @@ export default function ChatInputBar({
           )}
         </div>
 
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "4px 14px 10px",
-          gap: 8,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <ModelPickerDropdown selectedModel={selectedModel} thinking={thinking} planMode={planMode} />
-            {terminalCwd && (
-              <button
-                className="hoverable"
-                onClick={injectTerminalCwd}
-                title={`Inject terminal path: ${terminalCwd}`}
-                style={{
-                  display: "flex", alignItems: "center", gap: 4,
-                  padding: "2px 6px", background: "none", border: "none", borderRadius: 4,
-                  color: "var(--text-dimmer)", fontSize: 11,
-                  fontFamily: "var(--font-ui)",
-                  cursor: "pointer", whiteSpace: "nowrap",
-                  maxWidth: 160, overflow: "hidden",
-                }}
-              >
-                <span style={{ fontSize: 12, lineHeight: 1 }}>&#x2293;</span>
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {terminalCwd.split("/").pop() || terminalCwd}
-                </span>
-              </button>
-            )}
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <button
-              onClick={onNewSession}
-              title="New conversation"
-              style={{
-                ...ICON_BTN_BASE,
-                background: "none",
-                border: "1px solid var(--border-dim)",
-                color: "var(--text-dimmer)",
-                transition: "border-color 0.1s, color 0.1s",
-              }}
-              onMouseEnter={dimBorderHover}
-              onMouseLeave={dimBorderUnhover}
-            >
-              <Plus size={14} />
-            </button>
-
-            {speechAvailable && (
-              <button
-                onClick={toggleVoiceInput}
-                title={listening ? "Stop recording" : "Voice input"}
-                style={{
-                  ...ICON_BTN_BASE,
-                  background: listening ? "rgba(239, 68, 68, 0.15)" : "none",
-                  border: listening ? "1px solid var(--red)" : "1px solid var(--border-dim)",
-                  color: listening ? "var(--red)" : "var(--text-dimmer)",
-                  transition: "border-color 0.1s, color 0.1s, background 0.1s",
-                  animation: listening ? "pulse 1.5s ease-in-out infinite" : "none",
-                }}
-                onMouseEnter={e => { if (!listening) dimBorderHover(e); }}
-                onMouseLeave={e => { if (!listening) dimBorderUnhover(e); }}
-              >
-                <Mic size={14} />
-              </button>
-            )}
-
-            <div style={{ width: 28, height: 28, flexShrink: 0 }}>
-              {streaming ? (
-                <button
-                  onClick={() => abortRef.current?.()}
-                  title="Stop generation"
-                  style={{
-                    ...ICON_BTN_BASE,
-                    background: "var(--red-bg)",
-                    border: "1px solid var(--red)",
-                    color: "var(--red)",
-                    transition: "background-color 0.15s ease",
-                  }}
-                >
-                  <Square size={11} />
-                </button>
-              ) : (
-                <button
-                  onClick={() => void sendMessage()}
-                  disabled={!hasText}
-                  title="Send (⌘↵)"
-                  style={{
-                    ...ICON_BTN_BASE,
-                    background: hasText ? "var(--text)" : "var(--surface-input)",
-                    border: "none",
-                    color: hasText ? "var(--bg)" : "var(--text-dimmer)",
-                    cursor: hasText ? "pointer" : "default",
-                    transition: "background-color 0.15s ease, color 0.15s ease",
-                  }}
-                >
-                  <ArrowUp size={14} />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <ChatBottomBar
+          selectedModel={selectedModel}
+          thinking={thinking}
+          planMode={planMode}
+          terminalCwd={terminalCwd}
+          streaming={streaming}
+          hasText={hasText}
+          listening={listening}
+          speechAvailable={speechAvailable}
+          onNewSession={onNewSession}
+          onSend={() => void sendMessage()}
+          onStop={() => abortRef.current?.()}
+          onToggleVoice={toggleVoiceInput}
+          onInjectTerminalCwd={injectTerminalCwd}
+        />
       </div>
       </div>
 

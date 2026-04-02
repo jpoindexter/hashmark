@@ -89,7 +89,7 @@ export default function AgentEditor({ agent, editContent, onEditContent }: Agent
   const overallColor = hasErrors ? "var(--red)" : hasWarnings ? "var(--yellow)" : "var(--accent)";
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div className="flex-col flex-1" style={{ overflow: "hidden" }}>
       <textarea
         value={editContent}
         onChange={(e) => onEditContent(e.target.value)}
@@ -126,11 +126,10 @@ function SkillChecksPanel({ checks, passingCount, overallStatus, overallColor, s
   const hasWarnings = checks.some((c) => c.status === "warn");
   return (
     <div style={{ borderTop: "1px solid var(--border-dim)", background: "var(--bg-2)", flexShrink: 0 }}>
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
+      <div className="flex-between" style={{
         padding: "6px 14px", borderBottom: "1px solid var(--border-dim)",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div className="flex-row gap-2">
           <span className="text-micro" style={{
             fontFamily: "var(--font)", padding: "2px 6px", borderRadius: 2, color: overallColor,
             background: hasErrors ? "rgba(248,81,73,0.1)" : hasWarnings ? "rgba(210,153,34,0.1)" : "rgba(63,185,80,0.1)",
@@ -184,7 +183,7 @@ function SkillChecksPanel({ checks, passingCount, overallStatus, overallColor, s
 function EffectivenessPanel({ data }: { data: EffectivenessData }) {
   return (
     <div style={{ borderTop: "1px solid var(--border-dim)", background: "var(--bg-2)", flexShrink: 0, padding: "8px 14px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+      <div className="flex-between" style={{ marginBottom: 6 }}>
         <span className="text-micro" style={{ fontFamily: "var(--font)" }}>
           Effectiveness
         </span>
@@ -197,9 +196,9 @@ function EffectivenessPanel({ data }: { data: EffectivenessData }) {
         )}
       </div>
       {data.totalRuns > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+        <div className="flex-col" style={{ gap: 5 }}>
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+            <div className="flex-between" style={{ marginBottom: 3 }}>
               <span className="text-micro" style={{ fontFamily: "var(--font)" }}>
                 Success Rate
               </span>
@@ -214,7 +213,7 @@ function EffectivenessPanel({ data }: { data: EffectivenessData }) {
               }} />
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div className="flex-row gap-2">
             <span className="text-micro" style={{ fontFamily: "var(--font)" }}>
               Trend
             </span>
