@@ -44,7 +44,7 @@
 ## Phase 1 -- Critical Fixes (P0 from audit)
 
 ### Architecture
-- [ ] Wire Tauri managed sidecar for Node server (clean lifecycle, no orphan processes)
+- [x] Wire Tauri managed sidecar for Node server (clean lifecycle, no orphan processes)
 - [x] Remove dist/ from git tracking: `git rm -r --cached dist/`
 - [x] Add `process.on("uncaughtException")` handler to bin.ts
 - [x] Fix mutable shared `ctx` concurrency hazard (workspace switch corrupts in-flight ops)
