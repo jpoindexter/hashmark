@@ -1,6 +1,12 @@
 import { Hono } from "hono";
 import { loadProviders, saveProviders, detectCLIs } from "../lib/providers.js";
 import { PROVIDERS } from "../lib/ai-provider.js";
+import {
+  discoverProviders,
+  probeOllama,
+  validateApiKey,
+  recommendProvider,
+} from "../lib/provider-discovery.js";
 import type { WorkspaceCtx } from "./workspaces.js";
 
 /** Build models list from provider registry, with overrides for CLI-only tools. */
@@ -125,6 +131,32 @@ export function providersRoutes(ctx: WorkspaceCtx) {
     saveProviders(ctx.dataDir, store);
 
     return c.json({ ok: true });
+  });
+
+  // ── Discovery endpoints ─────────────────────────────────────────────────────
+
+  // GET /api/providers/discover — probe all providers, return availability + models
+  app.get("/discover", async (c) => {
+    const goal = (c.req.query("goal") as "quality" | "speed" | "cost" | "balanced") || undefined;
+    const discovered = await discoverProviders(ctx.projectDir, ctx.dataDir);
+    const recommendation = goal ? recommendProvider(discovered, goal) : recommendProvider(discovered, "balanced");
+    return c.json({ providers: discovered, recommendation });
+  });
+
+  // POST /api/providers/discover/ollama — specifically probe Ollama
+  app.post("/discover/ollama", async (c) => {
+    const body = await c.req.json<{ baseUrl?: string }>().catch(() => ({} as { baseUrl?: string }));
+    const result = await probeOllama(body.baseUrl);
+    return c.json(result);
+  });
+
+  // POST /api/providers/validate — validate an API key for a specific provider
+  app.post("/validate", async (c) => {
+    const body = await c.req.json<{ provider?: string; apiKey?: string }>();
+    if (!body.provider) return c.json({ error: "provider required" }, 400);
+    if (!body.apiKey) return c.json({ error: "apiKey required" }, 400);
+    const valid = await validateApiKey(body.provider, body.apiKey);
+    return c.json({ provider: body.provider, valid });
   });
 
   return app;
