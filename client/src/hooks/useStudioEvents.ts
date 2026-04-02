@@ -176,7 +176,7 @@ export function useStudioEvents({
       window.studio.onMenu("menu:command-palette", () => { setPaletteMode("commands"); setCmdOpen(true); }),
       window.studio.onMenu("menu:go-to-file", () => { setPaletteMode("files"); setCmdOpen(true); }),
       window.studio.onMenu("menu:run-scan", () => navigate("/generate")),
-      window.studio.onMenu("menu:start-agent", () => navigate("/run")),
+      window.studio.onMenu("menu:start-agent", () => navigate("/agents")),
       window.studio.onMenu("menu:stop-agent", () => dispatch("studio:stop-agent")),
       window.studio.onMenu("menu:find", () => setCmdOpen(true)),
       window.studio.onMenu("menu:about", () => setAboutOpen(true)),
