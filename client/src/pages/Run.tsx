@@ -4,6 +4,7 @@ import { Search, Zap } from "lucide-react";
 import { DiffPanel } from "../components/DiffPanel.tsx";
 import AgentPicker from "../components/AgentPicker.tsx";
 import PermissionSelector from "../components/PermissionSelector.tsx";
+import PlanPhaseBar, { extractPlanSummary, detectPlanPhaseTransition } from "../components/PlanPhaseBar.tsx";
 import { toast } from "../hooks/useToast.ts";
 import { PageShell } from "../components/shared/PageShell.tsx";
 import { fetchApi } from "../lib/api";
@@ -112,6 +113,7 @@ export default function Run() {
   const [agents, setAgents]     = useState<AgentDef[]>([]);
   const [phase, setPhase]       = useState<RunPhase>("idle");
   const [mode, setMode]         = useState<RunMode>("build");
+  const [planPhase, setPlanPhase] = useState<1 | 2 | 3>(1);
   const [status, setStatus]     = useState("");
   const [displayOutput, setDisplayOutput] = useState("");
   const [totalLines, setTotalLines]      = useState(0);
@@ -216,6 +218,7 @@ export default function Run() {
     setError(null);
     setShowDiff(false);
     setDiff("");
+    setPlanPhase(1);
 
     // Request notification permission on first run start (not on page load)
     if ("Notification" in window && Notification.permission === "default") {
@@ -302,6 +305,10 @@ export default function Run() {
         break;
       case "chunk":
         appendOutput(event.text as string);
+        if (mode === "plan") {
+          const next = detectPlanPhaseTransition(fullOutputRef.current, planPhase);
+          if (next !== planPhase) setPlanPhase(next);
+        }
         break;
       case "tool_use": {
         const tool = event.tool as string;
@@ -365,7 +372,12 @@ export default function Run() {
         };
         setResult(r);
         setPhase("done");
-        setStatus(r.hasChanges && r.mode !== "plan" ? "Ready to merge" : "Done");
+        if (mode === "plan") {
+          setPlanPhase(3);
+          setStatus("Plan ready");
+        } else {
+          setStatus(r.hasChanges ? "Ready to merge" : "Done");
+        }
         if (r.mode === "plan" || !r.hasChanges) {
           toast("Run complete", { variant: "success", title: "No changes made" });
         }
@@ -391,7 +403,7 @@ export default function Run() {
         break;
       }
     }
-  }, [appendOutput]);
+  }, [appendOutput, mode, planPhase]);
 
   async function handleMerge() {
     const rid = result?.runId;
@@ -449,6 +461,23 @@ export default function Run() {
     setError(null);
     setShowDiff(false);
     setDiff("");
+    setPlanPhase(1);
+  }
+
+  function handleExecutePlan() {
+    const summary = extractPlanSummary(fullOutputRef.current);
+    const prefix = "Execute this plan:\n\n";
+    setTask(prefix + summary);
+    setMode("build");
+    setPhase("idle");
+    setStatus("");
+    setResult(null);
+    resultRef.current = null;
+    setError(null);
+    setShowDiff(false);
+    setDiff("");
+    setPlanPhase(1);
+    setTimeout(resizeTextarea, 0);
   }
 
   function handleRunAgain() {
@@ -787,6 +816,15 @@ export default function Run() {
             </div>
           )}
 
+          {/* Plan phase indicator */}
+          {mode === "plan" && phase !== "idle" && (
+            <PlanPhaseBar
+              phase={planPhase}
+              running={phase === "running"}
+              onExecute={planPhase === 3 && phase === "done" ? handleExecutePlan : undefined}
+            />
+          )}
+
           {/* Error */}
           {error && (
             <div style={{
@@ -942,6 +980,16 @@ export default function Run() {
 
               {/* Action buttons */}
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {result.mode === "plan" && (
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={handleExecutePlan}
+                    style={{ display: "flex", alignItems: "center", gap: 5 }}
+                  >
+                    <Zap size={12} />
+                    execute this plan
+                  </button>
+                )}
                 {result.readyToMerge && !result.merged && (
                   <button
                     className="btn btn-primary btn-sm"

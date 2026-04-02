@@ -36,6 +36,7 @@ import { workspacesRoutes, type WorkspaceCtx } from "./routes/workspaces.js";
 import { configRoutes } from "./routes/config.js";
 import { sandboxRoutes } from "./routes/sandbox.js";
 import { settingsRoutes } from "./routes/settings.js";
+import { toolsRoutes } from "./routes/tools.js";
 import { getDb, getStudioSetting, setStudioSetting } from "./db.js";
 import { getPermissionMode, setPermissionMode, isValidPermissionMode } from "./lib/permissions.js";
 import { getStudioToken } from "./lib/studio-token.js";
@@ -279,6 +280,7 @@ export function createServer(opts: ServerOptions) {
   app.route("/api/config", configRoutes(ctx));
   app.route("/api/sandbox", sandboxRoutes(ctx));
   app.route("/api/settings", settingsRoutes(ctx));
+  app.route("/api/tools", toolsRoutes(ctx));
 
   // Serve static client files
   app.use(

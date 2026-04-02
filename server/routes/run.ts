@@ -19,6 +19,7 @@ import { z } from "zod";
 import { checkUsage, recordInvocation, getUsageStats } from "../lib/claude-usage.js";
 import { createStreamParser, type StudioEvent } from "../lib/claude-stream.js";
 import { withRetry, isRetryableExit, NonRetryableError } from "../lib/retry.js";
+import { loadToolPlugins, buildToolPluginPrompt } from "../lib/tool-plugins.js";
 import type { WorkspaceCtx } from "./workspaces.js";
 
 const execFile = promisify(execFileCb);
@@ -235,7 +236,11 @@ export function runRoutes(ctx: WorkspaceCtx) {
             ? `You are operating in PLAN MODE. You may read files, analyze code, and produce reports. You MUST NOT write or modify any files, run git commands, or execute shell commands that modify state. Provide a detailed analysis and action plan instead.\n\n`
             : "";
 
-          const prompt = `${planPrefix}${agentContext}${body.task}\n\nWork in the current directory. Make the necessary code changes, create or modify files as needed.`;
+          // Inject custom tool definitions so Claude knows about project-specific commands
+          const toolPlugins = loadToolPlugins(projectDir);
+          const toolContext = buildToolPluginPrompt(toolPlugins);
+
+          const prompt = `${planPrefix}${agentContext}${toolContext}${body.task}\n\nWork in the current directory. Make the necessary code changes, create or modify files as needed.`;
 
           // Spawn claude and stream output -- permission mode drives tools + env
           const permMode = getPermissionMode(getDb(dataDir));

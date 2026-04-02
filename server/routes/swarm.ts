@@ -19,6 +19,7 @@ import { getPermissionMode } from "../lib/permissions.js";
 import { createStreamParser } from "../lib/claude-stream.js";
 import { checkUsage, recordInvocation } from "../lib/claude-usage.js";
 import { loadScanContext } from "../context.js";
+import { loadToolPlugins, buildToolPluginPrompt } from "../lib/tool-plugins.js";
 import { z } from "zod";
 import type { WorkspaceCtx } from "./workspaces.js";
 
@@ -143,10 +144,14 @@ async function runAgent(
       ? `You are operating in PLAN MODE. Read files and produce analysis only. Do NOT write or modify files.\n\n`
       : "";
 
+  // Inject custom tool definitions so Claude knows about project-specific commands
+  const toolPlugins = loadToolPlugins(projectDir);
+  const toolContext = buildToolPluginPrompt(toolPlugins);
+
   // Shared prefix is identical across all agents in this swarm -- Claude's
   // prompt cache recognizes the common token prefix and cache-reads it after
   // the first agent processes it, saving input tokens for the rest of the batch.
-  const prompt = `${sharedPrefix}${planPrefix}${agentContext}${agent.task}\n\nWork in the current directory. Make the necessary code changes, create or modify files as needed.`;
+  const prompt = `${sharedPrefix}${planPrefix}${agentContext}${toolContext}${agent.task}\n\nWork in the current directory. Make the necessary code changes, create or modify files as needed.`;
 
   const ctrl = swarm.controllers[agentIndex];
 
