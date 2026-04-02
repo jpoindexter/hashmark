@@ -44,6 +44,7 @@ import { findClaudeBin } from "./lib/bin-resolver.js";
 import { studioAuthMiddleware } from "./lib/auth-middleware.js";
 import { startDbBackup } from "./lib/backup.js";
 import { startDreamLoop, getDreamStatus } from "./lib/dream.js";
+import { SmartRouter, type RoutingStrategy } from "./lib/smart-router.js";
 // rate-limit.ts still available for future use but not applied to local desktop routes
 // import { rateLimitMiddleware } from "./lib/rate-limit.js";
 
@@ -262,6 +263,24 @@ export function createServer(opts: ServerOptions) {
   // Dream status — background memory consolidation state
   app.get("/api/dream/status", (c) => {
     return c.json(getDreamStatus(ctx.dataDir));
+  });
+
+  // Smart router — cost/latency/quality-aware provider selection
+  const smartRouter = new SmartRouter();
+  // Non-blocking health check on startup
+  smartRouter.checkHealth().catch(() => {});
+
+  app.get("/api/router/stats", (c) => {
+    return c.json({ providers: smartRouter.getStats() });
+  });
+
+  app.get("/api/router/recommend", (c) => {
+    const raw = c.req.query("strategy") ?? "balanced";
+    const valid: RoutingStrategy[] = ["quality", "speed", "cost", "balanced"];
+    const strategy = valid.includes(raw as RoutingStrategy)
+      ? (raw as RoutingStrategy)
+      : "balanced";
+    return c.json(smartRouter.recommend(strategy));
   });
 
   // Rate limiting removed — this is a local desktop app, not a public API.
