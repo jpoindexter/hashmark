@@ -236,6 +236,13 @@ function migrate(db: Database.Database) {
   if (!runCols.includes('duration_api_ms')) {
     db.exec('ALTER TABLE runs ADD COLUMN duration_api_ms INTEGER');
   }
+  // Daemon mode -- background runs not tied to an SSE stream
+  if (!runCols.includes('is_daemon')) {
+    db.exec('ALTER TABLE runs ADD COLUMN is_daemon INTEGER NOT NULL DEFAULT 0');
+  }
+  if (!runCols.includes('output')) {
+    db.exec('ALTER TABLE runs ADD COLUMN output TEXT NOT NULL DEFAULT ""');
+  }
 
   // Session cost tracking (actual from Claude result events)
   if (!sessionCols.includes('cost_usd')) {
@@ -248,6 +255,34 @@ function migrate(db: Database.Database) {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+  `);
+
+  // Inter-session messaging (inbox)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS inbox_messages (
+      id TEXT PRIMARY KEY,
+      from_id TEXT NOT NULL,
+      to_id TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'info',
+      subject TEXT NOT NULL,
+      body TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      read_at INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_inbox_to ON inbox_messages(to_id, read_at);
+    CREATE INDEX IF NOT EXISTS idx_inbox_created ON inbox_messages(created_at DESC);
+  `);
+
+  // Bridge -- remote access paired devices
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS bridge_devices (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      token TEXT NOT NULL UNIQUE,
+      paired_at INTEGER NOT NULL,
+      last_seen INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_bridge_devices_token ON bridge_devices(token);
   `);
 
   // FTS5 full-text search index for session messages

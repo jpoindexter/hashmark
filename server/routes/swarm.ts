@@ -21,6 +21,7 @@ import { checkUsage, recordInvocation } from "../lib/claude-usage.js";
 import { loadScanContext } from "../context.js";
 import { loadToolPlugins, buildToolPluginPrompt } from "../lib/tool-plugins.js";
 import { z } from "zod";
+import { sendMessage } from "../lib/inbox.js";
 import type { WorkspaceCtx } from "./workspaces.js";
 
 const MAX_CONCURRENT_CLAUDE = 3;
@@ -284,14 +285,33 @@ async function runAgent(
   // Count files and notify client to review before merging
   if (hasChanges) {
     let filesChanged = 0;
+    let changedFiles: string[] = [];
     try {
       const { stdout: nameOnly } = await execFile(
         "git", ["diff-tree", "--no-commit-id", "-r", "--name-only", "HEAD"],
         { cwd: worktreeDir }
       );
-      filesChanged = nameOnly.trim().split("\n").filter(Boolean).length;
+      changedFiles = nameOnly.trim().split("\n").filter(Boolean);
+      filesChanged = changedFiles.length;
     } catch {}
     emit(swarm, agentIndex, { type: "ready_to_merge", branch, filesChanged });
+
+    // Broadcast to other agents so they know which files were touched
+    try {
+      sendMessage(dataDir, {
+        from: `swarm/${swarm.swarmId}/agent/${agentIndex}`,
+        to: "broadcast",
+        type: "result",
+        subject: `Agent ${agentIndex} finished: ${agent.task.slice(0, 60)}`,
+        body: JSON.stringify({
+          swarmId: swarm.swarmId,
+          agentIndex,
+          branch,
+          filesChanged: changedFiles,
+          task: agent.task,
+        }),
+      });
+    } catch {}
   }
 
   // Remove worktree but keep branch — user triggers merge via POST /api/swarm/:id/agents/:index/merge
