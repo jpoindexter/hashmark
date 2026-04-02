@@ -58,6 +58,68 @@ async function buildTree(dir: string, root: string, depth = 0): Promise<FileNode
   return nodes;
 }
 
+/** Standalone git status -- returns data without Hono context */
+export async function getGitStatus(projectDir: string) {
+  try {
+    const [statusOut, logOut, branchOut] = await Promise.all([
+      execAsync("git", ["status", "--porcelain=v1"], { cwd: projectDir }),
+      execAsync("git", ["log", "--oneline", "-10"], { cwd: projectDir }),
+      execAsync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: projectDir }),
+    ]);
+    const branch = branchOut.stdout.trim();
+
+    let ahead = 0;
+    let behind = 0;
+    try {
+      const { stdout: revCount } = await execAsync(
+        "git", ["rev-list", "--left-right", "--count", `${branch}...@{u}`],
+        { cwd: projectDir }
+      );
+      const parts = revCount.trim().split(/\s+/);
+      ahead = parseInt(parts[0]) || 0;
+      behind = parseInt(parts[1]) || 0;
+    } catch {}
+
+    const rawFiles = statusOut.stdout.trim().split("\n").filter(Boolean).map((line) => {
+      const xy = line.slice(0, 2);
+      const file = line.slice(3).trim();
+      const x = xy[0];
+      const y = xy[1];
+      const isUntracked = x === "?" && y === "?";
+      const isStaged = x !== " " && x !== "?";
+      const isUnstaged = !isUntracked && y !== " ";
+      return { status: xy, file, x, y, isStaged, isUnstaged, isUntracked };
+    });
+
+    const [unstagedOut, stagedOut] = await Promise.all([
+      execAsync("git", ["diff", "--numstat", "HEAD"], { cwd: projectDir }).catch(() => ({ stdout: "" })),
+      execAsync("git", ["diff", "--numstat", "--cached"], { cwd: projectDir }).catch(() => ({ stdout: "" })),
+    ]);
+    const parseNumstat = (out: string): Map<string, { added: number; removed: number }> => {
+      const m = new Map<string, { added: number; removed: number }>();
+      for (const line of out.trim().split("\n").filter(Boolean)) {
+        const parts = line.split("\t");
+        if (parts.length >= 3) m.set(parts[2], { added: parseInt(parts[0]) || 0, removed: parseInt(parts[1]) || 0 });
+      }
+      return m;
+    };
+    const unstagedMap = parseNumstat(unstagedOut.stdout);
+    const stagedMap = parseNumstat(stagedOut.stdout);
+    const filesWithStats = rawFiles.map((f) => {
+      const stats = f.isStaged ? stagedMap.get(f.file) : unstagedMap.get(f.file);
+      return { ...f, added: stats?.added ?? 0, removed: stats?.removed ?? 0 };
+    });
+
+    const commits = logOut.stdout.trim().split("\n").filter(Boolean).map((line) => {
+      const i = line.indexOf(" ");
+      return { hash: line.slice(0, i), message: line.slice(i + 1) };
+    });
+    return { branch, ahead, behind, files: filesWithStats, commits };
+  } catch {
+    return { branch: "unknown", ahead: 0, behind: 0, files: [] as never[], commits: [] as never[], error: "not a git repo" };
+  }
+}
+
 export function filesRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
 
@@ -746,68 +808,8 @@ export function filesRoutes(ctx: WorkspaceCtx) {
   });
 
   app.get("/git", async (c) => {
-    try {
-      const [statusOut, logOut, branchOut] = await Promise.all([
-        execAsync("git", ["status", "--porcelain=v1"], { cwd: ctx.projectDir }),
-        execAsync("git", ["log", "--oneline", "-10"], { cwd: ctx.projectDir }),
-        execAsync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: ctx.projectDir }),
-      ]);
-      const branch = branchOut.stdout.trim();
-
-      // Ahead/behind vs remote tracking branch
-      let ahead = 0;
-      let behind = 0;
-      try {
-        const { stdout: revCount } = await execAsync(
-          "git", ["rev-list", "--left-right", "--count", `${branch}...@{u}`],
-          { cwd: ctx.projectDir }
-        );
-        const parts = revCount.trim().split(/\s+/);
-        ahead = parseInt(parts[0]) || 0;
-        behind = parseInt(parts[1]) || 0;
-      } catch { /* no upstream */ }
-
-      // Parse porcelain v1: XY filename
-      // X = staged status, Y = unstaged status
-      const rawFiles = statusOut.stdout.trim().split("\n").filter(Boolean).map((line) => {
-        const xy = line.slice(0, 2);
-        const file = line.slice(3).trim();
-        const x = xy[0]; // staged
-        const y = xy[1]; // unstaged
-        const isUntracked = x === "?" && y === "?";
-        const isStaged = x !== " " && x !== "?";
-        const isUnstaged = !isUntracked && y !== " ";
-        return { status: xy, file, x, y, isStaged, isUnstaged, isUntracked };
-      });
-
-      // Batch numstat: 2 git calls instead of N per-file spawns
-      const [unstagedOut, stagedOut] = await Promise.all([
-        execAsync("git", ["diff", "--numstat", "HEAD"], { cwd: ctx.projectDir }).catch(() => ({ stdout: "" })),
-        execAsync("git", ["diff", "--numstat", "--cached"], { cwd: ctx.projectDir }).catch(() => ({ stdout: "" })),
-      ]);
-      const parseNumstat = (out: string): Map<string, { added: number; removed: number }> => {
-        const m = new Map<string, { added: number; removed: number }>();
-        for (const line of out.trim().split("\n").filter(Boolean)) {
-          const parts = line.split("\t");
-          if (parts.length >= 3) m.set(parts[2], { added: parseInt(parts[0]) || 0, removed: parseInt(parts[1]) || 0 });
-        }
-        return m;
-      };
-      const unstagedMap = parseNumstat(unstagedOut.stdout);
-      const stagedMap = parseNumstat(stagedOut.stdout);
-      const filesWithStats = rawFiles.map((f) => {
-        const stats = f.isStaged ? stagedMap.get(f.file) : unstagedMap.get(f.file);
-        return { ...f, added: stats?.added ?? 0, removed: stats?.removed ?? 0 };
-      });
-
-      const commits = logOut.stdout.trim().split("\n").filter(Boolean).map((line) => {
-        const i = line.indexOf(" ");
-        return { hash: line.slice(0, i), message: line.slice(i + 1) };
-      });
-      return c.json({ branch, ahead, behind, files: filesWithStats, commits });
-    } catch {
-      return c.json({ branch: "unknown", ahead: 0, behind: 0, files: [], commits: [], error: "not a git repo" });
-    }
+    const result = await getGitStatus(ctx.projectDir);
+    return c.json(result);
   });
 
   return app;

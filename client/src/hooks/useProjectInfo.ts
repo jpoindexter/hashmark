@@ -60,25 +60,18 @@ export function useProjectInfo(
   const [drift, setDrift] = useState<DriftResult | null>(null);
 
   const fetchAll = useCallback(() => {
-    fetchApi("/api/info")
+    fetchApi("/api/status")
       .then(r => r.json())
-      .then(setInfo)
-      .catch(() => {
-        toast.error("Failed to load project info");
-      });
-    fetchApi("/api/files/git")
-      .then(r => r.json())
-      .then(setGit)
-      .catch(() => {
-        toast.error("Failed to load git status");
-      });
-    fetchApi("/api/drift/check")
-      .then(r => r.json())
-      .then((d: DriftResponse) => {
+      .then((data: { info: ProjectInfo; git: GitStatus; drift: DriftResponse }) => {
+        setInfo(data.info);
+        setGit(data.git);
+        const d = data.drift;
         if (d.hasContextFile && d.driftLevel !== "none") setDrift(d);
         else setDrift(null);
       })
-      .catch(() => { /* drift is non-critical */ });
+      .catch(() => {
+        toast.error("Failed to load project status");
+      });
   }, []);
 
   // Fetch info, git, and drift on mount
