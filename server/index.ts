@@ -148,9 +148,9 @@ export function createServer(opts: ServerOptions) {
     const now = Date.now();
     if (_claudeCheck === null || (!_claudeCheck && now - _claudeCheckTime > 60_000)) {
       try {
-        const { existsSync } = require("fs") as typeof import("fs");
-        const resolved = findClaudeBin(ctx.projectDir);
-        _claudeCheck = resolved !== "claude" || existsSync("/usr/local/bin/claude") || existsSync("/opt/homebrew/bin/claude");
+        const { spawnSync } = require("child_process") as typeof import("child_process");
+        const r = spawnSync("claude", ["--version"], { stdio: "pipe", timeout: 5000, shell: true });
+        _claudeCheck = r.status === 0;
         _claudeCheckTime = now;
       } catch {
         _claudeCheck = false;
