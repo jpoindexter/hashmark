@@ -112,18 +112,6 @@ export default function Generate() {
     ]);
   }, []);
 
-  // Cmd+Enter to trigger scan
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && pageState === "idle") {
-        e.preventDefault();
-        triggerScan();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [pageState, triggerScan]);
-
   function toggleFormat(id: string) {
     setSelectedFormats(prev => {
       const next = new Set(prev);
@@ -143,6 +131,18 @@ export default function Generate() {
     setScanDelta(null);
     setErrorMsg("");
   }, [selectedFormats]);
+
+  // Cmd+Enter to trigger scan (must be after triggerScan declaration)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && pageState === "idle") {
+        e.preventDefault();
+        triggerScan();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [pageState, triggerScan]);
 
   const handleScanComplete = useCallback((result: ScanResult, delta: ScanDelta | null) => {
     setScanResult(result);

@@ -38,6 +38,7 @@ import { configRoutes } from "./routes/config.js";
 import { sandboxRoutes } from "./routes/sandbox.js";
 import { settingsRoutes } from "./routes/settings.js";
 import { toolsRoutes } from "./routes/tools.js";
+import { promptsRoutes } from "./routes/prompts.js";
 import { daemonRoutes } from "./routes/daemon.js";
 import { killAllDaemons } from "./lib/daemon.js";
 import { getDb, getStudioSetting, setStudioSetting } from "./db.js";
@@ -324,6 +325,7 @@ export function createServer(opts: ServerOptions) {
   app.route("/api/kairos", kairosRoutes(ctx));
   app.route("/api/bridge", bridgeRoutes(ctx, opts.port));
   app.route("/api/daemon", daemonRoutes(ctx));
+  app.route("/api/prompts", promptsRoutes(ctx));
 
   // Serve static client files
   app.use(
