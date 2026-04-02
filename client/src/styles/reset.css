@@ -207,6 +207,8 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
   cursor: pointer; transition: background var(--transition-fast), color var(--transition-fast);
 }
 .btn-icon:hover { background: var(--hover-bg-strong); color: var(--text-dim); }
+.btn-icon-danger { transition: background var(--transition-fast), color var(--transition-fast); }
+.btn-icon-danger:hover { background: rgba(248, 81, 73, 0.15); color: var(--red); }
 
 /* ---- Utility: surfaces ---- */
 .surface     { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }

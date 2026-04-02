@@ -15,14 +15,7 @@ export function ToolbarBtn({
     <button
       onClick={onClick}
       title={title}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = danger ? "rgba(248, 81, 73, 0.15)" : "var(--hover-bg-strong)";
-        e.currentTarget.style.color = danger ? "var(--red)" : "var(--text)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "none";
-        e.currentTarget.style.color = "var(--text-dimmer)";
-      }}
+      className={danger ? "btn-icon-danger" : "btn-icon"}
       style={{
         display: "flex",
         alignItems: "center",
@@ -35,7 +28,6 @@ export function ToolbarBtn({
         color: "var(--text-dimmer)",
         cursor: "pointer",
         padding: 0,
-        transition: "background 0.1s, color 0.1s",
         flexShrink: 0,
       }}
     >
@@ -58,6 +50,7 @@ export function MoreMenuItem({
   return (
     <div
       onClick={onClick}
+      className="hoverable"
       style={{
         padding: "5px 12px",
         fontSize: 12,
@@ -69,8 +62,6 @@ export function MoreMenuItem({
         justifyContent: "space-between",
         gap: 16,
       }}
-      onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "var(--active-bg)"}
-      onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
     >
       <span>{label}</span>
       {shortcut && (

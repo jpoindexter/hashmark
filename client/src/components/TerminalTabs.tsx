@@ -334,6 +334,7 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
                   <div
                     key={shell}
                     onClick={() => addTab(shell)}
+                    className="hoverable"
                     style={{
                       padding: "5px 12px",
                       fontSize: 12,
@@ -344,8 +345,6 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
                       alignItems: "center",
                       gap: 8,
                     }}
-                    onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "var(--active-bg)"}
-                    onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
                   >
                     <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>$</span>
                     {shell}
