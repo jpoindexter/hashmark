@@ -150,6 +150,7 @@ export default function Shell() {
               onNewSession={handleNewSession}
               streaming={streaming}
               streamingSessionId={streaming ? activeSessionId : null}
+              git={git}
             />
 
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>

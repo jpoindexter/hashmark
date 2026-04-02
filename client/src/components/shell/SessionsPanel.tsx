@@ -17,6 +17,7 @@ interface SessionsPanelProps {
   onNewSession: () => void;
   streaming: boolean;
   streamingSessionId: string | null;
+  git?: { branch: string; files: { status: string }[] } | null;
 }
 
 interface CtxState {
@@ -52,6 +53,7 @@ export default function SessionsPanel({
   onNewSession,
   streaming,
   streamingSessionId,
+  git,
 }: SessionsPanelProps) {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [ctxMenu, setCtxMenu] = useState<CtxState | null>(null);
@@ -142,6 +144,24 @@ export default function SessionsPanel({
 
   return (
     <div style={panel}>
+      {git && (
+        <div style={{
+          padding: "6px 14px",
+          fontSize: 10,
+          fontFamily: "var(--font)",
+          color: "var(--text-dimmer)",
+          borderBottom: "0.5px solid var(--border-dim)",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          flexShrink: 0,
+        }}>
+          <span style={{ color: "var(--accent)" }}>{git.branch}</span>
+          {git.files.length > 0 && (
+            <span style={{ color: "var(--yellow)" }}>{git.files.length} changed</span>
+          )}
+        </div>
+      )}
       <div style={hdr}>
         <span className="label">sessions</span>
         <button
