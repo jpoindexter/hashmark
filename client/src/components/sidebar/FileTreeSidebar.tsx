@@ -1,209 +1,15 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  FileCode, FileText, Folder, ChevronRight, ChevronDown,
   Copy, FolderOpen, ExternalLink, FilePlus, FolderPlus, Pencil, Trash2,
   GitBranch,
 } from "lucide-react";
 import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
-import ConfirmDialog from "../shared/ConfirmDialog.tsx";
 import { Skeleton } from "../shared/Skeleton.tsx";
 import { fetchApi } from "../../lib/api";
 import { toast } from "../../hooks/useToast";
-
-interface FileNode {
-  name: string;
-  path: string;
-  type: "file" | "dir";
-  children?: FileNode[];
-  ext?: string;
-}
-
-const CODE_EXTS = new Set([
-  "ts", "tsx", "js", "jsx", "mjs", "py", "go", "rs", "rb", "java",
-  "c", "cpp", "h", "cs", "swift", "kt", "sh", "bash", "sql",
-]);
-
-function fileIcon(ext?: string) {
-  if (ext && CODE_EXTS.has(ext)) return FileCode;
-  return FileText;
-}
-
-function countFiles(nodes: FileNode[]): number {
-  let count = 0;
-  for (const n of nodes) {
-    if (n.type === "file") count++;
-    if (n.children) count += countFiles(n.children);
-  }
-  return count;
-}
-
-/** Flatten a sorted tree into a path-ordered list for shift-click range selection */
-function flattenTree(nodes: FileNode[]): string[] {
-  const result: string[] = [];
-  for (const n of nodes) {
-    result.push(n.path);
-    if (n.children) {
-      const sorted = [...n.children].sort((a, b) => {
-        if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
-        return a.name.localeCompare(b.name);
-      });
-      result.push(...flattenTree(sorted));
-    }
-  }
-  return result;
-}
-
-type GitStatus = "M" | "A" | "D" | "?" | string;
-
-function gitStatusColor(status: GitStatus): string {
-  if (status === "M") return "var(--yellow)";
-  if (status === "A" || status === "?") return "var(--accent)";
-  if (status === "D") return "var(--red)";
-  return "var(--text-dimmer)";
-}
-
-interface TreeRowProps {
-  node: FileNode;
-  depth: number;
-  selectedPaths: Set<string>;
-  gitFiles: Record<string, string>;
-  onSelect: (path: string, e: React.MouseEvent) => void;
-  onContextMenu: (e: React.MouseEvent, node: FileNode) => void;
-}
-
-function TreeRow({ node, depth, selectedPaths, gitFiles, onSelect, onContextMenu }: TreeRowProps) {
-  const [open, setOpen] = useState(depth < 1);
-  const isDir = node.type === "dir";
-  const isSelected = selectedPaths.has(node.path);
-  const Icon = isDir ? Folder : fileIcon(node.ext);
-  const Chevron = open ? ChevronDown : ChevronRight;
-  const status = gitFiles[node.path];
-
-  const handleClick = (e: React.MouseEvent) => {
-    // Dirs toggle open/close on regular click, but support multi-select modifiers
-    if (isDir && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
-      setOpen((v) => !v);
-    } else {
-      onSelect(node.path, e);
-    }
-  };
-
-  const sorted = useMemo(() => {
-    if (!node.children) return [];
-    return [...node.children].sort((a, b) => {
-      if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
-      return a.name.localeCompare(b.name);
-    });
-  }, [node.children]);
-
-  const nameColor = status
-    ? gitStatusColor(status)
-    : "var(--text-dim)";
-
-  return (
-    <>
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label={node.name}
-        onClick={handleClick}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }}
-        onContextMenu={(e) => { e.preventDefault(); onContextMenu(e, node); }}
-        className={isSelected ? undefined : "hoverable"}
-        style={{
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
-          gap: 4,
-          height: 22,
-          paddingLeft: 8 + depth * 16,
-          paddingRight: 8,
-          cursor: "pointer",
-          userSelect: "none",
-          fontSize: 12,
-          fontFamily: "var(--font)",
-          color: "var(--text-dim)",
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          background: isSelected ? "var(--active-bg)" : "transparent",
-          borderLeft: isSelected ? "2px solid var(--accent)" : "2px solid transparent",
-        }}
-      >
-        {/* Indent guide lines */}
-        {Array.from({ length: depth }).map((_, i) => (
-          <div key={i} style={{
-            position: "absolute",
-            left: 20 + i * 16,
-            top: 0,
-            bottom: 0,
-            width: 1,
-            background: "var(--border-dim)",
-            pointerEvents: "none",
-          }} />
-        ))}
-
-        {isDir && (
-          <Chevron
-            size={12}
-            style={{ flexShrink: 0, color: "var(--text-dimmer)" }}
-          />
-        )}
-        {!isDir && <span style={{ width: 12, flexShrink: 0 }} />}
-        <Icon
-          size={14}
-          style={{
-            flexShrink: 0,
-            color: isDir ? "var(--text-dim)" : "var(--text-dimmer)",
-          }}
-        />
-        <span
-          style={{
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            color: nameColor,
-            textDecoration: status === "D" ? "line-through" : undefined,
-          }}
-        >
-          {node.name}
-        </span>
-
-        {/* Git status badge */}
-        {status && (
-          <span style={{
-            fontSize: 10,
-            fontWeight: 600,
-            marginLeft: "auto",
-            flexShrink: 0,
-            color: gitStatusColor(status),
-          }}>
-            {status}
-          </span>
-        )}
-      </div>
-      {isDir &&
-        open &&
-        sorted.map((child) => (
-          <TreeRow
-            key={child.path}
-            node={child}
-            depth={depth + 1}
-            selectedPaths={selectedPaths}
-            gitFiles={gitFiles}
-            onSelect={onSelect}
-            onContextMenu={onContextMenu}
-          />
-        ))}
-    </>
-  );
-}
-
-type DialogState =
-  | null
-  | { kind: "new-file"; dir: string }
-  | { kind: "new-folder"; dir: string }
-  | { kind: "rename"; oldPath: string; oldName: string }
-  | { kind: "delete"; path: string; name: string; isDir: boolean }
-  | { kind: "delete-bulk"; paths: string[] };
+import { type FileNode, type DialogState, countFiles, flattenTree } from "./file-tree/types";
+import { TreeRow } from "./file-tree/TreeNode";
+import { FileActions } from "./file-tree/FileActions";
 
 export default function FileTreeSidebar() {
   const [tree, setTree] = useState<FileNode[]>([]);
@@ -535,49 +341,6 @@ export default function FileTreeSidebar() {
     [tree]
   );
 
-  // ---- Dialog helpers ----
-
-  const dialogOpen = dialog !== null;
-  const isInputDialog = dialog?.kind === "new-file" || dialog?.kind === "new-folder" || dialog?.kind === "rename";
-  const isDeleteDialog = dialog?.kind === "delete" || dialog?.kind === "delete-bulk";
-
-  const dialogTitle = (() => {
-    if (!dialog) return "";
-    if (dialog.kind === "new-file") return "New File";
-    if (dialog.kind === "new-folder") return "New Folder";
-    if (dialog.kind === "rename") return "Rename";
-    if (dialog.kind === "delete") return `Delete ${dialog.isDir ? "folder" : "file"}`;
-    if (dialog.kind === "delete-bulk") return `Delete ${dialog.paths.length} items`;
-    return "";
-  })();
-
-  const dialogMessage = (() => {
-    if (!dialog) return undefined;
-    if (dialog.kind === "delete") {
-      return `Are you sure you want to delete "${dialog.name}"?${dialog.isDir ? " This will remove all contents." : ""}`;
-    }
-    if (dialog.kind === "delete-bulk") {
-      return `Are you sure you want to delete ${dialog.paths.length} items? This cannot be undone.`;
-    }
-    if (dialog.kind === "new-file") {
-      return dialog.dir ? `Create file in ${dialog.dir}/` : "Create file in project root";
-    }
-    if (dialog.kind === "new-folder") {
-      return dialog.dir ? `Create folder in ${dialog.dir}/` : "Create folder in project root";
-    }
-    return undefined;
-  })();
-
-  const dialogPlaceholder = (() => {
-    if (!dialog) return "";
-    if (dialog.kind === "new-file") return "filename.ts";
-    if (dialog.kind === "new-folder") return "folder-name";
-    if (dialog.kind === "rename") return "new name";
-    return "";
-  })();
-
-  const dialogDefault = dialog?.kind === "rename" ? dialog.oldName : "";
-
   // Clear selection when clicking empty space in the tree container
   const handleTreeBackgroundClick = useCallback((e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -685,38 +448,14 @@ export default function FileTreeSidebar() {
       />
 
       {/* CRUD dialogs */}
-      {isInputDialog && (
-        <ConfirmDialog
-          open={dialogOpen}
-          title={dialogTitle}
-          message={dialogMessage}
-          confirmLabel={dialog?.kind === "rename" ? "Rename" : "Create"}
-          inputMode
-          inputPlaceholder={dialogPlaceholder}
-          inputDefaultValue={dialogDefault}
-          onConfirm={() => {}}
-          onConfirmWithValue={(val) => {
-            const trimmed = val.trim();
-            if (!trimmed) return;
-            if (dialog?.kind === "new-file") handleCreateFile(trimmed);
-            else if (dialog?.kind === "new-folder") handleCreateFolder(trimmed);
-            else if (dialog?.kind === "rename") handleRename(trimmed);
-          }}
-          onCancel={() => setDialog(null)}
-        />
-      )}
-
-      {isDeleteDialog && (
-        <ConfirmDialog
-          open={dialogOpen}
-          title={dialogTitle}
-          message={dialogMessage}
-          confirmLabel="Delete"
-          danger
-          onConfirm={handleDelete}
-          onCancel={() => setDialog(null)}
-        />
-      )}
+      <FileActions
+        dialog={dialog}
+        onClose={() => setDialog(null)}
+        onCreateFile={handleCreateFile}
+        onCreateFolder={handleCreateFolder}
+        onRename={handleRename}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "../shared/Skeleton.tsx";
@@ -6,41 +6,20 @@ import IconButton from "../shared/IconButton.tsx";
 import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
 import ConfirmDialog from "../shared/ConfirmDialog.tsx";
 import { fetchApi } from "../../lib/api";
+import {
+  type ChatSession,
+  type WorkspaceInfo,
+  type DialogState,
+  avatarBg,
+  avatarColor,
+  buildSessionMenuItems,
+  buildWorkspaceMenuItems,
+} from "./sessions/types.ts";
+import SessionItem from "./sessions/SessionItem.tsx";
 
 interface ContextMenuState {
   items: ContextMenuItem[];
   position: { x: number; y: number };
-}
-
-interface DialogState {
-  open: boolean;
-  title: string;
-  message?: string;
-  confirmLabel?: string;
-  danger?: boolean;
-  inputMode?: boolean;
-  inputPlaceholder?: string;
-  inputDefaultValue?: string;
-  onConfirm: () => void;
-  onConfirmWithValue?: (value: string) => void;
-}
-
-interface ChatSession {
-  id: string;
-  title: string;
-  message_count: number;
-  updated_at: number;
-}
-
-interface GitStatus {
-  branch: string;
-  files: { status: string; added: number; removed: number }[];
-}
-
-interface WorkspaceInfo {
-  name: string;
-  dir: string;
-  git: GitStatus | null;
 }
 
 interface SessionsSidebarProps {
@@ -50,22 +29,6 @@ interface SessionsSidebarProps {
   git?: { branch: string; files: { status: string; added?: number; removed?: number }[] } | null;
   streaming?: boolean;
   streamingSessionId?: string | null;
-}
-
-// 4 neutral grey avatar backgrounds using design tokens (theme-safe)
-const AVATAR_BG_VARIANTS = [
-  "var(--surface-muted)",
-  "var(--surface-subtle)",
-  "var(--surface-dim)",
-  "var(--surface-input)",
-];
-
-function avatarBg(name: string): string {
-  return AVATAR_BG_VARIANTS[name.charCodeAt(0) % 4];
-}
-
-function avatarColor(): string {
-  return "var(--text)";
 }
 
 export default function SessionsSidebar({ activeSessionId, onSessionSelect, info, git, streaming, streamingSessionId }: SessionsSidebarProps) {
@@ -307,7 +270,7 @@ function WorkspaceGroup({
       </div>
 
       {expanded && sessions.length > 0 && sessions.map((s, i) => (
-        <SessionRow
+        <SessionItem
           key={s.id}
           session={s}
           shortcut={i < 9 ? `\u2318${i + 1}` : undefined}
@@ -371,200 +334,4 @@ function LetterAvatar({ name }: { name: string }) {
       {name.charAt(0).toUpperCase()}
     </div>
   );
-}
-
-function SessionRow({
-  session,
-  shortcut,
-  active,
-  onClick,
-  isStreaming,
-  onContextMenu,
-}: {
-  session: ChatSession;
-  shortcut?: string;
-  active: boolean;
-  onClick: () => void;
-  isStreaming: boolean;
-  onContextMenu: (e: React.MouseEvent) => void;
-}) {
-  const shortcutRef = useRef<HTMLSpanElement>(null);
-  const title = session.title || "Untitled";
-
-  const dotColor = isStreaming
-    ? "var(--yellow)"
-    : active
-    ? "var(--accent)"
-    : "var(--text-dimmer)";
-
-  const dotShadow = isStreaming ? "0 0 4px var(--yellow)" : undefined;
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-current={active ? "true" : undefined}
-      onClick={onClick}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
-      onContextMenu={onContextMenu}
-      className={active ? undefined : "hoverable"}
-      onMouseEnter={() => {
-        if (shortcutRef.current && shortcut) shortcutRef.current.style.visibility = "visible";
-      }}
-      onMouseLeave={() => {
-        if (shortcutRef.current && !active) shortcutRef.current.style.visibility = "hidden";
-      }}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        height: 22,
-        padding: "0 8px 0 28px",
-        cursor: "pointer",
-        background: active ? "var(--active-bg)" : "transparent",
-        transition: "background 0.1s",
-      }}
-    >
-      <span style={{
-        display: "inline-block",
-        width: 6,
-        height: 6,
-        borderRadius: "50%",
-        background: dotColor,
-        flexShrink: 0,
-        boxShadow: dotShadow,
-        animation: isStreaming ? "session-dot-pulse 1.5s ease-in-out infinite" : undefined,
-      }} />
-      <span style={{
-        flex: 1,
-        fontSize: 13,
-        fontWeight: active ? 600 : 400,
-        color: active ? "var(--text)" : "var(--text-dim)",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-        lineHeight: "22px",
-      }}>
-        {title}
-      </span>
-      {shortcut && (
-        <span
-          ref={shortcutRef}
-          style={{
-            fontSize: 10,
-            color: "var(--text-dimmer)",
-            flexShrink: 0,
-            visibility: active ? "visible" : "hidden",
-          }}
-        >
-          {shortcut}
-        </span>
-      )}
-    </div>
-  );
-}
-
-// Builds context menu items for a session row (uses setDialog for confirm/prompt)
-function buildSessionMenuItems(
-  session: ChatSession,
-  onRefresh: () => void,
-  setDialog: (d: DialogState | null) => void,
-): ContextMenuItem[] {
-  return [
-    {
-      label: "Rename",
-      onClick: () => {
-        setDialog({
-          open: true,
-          title: "Rename mission",
-          inputMode: true,
-          inputPlaceholder: "Mission name",
-          inputDefaultValue: session.title || "Untitled",
-          confirmLabel: "Rename",
-          onConfirm: () => {},
-          onConfirmWithValue: (newTitle: string) => {
-            if (!newTitle.trim()) return;
-            fetchApi(`/api/sessions/${session.id}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ title: newTitle.trim() }),
-            }).then(() => { onRefresh(); setDialog(null); }).catch(() => setDialog(null));
-          },
-        });
-      },
-    },
-    {
-      label: "Duplicate",
-      onClick: () => {
-        fetchApi("/api/sessions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: `${session.title || "Untitled"} (copy)` }),
-        }).then(() => onRefresh()).catch(() => {});
-      },
-    },
-    { label: "", onClick: () => {}, separator: true },
-    {
-      label: "Delete",
-      danger: true,
-      onClick: () => {
-        setDialog({
-          open: true,
-          title: `Delete "${session.title || "Untitled"}"?`,
-          message: "This will permanently delete this mission and all its messages.",
-          confirmLabel: "Delete",
-          danger: true,
-          onConfirm: () => {
-            fetchApi(`/api/sessions/${session.id}`, { method: "DELETE" })
-              .then(() => { onRefresh(); setDialog(null); })
-              .catch(() => setDialog(null));
-          },
-        });
-      },
-    },
-  ];
-}
-
-// Builds context menu items for the workspace row
-function buildWorkspaceMenuItems(
-  dir: string,
-  setDialog: (d: DialogState | null) => void,
-): ContextMenuItem[] {
-  const items: ContextMenuItem[] = [];
-
-  if (typeof window.studio?.showInFinder === "function") {
-    items.push({
-      label: "Open in Finder",
-      onClick: () => { void window.studio!.showInFinder(dir); },
-    });
-  }
-
-  items.push({
-    label: "Copy Path",
-    onClick: () => {
-      void navigator.clipboard.writeText(dir);
-    },
-  });
-
-  items.push({ label: "", onClick: () => {}, separator: true });
-
-  items.push({
-    label: "Remove",
-    danger: true,
-    onClick: () => {
-      setDialog({
-        open: true,
-        title: "Remove workspace?",
-        message: "This will remove the workspace from the sidebar. Your files will not be deleted.",
-        confirmLabel: "Remove",
-        danger: true,
-        onConfirm: () => {
-          // Workspace removal is not yet supported on the backend
-          setDialog(null);
-        },
-      });
-    },
-  });
-
-  return items;
 }
