@@ -6,6 +6,7 @@ import { CodeBlock } from "./chat/CodeRendering";
 import { EmptyState, ResumedDivider } from "./chat/ChatEmptyState";
 import MessageBubble, { ASSISTANT_CONTENT_STYLE, fmtDuration, type Message } from "./chat/MessageBubbles";
 import ContextMenu, { type ContextMenuItem } from "./shared/ContextMenu";
+import { useTextMeasure } from "../hooks/useTextMeasure";
 import ScrollToBottom from "./shared/ScrollToBottom";
 import { fetchApi } from "../lib/api";
 import { fmtTime, fmtTokens } from "../lib/format";
@@ -533,10 +534,27 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
     items.push({ id: STREAMING_ID, role: "assistant" as const });
   }
 
+  // Pretext-powered height estimation -- avoids DOM reflow for initial sizing
+  const { estimateHeight, updateWidth } = useTextMeasure({
+    font: '13px "JetBrains Mono Variable", "JetBrains Mono", monospace',
+    lineHeight: 20.8, // 13px * 1.6
+    basePadding: 24,   // top + bottom padding on message bubbles
+  });
+
+  // Track container width for accurate text measurement
+  useEffect(() => { updateWidth(parentRef.current); }, [updateWidth]);
+
   const virtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 200,
+    estimateSize: (index) => {
+      const item = items[index];
+      if (!item) return 200;
+      if (item.id === STREAMING_ID) return 200; // streaming bubble changes constantly
+      if (item.id === RESUME_DIVIDER_ID) return 40;
+      const msg = item as Message;
+      return estimateHeight(msg.content, msg.role);
+    },
     overscan: 5,
     measureElement: (el) => el.getBoundingClientRect().height,
   });
