@@ -6,6 +6,7 @@ import { CodeBlock } from "./chat/CodeRendering";
 import { EmptyState, ResumedDivider } from "./chat/ChatEmptyState";
 import MessageBubble, { ASSISTANT_CONTENT_STYLE, fmtDuration, type Message } from "./chat/MessageBubbles";
 import ToolResultCard from "./chat/ToolResultCard";
+import { EditPreview } from "./chat/EditPreview";
 import ContextMenu, { type ContextMenuItem } from "./shared/ContextMenu";
 import { useTextMeasure } from "../hooks/useTextMeasure";
 import ScrollToBottom from "./shared/ScrollToBottom";
@@ -315,6 +316,7 @@ function StreamingBubble({ state, legacyText, streamStartTime }: { state?: Strea
               if (seg.blocks.length === 1) {
                 const b = seg.blocks[0];
                 const isRead = categorize(b.tool) === "Read";
+                const isEdit = ["edit", "write", "multiedit"].includes(b.tool.toLowerCase());
                 const fp = isRead ? getReadFilePath(b.input) : null;
                 return (
                   <div key={seg.key}>
@@ -324,6 +326,7 @@ function StreamingBubble({ state, legacyText, streamStartTime }: { state?: Strea
                         <FileBadge filePath={fp} />
                       </div>
                     )}
+                    {isEdit && <EditPreview block={b} />}
                   </div>
                 );
               }
