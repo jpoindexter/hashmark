@@ -115,15 +115,11 @@ export default function DependencyGraph({ agents, conflicts }: DependencyGraphPr
           {/* Header row: agent names */}
           <thead>
             <tr>
-              <th style={{
+              <th className="text-micro" style={{
                 textAlign: "left",
                 padding: "6px 10px",
                 borderBottom: "1px solid var(--border-dim)",
-                color: "var(--text-dimmer)",
                 fontWeight: 400,
-                fontSize: 9,
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
                 position: "sticky",
                 left: 0,
                 background: "var(--bg)",
@@ -135,15 +131,12 @@ export default function DependencyGraph({ agents, conflicts }: DependencyGraphPr
               {agents.map((agent) => (
                 <th
                   key={agent.id}
+                  className="text-micro"
                   style={{
                     textAlign: "center",
                     padding: "6px 8px",
                     borderBottom: "1px solid var(--border-dim)",
                     color: "var(--accent)",
-                    fontWeight: 600,
-                    fontSize: 9,
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
                     whiteSpace: "nowrap",
                     minWidth: 70,
                   }}
@@ -253,13 +246,7 @@ export default function DependencyGraph({ agents, conflicts }: DependencyGraphPr
           border: "1px solid var(--border-dim)",
           borderRadius: "var(--radius)",
         }}>
-          <div style={{
-            fontSize: 9,
-            color: "var(--text-dimmer)",
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            marginBottom: 2,
-          }}>
+          <div className="text-micro" style={{ marginBottom: 2 }}>
             CONFLICT DETAILS
           </div>
           {conflicts.map((c) => (

@@ -16,15 +16,6 @@ interface Checkpoint {
   status: "active" | "merged" | "abandoned";
 }
 
-const sectionLabel: React.CSSProperties = {
-  fontSize: 10,
-  fontFamily: "var(--font)",
-  letterSpacing: "0.1em",
-  textTransform: "uppercase",
-  color: "var(--text-dimmer)",
-  padding: "12px 12px 4px",
-};
-
 const iconBtn: React.CSSProperties = {
   background: "none",
   border: "none",
@@ -191,7 +182,7 @@ export default function CheckpointPanel({ onClose }: { onClose: () => void }) {
           borderBottom: "1px solid var(--border-dim)",
           flexShrink: 0,
         }}>
-          <span style={{ ...sectionLabel, padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
+          <span className="label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <Clock size={12} />
             CHECKPOINTS
           </span>

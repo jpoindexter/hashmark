@@ -73,12 +73,7 @@ export default function PermissionSelector() {
         gap: 6,
       }}>
         <Shield size={11} style={{ color: "var(--text-dimmer)", flexShrink: 0 }} />
-        <span style={{
-          fontSize: 9,
-          color: "var(--text-dimmer)",
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-        }}>
+        <span className="text-micro">
           Permissions
         </span>
       </div>

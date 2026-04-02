@@ -304,7 +304,7 @@ export default function ProjectPicker(_props: ProjectPickerProps = {}) {
             borderRadius: "var(--radius-lg)",
             padding: 16,
           }}>
-            <div style={{ fontSize: 10, color: "var(--text-dimmer)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>
+            <div className="label" style={{ marginBottom: 10 }}>
               New Workspace
             </div>
             <input

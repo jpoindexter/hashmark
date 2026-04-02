@@ -22,15 +22,6 @@ const CURSOR_STYLE: React.CSSProperties = {
 
 // Code rendering extracted to ./chat/CodeRendering.tsx
 
-const SECTION_HEADING_STYLE: React.CSSProperties = {
-  fontSize: 13,
-  fontWeight: 600,
-  color: "var(--text)",
-  fontFamily: "var(--font-ui)",
-  textTransform: "uppercase",
-  letterSpacing: "0.06em",
-};
-
 interface ContextMenuState {
   items: ContextMenuItem[];
   position: { x: number; y: number };

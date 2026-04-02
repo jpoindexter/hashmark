@@ -113,13 +113,7 @@ export default function ScanProgress({ onComplete, onError, onCancel }: ScanProg
       {/* Header row */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{
-            fontSize: "11px",
-            textTransform: "uppercase",
-            letterSpacing: "0.12em",
-            fontWeight: 600,
-            color: "var(--accent)",
-          }}>
+          <span className="label" style={{ color: "var(--accent)", letterSpacing: "0.12em" }}>
             {finished ? "Done" : "Scanning..."}
           </span>
           {!finished && <span className="cursor" />}
@@ -172,14 +166,7 @@ export default function ScanProgress({ onComplete, onError, onCancel }: ScanProg
           border: "1px solid var(--border-dim)",
           borderRadius: "var(--radius)",
         }}>
-          <div style={{
-            padding: "6px 12px",
-            borderBottom: "1px solid var(--border-dim)",
-            fontSize: "10px",
-            color: "var(--text-dimmer)",
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-          }}>
+          <div className="label" style={{ padding: "6px 12px", borderBottom: "1px solid var(--border-dim)" }}>
             Output
           </div>
           <div
