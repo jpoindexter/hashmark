@@ -131,9 +131,8 @@ function SkillChecksPanel({ checks, passingCount, overallStatus, overallColor, s
         padding: "6px 14px", borderBottom: "1px solid var(--border-dim)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{
-            fontSize: 9, fontFamily: "var(--font)", fontWeight: 600, letterSpacing: "0.1em",
-            textTransform: "uppercase", padding: "2px 6px", borderRadius: 2, color: overallColor,
+          <span className="text-micro" style={{
+            fontFamily: "var(--font)", padding: "2px 6px", borderRadius: 2, color: overallColor,
             background: hasErrors ? "rgba(248,81,73,0.1)" : hasWarnings ? "rgba(210,153,34,0.1)" : "rgba(63,185,80,0.1)",
             border: `1px solid ${hasErrors ? "rgba(248,81,73,0.25)" : hasWarnings ? "rgba(210,153,34,0.25)" : "rgba(63,185,80,0.25)"}`,
           }}>
@@ -143,9 +142,8 @@ function SkillChecksPanel({ checks, passingCount, overallStatus, overallColor, s
             {passingCount}/{checks.length} checks
           </span>
         </div>
-        <button onClick={onToggleShowAll} style={{
-          background: "none", border: "none", cursor: "pointer", fontSize: 9, fontFamily: "var(--font)",
-          letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dimmer)", padding: 0,
+        <button onClick={onToggleShowAll} className="text-micro" style={{
+          background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font)", padding: 0,
         }}>
           {showAll ? "hide passing" : "show all"}
         </button>
@@ -164,8 +162,8 @@ function SkillChecksPanel({ checks, passingCount, overallStatus, overallColor, s
               }}>
                 {c.status === "pass" ? "✓" : c.status === "warn" ? "⚠" : "✗"}
               </span>
-              <span style={{
-                fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0, fontSize: 9, marginTop: 1,
+              <span className="text-micro" style={{
+                flexShrink: 0, marginTop: 1,
                 color: c.status === "pass" ? "var(--text-dimmer)" : c.status === "warn" ? "var(--yellow)" : "var(--red)",
               }}>
                 {c.label}
@@ -187,7 +185,7 @@ function EffectivenessPanel({ data }: { data: EffectivenessData }) {
   return (
     <div style={{ borderTop: "1px solid var(--border-dim)", background: "var(--bg-2)", flexShrink: 0, padding: "8px 14px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-        <span style={{ fontSize: 9, fontFamily: "var(--font)", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dimmer)" }}>
+        <span className="text-micro" style={{ fontFamily: "var(--font)" }}>
           Effectiveness
         </span>
         {data.totalRuns === 0 ? (
@@ -202,7 +200,7 @@ function EffectivenessPanel({ data }: { data: EffectivenessData }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-              <span style={{ fontSize: 9, fontFamily: "var(--font)", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dimmer)" }}>
+              <span className="text-micro" style={{ fontFamily: "var(--font)" }}>
                 Success Rate
               </span>
               <span style={{ fontSize: 9, fontFamily: "var(--font)", color: "var(--accent)" }}>
@@ -217,7 +215,7 @@ function EffectivenessPanel({ data }: { data: EffectivenessData }) {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 9, fontFamily: "var(--font)", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dimmer)" }}>
+            <span className="text-micro" style={{ fontFamily: "var(--font)" }}>
               Trend
             </span>
             {data.recentTrend === "insufficient_data" ? (

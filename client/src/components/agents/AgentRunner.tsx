@@ -226,19 +226,20 @@ function RunControls({ runPrompt, onPromptChange, running, currentModel, modelOp
         </div>
         <button onClick={onToggleApproval} disabled={running}
           title={approvalRequired ? "Tool approval required — click to disable" : "Click to require tool approval before run"}
+          className="text-micro"
           style={{
             background: approvalRequired ? "rgba(210,153,34,0.12)" : "none",
             border: `1px solid ${approvalRequired ? "rgba(210,153,34,0.4)" : "var(--border-dim)"}`,
-            color: approvalRequired ? "var(--yellow)" : "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: "9px", padding: "4px 8px",
-            cursor: running ? "not-allowed" : "pointer", letterSpacing: "0.06em", textTransform: "uppercase", transition: "all 0.1s", opacity: running ? 0.5 : 1,
+            color: approvalRequired ? "var(--yellow)" : "var(--text-dimmer)", fontFamily: "var(--font)", padding: "4px 8px",
+            cursor: running ? "not-allowed" : "pointer", transition: "all 0.1s", opacity: running ? 0.5 : 1,
           }}>
           {approvalRequired ? "⚠ GATE ON" : "GATE"}
         </button>
         <div style={{ flex: 1 }} />
         {running ? (
-          <button onClick={onStop} style={{
-            background: "none", border: "1px solid var(--red)", color: "var(--red)", fontFamily: "var(--font)", fontSize: "10px", padding: "4px 14px",
-            cursor: "pointer", letterSpacing: "0.05em", textTransform: "uppercase", transition: "all 0.1s",
+          <button onClick={onStop} className="label" style={{
+            background: "none", border: "1px solid var(--red)", color: "var(--red)", fontFamily: "var(--font)", padding: "4px 14px",
+            cursor: "pointer", transition: "all 0.1s",
           }}>■ STOP</button>
         ) : (
           <button className="btn btn-primary" onClick={onRun} disabled={!runPrompt.trim()} style={{ fontSize: "10px", padding: "4px 14px" }}>Run</button>

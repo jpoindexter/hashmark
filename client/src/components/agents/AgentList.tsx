@@ -117,8 +117,8 @@ export default function AgentList({
         />
         <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
           {(["name", "lastRun", "runCount"] as SortKey[]).map((k) => (
-            <button key={k} onClick={() => setSortKey(k)} style={{
-              padding: "4px 8px", fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.06em",
+            <button key={k} onClick={() => setSortKey(k)} className="text-micro" style={{
+              padding: "4px 8px",
               border: "1px solid", borderColor: sortKey === k ? "var(--accent)" : "var(--border-dim)",
               borderRadius: "var(--radius-sm)", background: sortKey === k ? "var(--accent-bg)" : "var(--bg-3)",
               color: sortKey === k ? "var(--accent)" : "var(--text-dimmer)", cursor: "pointer", transition: "all 0.1s",
@@ -138,9 +138,8 @@ export default function AgentList({
       ) : (
         Object.entries(grouped).sort().map(([dept, deptAgents]) => (
           <div key={dept} style={{ marginBottom: "24px" }}>
-            <div style={{
-              fontSize: "10px", color: "var(--text-dimmer)", textTransform: "uppercase",
-              letterSpacing: "0.1em", marginBottom: "10px", paddingBottom: "6px",
+            <div className="label" style={{
+              marginBottom: "10px", paddingBottom: "6px",
               borderBottom: "1px solid var(--border-dim)",
             }}>
               {dept} — {deptAgents.length}
@@ -192,9 +191,9 @@ function DeptDropdown({ selectedDepts, departments, deptCounts, open, dropdownRe
 }) {
   return (
     <div ref={dropdownRef} style={{ position: "relative" }}>
-      <button onClick={onToggle} style={{
-        display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", fontSize: "10px",
-        textTransform: "uppercase", letterSpacing: "0.05em", border: "1px solid",
+      <button onClick={onToggle} className="label" style={{
+        display: "flex", alignItems: "center", gap: 6, padding: "5px 10px",
+        border: "1px solid",
         borderColor: selectedDepts.size > 0 ? "var(--accent)" : "var(--border-dim)", borderRadius: "var(--radius)",
         background: selectedDepts.size > 0 ? "var(--accent-bg)" : "var(--bg-3)",
         color: selectedDepts.size > 0 ? "var(--accent)" : "var(--text-dimmer)",
@@ -211,9 +210,9 @@ function DeptDropdown({ selectedDepts, departments, deptCounts, open, dropdownRe
           background: "var(--bg-3)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)",
           minWidth: 200, maxHeight: 320, overflowY: "auto", boxShadow: "var(--shadow-md)",
         }}>
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", borderBottom: "1px solid var(--border-dim)", fontSize: 9, fontFamily: "var(--font)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-            <button onClick={onSelectAll} className="hoverable" style={{ background: "none", border: "none", color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 9, letterSpacing: "0.06em", padding: 0 }}>select all</button>
-            <button onClick={onClear} className="hoverable" style={{ background: "none", border: "none", color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 9, letterSpacing: "0.06em", padding: 0 }}>clear</button>
+          <div className="text-micro" style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", borderBottom: "1px solid var(--border-dim)", fontFamily: "var(--font)" }}>
+            <button onClick={onSelectAll} className="hoverable text-micro" style={{ background: "none", border: "none", fontFamily: "var(--font)", padding: 0 }}>select all</button>
+            <button onClick={onClear} className="hoverable text-micro" style={{ background: "none", border: "none", fontFamily: "var(--font)", padding: 0 }}>clear</button>
           </div>
           {departments.map((dept) => {
             const checked = selectedDepts.has(dept);

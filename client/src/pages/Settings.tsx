@@ -220,9 +220,8 @@ function SettingsNav({
           if (groupSections.length === 0) return null;
           return (
             <div key={group} style={{ marginBottom: 4 }}>
-              <div style={{
-                fontSize: 9, color: "var(--text-dimmer)", textTransform: "uppercase",
-                letterSpacing: "0.08em", padding: "10px 8px 4px", opacity: 0.6,
+              <div className="text-micro" style={{
+                padding: "10px 8px 4px", opacity: 0.6,
               }}>
                 {group}
               </div>

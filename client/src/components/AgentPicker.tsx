@@ -168,10 +168,7 @@ export default function AgentPicker({
               {label}
             </span>
             {selectedDept && (
-              <span style={{
-                fontSize: 9,
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
+              <span className="text-micro" style={{
                 color: deptColor(selectedId),
                 border: `1px solid ${deptColor(selectedId)}`,
                 padding: "0px 4px",
@@ -265,15 +262,9 @@ export default function AgentPicker({
               {gi > 0 && (
                 <div style={{ borderTop: "1px solid var(--border-dim)" }} />
               )}
-              <div style={{
+              <div className="label" style={{
                 padding: "6px 12px 3px",
-                fontSize: 10,
-                fontWeight: 600,
-                color: "var(--text-dimmer)",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
                 userSelect: "none",
-                fontFamily: "var(--font-ui)",
               }}>
                 {dept}
               </div>
@@ -371,10 +362,7 @@ function PickerRow({
       )}
       <span style={{ flex: 1 }}>{label}</span>
       {dept && dotColor && (
-        <span style={{
-          fontSize: 9,
-          textTransform: "uppercase",
-          letterSpacing: "0.06em",
+        <span className="text-micro" style={{
           color: dotColor,
           border: `1px solid ${dotColor}`,
           padding: "0px 4px",

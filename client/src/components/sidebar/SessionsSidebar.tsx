@@ -181,14 +181,7 @@ function SectionHeader({ onAdd }: { onAdd: () => void }) {
       flexShrink: 0,
       background: "var(--surface-muted)",
     }}>
-      <span style={{
-        flex: 1,
-        fontSize: 11,
-        fontWeight: 600,
-        color: "var(--text-dim)",
-        textTransform: "uppercase",
-        letterSpacing: "0.06em",
-      }}>
+      <span className="label" style={{ flex: 1 }}>
         Missions
       </span>
       <IconButton title="New mission" onClick={onAdd}>

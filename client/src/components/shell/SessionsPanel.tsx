@@ -140,18 +140,10 @@ export default function SessionsPanel({
     flexShrink: 0,
   };
 
-  const lbl: CSSProperties = {
-    fontFamily: "var(--font)",
-    fontSize: 10,
-    color: "var(--text-dimmer)",
-    letterSpacing: "0.06em",
-    textTransform: "uppercase",
-  };
-
   return (
     <div style={panel}>
       <div style={hdr}>
-        <span style={lbl}>sessions</span>
+        <span className="label">sessions</span>
         <button
           aria-label="New session"
           onClick={onNewSession}

@@ -34,10 +34,7 @@ const heading: CSSProperties = {
   margin: 0,
   marginBottom: 4,
   fontSize: 14,
-  fontWeight: 600,
   color: "var(--red)",
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
 };
 
 const subtitle: CSSProperties = {
@@ -116,7 +113,7 @@ export default class ErrorBoundary extends Component<Props, State> {
       return (
         <div style={overlay}>
           <div style={card}>
-            <h2 style={heading}>Runtime Error</h2>
+            <h2 className="label" style={heading}>Runtime Error</h2>
             <p style={subtitle}>Something crashed in this panel. You can reload the app or try to continue.</p>
             <pre style={codeBlock}>{this.state.error.message}{this.state.error.stack ? `\n\n${this.state.error.stack}` : ""}</pre>
             <div style={actions}>

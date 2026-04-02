@@ -119,22 +119,11 @@ export default function AgentCard({ agent, stats, onClick, onRun, onDelete, onDu
           marginBottom: "6px",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{
-              fontSize: "9px",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color,
-              fontWeight: 600,
-            }}>
+            <span className="text-micro" style={{ color }}>
               {agent.department}
             </span>
             {streaming && (
-              <span style={{
-                fontSize: "9px",
-                color: "var(--accent)",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-              }}>
+              <span className="text-micro" style={{ color: "var(--accent)" }}>
                 generating<span className="cursor" style={{ height: "9px", width: "5px" }} />
               </span>
             )}
@@ -194,13 +183,10 @@ export default function AgentCard({ agent, stats, onClick, onRun, onDelete, onDu
           {onRun && (
             <button
               onClick={(e) => { e.stopPropagation(); onRun(e); }}
+              className="text-micro"
               style={{
                 padding: "2px 8px",
-                fontSize: "9px",
                 fontFamily: "var(--font)",
-                fontWeight: 600,
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
                 background: "var(--accent-bg)",
                 border: "1px solid var(--accent-border)",
                 borderRadius: "var(--radius-sm)",

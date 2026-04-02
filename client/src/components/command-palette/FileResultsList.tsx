@@ -47,17 +47,12 @@ function HighlightedText({
 
 export function SectionHeader({ label }: { label: string }) {
   return (
-    <div style={{
+    <div className="label" style={{
       height: 24,
       padding: "0 12px",
       display: "flex",
       alignItems: "center",
-      fontSize: 10,
-      textTransform: "uppercase" as const,
-      letterSpacing: "0.08em",
-      color: "var(--text-dimmer)",
       userSelect: "none" as const,
-      fontFamily: "var(--font-ui)",
     }}>
       {label}
     </div>
@@ -188,13 +183,7 @@ export default function FileResultsList({
               </span>
             }
             right={
-              <span style={{
-                fontSize: 10,
-                color: "var(--text-dimmer)",
-                fontFamily: "var(--font-ui)",
-                textTransform: "uppercase",
-                letterSpacing: "0.04em",
-              }}>
+              <span className="label">
                 recent
               </span>
             }

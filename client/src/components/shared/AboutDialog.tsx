@@ -168,13 +168,7 @@ export default function AboutDialog({ open, onClose }: { open: boolean; onClose:
                 background: "var(--border-dim)",
                 margin: "8px 0",
               }} />
-              <div style={{
-                fontSize: 10,
-                color: "var(--text-dimmer)",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                marginBottom: 6,
-              }}>
+              <div className="label" style={{ marginBottom: 6 }}>
                 CLI Tools
               </div>
               {info.clis.map((cli, i) => (

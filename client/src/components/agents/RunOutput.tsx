@@ -135,7 +135,7 @@ export function StructuredOutput({ segments, running, output, runStatus }: {
         if (seg.type === "code") return (
           <div key={idx} style={{ background: "var(--bg-3)", border: "1px solid var(--border-dim)", borderRadius: 2, margin: "10px 0" }}>
             {seg.lang !== "text" && (
-              <div style={{ padding: "3px 10px", fontSize: 9, color: "var(--text-dimmer)", borderBottom: "1px solid var(--border-dim)", fontFamily: "var(--font)", letterSpacing: "0.06em", textTransform: "uppercase" }}>{seg.lang}</div>
+              <div className="text-micro" style={{ padding: "3px 10px", borderBottom: "1px solid var(--border-dim)", fontFamily: "var(--font)" }}>{seg.lang}</div>
             )}
             <pre style={{ margin: 0, padding: "10px 12px", fontSize: 11, lineHeight: "1.55", color: "var(--text)", fontFamily: "var(--font)", whiteSpace: "pre-wrap", wordBreak: "break-word", overflowX: "auto" }}>{seg.content}</pre>
           </div>

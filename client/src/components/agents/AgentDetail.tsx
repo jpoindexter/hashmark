@@ -36,9 +36,9 @@ export default function AgentDetail({ agent, editContent, onEditContent, onSave,
               <button
                 key={t}
                 onClick={() => setTab(t)}
+                className="label"
                 style={{
-                  padding: "4px 12px", fontSize: "10px", textTransform: "uppercase",
-                  letterSpacing: "0.08em", background: tab === t ? "var(--accent-bg)" : "none",
+                  padding: "4px 12px", background: tab === t ? "var(--accent-bg)" : "none",
                   border: "none", borderRight: t !== "gov" ? "1px solid var(--border-dim)" : "none",
                   color: tab === t ? "var(--accent)" : "var(--text-dimmer)", cursor: "pointer",
                   fontFamily: "var(--font)", transition: "all 0.1s",
@@ -179,9 +179,8 @@ function GovTab({ agent }: { agent: Agent }) {
 function GovSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div style={{
-        fontSize: 9, color: "var(--text-dimmer)", textTransform: "uppercase",
-        letterSpacing: "0.1em", marginBottom: 6, fontFamily: "var(--font)",
+      <div className="text-micro" style={{
+        marginBottom: 6, fontFamily: "var(--font)",
       }}>{label}</div>
       {children}
     </div>

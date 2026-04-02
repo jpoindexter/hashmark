@@ -166,10 +166,7 @@ export default function WorkspaceDropdown({ currentName, currentPath }: { curren
         }}>
           {workspaces.length > 0 && (
             <div>
-              <div style={{
-                fontSize: 9, color: "var(--text-dimmer)", letterSpacing: "0.1em",
-                padding: "6px 12px 3px", textTransform: "uppercase",
-              }}>
+              <div className="text-micro" style={{ padding: "6px 12px 3px" }}>
                 Workspaces
               </div>
               {workspaces.map((ws, i) => {
