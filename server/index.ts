@@ -20,7 +20,7 @@ import { generateRoutes } from "./routes/generate.js";
 import { scanRoutes } from "./routes/scan.js";
 import { tasksRoutes } from "./routes/tasks.js";
 import { sessionsRoutes, killAllActiveSessions, setStudioPort } from "./routes/sessions.js";
-export { killAllActiveSessions };
+export { killAllActiveSessions, killAllDaemons };
 import { attachTerminalWS } from "./routes/terminal.js";
 import { filesRoutes, getGitStatus } from "./routes/files.js";
 import { workspaceRoutes } from "./routes/workspace.js";
@@ -38,6 +38,8 @@ import { configRoutes } from "./routes/config.js";
 import { sandboxRoutes } from "./routes/sandbox.js";
 import { settingsRoutes } from "./routes/settings.js";
 import { toolsRoutes } from "./routes/tools.js";
+import { daemonRoutes } from "./routes/daemon.js";
+import { killAllDaemons } from "./lib/daemon.js";
 import { getDb, getStudioSetting, setStudioSetting } from "./db.js";
 import { getPermissionMode, setPermissionMode, isValidPermissionMode } from "./lib/permissions.js";
 import { getStudioToken } from "./lib/studio-token.js";
@@ -70,7 +72,7 @@ function cleanupOrphanedWorktrees(projectDir: string) {
         if (!pathMatch || !branchMatch) continue;
         const wtPath = pathMatch[1];
         const branch = branchMatch[1];
-        if (!branch.startsWith("studio-run-") && !branch.startsWith("swarm-") && !branch.startsWith("studio-swarm-")) continue;
+        if (!branch.startsWith("studio-run-") && !branch.startsWith("studio-daemon-") && !branch.startsWith("swarm-") && !branch.startsWith("studio-swarm-")) continue;
         execFile("git", ["worktree", "remove", wtPath, "--force"], { cwd: projectDir }).catch(() => {});
         execFile("git", ["branch", "-D", branch], { cwd: projectDir }).catch(() => {});
       }
@@ -134,7 +136,13 @@ export function createServer(opts: ServerOptions) {
   // Auth token — generated once, persisted to .hashmark/studio.token
   const studioToken = getStudioToken(ctx.dataDir);
 
-  // Auth middleware — protects all /api/* except /api/health and /api/info
+  // Bridge token validator -- allows remote devices to authenticate
+  setBridgeTokenValidator((token) => {
+    const db = getDb(ctx.dataDir);
+    return validateBridgeToken(db, token);
+  });
+
+  // Auth middleware — protects all /api/* except /api/health, /api/info, /api/bridge/pair
   app.use("/api/*", studioAuthMiddleware(studioToken));
 
   // Health check — verifies DB write access and claude binary exists
@@ -314,6 +322,8 @@ export function createServer(opts: ServerOptions) {
   app.route("/api/tools", toolsRoutes(ctx));
   app.route("/api/inbox", inboxRoutes(ctx));
   app.route("/api/kairos", kairosRoutes(ctx));
+  app.route("/api/bridge", bridgeRoutes(ctx, opts.port));
+  app.route("/api/daemon", daemonRoutes(ctx));
 
   // Serve static client files
   app.use(
