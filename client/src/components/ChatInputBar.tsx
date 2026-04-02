@@ -4,8 +4,8 @@ import { fetchApi } from "../lib/api";
 import { toast } from "../hooks/useToast";
 import type { SlashCommand } from "./chat-input/SlashPicker";
 import { useSlashCommands, SlashPicker } from "./chat-input/SlashPicker";
-import type { FileEntry } from "./chat-input/MentionPicker";
-import { useMentionFiles, MentionPicker, getAtQuery } from "./chat-input/MentionPicker";
+import type { FileEntry, AgentEntry } from "./chat-input/MentionPicker";
+import { useMentionFiles, useMentionAgents, MentionPicker, getAtQuery } from "./chat-input/MentionPicker";
 import { useAgentSuggestion, AgentChip } from "./chat-input/AgentChip";
 import { ModelPickerDropdown } from "./chat-input/ModelPicker";
 
@@ -112,6 +112,8 @@ export default function ChatInputBar({
     () => window.dispatchEvent(new CustomEvent("studio:toggle-thinking")),
   );
   const mentionFiles = useMentionFiles();
+  const mentionAgents = useMentionAgents();
+  const [selectedAgent, setSelectedAgent] = useState<AgentEntry | null>(null);
 
   useEffect(() => {
     setPendingDismissed(false);
@@ -395,6 +397,7 @@ export default function ChatInputBar({
           planMode,
           ...(systemPrompt && { systemPrompt }),
           ...(skipContextRef.current && { skipContext: true }),
+          ...(selectedAgent && { agentId: selectedAgent.id }),
         }),
       });
     } catch {
@@ -419,6 +422,7 @@ export default function ChatInputBar({
     if (!overrideText) {
       setInput("");
       setAttachedImage(null);
+      setSelectedAgent(null);
       if (textareaRef.current) textareaRef.current.style.height = "auto";
     }
 
@@ -568,7 +572,16 @@ export default function ChatInputBar({
             <MentionPicker
               query={atQuery}
               files={mentionFiles}
+              agents={mentionAgents}
               onSelect={selectMentionFile}
+              onSelectAgent={(agent) => {
+                setSelectedAgent(agent);
+                // Replace @query with @agent-name in input
+                const before = input.slice(0, input.lastIndexOf("@"));
+                setInput(`${before}@${agent.name} `);
+                setAtQuery(null);
+                requestAnimationFrame(() => textareaRef.current?.focus());
+              }}
               onDismiss={() => setAtQuery(null)}
             />
           </div>
@@ -671,6 +684,34 @@ export default function ChatInputBar({
               style={{ ...CLOSE_BTN_STYLE, width: 20, height: 20, borderRadius: "var(--radius-sm)" }}
             >
               <X size={12} />
+            </button>
+          </div>
+        )}
+
+        {selectedAgent && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "6px 14px",
+            borderBottom: "1px solid var(--border-dim)",
+          }}>
+            <span style={{ fontSize: 11, color: "var(--accent)", fontFamily: "var(--font)", fontWeight: 600 }}>
+              @{selectedAgent.name}
+            </span>
+            {selectedAgent.description && (
+              <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>
+                {selectedAgent.description.slice(0, 50)}
+              </span>
+            )}
+            <button
+              onClick={() => {
+                setSelectedAgent(null);
+                const cleaned = input.replace(/@\S+\s?/, "");
+                setInput(cleaned);
+              }}
+              title="Remove agent"
+              style={{ ...CLOSE_BTN_STYLE, width: 16, height: 16, marginLeft: "auto" }}
+            >
+              <X size={10} />
             </button>
           </div>
         )}
