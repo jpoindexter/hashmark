@@ -1,19 +1,24 @@
 import { Hono } from "hono";
 import { loadProviders, saveProviders, detectCLIs } from "../lib/providers.js";
+import { PROVIDERS } from "../lib/ai-provider.js";
 import type { WorkspaceCtx } from "./workspaces.js";
 
-const STATIC_MODELS: Record<string, string[]> = {
-  claude:  ["claude-opus-4-6", "claude-sonnet-4-6", "claude-haiku-4-5-20251001"],
-  openai:  ["gpt-4o", "gpt-4o-mini", "o1", "o1-mini"],
-  gemini:  ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
-  mistral: ["mistral-large-latest", "mistral-small-latest", "codestral-latest"],
-  grok:    ["grok-3", "grok-3-mini"],
-  codex:   ["gpt-4o", "gpt-4o-mini", "o3", "o3-mini", "o1", "o1-mini"],
-  aider:   ["gpt-4o", "claude-sonnet-4-6", "deepseek-chat"],
-  amp:     ["amp-default"],
-  goose:   ["goose-default"],
-  copilot: ["copilot-default"],
-};
+/** Build models list from provider registry, with overrides for CLI-only tools. */
+function getStaticModels(id: string): string[] {
+  const registered = PROVIDERS[id];
+  if (registered) return registered.models;
+
+  // CLI-only tools not in the streaming registry
+  const CLI_MODELS: Record<string, string[]> = {
+    claude:  PROVIDERS.anthropic.models,
+    codex:   PROVIDERS.openai.models,
+    aider:   ["gpt-4o", "claude-sonnet-4-6", "deepseek-chat"],
+    amp:     ["amp-default"],
+    goose:   ["goose-default"],
+    copilot: ["copilot-default"],
+  };
+  return CLI_MODELS[id] ?? [];
+}
 
 export function providersRoutes(ctx: WorkspaceCtx) {
   const app = new Hono();
@@ -29,6 +34,18 @@ export function providersRoutes(ctx: WorkspaceCtx) {
       cliDetected: cliInstalled.has(rest.id),
     }));
     return c.json({ active: store.active, model: store.model, providers: masked });
+  });
+
+  // GET /api/providers/registry — full list of supported providers from the registry
+  app.get("/registry", (c) => {
+    const registry = Object.values(PROVIDERS).map((p) => ({
+      id: p.id,
+      name: p.name,
+      models: p.models,
+      requiresKey: p.requiresKey,
+      envKey: p.envKey ?? null,
+    }));
+    return c.json({ providers: registry });
   });
 
   // GET /api/providers/detect — scan system for installed AI CLI tools
@@ -90,7 +107,7 @@ export function providersRoutes(ctx: WorkspaceCtx) {
       }
     }
 
-    const models = STATIC_MODELS[id] ?? [];
+    const models = getStaticModels(id);
     return c.json({ models });
   });
 

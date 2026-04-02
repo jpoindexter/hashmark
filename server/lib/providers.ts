@@ -129,13 +129,21 @@ const DEFAULT_STORE: ProvidersStore = {
   active: "claude",
   model: "claude-opus-4-5-20251001",
   providers: [
-    { id: "claude",  name: "Claude",  enabled: true },
-    { id: "openai",  name: "OpenAI",  enabled: false },
-    { id: "gemini",  name: "Gemini",  enabled: false },
-    { id: "mistral", name: "Mistral", enabled: false },
-    { id: "grok",    name: "Grok",    enabled: false },
-    { id: "ollama",  name: "Ollama",  baseUrl: "http://localhost:11434", enabled: false },
-    { id: "codex",   name: "Codex (OpenAI)", enabled: false },
+    // CLI tools (spawn a process)
+    { id: "claude",  name: "Claude Code",     enabled: true },
+    { id: "codex",   name: "Codex (OpenAI)",  enabled: false },
+    // API providers (streaming HTTP)
+    { id: "anthropic", name: "Anthropic",      enabled: false },
+    { id: "openai",    name: "OpenAI",         enabled: false },
+    { id: "google",    name: "Google Gemini",  enabled: false },
+    { id: "groq",      name: "Groq",           enabled: false },
+    { id: "deepseek",  name: "DeepSeek",       enabled: false },
+    { id: "mistral",   name: "Mistral",        enabled: false },
+    { id: "grok",      name: "xAI Grok",       enabled: false },
+    { id: "openrouter", name: "OpenRouter",    enabled: false },
+    { id: "together",  name: "Together AI",    enabled: false },
+    { id: "fireworks", name: "Fireworks AI",   enabled: false },
+    { id: "ollama",    name: "Ollama", baseUrl: "http://localhost:11434", enabled: false },
   ],
 };
 
