@@ -124,8 +124,7 @@ function CommitRow({ commit, isLast, expanded, onToggle, onFileClick, activeDiff
             borderRadius: "var(--radius-sm)",
             transition: "background 0.1s",
           }}
-          onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "var(--bg-3)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+          className="hoverable"
         >
           {/* Short hash */}
           <span style={{
@@ -208,19 +207,13 @@ function CommitRow({ commit, isLast, expanded, onToggle, onFileClick, activeDiff
               return (
                 <div
                   key={file}
+                  className={isActive ? undefined : "hoverable"}
                   onClick={() => onFileClick(commit.hash, file)}
                   style={{
                     display: "flex", alignItems: "center", gap: 8,
                     padding: "5px 10px", cursor: "pointer",
                     background: isActive ? "var(--accent-bg)" : "transparent",
                     borderBottom: "1px solid var(--border-dim)",
-                    transition: "background 0.1s",
-                  }}
-                  onMouseEnter={e => {
-                    if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "var(--bg-3)";
-                  }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLDivElement).style.background = isActive ? "var(--accent-bg)" : "transparent";
                   }}
                 >
                   <span style={{
@@ -360,16 +353,14 @@ export default function GitPage() {
               {uncommittedCount > 0 && (
                 <span
                   onClick={() => navigate("/source-control")}
-                  style={{ cursor: "pointer",
+                  className="hoverable"
+                  style={{
                     fontFamily: "var(--font-ui)", fontSize: 11,
                     color: "var(--yellow)", textDecoration: "none",
                     background: "rgba(210,153,34,0.08)",
                     padding: "1px 8px", borderRadius: 100,
                     border: "1px solid rgba(210,153,34,0.25)",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "none"; }}
+                  }
                 >
                   {uncommittedCount} uncommitted {uncommittedCount === 1 ? "change" : "changes"}
                 </span>
