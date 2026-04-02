@@ -477,7 +477,21 @@ export default function ChatInputBar({
                 type: "tool_use",
                 tool: (evt.tool ?? evt.name ?? "unknown") as string,
                 input: (evt.input ?? {}) as Record<string, unknown>,
+                toolUseId: (evt.toolUseId ?? evt.id ?? "") as string,
               });
+            } else if (evtType === "tool_result") {
+              activeThinkingIdx = -1;
+              const content = typeof evt.content === "string"
+                ? evt.content
+                : JSON.stringify(evt.content ?? "");
+              if (content.length > 0) {
+                blocks.push({
+                  type: "tool_result",
+                  toolUseId: (evt.toolUseId ?? "") as string,
+                  content: content.slice(0, 4000),
+                  isError: evt.is_error === true,
+                });
+              }
             } else if (evtType === "progress") {
               activeThinkingIdx = -1;
               blocks.push({ type: "progress", text: (evt.text ?? "") as string });

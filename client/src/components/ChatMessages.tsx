@@ -5,6 +5,7 @@ import ToolCallSummary, { FileBadge, getReadFilePath, categorize } from "./chat/
 import { CodeBlock } from "./chat/CodeRendering";
 import { EmptyState, ResumedDivider } from "./chat/ChatEmptyState";
 import MessageBubble, { ASSISTANT_CONTENT_STYLE, fmtDuration, type Message } from "./chat/MessageBubbles";
+import ToolResultCard from "./chat/ToolResultCard";
 import ContextMenu, { type ContextMenuItem } from "./shared/ContextMenu";
 import { useTextMeasure } from "../hooks/useTextMeasure";
 import ScrollToBottom from "./shared/ScrollToBottom";
@@ -40,6 +41,14 @@ export interface ToolUseBlockData {
   type: "tool_use";
   tool: string;
   input: Record<string, unknown>;
+  toolUseId?: string;
+}
+
+export interface ToolResultBlockData {
+  type: "tool_result";
+  toolUseId: string;
+  content: string;
+  isError?: boolean;
 }
 
 export interface ProgressBlock {
@@ -53,7 +62,7 @@ export interface ThinkingBlockData {
   id?: string;
 }
 
-export type ContentBlock = TextBlock | ToolUseBlockData | ProgressBlock | ThinkingBlockData;
+export type ContentBlock = TextBlock | ToolUseBlockData | ToolResultBlockData | ProgressBlock | ThinkingBlockData;
 
 export interface StreamingState {
   blocks: ContentBlock[];
@@ -232,6 +241,16 @@ function segmentBlocks(blocks: ContentBlock[]): StreamSegment[] {
       if (block.text) {
         segments.push({ kind: "node", key: segKey++, node: <AssistantContent text={block.text} /> });
       }
+      i++;
+      continue;
+    }
+
+    if (block.type === "tool_result") {
+      segments.push({
+        kind: "node",
+        key: segKey++,
+        node: <ToolResultCard block={block} />,
+      });
       i++;
       continue;
     }
