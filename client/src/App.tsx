@@ -20,6 +20,7 @@ const WorkspaceSetup = lazy(() => import("./pages/WorkspaceSetup.tsx"));
 const Governance = lazy(() => import("./pages/Governance.tsx"));
 const Files = lazy(() => import("./pages/Files.tsx"));
 const Git = lazy(() => import("./pages/Git.tsx"));
+const Usage = lazy(() => import("./pages/Usage.tsx"));
 const SourceControlPage = lazy(() => import("./components/SourceControlPage.tsx"));
 
 interface InfoResponse {
@@ -115,6 +116,7 @@ function AppShell() {
           <Route path="governance" element={<Suspense fallback={<PageSkeleton />}><PageTransition><Governance /></PageTransition></Suspense>} />
           <Route path="sessions" element={<Navigate to="/" replace />} />
           <Route path="settings" element={<Suspense fallback={<PageSkeleton />}><PageTransition><Settings /></PageTransition></Suspense>} />
+          <Route path="usage" element={<Suspense fallback={<PageSkeleton />}><PageTransition><Usage /></PageTransition></Suspense>} />
           <Route path="setup" element={<Suspense fallback={<PageSkeleton />}><PageTransition><WorkspaceSetup /></PageTransition></Suspense>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
