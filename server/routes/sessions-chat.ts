@@ -24,6 +24,7 @@ import { microcompact, checkContextUsage, shouldAutoCompact } from "../lib/compa
 import { loadProjectEnvVars } from "../lib/env.js";
 import { createStudioMcpConfig } from "../lib/mcp-studio.js";
 import { findBin } from "../lib/bin-resolver.js";
+import { onTurnComplete, loadSessionMemory } from "../lib/session-memory.js";
 import type { WorkspaceCtx } from "./workspaces.js";
 import type { SessionSharedState } from "./sessions-shared.js";
 
@@ -178,12 +179,13 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
       }
     } catch { /* no CLAUDE.md -- analytics just won't fire */ }
 
-    // Build system prompt -- scan context + agent identity + user's custom prompt
+    // Build system prompt -- scan context + session memory + agent identity + user's custom prompt
     const scanContext = body.skipContext ? null : loadScanContext(projectDir);
+    const sessionMemory = loadSessionMemory(dataDir);
     const agentIdentity = session.agent_name ? `You are ${session.agent_name}, an AI assistant.` : null;
     const userSystemPrompt = body.systemPrompt ?? null;
 
-    const effectiveSystemPrompt = [scanContext, agentIdentity, userSystemPrompt]
+    const effectiveSystemPrompt = [scanContext, sessionMemory, agentIdentity, userSystemPrompt]
       .filter(Boolean)
       .join("\n\n---\n\n") || undefined;
 
@@ -278,6 +280,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
               `).run(actualModel, msgInputEstimate, msgOutputEstimate, Date.now(), Date.now(), sessionId);
 
               flushAnalytics(dataDir, sessionId).catch(() => {});
+              onTurnComplete(sessionId, dataDir, projectDir);
 
               const updated = db.prepare(
                 "SELECT total_input_tokens, total_output_tokens FROM sessions WHERE id = ?"
@@ -486,6 +489,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
             `).run(msgInputEstimate, msgOutputEstimate, Date.now(), Date.now(), sessionId);
 
             flushAnalytics(dataDir, sessionId).catch(() => {});
+            onTurnComplete(sessionId, dataDir, projectDir);
 
             const cliModel = body.model || "claude-sonnet-4-6";
             const updated = db.prepare(
