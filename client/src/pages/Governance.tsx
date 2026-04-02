@@ -120,8 +120,7 @@ function DeleteButton({ onConfirm }: { onConfirm: () => void }) {
           cursor: "pointer", fontSize: 15, lineHeight: 1,
           transition: "color 0.1s", padding: "0 2px",
         }}
-        onMouseEnter={e => { if (!open) e.currentTarget.style.color = "var(--red)"; }}
-        onMouseLeave={e => { if (!open) e.currentTarget.style.color = "var(--text-dimmer)"; }}
+        className={open ? "" : "hoverable"}
       >
         ×
       </button>
@@ -389,14 +388,7 @@ function PolicyDrawer({ policy, onSave, onClose }: PolicyDrawerProps) {
                     borderRadius: 0,
                     transition: "border-color 0.1s, color 0.1s",
                   }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.borderColor = "var(--accent)";
-                    e.currentTarget.style.color = "var(--accent)";
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.borderColor = "var(--border-dim)";
-                    e.currentTarget.style.color = "var(--text-dim)";
-                  }}
+                  className="hoverable"
                 >
                   + {t.label}
                 </button>
@@ -597,14 +589,7 @@ function PoliciesTab() {
               letterSpacing: "0.04em",
               transition: "border-color 0.1s, color 0.1s",
             }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = "var(--accent)";
-              e.currentTarget.style.color = "var(--accent)";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = "var(--border)";
-              e.currentTarget.style.color = "var(--text-dim)";
-            }}
+            className="hoverable"
           >
             + NEW POLICY
           </button>
@@ -628,9 +613,8 @@ function PoliciesTab() {
             {policies.map(p => (
               <tr
                 key={p.id}
+                className="hoverable"
                 style={{ borderBottom: "1px solid var(--border-dim)" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "var(--accent-bg)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
               >
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ color: "var(--text)", fontWeight: 600 }}>{p.name}</div>
@@ -661,14 +645,7 @@ function PoliciesTab() {
                       cursor: "pointer", letterSpacing: "0.04em",
                       whiteSpace: "nowrap",
                     }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.borderColor = "var(--accent)";
-                      e.currentTarget.style.color = "var(--accent)";
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.borderColor = "var(--border-dim)";
-                      e.currentTarget.style.color = "var(--text-dim)";
-                    }}
+                    className="hoverable"
                   >
                     EDIT
                   </button>
@@ -977,9 +954,8 @@ function ActionLogTab() {
               {displayed.map(a => (
                 <tr
                   key={a.id}
+                  className="hoverable"
                   style={{ borderBottom: "1px solid var(--border-dim)" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "var(--accent-bg)")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                 >
                   <td style={{ padding: "7px 10px", color: "var(--text-dimmer)", fontSize: 11, fontFamily: "var(--font)", whiteSpace: "nowrap" }}>
                     {fmtDateTime(a.created_at)}
@@ -1204,9 +1180,8 @@ function ActionJournalTab() {
               {events.map((e, i) => (
                 <tr
                   key={i}
+                  className="hoverable"
                   style={{ borderBottom: "1px solid var(--border-dim)" }}
-                  onMouseEnter={ev => (ev.currentTarget.style.background = "var(--accent-bg)")}
-                  onMouseLeave={ev => (ev.currentTarget.style.background = "transparent")}
                   title={e.detail}
                 >
                   <td style={{ padding: "7px 10px", color: "var(--text-dimmer)", fontSize: 11, fontFamily: "var(--font)", whiteSpace: "nowrap" }}>

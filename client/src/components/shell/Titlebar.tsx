@@ -52,17 +52,10 @@ function LayoutToggle({
 }) {
   return (
     <button
+      className="hoverable-strong"
       title={title}
       aria-label={title}
       onClick={onClick}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = "var(--hover-bg-strong)";
-        if (!active) e.currentTarget.style.color = "var(--text)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "none";
-        if (!active) e.currentTarget.style.color = "var(--text-dimmer)";
-      }}
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -73,9 +66,7 @@ function LayoutToggle({
         border: "none",
         background: "none",
         color: active ? "var(--text)" : "var(--text-dimmer)",
-        cursor: "pointer",
         borderRadius: 4,
-        transition: "color 0.1s ease, background 0.1s ease",
       }}
     >
       {children}
@@ -86,10 +77,9 @@ function LayoutToggle({
 function PrButton({ onClick }: { onClick: () => void }) {
   return (
     <button
+      className="hoverable"
       title="Create Pull Request"
       onClick={onClick}
-      onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent-bg)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -102,11 +92,9 @@ function PrButton({ onClick }: { onClick: () => void }) {
         fontFamily: "var(--font)",
         fontWeight: 600,
         letterSpacing: "0.03em",
-        cursor: "pointer",
         borderRadius: 10,
         lineHeight: "18px",
         marginRight: 4,
-        transition: "background 0.1s ease",
       }}
     >
       <GitPullRequest size={11} />
@@ -129,10 +117,9 @@ function UpdatePill({ status, version, onClick }: {
 
   return (
     <button
+      className={ready ? "hoverable" : undefined}
       title={ready ? "Restart to update" : "Update downloading..."}
       onClick={onClick}
-      onMouseEnter={(e) => { if (ready) e.currentTarget.style.background = "var(--accent-bg)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -148,7 +135,6 @@ function UpdatePill({ status, version, onClick }: {
         cursor: ready ? "pointer" : "default",
         borderRadius: 10,
         lineHeight: "18px",
-        transition: "background 0.1s ease",
       }}
     >
       <ArrowDownToLine size={11} />
@@ -171,7 +157,6 @@ export default function Titlebar({
   streaming,
   onRefreshGit,
 }: TitlebarProps) {
-  const [refreshHovered, setRefreshHovered] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus>("idle");
   const [updateVersion, setUpdateVersion] = useState("");
 

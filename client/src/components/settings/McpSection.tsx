@@ -43,9 +43,9 @@ export default function McpSection({ mcpConfig }: { mcpConfig: McpConfigData | n
                   <div style={{ fontSize: 12, color: "var(--text)", fontFamily: "var(--font)", fontWeight: 600 }}>{name}</div>
                   <div style={{ fontSize: 10, color: "var(--text-dimmer)", marginTop: 2, fontFamily: "var(--font)" }}>{server.command}</div>
                 </div>
-                <span style={{
-                  fontSize: 9, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap",
-                  color: server.source === "project" ? "var(--accent)" : "var(--text-dimmer)",
+                <span className="text-micro" style={{
+                  whiteSpace: "nowrap",
+                  color: server.source === "project" ? "var(--accent)" : undefined,
                 }}>
                   {server.source === "project" ? ".mcp.json" : "global"}
                 </span>
@@ -56,7 +56,7 @@ export default function McpSection({ mcpConfig }: { mcpConfig: McpConfigData | n
       )}
       {mcpConfig?.sources && (
         <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+          <div className="label mb-2">
             Config Sources
           </div>
           {mcpConfig.sources.map(s => (

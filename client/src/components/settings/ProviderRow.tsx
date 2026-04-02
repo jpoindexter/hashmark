@@ -65,12 +65,7 @@ export default function ProviderRow({
         <span style={{ fontSize: 14, color: isActive ? "var(--accent)" : "var(--text-dimmer)", flexShrink: 0 }}>{icon}</span>
         <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: isActive ? "var(--accent)" : "var(--text)" }}>{provider.name}</span>
         {isActive && (
-          <span style={{
-            fontSize: 9, textTransform: "uppercase", letterSpacing: "0.06em",
-            color: "var(--accent)", background: "var(--accent-bg)",
-            border: "1px solid var(--accent-border)", borderRadius: 3,
-            padding: "1px 6px", flexShrink: 0,
-          }}>active</span>
+          <span className="badge badge-green" style={{ flexShrink: 0 }}>active</span>
         )}
         {provider.cliDetected && !isActive && (
           <span style={{ fontSize: 9, color: "var(--accent)", opacity: 0.8, flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 3 }}>
@@ -81,7 +76,7 @@ export default function ProviderRow({
           <span style={{ fontSize: 9, color: "var(--accent)", opacity: 0.6, flexShrink: 0 }}>key set</span>
         )}
         {needsKey && !effectivelyHasKey && (
-          <span style={{ fontSize: 9, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.04em", flexShrink: 0 }}>no key</span>
+          <span className="text-micro" style={{ flexShrink: 0 }}>no key</span>
         )}
         <span style={{ fontSize: 10, color: "var(--text-dimmer)", flexShrink: 0, marginLeft: 4 }}>
           {isExpanded ? "\u25B2" : "\u25BC"}
@@ -92,7 +87,7 @@ export default function ProviderRow({
         <div style={{ borderTop: "1px solid var(--border-dim)", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 12 }}>
           {needsKey && (
             <div>
-              <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+              <div className="label" style={{ marginBottom: 6 }}>
                 API Key
                 {PROVIDER_ENV_KEYS[provider.id] && (
                   <span style={{ marginLeft: 6, opacity: 0.6 }}>
@@ -143,7 +138,7 @@ export default function ProviderRow({
 
           {provider.id === "ollama" && (
             <div>
-              <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Ollama URL</div>
+              <div className="label" style={{ marginBottom: 6 }}>Ollama URL</div>
               <div style={{ display: "flex", gap: 6 }}>
                 <input
                   value={baseUrlInput}
@@ -176,7 +171,7 @@ export default function ProviderRow({
 
           {provModels.length > 0 && (
             <div>
-              <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Model</div>
+              <div className="label" style={{ marginBottom: 6 }}>Model</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 {provModels.map(m => {
                   const isCurrent = isActive && m === currentModel;

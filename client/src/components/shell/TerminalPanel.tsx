@@ -101,21 +101,18 @@ export default function TerminalPanel({
           const isActive = activeTab === tab;
           return (
             <button
+              className="hoverable"
               key={tab}
               onClick={() => onTabChange(tab)}
-              onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "var(--hover-bg)"; }}
-              onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "none"; }}
               style={{
                 background: "none",
                 border: "none",
-                cursor: "pointer",
                 padding: "0 14px",
                 fontSize: 11,
                 fontFamily: "var(--font)",
                 color: isActive ? "var(--text)" : "var(--text-dimmer)",
                 borderBottom: isActive ? "1px solid var(--accent)" : "1px solid transparent",
                 letterSpacing: "0.05em",
-                transition: "color 0.1s, background 0.1s",
               }}
             >
               {tab}
@@ -124,37 +121,31 @@ export default function TerminalPanel({
         })}
         <div style={{ flex: 1 }} />
         <button
+          className="hoverable-strong"
           title={termBig ? "Restore terminal" : "Maximize terminal"}
           aria-label={termBig ? "Restore terminal" : "Maximize terminal"}
           onClick={onToggleBig}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg-strong)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
           style={{
             background: "none",
             border: "none",
-            cursor: "pointer",
             color: "var(--text-dimmer)",
             fontSize: 13,
             padding: "0 10px",
-            transition: "background 0.1s",
           }}
         >
           {termBig ? "\u2291" : "\u229E"}
         </button>
         <button
+          className="hoverable-strong"
           title="Close terminal (\u2318`)"
           aria-label="Close terminal"
           onClick={onClose}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg-strong)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
           style={{
             background: "none",
             border: "none",
-            cursor: "pointer",
             color: "var(--text-dimmer)",
             fontSize: 14,
             padding: "0 10px",
-            transition: "background 0.1s",
           }}
         >
           x

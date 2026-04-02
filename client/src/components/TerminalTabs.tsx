@@ -375,7 +375,7 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
                   boxShadow: "var(--shadow-lg)",
                 }}
               >
-                <div style={{ padding: "3px 10px 5px", fontSize: 10, color: "var(--text-dimmer)", fontFamily: "var(--font-ui)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                <div className="label" style={{ padding: "3px 10px 5px" }}>
                   Select Shell
                 </div>
                 {SHELLS.map(shell => (
@@ -793,7 +793,7 @@ function InfoRow({
 }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-      <span style={{ color: "var(--text-dimmer)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 600, flexShrink: 0 }}>
+      <span className="label" style={{ flexShrink: 0 }}>
         {label}
       </span>
       <span

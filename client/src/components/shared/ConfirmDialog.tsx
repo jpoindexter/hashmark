@@ -10,7 +10,6 @@ interface ConfirmDialogProps {
   danger?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
-  /** If set, shows an input field and passes the value to onConfirmWithValue */
   inputMode?: boolean;
   inputPlaceholder?: string;
   inputDefaultValue?: string;
@@ -67,39 +66,16 @@ export default function ConfirmDialog({
   if (!open) return null;
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 3000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "var(--overlay-bg)",
-        backdropFilter: "blur(2px)",
-        animation: "fadeIn 0.1s ease",
-      }}
-      onClick={onCancel}
-    >
+    <div className="modal-overlay" onClick={onCancel}>
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
+        className="modal-dialog"
         onClick={e => e.stopPropagation()}
-        style={{
-          background: "var(--bg-2)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-lg)",
-          padding: "20px 24px",
-          minWidth: 320,
-          maxWidth: 420,
-          boxShadow: "var(--shadow-lg)",
-          fontFamily: "var(--font-ui)",
-          animation: "dropdownIn 0.15s ease-out",
-        }}
+        style={{ padding: "20px 24px", minWidth: 320, maxWidth: 420 }}
       >
-        {/* Title */}
         <div style={{
           fontSize: 14,
           fontWeight: 600,
@@ -109,19 +85,12 @@ export default function ConfirmDialog({
           {title}
         </div>
 
-        {/* Message */}
         {message && (
-          <div style={{
-            fontSize: 12,
-            color: "var(--text-dim)",
-            lineHeight: 1.5,
-            marginBottom: inputMode ? 12 : 20,
-          }}>
+          <div className="text-body" style={{ marginBottom: inputMode ? 12 : 20 }}>
             {message}
           </div>
         )}
 
-        {/* Input */}
         {inputMode && (
           <input
             ref={inputRef}
@@ -130,60 +99,16 @@ export default function ConfirmDialog({
             onChange={e => setInputValue(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") handleConfirm(); }}
             placeholder={inputPlaceholder}
-            style={{
-              width: "100%",
-              padding: "6px 10px",
-              fontSize: 13,
-              fontFamily: "var(--font)",
-              background: "var(--bg-3)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-              color: "var(--text)",
-              outline: "none",
-              marginBottom: 20,
-              boxSizing: "border-box",
-            }}
+            style={{ width: "100%", marginBottom: 20 }}
           />
         )}
 
-        {/* Buttons */}
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <button
-            onClick={onCancel}
-            style={{
-              padding: "6px 16px",
-              fontSize: 12,
-              fontFamily: "var(--font-ui)",
-              fontWeight: 500,
-              background: "var(--bg-3)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-              color: "var(--text-dim)",
-              cursor: "pointer",
-              transition: "background 0.1s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "var(--bg-4)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-3)"; }}
-          >
-            {cancelLabel}
-          </button>
+        <div className="flex-row" style={{ justifyContent: "flex-end", gap: 8 }}>
+          <button className="btn" onClick={onCancel}>{cancelLabel}</button>
           <button
             ref={confirmBtnRef}
+            className={danger ? "btn btn-danger" : "btn btn-primary"}
             onClick={handleConfirm}
-            style={{
-              padding: "6px 16px",
-              fontSize: 12,
-              fontFamily: "var(--font-ui)",
-              fontWeight: 600,
-              background: danger ? "var(--red)" : "var(--accent)",
-              border: "none",
-              borderRadius: "var(--radius)",
-              color: danger ? "#fff" : "var(--bg)",
-              cursor: "pointer",
-              transition: "opacity 0.1s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
           >
             {confirmLabel}
           </button>

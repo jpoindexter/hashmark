@@ -10,7 +10,7 @@ interface ModalProps {
   children: ReactNode;
 }
 
-export default function Modal({ open, onClose, title, width = 540, children }: ModalProps) {
+export default function Modal({ open, onClose, title, width, children }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef, open);
 
@@ -26,92 +26,27 @@ export default function Modal({ open, onClose, title, width = 540, children }: M
   if (!open) return null;
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: "var(--z-overlay)" as unknown as number,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "var(--overlay-bg)",
-        backdropFilter: "blur(2px)",
-        animation: "fadeIn 0.1s ease",
-      }}
-    >
+    <div className="modal-overlay" onClick={onClose}>
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={title ?? "Dialog"}
+        className="modal-dialog"
         onClick={e => e.stopPropagation()}
-        style={{
-          background: "var(--bg-2)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-lg)",
-          width,
-          maxWidth: "90vw",
-          maxHeight: "85vh",
-          display: "flex",
-          flexDirection: "column",
-          boxShadow: "var(--shadow-lg)",
-          fontFamily: "var(--font-ui)",
-          animation: "dropdownIn 0.15s ease-out",
-          overflow: "hidden",
-        }}
+        style={width ? { width } : undefined}
       >
         {title && (
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "14px 20px",
-            borderBottom: "1px solid var(--border-dim)",
-            flexShrink: 0,
-          }}>
-            <span style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: "var(--text)",
-            }}>
+          <div className="modal-header" style={{ flexShrink: 0 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", textTransform: "none", letterSpacing: 0 }}>
               {title}
             </span>
-            <button
-              onClick={onClose}
-              aria-label="Close"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 24,
-                height: 24,
-                background: "transparent",
-                border: "none",
-                borderRadius: "var(--radius)",
-                color: "var(--text-dimmer)",
-                cursor: "pointer",
-                transition: "color 0.1s, background 0.1s",
-                padding: 0,
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.color = "var(--text)";
-                e.currentTarget.style.background = "var(--hover-bg-strong)";
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.color = "var(--text-dimmer)";
-                e.currentTarget.style.background = "transparent";
-              }}
-            >
+            <button className="btn-icon" onClick={onClose} aria-label="Close">
               <X size={14} />
             </button>
           </div>
         )}
-        <div style={{
-          padding: "20px",
-          overflowY: "auto",
-          flex: 1,
-        }}>
+        <div className="modal-body">
           {children}
         </div>
       </div>

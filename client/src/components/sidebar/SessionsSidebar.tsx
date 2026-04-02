@@ -269,8 +269,7 @@ function WorkspaceGroup({
         onClick={() => setExpanded(v => !v)}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(v => !v); } }}
         onContextMenu={onWorkspaceContextMenu}
-        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+        className="hoverable"
         style={{
           display: "flex",
           alignItems: "center",
@@ -278,9 +277,7 @@ function WorkspaceGroup({
           paddingLeft: 8,
           paddingRight: 8,
           gap: 4,
-          cursor: "pointer",
           background: "transparent",
-          transition: "background 0.1s",
         }}
       >
         <CollapseChevron expanded={expanded} />
@@ -410,12 +407,11 @@ function SessionRow({
       onClick={onClick}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
       onContextMenu={onContextMenu}
-      onMouseEnter={(e) => {
-        if (!active) e.currentTarget.style.background = "var(--hover-bg)";
+      className={active ? undefined : "hoverable"}
+      onMouseEnter={() => {
         if (shortcutRef.current && shortcut) shortcutRef.current.style.visibility = "visible";
       }}
-      onMouseLeave={(e) => {
-        if (!active) e.currentTarget.style.background = "transparent";
+      onMouseLeave={() => {
         if (shortcutRef.current && !active) shortcutRef.current.style.visibility = "hidden";
       }}
       style={{

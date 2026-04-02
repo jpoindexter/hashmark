@@ -59,22 +59,15 @@ function FileActionBtn({
   color?: string;
   onClick: (e: React.MouseEvent) => void;
 }) {
-  const [hover, setHover] = useState(false);
   return (
     <button
       title={title}
       onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      className="btn-icon"
       style={{
-        background: hover ? "var(--bg-4)" : "transparent",
-        border: "none", cursor: "pointer",
         color: color ?? "var(--text-dimmer)",
         fontFamily: "var(--font)", fontSize: 12, fontWeight: 700, lineHeight: 1,
         width: 18, height: 18,
-        display: "inline-flex", alignItems: "center", justifyContent: "center",
-        borderRadius: "var(--radius-sm)", flexShrink: 0, padding: 0,
-        transition: "background 0.1s",
       }}
     >
       {label}
@@ -93,17 +86,14 @@ function SectionHeader({
   actionLabel?: string;
   actionTitle?: string;
 }) {
-  const [hover, setHover] = useState(false);
   return (
     <div
       onClick={onToggle}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      className="hoverable"
       style={{
         display: "flex", alignItems: "center", gap: 6,
         padding: "5px 8px 5px 12px",
-        cursor: "pointer",
-        background: hover ? "var(--surface-subtle)" : "transparent",
+        background: "transparent",
         userSelect: "none",
         flexShrink: 0,
       }}
@@ -128,13 +118,12 @@ function SectionHeader({
         <button
           title={actionTitle}
           onClick={e => { e.stopPropagation(); onAction(); }}
+          className="hoverable"
           style={{
-            background: "none", border: "none", cursor: "pointer",
+            background: "none", border: "none",
             color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 11,
             padding: "0 2px", lineHeight: 1, flexShrink: 0,
           }}
-          onMouseEnter={e => (e.currentTarget.style.color = "var(--accent)")}
-          onMouseLeave={e => (e.currentTarget.style.color = "var(--text-dimmer)")}
         >
           {actionLabel}
         </button>
@@ -162,12 +151,11 @@ function FileRow({
   return (
     <div
       onClick={onClick}
-      onMouseEnter={(e) => {
-        if (!selected) e.currentTarget.style.background = "var(--hover-bg)";
+      className={selected ? "" : "hoverable"}
+      onMouseEnter={() => {
         if (actionsRef.current) actionsRef.current.style.opacity = "1";
       }}
-      onMouseLeave={(e) => {
-        if (!selected) e.currentTarget.style.background = "transparent";
+      onMouseLeave={() => {
         if (actionsRef.current) actionsRef.current.style.opacity = "0";
       }}
       style={{
@@ -705,12 +693,11 @@ export default function SourceControlPage() {
       {/* Resize handle */}
       <div
         onMouseDown={onDragStart}
+        className="hoverable"
         style={{
           width: 4, background: "var(--border-dim)",
-          cursor: "ew-resize", flexShrink: 0, transition: "background 0.1s",
+          cursor: "ew-resize", flexShrink: 0,
         }}
-        onMouseEnter={e => (e.currentTarget.style.background = "var(--accent)")}
-        onMouseLeave={e => (e.currentTarget.style.background = "var(--border-dim)")}
       />
 
       {/* Right: diff viewer */}

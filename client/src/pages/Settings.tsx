@@ -183,10 +183,7 @@ function SettingsNav({
       background: "var(--bg-2)", borderRight: "1px solid var(--border-dim)",
       display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0,
     }}>
-      <div style={{
-        padding: "16px 14px 8px", fontSize: "10px", fontWeight: 700,
-        color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.1em",
-      }}>
+      <div className="label" style={{ padding: "16px 14px 8px" }}>
         Settings
       </div>
 

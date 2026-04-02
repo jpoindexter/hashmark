@@ -282,7 +282,7 @@ export default function Generate() {
               display: "flex", alignItems: "center", justifyContent: "space-between",
               marginBottom: "10px",
             }}>
-              <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dimmer)", fontWeight: 600 }}>
+              <div className="label">
                 Formats
               </div>
               <div style={{ display: "flex", gap: "8px" }}>
@@ -488,10 +488,7 @@ export default function Generate() {
               {/* Delta summary */}
               {scanDelta && Object.keys(scanDelta).length > 0 && (
                 <div style={{ marginBottom: "16px" }}>
-                  <div style={{
-                    fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.1em",
-                    color: "var(--text-dimmer)", marginBottom: "8px", fontWeight: 600,
-                  }}>
+                  <div className="label mb-2">
                     What changed
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
@@ -529,10 +526,7 @@ export default function Generate() {
                 const files = getGeneratedFiles();
                 return files.length > 0 ? (
                   <div>
-                    <div style={{
-                      fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.1em",
-                      color: "var(--text-dimmer)", marginBottom: "8px", fontWeight: 600,
-                    }}>
+                    <div className="label mb-2">
                       Output files
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>

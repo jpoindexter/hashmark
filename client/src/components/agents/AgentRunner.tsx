@@ -212,13 +212,11 @@ function RunControls({ runPrompt, onPromptChange, running, currentModel, modelOp
           {modelOpen && (
             <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 200, background: "var(--bg-3)", border: "1px solid var(--border)", borderRadius: "var(--radius)", minWidth: "160px", overflow: "hidden" }}>
               {MODELS.map((m) => (
-                <button key={m.id} onClick={() => onSelectModel(m.id)} style={{
+                <button key={m.id} onClick={() => onSelectModel(m.id)} className="hoverable" style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "6px 10px", background: "none", border: "none",
                   borderLeft: m.id === runModel ? "2px solid var(--accent)" : "2px solid transparent",
-                  color: m.id === runModel ? "var(--accent)" : "var(--text-dim)", fontFamily: "var(--font)", fontSize: "11px", cursor: "pointer", textAlign: "left", transition: "background 0.1s",
-                }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-4)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}>
+                  color: m.id === runModel ? "var(--accent)" : "var(--text-dim)", fontFamily: "var(--font)", fontSize: "11px", textAlign: "left",
+                }}>
                   <span>{m.label}</span>
                   <span style={{ color: "var(--text-dimmer)", fontSize: "10px" }}>{m.note}</span>
                 </button>

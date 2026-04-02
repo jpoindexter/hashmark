@@ -11,7 +11,7 @@ export default function ClaudeCodeSection() {
       <ReadonlyField label="Config Location" value="~/.claude/" mono />
       <ReadonlyField label="Auth" value="Browser auth via claude.ai -- run `claude auth` to set up" mono />
       <div style={{ marginTop: 16 }}>
-        <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+        <div className="label mb-2">
           Useful Commands
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>

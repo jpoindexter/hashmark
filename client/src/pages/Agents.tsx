@@ -250,7 +250,7 @@ function CreateAgentModal({ modalRef, createName, createDesc, createDept, create
 function ModalField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-      <span style={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>{label}</span>
+      <span className="label">{label}</span>
       {children}
     </label>
   );

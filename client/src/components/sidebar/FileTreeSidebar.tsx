@@ -109,8 +109,7 @@ function TreeRow({ node, depth, selectedPaths, gitFiles, onSelect, onContextMenu
         onClick={handleClick}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }}
         onContextMenu={(e) => { e.preventDefault(); onContextMenu(e, node); }}
-        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "var(--hover-bg)"; }}
-        onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+        className={isSelected ? undefined : "hoverable"}
         style={{
           position: "relative",
           display: "flex",

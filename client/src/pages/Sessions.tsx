@@ -972,12 +972,11 @@ function SessionListItem({
       aria-current={isActive ? "true" : undefined}
       onClick={onSelect}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(); } }}
-      onMouseEnter={(e) => {
-        if (!isActive) e.currentTarget.style.background = "var(--bg-3)";
+      className={isActive ? "" : "hoverable"}
+      onMouseEnter={() => {
         if (trashBtnRef.current) trashBtnRef.current.style.visibility = "visible";
       }}
-      onMouseLeave={(e) => {
-        if (!isActive) e.currentTarget.style.background = "transparent";
+      onMouseLeave={() => {
         if (!isActive && trashBtnRef.current) trashBtnRef.current.style.visibility = "hidden";
       }}
       style={{
@@ -1045,8 +1044,7 @@ function SessionListItem({
               padding: "1px", flexShrink: 0, borderRadius: "var(--radius-sm)",
               visibility: isActive ? "visible" : "hidden",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--red)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-dimmer)"; }}
+            className="hoverable"
           >
             <Trash2 size={11} />
           </button>

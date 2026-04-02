@@ -209,28 +209,21 @@ function HeaderIconBtn({
   onClick: (e: React.MouseEvent) => void;
   children: React.ReactNode;
 }) {
-  const [hover, setHover] = useState(false);
   return (
     <button
       title={title}
       aria-label={title}
       onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      className="btn-icon"
       style={{
-        background: hover ? "var(--bg-4)" : "transparent",
+        background: "transparent",
         border: "none",
-        cursor: "pointer",
-        color: hover ? "var(--text)" : "var(--text-dimmer)",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
+        color: "var(--text-dimmer)",
         width: 20,
         height: 20,
         borderRadius: "var(--radius-sm)",
         padding: 0,
         flexShrink: 0,
-        transition: "background 0.1s, color 0.1s",
       }}
     >
       {children}
@@ -251,17 +244,14 @@ function ActionBtn({
   color?: string;
   onClick: (e: React.MouseEvent) => void;
 }) {
-  const [hover, setHover] = useState(false);
   return (
     <button
       title={title}
       onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      className="btn-icon"
       style={{
-        background: hover ? "var(--bg-4)" : "transparent",
+        background: "transparent",
         border: "none",
-        cursor: "pointer",
         color: color ?? "var(--text-dimmer)",
         fontFamily: "var(--font)",
         fontSize: 12,
@@ -269,13 +259,9 @@ function ActionBtn({
         lineHeight: 1,
         width: 16,
         height: 16,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
         borderRadius: "var(--radius-sm)",
         flexShrink: 0,
         padding: 0,
-        transition: "background 0.1s",
       }}
     >
       {label}
@@ -304,13 +290,13 @@ function SectionHeader({
       onClick={onToggle}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      className="hoverable"
       style={{
         display: "flex",
         alignItems: "center",
         gap: 4,
         padding: "4px 8px 4px 6px",
-        cursor: "pointer",
-        background: hover ? "var(--surface-subtle)" : "transparent",
+        background: "transparent",
         userSelect: "none",
         flexShrink: 0,
       }}
@@ -397,12 +383,11 @@ function ChangedFileRow({
   return (
     <div
       onClick={onClick}
-      onMouseEnter={(e) => {
-        if (!isSelected) e.currentTarget.style.background = "var(--hover-bg)";
+      className={isSelected ? undefined : "hoverable"}
+      onMouseEnter={() => {
         if (actionsRef.current) actionsRef.current.style.opacity = "1";
       }}
-      onMouseLeave={(e) => {
-        if (!isSelected) e.currentTarget.style.background = "transparent";
+      onMouseLeave={() => {
         if (actionsRef.current) actionsRef.current.style.opacity = "0";
       }}
       style={{
@@ -511,8 +496,7 @@ function OutgoingCommitRow({ commit }: { commit: OutgoingCommit }) {
 
   return (
     <div
-      onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+      className="hoverable"
       style={{
         display: "flex",
         alignItems: "center",
@@ -526,7 +510,6 @@ function OutgoingCommitRow({ commit }: { commit: OutgoingCommit }) {
         whiteSpace: "nowrap",
         overflow: "hidden",
         background: "transparent",
-        transition: "background 0.1s",
       }}
     >
       {/* Yellow dot = outgoing/unpushed */}
@@ -777,13 +760,12 @@ function CreatePrDialog({
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
           <button
             onClick={onClose}
+            className="hoverable"
             style={{
               padding: "6px 16px", fontSize: 12, fontFamily: "var(--font-ui)", fontWeight: 500,
               background: "var(--bg-3)", border: "1px solid var(--border)",
-              borderRadius: "var(--radius)", color: "var(--text-dim)", cursor: "pointer", transition: "background 0.1s",
+              borderRadius: "var(--radius)", color: "var(--text-dim)",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-4)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-3)"; }}
           >
             Cancel
           </button>
@@ -797,8 +779,6 @@ function CreatePrDialog({
               cursor: title.trim() ? "pointer" : "default", transition: "opacity 0.1s",
               opacity: creating ? 0.6 : 1,
             }}
-            onMouseEnter={(e) => { if (title.trim()) e.currentTarget.style.opacity = "0.85"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.opacity = creating ? "0.6" : "1"; }}
           >
             {creating ? "Creating..." : "Create PR"}
           </button>

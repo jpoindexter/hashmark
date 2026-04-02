@@ -60,10 +60,24 @@
   --font-ui: 'JetBrains Mono', 'Fira Code', Menlo, monospace;
 
   /* Typography scale */
+  --font-size-2xs:  9px;
   --font-size-xs:   10px;
   --font-size-sm:   11px;
   /* --font-size-base: 13px (defined below) */
   --font-size-lg:   15px;
+  --font-size-xl:   18px;
+  --font-size-2xl:  24px;
+
+  /* Letter-spacing scale (5 values, consolidated from 11+) */
+  --tracking-tight:   -0.01em;
+  --tracking-normal:   0;
+  --tracking-wide:     0.04em;
+  --tracking-wider:    0.06em;
+  --tracking-widest:   0.1em;
+
+  /* Font-weight (only 400 + 600 woff2 loaded) */
+  --weight-normal:   400;
+  --weight-semibold: 600;
 
   /* Border radius -- sharp */
   --radius:    2px;

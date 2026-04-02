@@ -199,7 +199,7 @@ export default function ProviderSelector() {
         }}>
 
           {/* Header */}
-          <div style={{ padding: "8px 12px 6px", fontSize: 10, fontWeight: 600, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em", borderBottom: "1px solid var(--border-dim)" }}>
+          <div className="label" style={{ padding: "8px 12px 6px", borderBottom: "1px solid var(--border-dim)" }}>
             AI Provider
           </div>
 
@@ -280,9 +280,7 @@ export default function ProviderSelector() {
                   <span style={{ fontSize: 9, color: "var(--accent)", opacity: 0.7 }}>key set</span>
                 )}
                 {needsKey && (
-                  <span style={{ fontSize: 9, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                    add key
-                  </span>
+                  <span className="text-micro">add key</span>
                 )}
                 {p.id === "ollama" && (
                   <span style={{ fontSize: 9, color: "var(--text-dimmer)" }}>local</span>
@@ -327,7 +325,7 @@ export default function ProviderSelector() {
           {/* Model selector (shown when not in key-input mode) */}
           {!keyInput && models.length > 0 && (
             <div style={{ borderTop: "1px solid var(--border-dim)", padding: "6px 0" }}>
-              <div style={{ padding: "2px 12px 4px", fontSize: 10, fontWeight: 600, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              <div className="label" style={{ padding: "2px 12px 4px" }}>
                 Model
               </div>
               {models.map(m => {

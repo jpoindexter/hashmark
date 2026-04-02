@@ -47,8 +47,7 @@ function AgentRow({
     <div
       onClick={onClick}
       onContextMenu={(e) => { e.preventDefault(); onContextMenu(e, agent); }}
-      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "var(--hover-bg)"; }}
-      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+      className={isSelected ? undefined : "hoverable"}
       title={agent.description || agent.path}
       style={{
         display: "flex",
@@ -112,13 +111,7 @@ function DeptSection({
           letterSpacing: "0.04em",
           color: "var(--text-dimmer)",
         }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLDivElement).style.background =
-            "var(--surface-subtle)";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLDivElement).style.background = "transparent";
-        }}
+        className="hoverable"
       >
         <span
           style={{

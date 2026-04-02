@@ -44,7 +44,7 @@ export function StudioSection({ info, detectedCLIs }: { info: InfoData | null; d
 
       {detectedCLIs.length > 0 && (
         <div style={{ marginTop: 24 }}>
-          <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
+          <div className="label mb-3">
             Detected CLI Tools
           </div>
           <div style={{
@@ -79,7 +79,7 @@ export function StudioSection({ info, detectedCLIs }: { info: InfoData | null; d
       )}
 
       <div style={{ marginTop: 24 }}>
-        <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
+        <div className="label mb-3">
           Links
         </div>
         <div style={{ display: "flex", gap: 8 }}>

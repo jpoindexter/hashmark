@@ -144,8 +144,7 @@ function CopyButton({ text }: { text: string }) {
         lineHeight: 1.4,
         transition: "background 0.1s, color 0.1s",
       }}
-      onMouseEnter={e => { if (!copied) e.currentTarget.style.background = "var(--bg-4)"; }}
-      onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-3)"; }}
+      className="hoverable"
     >
       {copied ? "Copied!" : "Copy"}
     </button>
@@ -431,8 +430,7 @@ function RetryButton({ onClick }: { onClick: () => void }) {
           cursor: "pointer",
           transition: "background 0.1s",
         }}
-        onMouseEnter={e => { e.currentTarget.style.background = "rgba(63,185,80,0.2)"; }}
-        onMouseLeave={e => { e.currentTarget.style.background = "var(--accent-bg, rgba(63,185,80,0.1))"; }}
+        className="hoverable-strong"
       >
         Retry
       </button>
@@ -912,18 +910,7 @@ function EmptyState({ modelLabel: _modelLabel }: { modelLabel: string }) {
               fontFamily: "var(--font-ui)",
               textAlign: "left",
             }}
-            onMouseEnter={e => {
-              const el = e.currentTarget;
-              el.style.borderColor = "var(--border)";
-              el.style.color = "var(--text-dim)";
-              el.style.background = "var(--bg-2)";
-            }}
-            onMouseLeave={e => {
-              const el = e.currentTarget;
-              el.style.borderColor = "var(--border-dim)";
-              el.style.color = "var(--text-dimmer)";
-              el.style.background = "transparent";
-            }}
+            className="hoverable"
           >
             <span style={{ color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 11, flexShrink: 0 }}>→</span>
             {text}

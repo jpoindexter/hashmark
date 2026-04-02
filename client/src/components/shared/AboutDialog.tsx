@@ -217,8 +217,7 @@ export default function AboutDialog({ open, onClose }: { open: boolean; onClose:
             cursor: "pointer",
             transition: "background 0.1s",
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = "var(--bg-4)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-3)"; }}
+          className="hoverable"
         >
           Close
         </button>
@@ -266,16 +265,7 @@ function LinkButton({ label, onClick }: { label: string; onClick: () => void }) 
   return (
     <button
       onClick={onClick}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = "var(--accent-bg)";
-        e.currentTarget.style.color = "var(--accent)";
-        e.currentTarget.style.borderColor = "var(--accent-border)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "transparent";
-        e.currentTarget.style.color = "var(--text-dim)";
-        e.currentTarget.style.borderColor = "var(--border-dim)";
-      }}
+      className="hoverable"
       style={{
         padding: "4px 12px",
         fontSize: 11,
@@ -285,8 +275,6 @@ function LinkButton({ label, onClick }: { label: string; onClick: () => void }) 
         border: "1px solid var(--border-dim)",
         borderRadius: "var(--radius)",
         color: "var(--text-dim)",
-        cursor: "pointer",
-        transition: "background 0.1s, color 0.1s, border-color 0.1s",
       }}
     >
       {label}

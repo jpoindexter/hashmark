@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, type CSSProperties, type ReactNode } from "react";
+import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
 
 export interface ContextMenuItem {
   label: string;
@@ -14,46 +14,6 @@ export interface ContextMenuProps {
   onClose: () => void;
 }
 
-const overlayStyle: CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 199,
-};
-
-const menuBase: CSSProperties = {
-  position: "fixed",
-  zIndex: 200,
-  background: "var(--bg-3)",
-  border: "1px solid var(--border)",
-  borderRadius: "var(--radius-lg)",
-  padding: "4px 0",
-  minWidth: 160,
-  boxShadow: "var(--shadow-md)",
-};
-
-const itemBase: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  height: 28,
-  padding: "0 12px",
-  fontSize: 12,
-  fontFamily: "var(--font-ui)",
-  color: "var(--text-dim)",
-  cursor: "pointer",
-  border: "none",
-  background: "none",
-  width: "100%",
-  textAlign: "left",
-  outline: "none",
-};
-
-const separatorStyle: CSSProperties = {
-  height: 1,
-  background: "var(--border-dim)",
-  margin: "4px 0",
-};
-
 function clampPosition(x: number, y: number, menuWidth: number, menuHeight: number) {
   const pad = 8;
   const clampedX = Math.min(x, window.innerWidth - menuWidth - pad);
@@ -66,13 +26,11 @@ export default function ContextMenu({ items, position, onClose }: ContextMenuPro
   const [focusIndex, setFocusIndex] = useState(-1);
   const [clamped, setClamped] = useState<{ x: number; y: number } | null>(null);
 
-  // Filter to only actionable items (not separators) for keyboard nav
   const actionableIndices = items.reduce<number[]>((acc, item, i) => {
     if (!item.separator) acc.push(i);
     return acc;
   }, []);
 
-  // Clamp position after first render so we know the menu dimensions
   useEffect(() => {
     if (!position || !menuRef.current) {
       setClamped(null);
@@ -82,12 +40,10 @@ export default function ContextMenu({ items, position, onClose }: ContextMenuPro
     setClamped(clampPosition(position.x, position.y, rect.width, rect.height));
   }, [position]);
 
-  // Reset focus index when menu opens
   useEffect(() => {
     setFocusIndex(-1);
   }, [position]);
 
-  // Escape to close
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!position) return;
 
@@ -134,39 +90,32 @@ export default function ContextMenu({ items, position, onClose }: ContextMenuPro
 
   if (!position) return null;
 
-  // Use raw position initially, then clamped once measured
   const displayPos = clamped ?? position;
 
   return (
     <>
-      {/* Invisible overlay to catch outside clicks */}
-      <div style={overlayStyle} onMouseDown={onClose} />
+      <div style={{ position: "fixed", inset: 0, zIndex: 199 }} onMouseDown={onClose} />
 
       <div
         ref={menuRef}
         role="menu"
+        className="context-menu"
         style={{
-          ...menuBase,
           left: displayPos.x,
           top: displayPos.y,
-          // Hide until clamped to prevent flicker
           opacity: clamped ? 1 : 0,
         }}
       >
         {items.map((item, i) => {
           if (item.separator) {
-            return <div key={i} style={separatorStyle} />;
+            return <div key={i} className="context-menu-separator" />;
           }
-
-          const focused = i === focusIndex;
-          const isDanger = item.danger === true;
 
           return (
             <ContextMenuItemRow
               key={i}
               item={item}
-              focused={focused}
-              isDanger={isDanger}
+              focused={i === focusIndex}
               onClose={onClose}
               onHover={() => setFocusIndex(i)}
             />
@@ -180,28 +129,25 @@ export default function ContextMenu({ items, position, onClose }: ContextMenuPro
 function ContextMenuItemRow({
   item,
   focused,
-  isDanger,
   onClose,
   onHover,
 }: {
   item: ContextMenuItem;
   focused: boolean;
-  isDanger: boolean;
   onClose: () => void;
   onHover: () => void;
 }) {
-  const baseColor = isDanger ? "var(--red)" : "var(--text-dim)";
-  const hoverBg = isDanger ? "var(--red-bg)" : "var(--active-bg)";
-  const hoverColor = isDanger ? "var(--red)" : "var(--text)";
+  const isDanger = item.danger === true;
+  const itemClass = `context-menu-item${isDanger ? " context-menu-item-danger" : ""}`;
 
   return (
     <button
       role="menuitem"
-      style={{
-        ...itemBase,
-        color: focused ? hoverColor : baseColor,
-        background: focused ? hoverBg : "none",
-      }}
+      className={itemClass}
+      style={focused ? {
+        background: isDanger ? "var(--red-bg)" : "var(--active-bg)",
+        color: isDanger ? "var(--red)" : "var(--text)",
+      } : undefined}
       onMouseEnter={onHover}
       onClick={() => {
         onClose();
@@ -209,7 +155,7 @@ function ContextMenuItemRow({
       }}
     >
       {item.icon && (
-        <span style={{ display: "flex", alignItems: "center", flexShrink: 0, width: 14 }}>
+        <span className="flex-center" style={{ flexShrink: 0, width: 14 }}>
           {item.icon}
         </span>
       )}

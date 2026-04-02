@@ -35,12 +35,11 @@ export default function SecurityBanner({ findings, dismissed, onDismiss, agents,
               tabIndex={0}
               onClick={() => { const a = agents.find((ag) => ag.id === f.agentId); if (a) onOpenAgent(a); }}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const a = agents.find((ag) => ag.id === f.agentId); if (a) onOpenAgent(a); } }}
+              className="hoverable"
               style={{
                 padding: "8px 12px", borderBottom: i < findings.length - 1 ? "1px solid var(--border-dim)" : "none",
-                cursor: "pointer", display: "flex", gap: 10, alignItems: "flex-start",
+                display: "flex", gap: 10, alignItems: "flex-start",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-3)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
             >
               <span style={{
                 fontSize: 9, fontFamily: "var(--font)", fontWeight: 700, letterSpacing: "0.06em",

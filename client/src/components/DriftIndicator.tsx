@@ -137,6 +137,7 @@ export function DriftBadge({ drift, navigate }: { drift: DriftResult; navigate: 
           <div style={{ padding: "6px 10px" }}>
             <button
               onClick={() => { setOpen(false); navigate("/generate"); }}
+              className="hoverable"
               style={{
                 width: "100%",
                 background: "var(--bg-3)",
@@ -146,13 +147,9 @@ export function DriftBadge({ drift, navigate }: { drift: DriftResult; navigate: 
                 fontSize: 11,
                 fontFamily: "var(--font-ui)",
                 fontWeight: 600,
-                cursor: "pointer",
                 borderRadius: 0,
                 textAlign: "center",
-                transition: "background 0.1s",
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = isMajor ? "rgba(248,81,73,0.1)" : "rgba(210,153,34,0.1)")}
-              onMouseLeave={e => (e.currentTarget.style.background = "var(--bg-3)")}
             >
               Rescan now
             </button>
@@ -188,15 +185,14 @@ export function DriftBanner({ drift, onDismiss }: { drift: DriftResult; onDismis
       </span>
       <button
         onClick={() => window.dispatchEvent(new CustomEvent("studio:navigate", { detail: "/generate" }))}
+        className="hoverable"
         style={{
           color: accentColor, textDecoration: "none", fontWeight: 600,
           padding: "2px 8px", border: `1px solid ${borderColor}`,
-          borderRadius: 3, whiteSpace: "nowrap", cursor: "pointer",
-          transition: "background 0.1s", background: "transparent",
+          borderRadius: 3, whiteSpace: "nowrap",
+          background: "transparent",
           fontFamily: "var(--font-ui)", fontSize: 11,
         }}
-        onMouseEnter={e => (e.currentTarget.style.background = bgColor)}
-        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
       >
         Regenerate
       </button>

@@ -941,8 +941,8 @@ export default function Company() {
       {/* Plan preview (before running) */}
       {plan.length > 0 && phase === "planned" && (
         <div>
-          <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10, paddingBottom: 6, borderBottom: "1px solid var(--border-dim)" }}>
-            PLAN — {plan.length} parallel subtasks
+          <div className="label" style={{ marginBottom: 10, paddingBottom: 6, borderBottom: "1px solid var(--border-dim)" }}>
+            PLAN -- {plan.length} parallel subtasks
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {plan.map(s => (
@@ -1037,7 +1037,7 @@ export default function Company() {
           border: "1px solid var(--border-dim)",
           borderRadius: "var(--radius)",
         }}>
-          <div style={{ fontSize: 10, color: "var(--text-dimmer)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>
+          <div className="label mb-2">
             MERGE RESULTS
           </div>
           <div style={{ display: "flex", gap: 16, fontSize: 12, flexWrap: "wrap" }}>

@@ -87,8 +87,7 @@ export default function ResizableDrawer({
           userSelect: "none",
           touchAction: "none",
         }}
-        onMouseEnter={e => (e.currentTarget.style.background = "var(--accent-bg)")}
-        onMouseLeave={e => (e.currentTarget.style.background = "var(--bg-3)")}
+        className="hoverable"
       >
         <span style={{ color: "var(--text-dimmer)", fontSize: 10, lineHeight: 1, letterSpacing: 2, opacity: 0.5 }}>
           ···

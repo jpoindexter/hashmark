@@ -171,8 +171,7 @@ export default function SearchSidebar() {
                 top: 0,
                 zIndex: 1,
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = "var(--hover-bg)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-2)"; }}
+              className="hoverable"
             >
               <File size={12} style={{ color: "var(--text-dimmer)", flexShrink: 0 }} />
               <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
@@ -203,8 +202,7 @@ export default function SearchSidebar() {
                   cursor: "pointer",
                   lineHeight: 1.6,
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = "var(--hover-bg)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                className="hoverable"
               >
                 <span style={{ color: "var(--text-dimmer)", minWidth: 28, textAlign: "right", flexShrink: 0 }}>
                   {m.line}

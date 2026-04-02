@@ -212,23 +212,17 @@ function DeptDropdown({ selectedDepts, departments, deptCounts, open, dropdownRe
           minWidth: 200, maxHeight: 320, overflowY: "auto", boxShadow: "var(--shadow-md)",
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", borderBottom: "1px solid var(--border-dim)", fontSize: 9, fontFamily: "var(--font)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-            <button onClick={onSelectAll} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 9, letterSpacing: "0.06em", padding: 0 }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-dimmer)"; }}>select all</button>
-            <button onClick={onClear} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 9, letterSpacing: "0.06em", padding: 0 }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-dimmer)"; }}>clear</button>
+            <button onClick={onSelectAll} className="hoverable" style={{ background: "none", border: "none", color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 9, letterSpacing: "0.06em", padding: 0 }}>select all</button>
+            <button onClick={onClear} className="hoverable" style={{ background: "none", border: "none", color: "var(--text-dimmer)", fontFamily: "var(--font)", fontSize: 9, letterSpacing: "0.06em", padding: 0 }}>clear</button>
           </div>
           {departments.map((dept) => {
             const checked = selectedDepts.has(dept);
             return (
-              <button key={dept} onClick={() => onToggleDept(dept)} style={{
+              <button key={dept} onClick={() => onToggleDept(dept)} className="hoverable" style={{
                 display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "6px 10px",
-                background: "none", border: "none", cursor: "pointer", fontSize: 11, fontFamily: "var(--font)",
-                color: checked ? "var(--text)" : "var(--text-dim)", textAlign: "left", transition: "background 0.1s",
-              }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "var(--surface-dim)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}>
+                background: "none", border: "none", fontSize: 11, fontFamily: "var(--font)",
+                color: checked ? "var(--text)" : "var(--text-dim)", textAlign: "left",
+              }}>
                 <span style={{
                   width: 14, height: 14, borderRadius: 2, border: `1px solid ${checked ? "var(--accent)" : "var(--border)"}`,
                   background: checked ? "var(--accent-bg)" : "none", display: "flex", alignItems: "center", justifyContent: "center",

@@ -127,7 +127,7 @@ export function StructuredOutput({ segments, running, output, runStatus }: {
           <div key={idx} style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 8, marginTop: idx > 0 ? 20 : 0, paddingBottom: 6, borderBottom: "1px solid var(--border-dim)", fontFamily: "var(--font-ui, var(--font))" }}>{seg.text}</div>
         );
         if (seg.type === "h2") return (
-          <div key={idx} style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", marginBottom: 6, marginTop: idx > 0 ? 16 : 0, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "var(--font)" }}>{seg.text}</div>
+          <div key={idx} className="label" style={{ fontSize: 12, color: "var(--text)", marginBottom: 6, marginTop: idx > 0 ? 16 : 0 }}>{seg.text}</div>
         );
         if (seg.type === "h3") return (
           <div key={idx} style={{ fontSize: 11, fontWeight: 600, color: "var(--accent)", marginBottom: 4, marginTop: idx > 0 ? 12 : 0, fontFamily: "var(--font)" }}>{seg.text}</div>

@@ -128,16 +128,7 @@ function ActionCard({
         background: "var(--bg-2)",
         borderColor: "var(--border-dim)",
       }}
-      onMouseEnter={(e) => {
-        if (!disabled) {
-          e.currentTarget.style.background = "var(--bg-3)";
-          e.currentTarget.style.borderColor = "var(--border)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "var(--bg-2)";
-        e.currentTarget.style.borderColor = "var(--border-dim)";
-      }}
+      className={disabled ? "" : "hoverable"}
     >
       <div style={{ color: "var(--text-dim)" }}>{icon}</div>
       <div>
@@ -654,8 +645,7 @@ function RecentProjectRow({
         transition: "background 0.1s",
         boxSizing: "border-box",
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-3)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+      className="hoverable"
     >
       <FolderIcon size={14} color="var(--text-dimmer)" />
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -810,8 +800,7 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
           textAlign: "left",
           transition: "background 0.1s",
         }}
-        onMouseEnter={(e) => { if (!open) e.currentTarget.style.background = "var(--accent-bg)"; }}
-        onMouseLeave={(e) => { if (!open) e.currentTarget.style.background = "transparent"; }}
+        className={open ? "" : "hoverable"}
       >
         <div style={{ color: "var(--accent)", flexShrink: 0 }}>
           <FolderIcon size={12} color="var(--accent)" />
@@ -944,8 +933,7 @@ export function WorkspaceDropdown({ currentName, currentPath }: { currentName: s
                 textAlign: "left",
                 transition: "background 0.1s",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-bg)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              className="hoverable"
             >
               <span style={{ fontSize: 14, lineHeight: 1, marginTop: -1 }}>+</span>
               Add workspace
@@ -988,12 +976,11 @@ function DropdownWorkspaceRow({
         transition: "background 0.1s",
         cursor: isActive ? "default" : "pointer",
       }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = "var(--accent-bg)";
+      className="hoverable"
+      onMouseEnter={() => {
         if (!isActive && switchBtnRef.current) switchBtnRef.current.style.visibility = "visible";
       }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = focused ? "var(--accent-bg)" : "transparent";
+      onMouseLeave={() => {
         if (!isActive && switchBtnRef.current) switchBtnRef.current.style.visibility = focused ? "visible" : "hidden";
       }}
     >
@@ -1095,8 +1082,7 @@ function DropdownWorkspaceRow({
             opacity: hovered || focused ? 0.7 : 0,
             transition: "opacity 0.1s",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--red)")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-dimmer)")}
+          className="hoverable"
         >
           ×
         </button>

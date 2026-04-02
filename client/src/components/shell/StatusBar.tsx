@@ -21,12 +21,11 @@ function StatusItem({
 }) {
   return (
     <div
+      className={onClick ? "hoverable" : undefined}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
       title={title}
       onClick={onClick}
-      onMouseEnter={(e) => { if (onClick) e.currentTarget.style.background = "rgba(0,0,0,0.12)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -37,7 +36,6 @@ function StatusItem({
         background: "transparent",
         borderRadius: "var(--radius-sm)",
         height: "100%",
-        transition: "background 0.1s ease",
       }}
     >
       {children}
