@@ -171,9 +171,9 @@
 - [ ] Submit PR to Anthropic Claude Code docs
 
 ### Growth
-- [ ] Add Claude binary pre-flight check at startup (banner if missing)
+- [x] Add Claude binary pre-flight check at startup (banner if missing)
 - [x] Add desktop notifications for completed runs (Tauri native)
-- [ ] Add template tasks for first-time users ("Fix TypeScript errors", "Add tests", etc.)
+- [x] Add template tasks for first-time users ("Fix TypeScript errors", "Add tests", etc.)
 - [ ] Add usage dashboard (total cost, runs per day, success rate)
 - [x] Add "Delete All Data" button in Settings (GDPR)
 
