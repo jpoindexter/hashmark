@@ -54,22 +54,17 @@ export function ChatBottomBar({
   onInjectTerminalCwd,
 }: ChatBottomBarProps) {
   return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
+    <div className="flex-between gap-2" style={{
       padding: "4px 14px 10px",
-      gap: 8,
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      <div className="flex-row gap-1">
         <ModelPickerDropdown selectedModel={selectedModel} thinking={thinking} planMode={planMode} />
         {terminalCwd && (
           <button
-            className="hoverable"
+            className="hoverable flex-row gap-1"
             onClick={onInjectTerminalCwd}
             title={`Inject terminal path: ${terminalCwd}`}
             style={{
-              display: "flex", alignItems: "center", gap: 4,
               padding: "2px 6px", background: "none", border: "none", borderRadius: 4,
               color: "var(--text-dimmer)", fontSize: 11,
               fontFamily: "var(--font-ui)",
@@ -85,7 +80,7 @@ export function ChatBottomBar({
         )}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <div className="flex-row gap-2">
         <button
           onClick={onNewSession}
           title="New conversation"

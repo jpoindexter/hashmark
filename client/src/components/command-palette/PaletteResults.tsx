@@ -198,9 +198,9 @@ export default function PaletteResults({
                   isActive={idx === activeIdx}
                   onClick={() => onSelectCommand(cmd)}
                   onMouseEnter={() => onActiveIdxChange(idx)}
-                  left={<span style={{ color: "var(--text-dimmer)", display: "flex", alignItems: "center", flexShrink: 0 }}>{cmd.icon}</span>}
+                  left={<span className="flex-row" style={{ color: "var(--text-dimmer)", flexShrink: 0 }}>{cmd.icon}</span>}
                   center={
-                    <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                    <span className="flex-row gap-2" style={{ minWidth: 0 }}>
                       <span style={{ fontSize: 13, color: "var(--text)", whiteSpace: "nowrap" }}>{cmd.label}</span>
                       {cmd.description && (
                         <span style={{ fontSize: 12, color: "var(--text-dimmer)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
