@@ -8,11 +8,8 @@ const SECTIONS: ShortcutSection[] = [
     title: "NAVIGATION",
     rows: [
       ["g s", "Chat"],
-      ["g f", "Files"],
       ["g a", "Agents"],
-      ["g g", "Git"],
-      ["g r", "Run"],
-      ["g c", "Company"],
+      ["g g", "Generate"],
     ],
   },
   {
@@ -34,9 +31,6 @@ const SECTIONS: ShortcutSection[] = [
   {
     title: "VIEWS",
     rows: [
-      ["\u2318\u21E7E", "Explorer"],
-      ["\u2318\u21E7G", "Source Control"],
-      ["\u2318\u21E7F", "Search"],
       ["\u2318\u21E7A", "Agents"],
       ["\u2318,", "Settings"],
     ],

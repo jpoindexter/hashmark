@@ -147,7 +147,7 @@ export function ExperimentalSection() {
       </InfoNote>
       <SettingRow
         label="Skip Permission Prompts"
-        hint="Sets CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS=1 on all Claude subprocesses. Applies to Chat, Run, Swarm, and Company modes."
+        hint="Sets CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS=1 on all Claude subprocesses."
       >
         <Toggle
           checked={skipPerms}

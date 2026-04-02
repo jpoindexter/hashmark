@@ -182,9 +182,9 @@ function SectionHeader({ onAdd }: { onAdd: () => void }) {
       background: "var(--surface-muted)",
     }}>
       <span className="label" style={{ flex: 1 }}>
-        Missions
+        Sessions
       </span>
-      <IconButton title="New mission" onClick={onAdd}>
+      <IconButton title="New session" onClick={onAdd}>
         <Plus size={14} />
       </IconButton>
     </div>

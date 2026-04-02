@@ -1,8 +1,8 @@
 const DISPATCH_SUGGESTIONS = [
-  "scan this project for design violations",
+  "explain the architecture of this project",
   "review recent changes and summarize what changed",
-  "run a full audit -- violations, hierarchy, contrast",
-  "fix all spacing token mismatches",
+  "find and fix bugs in the most recently modified files",
+  "refactor the largest file into smaller modules",
 ];
 
 export function EmptyState({ modelLabel: _modelLabel }: { modelLabel: string }) {

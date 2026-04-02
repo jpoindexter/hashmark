@@ -254,7 +254,7 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
             <div style={{ color: "var(--text-dimmer)", lineHeight: "1.4" }}>
               Dead tool outputs, re-sent schemas, and static content accumulate as sessions grow.
               {wasteEstimatePct > 20 && (
-                <span style={{ color: "var(--yellow)" }}> Consider compacting this mission.</span>
+                <span style={{ color: "var(--yellow)" }}> Consider compacting this session.</span>
               )}
             </div>
             {/* Waste breakdown mini-bars */}
