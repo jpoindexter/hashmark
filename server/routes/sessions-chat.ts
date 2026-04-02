@@ -20,7 +20,7 @@ import {
 } from "../lib/context-analytics.js";
 import { createStreamParser } from "../lib/claude-stream.js";
 import { createCheckpoint } from "../lib/checkpoint.js";
-import { microcompact, checkContextUsage, shouldAutoCompact } from "../lib/compaction.js";
+import { smartPrune, checkContextUsage, shouldAutoCompact } from "../lib/compaction.js";
 import { loadProjectEnvVars } from "../lib/env.js";
 import { createStudioMcpConfig } from "../lib/mcp-studio.js";
 import { findBin } from "../lib/bin-resolver.js";
@@ -138,9 +138,12 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
       "SELECT role, content FROM session_messages WHERE session_id = ? AND (role = 'assistant' OR sent_at IS NOT NULL) ORDER BY created_at ASC"
     ).all(sessionId) as Array<{ role: string; content: string }>;
 
-    // Microcompact: truncate large assistant messages (tool output) before resending.
+    // Smart prune: selectively strip tool outputs from older turns while keeping
+    // recent context intact. Falls back to microcompact for stubborn messages.
     // Skip for resumed Claude sessions -- they manage their own context window.
-    const history = session.claude_session_id ? rawHistory : microcompact(rawHistory);
+    const { messages: history } = session.claude_session_id
+      ? { messages: rawHistory }
+      : smartPrune(rawHistory);
 
     // Check for pending (unsent) messages from previous failed attempts
     const pendingMessages = db.prepare(
@@ -231,8 +234,39 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
           }));
           apiMessages.push({ role: "user", content: expandedMessage });
 
-          let fullText = "";
           let aborted = false;
+          let totalLength = 0;
+
+          // Delta-aware message storage: INSERT on first chunk, debounced UPDATE appends
+          let assistantMsgId: string | null = null;
+          let pendingDelta = "";
+          let flushTimer: ReturnType<typeof setTimeout> | null = null;
+          const FLUSH_INTERVAL = 500;
+
+          const flushDelta = () => {
+            if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+            if (pendingDelta && assistantMsgId) {
+              db.prepare("UPDATE session_messages SET content = content || ? WHERE id = ?")
+                .run(pendingDelta, assistantMsgId);
+              pendingDelta = "";
+            }
+          };
+
+          const appendDelta = (text: string) => {
+            totalLength += text.length;
+            if (!assistantMsgId) {
+              // First chunk -- INSERT the message row
+              assistantMsgId = randomUUID();
+              db.prepare(
+                "INSERT INTO session_messages (id, session_id, role, content, created_at, sent_at) VALUES (?, ?, 'assistant', ?, ?, ?)"
+              ).run(assistantMsgId, sessionId, text, Date.now(), Date.now());
+            } else {
+              pendingDelta += text;
+              if (!flushTimer) {
+                flushTimer = setTimeout(flushDelta, FLUSH_INTERVAL);
+              }
+            }
+          };
 
           shared.activeProcesses.set(sessionId, {
             kill: () => { aborted = true; },
@@ -248,7 +282,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
             onChunk: (text) => {
               if (aborted) return;
               markMessagesSent();
-              fullText += text;
+              appendDelta(text);
               send({ type: "text", text });
               if (claudeSections.length > 0) {
                 updateAnalytics(dataDir, sessionId, text, claudeSections);
@@ -258,15 +292,24 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
               shared.activeProcesses.delete(sessionId);
               shared.sessionLastActivity.delete(sessionId);
               markMessagesSent();
-              const savedText = fullText.trim() || "[no response]";
+              flushDelta();
+
               const msgInputEstimate = Math.ceil(body.message.length / 3.5);
-              const msgOutputEstimate = Math.ceil(savedText.length / 3.5);
+              const msgOutputEstimate = Math.ceil(totalLength / 3.5);
               const actualModel = body.model || providersStore.model || "claude";
 
-              db.prepare(`
-                INSERT INTO session_messages (id, session_id, role, content, input_tokens, output_tokens, created_at, sent_at)
-                VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?)
-              `).run(randomUUID(), sessionId, savedText, msgInputEstimate, msgOutputEstimate, Date.now(), Date.now());
+              // If no chunks arrived, insert a placeholder message
+              if (!assistantMsgId) {
+                assistantMsgId = randomUUID();
+                db.prepare(
+                  "INSERT INTO session_messages (id, session_id, role, content, input_tokens, output_tokens, created_at, sent_at) VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?)"
+                ).run(assistantMsgId, sessionId, "[no response]", msgInputEstimate, msgOutputEstimate, Date.now(), Date.now());
+              } else {
+                // Update token counts on the already-inserted message
+                db.prepare(
+                  "UPDATE session_messages SET input_tokens = ?, output_tokens = ? WHERE id = ?"
+                ).run(msgInputEstimate, msgOutputEstimate, assistantMsgId);
+              }
 
               db.prepare(`
                 UPDATE sessions
@@ -300,12 +343,19 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
             onError: (err) => {
               shared.activeProcesses.delete(sessionId);
               shared.sessionLastActivity.delete(sessionId);
+              flushDelta();
               send({ type: "error", message: err.message });
 
-              db.prepare(`
-                INSERT INTO session_messages (id, session_id, role, content, created_at, sent_at)
-                VALUES (?, ?, 'assistant', ?, ?, ?)
-              `).run(randomUUID(), sessionId, `Error: ${err.message}`, Date.now(), Date.now());
+              // If no message was started, insert the error as a new message
+              if (!assistantMsgId) {
+                db.prepare(
+                  "INSERT INTO session_messages (id, session_id, role, content, created_at, sent_at) VALUES (?, ?, 'assistant', ?, ?, ?)"
+                ).run(randomUUID(), sessionId, `Error: ${err.message}`, Date.now(), Date.now());
+              } else {
+                // Append error to existing partial message
+                db.prepare("UPDATE session_messages SET content = content || ? WHERE id = ?")
+                  .run(`\n\nError: ${err.message}`, assistantMsgId);
+              }
 
               db.prepare("UPDATE sessions SET status = 'idle', ended_at = ?, error_count = error_count + 1, updated_at = ? WHERE id = ?")
                 .run(Date.now(), Date.now(), sessionId);
@@ -314,6 +364,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
             },
           }).catch((err: unknown) => {
             const msg = err instanceof Error ? err.message : String(err);
+            flushDelta();
             send({ type: "error", message: msg });
             controller.close();
           });
