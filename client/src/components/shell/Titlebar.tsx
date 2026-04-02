@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, type CSSProperties } from "react";
-import { RefreshCw, PanelLeft, Terminal, Columns2, GitPullRequest, ArrowDownToLine } from "lucide-react";
+import { RefreshCw, Terminal, GitPullRequest, ArrowDownToLine } from "lucide-react";
 import type { GitStatus, DriftResult } from "../../hooks/useProjectInfo";
 import BranchPicker from "../BranchPicker";
 import { DriftBadge } from "../DriftIndicator";
@@ -271,25 +271,11 @@ export default function Titlebar({
         {/* Layout toggle group */}
         <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
           <LayoutToggle
-            title="Toggle sidebar"
-            active={!!sidebarOpen}
-            onClick={() => window.dispatchEvent(new CustomEvent("studio:toggle-sidebar"))}
-          >
-            <PanelLeft size={16} />
-          </LayoutToggle>
-          <LayoutToggle
             title="Toggle terminal"
             active={!!termOpen}
             onClick={() => window.dispatchEvent(new CustomEvent("studio:toggle-terminal"))}
           >
             <Terminal size={16} />
-          </LayoutToggle>
-          <LayoutToggle
-            title="Toggle split editor"
-            active={!!splitOpen}
-            onClick={() => window.dispatchEvent(new CustomEvent("studio:toggle-split"))}
-          >
-            <Columns2 size={16} />
           </LayoutToggle>
         </div>
       </div>
