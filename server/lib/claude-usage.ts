@@ -8,8 +8,8 @@
  * - Our defaults: max 2 concurrent, max 20/hour, 5s cooldown between spawns
  */
 
-const MAX_INVOCATIONS_PER_HOUR = 20;
-const MIN_SPAWN_INTERVAL_MS = 5000; // 5s between spawns
+const MAX_INVOCATIONS_PER_HOUR = 30;
+const MIN_SPAWN_INTERVAL_MS = 1000; // 1s between spawns (swarm batches need fast sequential starts)
 
 const invocationLog: number[] = []; // timestamps
 let lastSpawnTime = 0;
