@@ -50,15 +50,16 @@ export default function ProviderRow({
   const icon = PROVIDER_ICONS[provider.id] ?? "\u25CE";
 
   return (
-    <div style={{
+    <div className="overflow-hidden" style={{
       background: "var(--bg-2)",
       border: `1px solid ${isActive ? "var(--accent-border)" : "var(--border-dim)"}`,
-      borderRadius: "var(--radius)", overflow: "hidden", transition: "border-color 0.15s",
+      borderRadius: "var(--radius)", transition: "border-color 0.15s",
     }}>
       <div
         onClick={onToggleExpand}
+        className="flex-row"
         style={{
-          display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
+          gap: 10, padding: "10px 14px",
           cursor: "pointer", background: isActive ? "var(--accent-bg)" : "transparent",
         }}
       >
@@ -84,7 +85,7 @@ export default function ProviderRow({
       </div>
 
       {isExpanded && (
-        <div style={{ borderTop: "1px solid var(--border-dim)", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="flex-col" style={{ borderTop: "1px solid var(--border-dim)", padding: "12px 14px", gap: 12 }}>
           {needsKey && (
             <div>
               <div className="label" style={{ marginBottom: 6 }}>
@@ -95,8 +96,8 @@ export default function ProviderRow({
                   </span>
                 )}
               </div>
-              <div style={{ display: "flex", gap: 6 }}>
-                <div style={{ flex: 1, position: "relative" }}>
+              <div className="flex-row" style={{ gap: 6 }}>
+                <div className="flex-1" style={{ position: "relative" }}>
                   <input
                     type={showKey ? "text" : "password"}
                     value={keyInput}
@@ -139,7 +140,7 @@ export default function ProviderRow({
           {provider.id === "ollama" && (
             <div>
               <div className="label" style={{ marginBottom: 6 }}>Ollama URL</div>
-              <div style={{ display: "flex", gap: 6 }}>
+              <div className="flex-row" style={{ gap: 6 }}>
                 <input
                   value={baseUrlInput}
                   onChange={e => onBaseUrlChange(e.target.value)}
@@ -172,15 +173,15 @@ export default function ProviderRow({
           {provModels.length > 0 && (
             <div>
               <div className="label" style={{ marginBottom: 6 }}>Model</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <div className="flex-col" style={{ gap: 3 }}>
                 {provModels.map(m => {
                   const isCurrent = isActive && m === currentModel;
                   return (
                     <div
                       key={m}
                       onClick={() => { if (isActive) onSetActive(m); }}
+                      className="flex-between"
                       style={{
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
                         padding: "5px 10px", borderRadius: "var(--radius-sm)",
                         background: isCurrent ? "var(--accent-bg)" : "var(--bg-3)",
                         border: `1px solid ${isCurrent ? "var(--accent-border)" : "var(--border-dim)"}`,
@@ -196,7 +197,7 @@ export default function ProviderRow({
             </div>
           )}
 
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div className="flex-row gap-2">
             {!isActive && (
               <button className={effectivelyHasKey ? "btn btn-primary" : "btn"} onClick={() => onSetActive()} style={{ fontSize: 11 }}>
                 Set Active

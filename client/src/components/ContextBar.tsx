@@ -100,8 +100,8 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
       {/* Collapsed summary row */}
       <div
         onClick={() => setExpanded(v => !v)}
+        className="flex-between"
         style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "3px 10px",
           fontSize: 12,
           fontFamily: "var(--font)",
@@ -110,26 +110,26 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
           userSelect: "none",
         }}
       >
-        <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+        <span className="flex-row" style={{ gap: 5 }}>
           <span style={{ color: barColor }}>{pct}%</span>
           <span>of context used</span>
           {wasteEstimatePct > 10 && (
-            <span style={{ color: wasteColor, display: "flex", alignItems: "center", gap: 2 }}>
+            <span className="flex-row" style={{ color: wasteColor, gap: 2 }}>
               <Zap size={9} />
               ~{wasteEstimatePct}% est. waste
             </span>
           )}
           {loopAnalysis && loopAnalysis.status !== "clean" && (
-            <span style={{
+            <span className="flex-row" style={{
               color: loopAnalysis.status === "loop" ? "var(--red)" : "var(--yellow)",
-              display: "flex", alignItems: "center", gap: 2,
+              gap: 2,
             }}>
               <AlertTriangle size={9} />
               {loopAnalysis.status === "loop" ? "loop detected" : "watch"}
             </span>
           )}
         </span>
-        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <span className="flex-row" style={{ gap: 6 }}>
           <span>{info.messageCount} msgs</span>
           {expanded
             ? <ChevronDown size={10} />
@@ -139,15 +139,12 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
 
       {/* Expanded breakdown */}
       {expanded && (
-        <div style={{
+        <div className="flex-col gap-2" style={{
           borderTop: "1px solid var(--border-dim)",
           padding: "8px 12px",
           fontSize: 11,
           fontFamily: "var(--font)",
           color: "var(--text-dim)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
         }}>
 
           {/* Token totals */}
@@ -173,13 +170,13 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
               <div style={{ flex: 1, background: "var(--accent)", opacity: 0.5, cursor: "pointer" }} title={`Responses: ${fmt(info.outputTokens)} tokens (${responsesPct}%)`} />
             </div>
             {/* Legend */}
-            <div style={{ display: "flex", gap: 10, marginTop: 4, flexWrap: "wrap" }}>
+            <div className="flex-row flex-wrap" style={{ gap: 10, marginTop: 4 }}>
               {([
                 ["Your msgs", "var(--accent)", yourMsgPct, info.userInputTokens],
                 ["History", "var(--yellow)", historyPct, historyOverhead],
                 ["Responses", "var(--accent)", responsesPct, info.outputTokens],
               ] as [string, string, number, number][]).map(([label, color, pct, tokens]) => (
-                <span key={label} style={{ display: "flex", alignItems: "center", gap: 3, color: "var(--text-dimmer)" }}>
+                <span key={label} className="flex-row" style={{ gap: 3, color: "var(--text-dimmer)" }}>
                   <span style={{ width: 6, height: 6, background: color, opacity: 0.8, borderRadius: 1, flexShrink: 0 }} />
                   <span>{label}</span>
                   <span style={{ color }}>{pct}%</span>
@@ -206,7 +203,7 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
                   <span style={{ color: "var(--text-dimmer)" }}>Conversation stages</span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span className="flex-row" style={{ gap: 6 }}>
                     {recencyLabel && (
                       <span style={{ color: recencyLabel.color, fontSize: 10 }}>{recencyLabel.text}</span>
                     )}
@@ -220,13 +217,13 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
                   <div style={{ width: `${midPct}%`, background: "var(--accent)", opacity: 0.6, flexShrink: 0, cursor: "pointer" }} title={`Middle: ${fmt(middle)} tokens (${midPct}%)`} />
                   <div style={{ flex: 1, background: "var(--accent)", cursor: "pointer" }} title={`Recent: ${fmt(recent)} tokens (${recentPct}%)`} />
                 </div>
-                <div style={{ display: "flex", gap: 10, marginTop: 4, flexWrap: "wrap" }}>
+                <div className="flex-row flex-wrap" style={{ gap: 10, marginTop: 4 }}>
                   {([
                     ["Early", "var(--text-dimmer)", earlyPct, early],
                     ["Mid", "var(--accent)", midPct, middle],
                     ["Recent", "var(--accent)", recentPct, recent],
                   ] as [string, string, number, number][]).map(([label, color, p, tokens]) => (
-                    <span key={label} style={{ display: "flex", alignItems: "center", gap: 3, color: "var(--text-dimmer)" }}>
+                    <span key={label} className="flex-row" style={{ gap: 3, color: "var(--text-dimmer)" }}>
                       <span style={{ width: 6, height: 6, background: color, opacity: 0.8, borderRadius: 1, flexShrink: 0 }} />
                       <span>{label}</span>
                       <span style={{ color }}>{fmt(tokens)}</span>
@@ -245,7 +242,7 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
             padding: "6px 8px",
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-              <span style={{ color: wasteColor, display: "flex", alignItems: "center", gap: 4 }}>
+              <span className="flex-row" style={{ color: wasteColor, gap: 4 }}>
                 <Zap size={9} />
                 Structural waste estimate
               </span>
@@ -258,13 +255,13 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
               )}
             </div>
             {/* Waste breakdown mini-bars */}
-            <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 3 }}>
+            <div className="flex-col" style={{ marginTop: 6, gap: 3 }}>
               {([
                 ["Dead tool output", 26.5],
                 ["Unused schemas", 20.2],
                 ["Static re-sends", 11.0],
               ] as [string, number][]).map(([label, pctShare]) => (
-                <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div key={label} className="flex-row" style={{ gap: 6 }}>
                   <div style={{ width: 80, color: "var(--text-dimmer)" }}>{label}</div>
                   <div style={{ flex: 1, height: 2, background: "var(--border-dim)", cursor: "pointer" }} title={`${label}: ${pctShare}% of structural waste`}>
                     <div style={{
@@ -290,10 +287,10 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
               border: `1px solid ${loopAnalysis.status === "loop" ? "rgba(248,81,73,0.3)" : "rgba(226,197,65,0.3)"}`,
               padding: "6px 8px",
             }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
-                <span style={{
+              <div className="flex-between" style={{ marginBottom: 5 }}>
+                <span className="flex-row" style={{
                   color: loopAnalysis.status === "loop" ? "var(--red)" : "var(--yellow)",
-                  display: "flex", alignItems: "center", gap: 4,
+                  gap: 4,
                   fontWeight: 600,
                 }}>
                   <AlertTriangle size={9} />
@@ -303,7 +300,7 @@ export function ContextBar({ sessionId, streaming }: ContextBarProps) {
               </div>
               {loopAnalysis.findings.map(f => (
                 <div key={f.pattern} style={{ marginBottom: 5 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 1 }}>
+                  <div className="flex-row" style={{ gap: 4, marginBottom: 1 }}>
                     <span style={{
                       fontSize: 10, fontWeight: 600, padding: "1px 4px",
                       background: f.severity === "critical" ? "rgba(248,81,73,0.15)" : "rgba(226,197,65,0.15)",

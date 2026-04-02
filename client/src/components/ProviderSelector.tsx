@@ -212,7 +212,7 @@ export default function ProviderSelector() {
                   {data.providers.find(p => p.id === keyInput.providerId)?.name ?? keyInput.providerId}
                 </span>
               </div>
-              <div style={{ display: "flex", gap: 6 }}>
+              <div className="flex-row" style={{ gap: 6 }}>
                 <input
                   type="password"
                   value={keyInput.value}
@@ -260,9 +260,8 @@ export default function ProviderSelector() {
               <div
                 key={p.id}
                 onClick={() => void selectProvider(p.id)}
-                className={isActive ? "" : "hoverable"}
+                className={`flex-row gap-2${isActive ? "" : " hoverable"}`}
                 style={{
-                  display: "flex", alignItems: "center", gap: 8,
                   padding: "7px 12px", cursor: "pointer",
                   background: isActive ? "var(--accent-bg)" : "transparent",
                   borderLeft: isActive ? "2px solid var(--accent)" : "2px solid transparent",
@@ -293,7 +292,7 @@ export default function ProviderSelector() {
             return (
               <div style={{ padding: "8px 12px", borderTop: "1px solid var(--border-dim)" }}>
                 <div style={{ fontSize: 10, color: "var(--text-dimmer)", marginBottom: 4 }}>Ollama URL</div>
-                <div style={{ display: "flex", gap: 6 }}>
+                <div className="flex-row" style={{ gap: 6 }}>
                   <input
                     value={baseUrlInput || ollama?.baseUrl || "http://localhost:11434"}
                     onChange={e => setBaseUrlInput(e.target.value)}
@@ -332,9 +331,8 @@ export default function ProviderSelector() {
                   <div
                     key={m}
                     onClick={() => void saveModel(m)}
-                    className={isActiveModel ? "" : "hoverable"}
+                    className={`flex-between${isActiveModel ? "" : " hoverable"}`}
                     style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
                       padding: "5px 12px", cursor: "pointer", fontSize: 11,
                       color: isActiveModel ? "var(--accent)" : "var(--text-dim)",
                       background: isActiveModel ? "var(--accent-bg)" : "transparent",
