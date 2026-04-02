@@ -210,6 +210,15 @@ function migrate(db: Database.Database) {
     db.exec("ALTER TABLE swarm_workers ADD COLUMN ended_at INTEGER");
     db.exec("UPDATE swarm_workers SET ended_at = completed_at WHERE ended_at IS NULL AND completed_at IS NOT NULL");
   }
+  // Per-worker cost tracking
+  if (!swarmWorkerCols.includes("cost_usd")) {
+    db.exec("ALTER TABLE swarm_workers ADD COLUMN cost_usd REAL NOT NULL DEFAULT 0");
+  }
+
+  // Swarm-level total cost tracking
+  if (!swarmRunCols.includes("total_cost_usd")) {
+    db.exec("ALTER TABLE swarm_runs ADD COLUMN total_cost_usd REAL NOT NULL DEFAULT 0");
+  }
 
   // runs additive migrations (must come after the CREATE TABLE above)
   const runCols = (db.pragma('table_info(runs)') as Array<{ name: string }>).map(r => r.name);

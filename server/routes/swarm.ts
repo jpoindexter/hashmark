@@ -13,10 +13,12 @@ import { tmpdir } from "os";
 import { logAgentAction } from "../lib/action-log.js";
 import { loadAgents, type AgentDef } from "../lib/agents.js";
 import { detectConflicts } from "../lib/dep-graph.js";
-import { getDb, getStudioSetting } from "../db.js";
+import { getDb } from "../db.js";
 import { findClaudeBin, buildClaudeArgs } from "../lib/bin-resolver.js";
+import { getPermissionMode } from "../lib/permissions.js";
 import { createStreamParser } from "../lib/claude-stream.js";
 import { checkUsage, recordInvocation } from "../lib/claude-usage.js";
+import { loadScanContext } from "../context.js";
 import { z } from "zod";
 import type { WorkspaceCtx } from "./workspaces.js";
 
@@ -43,6 +45,7 @@ interface SwarmAgent {
   status: AgentStatus;
   output: string;
   branch: string;
+  costUsd: number;
 }
 
 interface SwarmRun {
@@ -59,7 +62,7 @@ const swarms = new Map<string, SwarmRun>();
 
 // ─── Internal event system ────────────────────────────────────────────────────
 
-type SwarmEventType = "chunk" | "status" | "complete" | "committed" | "merged" | "merge_conflict" | "ready_to_merge" | "tool_use" | "tool_progress" | "cost";
+type SwarmEventType = "chunk" | "status" | "complete" | "committed" | "merged" | "merge_conflict" | "ready_to_merge" | "tool_use" | "tool_progress" | "cost" | "swarm_cost";
 
 interface SwarmEvent {
   type: SwarmEventType;
@@ -87,7 +90,9 @@ async function runAgent(
   projectDir: string,
   dataDir: string,
   claudeBin: string,
-  agentMap: Map<string, AgentDef>
+  agentMap: Map<string, AgentDef>,
+  sharedPrefix: string,
+  spawnEnv: Record<string, string>,
 ) {
   if (swarm.cancelled) return;
 
@@ -138,13 +143,12 @@ async function runAgent(
       ? `You are operating in PLAN MODE. Read files and produce analysis only. Do NOT write or modify files.\n\n`
       : "";
 
-  const prompt = `${planPrefix}${agentContext}${agent.task}\n\nWork in the current directory. Make the necessary code changes, create or modify files as needed.`;
+  // Shared prefix is identical across all agents in this swarm -- Claude's
+  // prompt cache recognizes the common token prefix and cache-reads it after
+  // the first agent processes it, saving input tokens for the rest of the batch.
+  const prompt = `${sharedPrefix}${planPrefix}${agentContext}${agent.task}\n\nWork in the current directory. Make the necessary code changes, create or modify files as needed.`;
 
   const ctrl = swarm.controllers[agentIndex];
-
-  const skipPerms = getStudioSetting(getDb(dataDir), "dangerousSkipPermissions", "false") === "true";
-  const swarmEnv: Record<string, string> = { ...process.env as Record<string, string> };
-  if (skipPerms) swarmEnv.CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
 
   await new Promise<void>((resolve) => {
     if (ctrl.signal.aborted) { resolve(); return; }
@@ -159,11 +163,16 @@ async function runAgent(
     recordInvocation();
 
     const agentTools = agent.agentId ? agentMap.get(agent.agentId)?.tools : undefined;
-    const { args: cliArgs } = buildClaudeArgs({ mode: swarm.mode, allowedTools: agentTools });
+    const permMode = getPermissionMode(getDb(dataDir));
+    const { args: cliArgs, permissionEnv } = buildClaudeArgs({
+      permissionMode: permMode,
+      agentTools,
+      mode: swarm.mode,
+    });
     const proc = spawn(claudeBin, cliArgs, {
       cwd: worktreeDir,
       stdio: ["pipe", "pipe", "pipe"],
-      env: swarmEnv,
+      env: { ...spawnEnv, ...permissionEnv },
     });
 
     // Send prompt via stdin
@@ -175,9 +184,8 @@ async function runAgent(
     });
 
     const parser = createStreamParser();
-    proc.stdout.on("data", (chunk: Buffer) => {
-      if (swarm.cancelled) return;
-      const events = parser.push(chunk);
+
+    function handleEvents(events: import("../lib/claude-stream.js").StudioEvent[]) {
       for (const ev of events) {
         if (ev.type === "text") {
           agent.output += ev.text;
@@ -187,28 +195,21 @@ async function runAgent(
         } else if (ev.type === "tool_progress") {
           emit(swarm, agentIndex, { type: "tool_progress", data: JSON.stringify({ tool: ev.tool, elapsed: ev.elapsed }) });
         } else if (ev.type === "cost") {
+          agent.costUsd = ev.totalUsd;
           emit(swarm, agentIndex, { type: "cost", data: String(ev.totalUsd) });
         }
       }
+    }
+
+    proc.stdout.on("data", (chunk: Buffer) => {
+      if (swarm.cancelled) return;
+      handleEvents(parser.push(chunk));
     });
 
     proc.stderr.on("data", () => {});
 
     proc.on("close", (code: number | null, signal: string | null) => {
-      // Drain any remaining data in the parser buffer
-      const remaining = parser.flush();
-      for (const ev of remaining) {
-        if (ev.type === "text") {
-          agent.output += ev.text;
-          emit(swarm, agentIndex, { type: "chunk", data: ev.text });
-        } else if (ev.type === "tool_use") {
-          emit(swarm, agentIndex, { type: "tool_use", data: JSON.stringify({ tool: ev.tool, input: ev.input }) });
-        } else if (ev.type === "tool_progress") {
-          emit(swarm, agentIndex, { type: "tool_progress", data: JSON.stringify({ tool: ev.tool, elapsed: ev.elapsed }) });
-        } else if (ev.type === "cost") {
-          emit(swarm, agentIndex, { type: "cost", data: String(ev.totalUsd) });
-        }
-      }
+      handleEvents(parser.flush());
 
       if (code !== 0 && code !== null && signal !== "SIGTERM" && !swarm.cancelled) {
         const msg = `[claude exited with code ${code}]`;
@@ -239,8 +240,8 @@ async function runAgent(
     emit(swarm, agentIndex, { type: "complete", data: "plan" });
     try {
       getDb(dataDir)
-        .prepare("UPDATE swarm_workers SET status = 'done', ended_at = ? WHERE run_id = ? AND worker_id = ?")
-        .run(Date.now(), swarm.swarmId, agent.workerIndex);
+        .prepare("UPDATE swarm_workers SET status = 'done', ended_at = ?, cost_usd = ? WHERE run_id = ? AND worker_id = ?")
+        .run(Date.now(), agent.costUsd, swarm.swarmId, agent.workerIndex);
     } catch {}
     try { await execFile("git", ["worktree", "remove", worktreeDir, "--force"], { cwd: projectDir }); } catch {}
     try { await execFile("git", ["branch", "-D", branch], { cwd: projectDir }); } catch {}
@@ -297,8 +298,8 @@ async function runAgent(
 
   try {
     getDb(dataDir)
-      .prepare("UPDATE swarm_workers SET status = 'done', ended_at = ? WHERE run_id = ? AND worker_id = ?")
-      .run(Date.now(), swarm.swarmId, agent.workerIndex);
+      .prepare("UPDATE swarm_workers SET status = 'done', ended_at = ?, cost_usd = ? WHERE run_id = ? AND worker_id = ?")
+      .run(Date.now(), agent.costUsd, swarm.swarmId, agent.workerIndex);
   } catch {}
 
   checkSwarmComplete(swarm, dataDir);
@@ -309,11 +310,20 @@ function checkSwarmComplete(swarm: SwarmRun, dataDir: string) {
     (a) => a.status === "done" || a.status === "failed" || a.status === "cancelled"
   );
   if (allDone) {
+    const totalCostUsd = swarm.agents.reduce((sum, a) => sum + a.costUsd, 0);
     try {
       getDb(dataDir)
-        .prepare("UPDATE swarm_runs SET status = 'complete', ended_at = ? WHERE id = ?")
-        .run(Date.now(), swarm.swarmId);
+        .prepare("UPDATE swarm_runs SET status = 'complete', ended_at = ?, total_cost_usd = ? WHERE id = ?")
+        .run(Date.now(), totalCostUsd, swarm.swarmId);
     } catch {}
+    // Emit total cost so the client can display it
+    emit(swarm, -1, {
+      type: "swarm_cost",
+      data: JSON.stringify({
+        totalUsd: totalCostUsd,
+        perAgent: swarm.agents.map((a) => ({ index: a.workerIndex, costUsd: a.costUsd })),
+      }),
+    });
     // Evict from in-memory map after 5min grace period (clients can still fetch final state)
     setTimeout(() => { swarms.delete(swarm.swarmId); }, 5 * 60_000).unref();
   }
@@ -345,6 +355,7 @@ export function swarmRoutes(ctx: WorkspaceCtx) {
       status: "pending" as AgentStatus,
       output: "",
       branch: `swarm-${swarmId}-${randomUUID().slice(0, 6)}`,
+      costUsd: 0,
     }));
 
     const swarm: SwarmRun = {
@@ -373,6 +384,22 @@ export function swarmRoutes(ctx: WorkspaceCtx) {
     const agentDefs = loadAgents(projectDir);
     const agentMap = new Map(agentDefs.map((a) => [a.id, a]));
 
+    // Build shared context prefix ONCE for all agents.
+    // Claude's prompt caching recognizes identical token prefixes across
+    // concurrent processes in the same project -- the first agent pays full
+    // input cost for this prefix, subsequent agents get a cache read.
+    const scanContext = loadScanContext(projectDir);
+    const sharedPrefix = [
+      "You are part of a multi-agent swarm working on the same codebase.",
+      "Other agents are working in parallel on related tasks.",
+      "Do not modify files that another agent is likely working on.",
+      "",
+      scanContext ? `PROJECT CONTEXT:\n${scanContext}\n` : "",
+    ].join("\n");
+
+    // Build spawn env once -- permission mode env is applied per-agent in runAgent
+    const baseEnv: Record<string, string> = { ...process.env as Record<string, string> };
+
     // Run agents in batches of MAX_CONCURRENT_CLAUDE to avoid spawning too many
     // Claude processes at once. Each batch waits for all its agents to finish
     // before the next batch starts.
@@ -380,7 +407,7 @@ export function swarmRoutes(ctx: WorkspaceCtx) {
       for (let i = 0; i < agents.length; i += MAX_CONCURRENT_CLAUDE) {
         const batch = agents
           .slice(i, i + MAX_CONCURRENT_CLAUDE)
-          .map((_, j) => runAgent(swarm, i + j, projectDir, dataDir, claudeBin, agentMap));
+          .map((_, j) => runAgent(swarm, i + j, projectDir, dataDir, claudeBin, agentMap, sharedPrefix, baseEnv));
         await Promise.allSettled(batch);
         if (swarm.cancelled) break;
       }
@@ -398,12 +425,14 @@ export function swarmRoutes(ctx: WorkspaceCtx) {
     const swarm = swarms.get(c.req.param("id"));
     if (!swarm) return c.json({ error: "Swarm not found" }, 404);
 
+    const totalCostUsd = swarm.agents.reduce((sum, a) => sum + a.costUsd, 0);
     return c.json({
       swarmId: swarm.swarmId,
       mode: swarm.mode,
       cancelled: swarm.cancelled,
-      agents: swarm.agents.map(({ workerIndex, task, agentId, status, output, branch }) => ({
-        id: workerIndex, task, agentId, status, output, branch,
+      totalCostUsd,
+      agents: swarm.agents.map(({ workerIndex, task, agentId, status, output, branch, costUsd }) => ({
+        id: workerIndex, task, agentId, status, output, branch, costUsd,
       })),
     });
   });
@@ -462,7 +491,13 @@ export function swarmRoutes(ctx: WorkspaceCtx) {
             (a) => a.status === "done" || a.status === "failed" || a.status === "cancelled"
           );
           if (allDone || swarm.cancelled) {
-            send({ type: "swarm_complete", swarmId: swarm.swarmId });
+            const totalCostUsd = swarm.agents.reduce((sum, a) => sum + a.costUsd, 0);
+            send({
+              type: "swarm_complete",
+              swarmId: swarm.swarmId,
+              totalCostUsd,
+              perAgentCost: swarm.agents.map((a) => ({ index: a.workerIndex, costUsd: a.costUsd })),
+            });
             clearInterval(interval);
             try { controller.close(); } catch {}
           }
