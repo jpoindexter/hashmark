@@ -20,71 +20,10 @@ function IconAgents() {
   );
 }
 
-function IconFindings() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 15, height: 15 }}>
-      <rect x="2" y="2" width="5" height="5" rx="1" />
-      <rect x="9" y="2" width="5" height="5" rx="1" />
-      <rect x="2" y="9" width="5" height="5" rx="1" />
-      <rect x="9" y="9" width="5" height="5" rx="1" />
-    </svg>
-  );
-}
-
 function IconGenerate() {
   return (
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 15, height: 15 }}>
       <path d="M2 12L6 2l4 10M3.5 9h5M11 5h3M12.5 3.5v3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconRun() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 15, height: 15 }}>
-      <path d="M5 3l8 5-8 5V3z" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconSwarm() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 15, height: 15 }}>
-      <rect x="1.5" y="1.5" width="5" height="5" rx="1" />
-      <rect x="9.5" y="1.5" width="5" height="5" rx="1" />
-      <rect x="1.5" y="9.5" width="5" height="5" rx="1" />
-      <rect x="9.5" y="9.5" width="5" height="5" rx="1" />
-    </svg>
-  );
-}
-
-function IconCompany() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 15, height: 15 }}>
-      <circle cx="8" cy="3" r="1.5" />
-      <circle cx="3.5" cy="11" r="1.5" />
-      <circle cx="12.5" cy="11" r="1.5" />
-      <path d="M8 4.5V7M8 7L3.5 9.5M8 7l4.5 2.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconGit() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 15, height: 15 }}>
-      <circle cx="4" cy="4" r="1.5" />
-      <circle cx="4" cy="12" r="1.5" />
-      <circle cx="12" cy="8" r="1.5" />
-      <path d="M4 5.5v5M4 7.5c0-2 2-3.5 6.5-3.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconHistory() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 15, height: 15 }}>
-      <circle cx="8" cy="8" r="6" />
-      <path d="M8 4.5V8l2.5 2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

@@ -10,9 +10,6 @@ import { fetchApi } from "./lib/api";
 const Agents = lazy(() => import("./pages/Agents.tsx"));
 const Generate = lazy(() => import("./pages/Generate.tsx"));
 const Settings = lazy(() => import("./pages/Settings.tsx"));
-const Run = lazy(() => import("./pages/Run.tsx"));
-const Swarm = lazy(() => import("./pages/Swarm.tsx"));
-const Git = lazy(() => import("./pages/Git.tsx"));
 
 interface InfoResponse {
   projectName: string;
@@ -96,10 +93,6 @@ function AppShell() {
           <Route path="agents" element={<Suspense fallback={<PageSkeleton />}><PageTransition><Agents /></PageTransition></Suspense>} />
           <Route path="generate" element={<Suspense fallback={<PageSkeleton />}><PageTransition><Generate /></PageTransition></Suspense>} />
           <Route path="settings" element={<Suspense fallback={<PageSkeleton />}><PageTransition><Settings /></PageTransition></Suspense>} />
-          {/* Temporarily kept -- will merge into chat */}
-          <Route path="run" element={<Suspense fallback={<PageSkeleton />}><PageTransition><Run /></PageTransition></Suspense>} />
-          <Route path="swarm" element={<Suspense fallback={<PageSkeleton />}><PageTransition><Swarm /></PageTransition></Suspense>} />
-          <Route path="git" element={<Suspense fallback={<PageSkeleton />}><PageTransition><Git /></PageTransition></Suspense>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
