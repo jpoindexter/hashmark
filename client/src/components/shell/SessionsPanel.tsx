@@ -3,6 +3,7 @@ import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu";
 import ConfirmDialog from "../shared/ConfirmDialog";
 import { fetchApi } from "../../lib/api";
 import { timeAgo } from "../../lib/format";
+import { useMultiSelect } from "../../hooks/useMultiSelect";
 
 interface ChatSession {
   id: string;
@@ -58,6 +59,7 @@ export default function SessionsPanel({
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [ctxMenu, setCtxMenu] = useState<CtxState | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<ChatSession | null>(null);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const renameRef = useRef<HTMLInputElement>(null);
@@ -86,6 +88,17 @@ export default function SessionsPanel({
   useEffect(() => {
     if (!streaming) fetchSessions();
   }, [streaming, fetchSessions]);
+
+  const sessionIds = sessions.map(s => s.id);
+  const sel = useMultiSelect(sessionIds);
+
+  const bulkDelete = useCallback(async () => {
+    const ids = Array.from(sel.selected);
+    await Promise.all(ids.map(id => deleteSession(id).catch(() => {})));
+    sel.clear();
+    fetchSessions();
+    setConfirmBulkDelete(false);
+  }, [sel, fetchSessions]);
 
   useEffect(() => {
     if (renaming && renameRef.current) {
@@ -200,7 +213,15 @@ export default function SessionsPanel({
               tabIndex={0}
               aria-current={active ? "true" : undefined}
               aria-label={s.title || `session ${i + 1}`}
-              onClick={() => !isRenaming && onSessionSelect(s.id)}
+              onClick={(e) => {
+                if (isRenaming) return;
+                if (e.shiftKey || e.metaKey || e.ctrlKey) {
+                  sel.handleClick(s.id, e);
+                } else {
+                  sel.clear();
+                  onSessionSelect(s.id);
+                }
+              }}
               onKeyDown={(e) => {
                 if (!isRenaming && (e.key === "Enter" || e.key === " ")) {
                   e.preventDefault();
@@ -213,8 +234,8 @@ export default function SessionsPanel({
                 paddingLeft: active ? 12 : 14,
                 cursor: "pointer",
                 borderBottom: "0.5px solid var(--border-dim)",
-                borderLeft: active ? "2px solid var(--accent)" : "2px solid transparent",
-                background: active ? "var(--bg-2)" : "transparent",
+                borderLeft: active ? "2px solid var(--accent)" : sel.selected.has(s.id) ? "2px solid var(--blue)" : "2px solid transparent",
+                background: active ? "var(--bg-2)" : sel.selected.has(s.id) ? "var(--bg-3)" : "transparent",
                 display: "flex",
                 flexDirection: "column",
                 gap: 3,
@@ -274,6 +295,24 @@ export default function SessionsPanel({
         })}
       </div>
 
+      {sel.selected.size > 0 && (
+        <div style={{
+          padding: "6px 10px",
+          borderTop: "1px solid var(--border-dim)",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          fontSize: 10,
+          fontFamily: "var(--font)",
+          color: "var(--text-dimmer)",
+          flexShrink: 0,
+        }}>
+          <span>{sel.selected.size} selected</span>
+          <button className="btn btn-sm" onClick={() => setConfirmBulkDelete(true)} style={{ fontSize: 10, color: "var(--red)" }}>Delete</button>
+          <button className="btn btn-sm" onClick={() => sel.clear()} style={{ fontSize: 10 }}>Clear</button>
+        </div>
+      )}
+
       <ContextMenu
         items={ctxMenu?.items ?? []}
         position={ctxMenu?.position ?? null}
@@ -292,6 +331,18 @@ export default function SessionsPanel({
             setConfirmDelete(null);
           }}
           onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+
+      {confirmBulkDelete && (
+        <ConfirmDialog
+          open={true}
+          title={`Delete ${sel.selected.size} sessions`}
+          message={`Delete ${sel.selected.size} sessions? This can't be undone.`}
+          confirmLabel="Delete All"
+          danger
+          onConfirm={() => void bulkDelete()}
+          onCancel={() => setConfirmBulkDelete(false)}
         />
       )}
     </div>
