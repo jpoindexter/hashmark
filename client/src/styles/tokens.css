@@ -1,126 +1,139 @@
-/* Design system -- Conductor warm dark + competitor consensus */
+/* Design system -- Conductor parity (extracted from Conductor v0.45.0) */
+/* HSL-based tokens consumed via hsl(var(--token)) pattern */
 
 :root {
-  /* Backgrounds -- warm dark (Conductor: #1a1a1a base) */
-  --bg:          #1a1a1a;
-  --bg-2:        #222222;
-  --bg-3:        #2a2a2a;
-  --bg-4:        #333333;
+  /* === BACKGROUNDS === */
+  /* Conductor dark: hsl(24 10% 7%) */
+  --bg:    hsl(24 10% 7%);
+  --bg-2:  hsl(24 9% 12%);
+  --bg-3:  hsl(25 8% 16%);
+  --bg-4:  hsl(25 7% 26%);
 
-  /* Borders -- warm tint */
-  --border:      rgba(255, 248, 240, 0.08);
-  --border-dim:  rgba(255, 248, 240, 0.04);
+  /* === BORDERS === */
+  --border:     hsl(0 0% 100% / 0.1);
+  --border-dim: hsl(0 0% 100% / 0.05);
+  --border-highlight: hsl(19 35% 69%);
 
-  /* Text -- warm whites (Conductor uses slightly warm, not pure white) */
-  --text:        #e8e4df;
-  --text-dim:    #9a9590;
-  --text-dimmer: #6a6560;
+  /* === TEXT === */
+  --text:        hsl(30 8% 91%);
+  --text-dim:    hsl(23 5% 63%);
+  --text-dimmer: hsl(23 5% 44%);
+  --foreground:  hsl(30 8% 91%);
 
-  /* Accent -- terra cotta/amber (Conductor's brand) */
-  --accent:        #d4956a;
-  --accent-dim:    #b07a52;
-  --accent-bg:     rgba(212, 149, 106, 0.08);
-  --accent-border: rgba(212, 149, 106, 0.15);
+  /* === ACCENT (warm copper/brown) === */
+  --accent:        hsl(19 35% 69%);
+  --accent-dim:    hsl(9 17% 57%);
+  --accent-bg:     hsl(5 19% 14%);
+  --accent-border: hsl(360 13% 31%);
 
-  /* Semantic -- muted but with hue */
-  --blue:      #7aa2f7;
-  --blue-bg:   rgba(122, 162, 247, 0.10);
-  --red:       #d46a6a;
-  --red-bg:    rgba(212, 106, 106, 0.10);
-  --yellow:    #d4a54a;
-  --yellow-bg: rgba(212, 165, 74, 0.10);
-  --green:     #7dba6a;
-  --green-bg:  rgba(125, 186, 106, 0.10);
-  --orange:    #d4956a;
-  --orange-bg: rgba(212, 149, 106, 0.10);
-  --purple:    #b49af7;
-  --purple-bg: rgba(180, 154, 247, 0.10);
+  /* === SEMANTIC COLORS === */
+  --blue:      hsl(213 94% 68%);
+  --blue-bg:   hsl(213 94% 68% / 0.10);
+  --red:       hsl(0 91% 71%);
+  --red-bg:    hsl(0 91% 71% / 0.10);
+  --yellow:    hsl(50 100% 75%);
+  --yellow-bg: hsl(50 100% 75% / 0.10);
+  --green:     hsl(142 69% 58%);
+  --green-bg:  hsl(142 69% 58% / 0.10);
+  --orange:    hsl(27 96% 61%);
+  --orange-bg: hsl(27 96% 61% / 0.10);
+  --purple:    hsl(292 100% 78%);
+  --purple-bg: hsl(292 100% 78% / 0.10);
+  --cyan:      hsl(188 85% 59%);
+  --cyan-bg:   hsl(188 85% 59% / 0.15);
 
-  /* Badge border tokens */
-  --blue-border:   rgba(122, 162, 247, 0.20);
-  --yellow-border: rgba(224, 175, 104, 0.20);
+  /* Badge borders */
+  --blue-border:   hsl(213 94% 68% / 0.20);
+  --yellow-border: hsl(50 100% 75% / 0.20);
+
+  /* === CONDUCTOR SEMANTIC TOKENS === */
+  --primary:            hsl(30 9% 95%);
+  --primary-foreground: hsl(25 8% 16%);
+  --secondary:          hsl(24 9% 12%);
+  --secondary-foreground: hsl(30 9% 95%);
+  --muted:              hsl(24 9% 12%);
+  --muted-foreground:   hsl(23 5% 63%);
+  --destructive:        hsl(0 91% 71%);
+  --success:            hsl(142 69% 58%);
+  --positive:           hsl(142 69% 58%);
+  --positive-muted:     hsl(144 48% 15%);
+  --highlight:          hsl(5 19% 14%);
+  --highlight-foreground: hsl(24 33% 93%);
+  --highlight-muted:    hsl(22 39% 78%);
+  --faint:              hsl(23 5% 44%);
+  --special:            hsl(19 35% 69%);
+  --unread:             hsl(19 35% 69%);
+
+  /* Sidebar */
+  --sidebar-background:        hsl(24 9% 12%);
+  --sidebar-foreground:        hsl(0 0% 100% / 0.9);
+  --sidebar-primary:           hsl(30 8% 91%);
+  --sidebar-accent:            hsl(0 0% 100% / 0.05);
+  --sidebar-accent-foreground: hsl(0 0% 100% / 0.9);
+  --sidebar-border:            hsl(0 0% 100% / 0.1);
+  --sidebar-muted-foreground:  hsl(0 0% 100% / 0.6);
+  --sidebar-blue:              hsl(213 94% 68%);
+
+  /* Composer */
+  --composer-background: hsl(24 9% 12%);
+
+  /* Git */
+  --git-green:  hsl(142 69% 58%);
+  --git-red:    hsl(0 91% 71%);
+  --git-yellow: hsl(50 100% 75%);
+  --git-gray:   hsl(23 5% 63%);
+
+  /* Status */
+  --status-backlog:     hsl(22 4% 54%);
+  --status-in-progress: hsl(50 100% 59%);
+  --status-in-review:   hsl(142 69% 58%);
+  --status-done:        hsl(19 35% 69%);
+  --status-canceled:    hsl(23 5% 63%);
+
+  /* Plan mode */
+  --plan-border: hsl(4 12% 46%);
 
   /* Tool event colors */
-  --tool-read: var(--blue);
-  --tool-edit: var(--yellow);
-  --tool-write: var(--green);
-  --tool-bash: var(--orange);
+  --tool-read:   var(--blue);
+  --tool-edit:   var(--yellow);
+  --tool-write:  var(--green);
+  --tool-bash:   var(--orange);
   --tool-search: var(--text-dimmer);
-  --tool-web: var(--cyan);
-  --tool-agent: var(--purple);
-  --tool-error: var(--red);
+  --tool-web:    var(--cyan);
+  --tool-agent:  var(--purple);
+  --tool-error:  var(--red);
 
-  /* Activity feed */
-  --activity-bg: var(--bg);
-  --activity-border: var(--border-dim);
-  --activity-event-hover: var(--bg-2);
+  /* === TYPOGRAPHY === */
+  /* Conductor: SF Pro for UI, Geist Mono for code */
+  --font:    'Geist Mono', 'JetBrains Mono', 'Fira Code', Menlo, monospace;
+  --font-ui: 'SF Pro', system-ui, -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
 
-  /* Typography -- proportional UI, monospace code */
-  --font:    'JetBrains Mono', 'Fira Code', Menlo, monospace;
-  --font-ui: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
-
-  /* Typography scale */
+  /* Type scale */
   --font-size-2xs:  9px;
   --font-size-xs:   10px;
   --font-size-sm:   11px;
-  /* --font-size-base: 13px (defined below) */
+  --font-size-base: 14px;
   --font-size-lg:   15px;
   --font-size-xl:   18px;
   --font-size-2xl:  24px;
 
-  /* Letter-spacing scale (5 values, consolidated from 11+) */
+  /* Tracking */
   --tracking-tight:   -0.01em;
   --tracking-normal:   0;
   --tracking-wide:     0.04em;
   --tracking-wider:    0.06em;
   --tracking-widest:   0.1em;
 
-  /* Font-weight (only 400 + 600 woff2 loaded) */
+  /* Weight */
   --weight-normal:   400;
   --weight-semibold: 600;
 
-  /* Border radius -- match OpenCode scale */
-  --radius:    6px;
+  /* === BORDER RADIUS (Conductor: 0.5rem default) === */
+  --radius:    8px;
   --radius-sm: 4px;
-  --radius-lg: 8px;
+  --radius-lg: 12px;
 
-  /* Typography scale (xs/sm/lg defined above near font declarations) */
-  --font-size-base: 14px;
-
-  /* Spacing constants */
-  --titlebar-height:       35px;
-  --activity-bar-width:    160px;
-  --status-bar-height:     22px;
-  --sidebar-default-width: 240px;
-  --sidebar-min-width:     170px;
-
-  /* Named surface aliases (referenced by components) */
-  --surface:   var(--bg-2);
-  --surface-2: var(--bg-3);
-
-  /* Modal overlay + shadow -- layered like OpenCode */
-  --overlay-bg:  rgba(0, 0, 0, 0.55);
-  --shadow-lg:   0 16px 48px -6px rgba(0, 0, 0, 0.15), 0 6px 12px -2px rgba(0, 0, 0, 0.10), 0 1px 2.5px rgba(0, 0, 0, 0.10);
-  --shadow-md:   0 6px 12px -2px rgba(0, 0, 0, 0.10), 0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.15);
-  --shadow-sm:   0 1px 2px -0.5px rgba(0, 0, 0, 0.06), 0 0.5px 1.5px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.10);
-
-  /* Interactive surface overlays (theme-aware) */
-  --hover-bg:        rgba(255, 255, 255, 0.04);
-  --hover-bg-strong: rgba(255, 255, 255, 0.08);
-  --active-bg:       rgba(255, 255, 255, 0.06);
-  --surface-muted:   rgba(255, 255, 255, 0.02);
-  --surface-subtle:  rgba(255, 255, 255, 0.03);
-  --surface-dim:     rgba(255, 255, 255, 0.05);
-  --surface-input:   rgba(255, 255, 255, 0.07);
-  --surface-strong:      rgba(255, 255, 255, 0.10);
-  --avatar-fallback-bg:   rgba(255, 255, 255, 0.08);
-  --avatar-fallback-text: rgba(255, 255, 255, 0.5);
-
-  /* Cyan (plan mode) */
-  --cyan:    #06b6d4;
-  --cyan-bg: rgba(6, 182, 212, 0.15);
-
-  /* Spacing scale (4px grid) */
+  /* === SPACING (4px grid, Conductor-matched) === */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -132,106 +145,187 @@
 
   /* Semantic spacing */
   --page-padding: var(--space-7);
-  --section-gap: var(--space-7);
+  --section-gap:  var(--space-7);
   --card-padding: var(--space-4);
   --input-padding: var(--space-2) var(--space-3);
 
-  /* Z-index scale */
+  /* === LAYOUT === */
+  --titlebar-height:       35px;
+  --activity-bar-width:    160px;
+  --status-bar-height:     22px;
+  --sidebar-default-width: 240px;
+  --sidebar-min-width:     170px;
+
+  /* Named surface aliases */
+  --surface:   var(--bg-2);
+  --surface-2: var(--bg-3);
+
+  /* === OVERLAYS & SHADOWS === */
+  --overlay-bg:  rgba(0, 0, 0, 0.55);
+  --shadow-lg:   0 16px 48px -6px rgba(0, 0, 0, 0.15), 0 6px 12px -2px rgba(0, 0, 0, 0.10), 0 1px 2.5px rgba(0, 0, 0, 0.10);
+  --shadow-md:   0 6px 12px -2px rgba(0, 0, 0, 0.10), 0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.15);
+  --shadow-sm:   0 1px 2px -0.5px rgba(0, 0, 0, 0.06), 0 0.5px 1.5px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.10);
+
+  /* Interactive surfaces */
+  --hover-bg:        hsl(0 0% 100% / 0.04);
+  --hover-bg-strong: hsl(0 0% 100% / 0.08);
+  --active-bg:       hsl(0 0% 100% / 0.06);
+  --surface-muted:   hsl(0 0% 100% / 0.02);
+  --surface-subtle:  hsl(0 0% 100% / 0.03);
+  --surface-dim:     hsl(0 0% 100% / 0.05);
+  --surface-input:   hsl(0 0% 100% / 0.07);
+  --surface-strong:  hsl(0 0% 100% / 0.10);
+  --avatar-fallback-bg:   hsl(0 0% 100% / 0.08);
+  --avatar-fallback-text: hsl(0 0% 100% / 0.5);
+
+  /* === Z-INDEX === */
   --z-dropdown: 100;
   --z-sticky: 200;
   --z-modal: 1000;
   --z-toast: 2000;
   --z-overlay: 3000;
 
-  /* Color on accent (text that sits on accent backgrounds) */
-  --color-on-accent: #1a1a1a;
+  /* === COLOR ON ACCENT === */
+  --color-on-accent: hsl(24 10% 7%);
 
-  /* Transitions */
+  /* === TRANSITIONS === */
   --transition-fast:    0.1s ease;
   --transition-sidebar: 0.18s ease;
   --transition-status:  0.15s ease-out;
+
+  /* === CONDUCTOR SHIMMER (brand signature) === */
+  --shimmer-color: #cda174;
 }
 
-/* Light theme -- informed by OpenCode light palette */
+/* ================================================================ */
+/* LIGHT THEME -- Conductor light mode                              */
+/* ================================================================ */
+
 [data-theme="light"] {
-  --bg:          #f8f8f8;
-  --bg-2:        #f3f3f3;
-  --bg-3:        #ededed;
-  --bg-4:        #e8e8e8;
+  --bg:    hsl(30 0% 100%);
+  --bg-2:  hsl(30 10% 98%);
+  --bg-3:  hsl(30 9% 95%);
+  --bg-4:  hsl(30 8% 91%);
 
-  --border:      rgba(0, 0, 0, 0.12);
-  --border-dim:  rgba(0, 0, 0, 0.06);
+  --border:     hsl(30 8% 91%);
+  --border-dim: hsl(4 14% 7% / 0.1);
+  --border-highlight: hsl(9 17% 57%);
 
-  --text:        rgba(0, 0, 0, 0.87);
-  --text-dim:    rgba(0, 0, 0, 0.55);
-  --text-dimmer: rgba(0, 0, 0, 0.30);
+  --text:        hsl(25 8% 16%);
+  --text-dim:    hsl(22 4% 54%);
+  --text-dimmer: hsl(23 5% 63%);
+  --foreground:  hsl(25 8% 16%);
 
-  --accent:        rgba(0, 0, 0, 0.80);
-  --accent-dim:    rgba(0, 0, 0, 0.55);
-  --accent-bg:     rgba(0, 0, 0, 0.04);
-  --accent-border: rgba(0, 0, 0, 0.12);
+  --accent:        hsl(360 15% 22%);
+  --accent-dim:    hsl(9 17% 57%);
+  --accent-bg:     hsl(28 33% 97%);
+  --accent-border: hsl(25 38% 86%);
 
-  /* Semantic -- actual hues, slightly muted for light bg */
-  --blue:      #2563eb;
-  --blue-bg:   rgba(37, 99, 235, 0.08);
-  --red:       #dc2626;
-  --red-bg:    rgba(220, 38, 38, 0.08);
-  --yellow:    #b45309;
-  --yellow-bg: rgba(180, 83, 9, 0.08);
-  --green:     #16a34a;
-  --green-bg:  rgba(22, 163, 74, 0.08);
-  --orange:    #c2410c;
-  --orange-bg: rgba(194, 65, 12, 0.08);
-  --purple:    #7c3aed;
-  --purple-bg: rgba(124, 58, 237, 0.08);
+  /* Semantic */
+  --blue:      hsl(221 83% 53%);
+  --blue-bg:   hsl(221 83% 53% / 0.08);
+  --red:       hsl(0 72% 51%);
+  --red-bg:    hsl(0 72% 51% / 0.08);
+  --yellow:    hsl(50 100% 44%);
+  --yellow-bg: hsl(50 100% 44% / 0.08);
+  --green:     hsl(142 76% 36%);
+  --green-bg:  hsl(142 76% 36% / 0.08);
+  --orange:    hsl(20 90% 48%);
+  --orange-bg: hsl(20 90% 48% / 0.08);
+  --purple:    hsl(292 100% 46%);
+  --purple-bg: hsl(292 100% 46% / 0.08);
+  --cyan:      hsl(192 90% 36%);
+  --cyan-bg:   hsl(192 90% 36% / 0.10);
 
-  --blue-border:   rgba(37, 99, 235, 0.20);
-  --yellow-border: rgba(180, 83, 9, 0.20);
+  --blue-border:   hsl(221 83% 53% / 0.20);
+  --yellow-border: hsl(50 100% 44% / 0.20);
 
+  /* Conductor light semantic */
+  --primary:            hsl(360 15% 22%);
+  --primary-foreground: hsl(30 9% 95%);
+  --secondary:          hsl(30 10% 98%);
+  --secondary-foreground: hsl(25 8% 16%);
+  --muted:              hsl(30 10% 98%);
+  --muted-foreground:   hsl(22 4% 54%);
+  --destructive:        hsl(0 72% 51%);
+  --success:            hsl(142 76% 36%);
+  --positive:           hsl(142 76% 36%);
+  --positive-muted:     hsl(138 76% 97%);
+  --highlight:          hsl(28 33% 97%);
+  --highlight-foreground: hsl(360 13% 31%);
+  --highlight-muted:    hsl(19 35% 69%);
+  --faint:              hsl(23 5% 63%);
+  --special:            hsl(19 35% 69%);
+  --unread:             hsl(9 17% 57%);
+
+  /* Sidebar */
+  --sidebar-background:        hsl(30 10% 98%);
+  --sidebar-foreground:        hsl(4 14% 7% / 0.7);
+  --sidebar-primary:           hsl(25 8% 16%);
+  --sidebar-accent:            hsl(4 14% 7% / 0.05);
+  --sidebar-accent-foreground: hsl(4 14% 7% / 0.8);
+  --sidebar-border:            hsl(4 14% 7% / 0.1);
+  --sidebar-muted-foreground:  hsl(4 14% 7% / 0.5);
+  --sidebar-blue:              hsl(221 83% 53%);
+
+  /* Composer */
+  --composer-background: hsl(30 10% 98% / 0.5);
+
+  /* Git */
+  --git-green:  hsl(142 76% 36%);
+  --git-red:    hsl(0 72% 51%);
+  --git-yellow: hsl(50 100% 59%);
+  --git-gray:   hsl(23 5% 63%);
+
+  /* Status */
+  --status-in-progress: hsl(50 100% 44%);
+  --status-in-review:   hsl(142 76% 36%);
+
+  /* Plan */
+  --plan-border: hsl(19 35% 69%);
+
+  /* Overlays */
   --overlay-bg:  rgba(0, 0, 0, 0.30);
   --shadow-lg:   0 16px 48px -6px rgba(0, 0, 0, 0.05), 0 6px 12px -2px rgba(0, 0, 0, 0.04), 0 1px 2.5px rgba(0, 0, 0, 0.04);
   --shadow-md:   0 6px 12px -2px rgba(0, 0, 0, 0.075), 0 4px 8px -2px rgba(0, 0, 0, 0.075), 0 1px 2px rgba(0, 0, 0, 0.10);
   --shadow-sm:   0 1px 2px -0.5px rgba(0, 0, 0, 0.04), 0 0.5px 1.5px rgba(0, 0, 0, 0.025), 0 1px 3px rgba(0, 0, 0, 0.05);
 
-  --hover-bg:        rgba(0, 0, 0, 0.04);
-  --hover-bg-strong: rgba(0, 0, 0, 0.08);
-  --active-bg:       rgba(0, 0, 0, 0.06);
-  --surface-muted:   rgba(0, 0, 0, 0.02);
-  --surface-subtle:  rgba(0, 0, 0, 0.03);
-  --surface-dim:     rgba(0, 0, 0, 0.05);
-  --surface-input:   rgba(0, 0, 0, 0.07);
-  --surface-strong:      rgba(0, 0, 0, 0.10);
-  --avatar-fallback-bg:   rgba(0, 0, 0, 0.08);
-  --avatar-fallback-text: rgba(0, 0, 0, 0.5);
+  --hover-bg:        hsl(4 14% 7% / 0.04);
+  --hover-bg-strong: hsl(4 14% 7% / 0.08);
+  --active-bg:       hsl(4 14% 7% / 0.06);
+  --surface-muted:   hsl(4 14% 7% / 0.02);
+  --surface-subtle:  hsl(4 14% 7% / 0.03);
+  --surface-dim:     hsl(4 14% 7% / 0.05);
+  --surface-input:   hsl(4 14% 7% / 0.07);
+  --surface-strong:  hsl(4 14% 7% / 0.10);
+  --avatar-fallback-bg:   hsl(4 14% 7% / 0.08);
+  --avatar-fallback-text: hsl(4 14% 7% / 0.5);
 
-  --cyan:    #0891b2;
-  --cyan-bg: rgba(8, 145, 178, 0.10);
-
-  --color-on-accent: #ffffff;
+  --color-on-accent: hsl(30 0% 100%);
+  --shimmer-color: hsl(9 17% 57%);
 }
 
 /* Tauri vibrancy */
 [data-tauri="true"] {
-  --bg-2: rgba(22, 22, 22, 0.92);
+  --bg-2: hsla(24, 9%, 12%, 0.92);
 }
 [data-tauri="true"][data-theme="light"] {
-  --bg-2: rgba(233, 233, 230, 0.88);
+  --bg-2: hsla(30, 10%, 92%, 0.88);
 }
 
-/* Compact density overrides */
+/* Compact density */
 :root[data-density="compact"] {
   --titlebar-height:    28px;
   --status-bar-height:  18px;
   --font-size-base:     12px;
-  --radius:             4px;
+  --radius:             6px;
   --radius-sm:          3px;
-  --radius-lg:          6px;
+  --radius-lg:          8px;
   --activity-bar-width: 140px;
   --sidebar-default-width: 200px;
   --sidebar-min-width:  140px;
 }
 
-/* Compact density: reduce padding and gaps globally */
 [data-density="compact"] .card { padding: 10px; }
 [data-density="compact"] .btn { padding: 3px 8px; gap: 4px; font-size: 11px; }
 [data-density="compact"] .badge { padding: 0 5px; font-size: 10px; }
@@ -239,3 +333,62 @@
 [data-density="compact"] textarea,
 [data-density="compact"] select { padding: 3px 8px; font-size: 11px; }
 [data-density="compact"] button { font-size: 11px; }
+
+/* === CONDUCTOR ANIMATIONS === */
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes synthesisPulse {
+  0%, 100% { opacity: 0.4; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(2px); }
+}
+
+@keyframes equalizer {
+  0%, 100% { height: 3px; }
+  50% { height: 12px; }
+}
+
+.shimmer {
+  background-image: linear-gradient(to right, var(--shimmer-color), var(--foreground, var(--text)) 40%, var(--shimmer-color));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 5s infinite linear;
+}
+
+/* === CONDUCTOR SCROLLBAR === */
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(0 0% 100% / 0.2); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text); }
+
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: hsl(0 0% 0% / 0.15); }
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: hsl(0 0% 0% / 0.4); }
+
+/* === CONDUCTOR SIDEBAR LABEL === */
+
+.sidebar-label {
+  font-family: var(--font);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-dimmer);
+}
+
+/* === BASE BODY (match Conductor) === */
+
+body {
+  cursor: default;
+  user-select: none;
+  font-size: var(--font-size-base);
+  line-height: 1.25rem;
+  letter-spacing: 0;
+  color: var(--text);
+  font-feature-settings: "rlig" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+}

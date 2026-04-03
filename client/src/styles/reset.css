@@ -1,3 +1,50 @@
+/* Geist Sans (Conductor's UI font) */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/Geist-Regular.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(/fonts/Geist-Medium.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(/fonts/Geist-SemiBold.woff2) format('woff2');
+}
+
+/* Geist Mono (Conductor's code font) */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/GeistMono-Regular.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(/fonts/GeistMono-Medium.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(/fonts/GeistMono-SemiBold.woff2) format('woff2');
+}
+
+/* JetBrains Mono (fallback) */
 @font-face {
   font-family: 'JetBrains Mono';
   font-style: normal;
@@ -20,14 +67,18 @@
   padding: 0;
 }
 
-/* Body */
+/* Body -- match Conductor: 14px, 20px line-height, ligatures, no user-select */
 html, body, #root {
   height: 100%;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-ui);
-  font-size: var(--font-size-base);
-  line-height: 1.5;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  letter-spacing: 0;
+  cursor: default;
+  user-select: none;
+  font-feature-settings: "rlig" 1, "calt" 1;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -37,11 +88,18 @@ input[type="search"], .font-mono {
   font-family: var(--font);
 }
 
-/* Scrollbar (legacy -- shell.css overrides with Grove tokens) */
-::-webkit-scrollbar { width: 4px; height: 4px; }
+/* Allow text selection in content areas */
+.selectable, pre, code, textarea, input,
+[data-selectable], .chat-content, .message-content {
+  user-select: text;
+  cursor: text;
+}
+
+/* Scrollbar -- Conductor style (8px, rounded, warm) */
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+::-webkit-scrollbar-thumb { background: hsl(0 0% 100% / 0.2); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text); }
 
 /* Links */
 a { color: var(--blue); text-decoration: none; }
