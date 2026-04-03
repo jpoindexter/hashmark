@@ -151,9 +151,10 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
     searchRef.current = search;
 
     // --- WebSocket connection ---
+    const token = (window as Window).__STUDIO_TOKEN__ ?? "";
     const wsUrl = tabId
-      ? `ws://localhost:3200/api/terminal/ws?tab=${tabId}`
-      : `ws://localhost:3200/api/terminal/ws`;
+      ? `ws://localhost:3200/api/terminal/ws?tab=${tabId}&token=${token}`
+      : `ws://localhost:3200/api/terminal/ws?token=${token}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
