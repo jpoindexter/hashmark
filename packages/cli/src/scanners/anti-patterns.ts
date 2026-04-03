@@ -57,14 +57,14 @@ export function generateAntiPatterns(
   if (Object.keys(tokens.colors).length > 0 || hasDesignSystem) {
     patterns.push({
       title: "Hardcoded colors instead of tokens",
-      wrong: `className="bg-blue-500 text-white"`,
+      wrong: `className="bg-blue-500 text-on-surface"`,
       right: `className="bg-primary text-primary-foreground"`,
       reason: "Breaks theme switching and design consistency",
     });
 
     patterns.push({
       title: "Arbitrary color values",
-      wrong: `style={{ color: "#3b82f6" }}`,
+      wrong: `style={{"color": "#3b82f6"}}`,
       right: `className="text-primary"`,
       reason: "Use semantic color tokens from the design system",
     });

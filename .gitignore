@@ -19,6 +19,8 @@
 
 # production
 /build
+dist/
+client/dist/
 
 # misc
 .DS_Store
@@ -46,4 +48,10 @@ next-env.d.ts
 
 # workspace package build artifacts
 packages/*/dist/
+packages/*/dist-cjs/
+packages/*/dist-ncc/
+packages/*/dist-bin/
 packages/*/node_modules/
+packages/cli/*.tgz
+.hashmark/
+release/

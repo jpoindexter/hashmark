@@ -4,11 +4,11 @@
 
 ## Project Overview
 
-This is a Next.js 16.1.6 + App Router + TypeScript + Tailwind CSS project with 33 components.
+This is a Next.js 16.1.6 + App Router + TypeScript + Tailwind CSS project with 46 components.
 
 ## Coding Standards
 
-- This project has 33 existing components. Always reuse them instead of creating new ones.
+- This project has 46 existing components. Always reuse them instead of creating new ones.
 - Use semantic design tokens for colors (e.g., `bg-primary`, `text-foreground`). Never hardcode color values.
 - Use Server Components by default. Only use `'use client'` directive for interactive components.
 - Use `next/image` for optimized images and `next/link` for client-side navigation.
@@ -21,14 +21,15 @@ This is a Next.js 16.1.6 + App Router + TypeScript + Tailwind CSS project with 3
 When generating UI code, use these existing components:
 
 **app**: OGImage, TwitterImage
-**dashboard**: UpgradeButton, ComplexityPage, ConnectRepoDialog, DashboardBreadcrumbs, PlanUsageSection, DashboardShellWrapper, FilesPage, IntelligencePage, RepoCard, RepoSettingsPage, RepoSubNav, ReposPage, RuleCard, RuleDialog, ScanHistoryPage, ScanResultsTables, SearchDialog, SettingsPage, TrialBanner
-**landing**: CliSection, Footer, Formats, Hero, HowItWorks, PricingTable
+**dashboard**: UpgradeButton, ComplexityPage, ConnectRepoDialog, DashboardBreadcrumbs, PlanUsageSection, DashboardShellWrapper, FilesPage, FormatToggles, IntelligencePage, RepoCard, RepoSettingsPage, RepoSubNav, ReposPage, RuleCard, RuleDialog, ScanHistoryPage, LatentHooksSection, ScanResultsTables, SearchDialog, SettingsPage, TrialBanner, UpgradeSuccessToast
+**landing**: CliSection, ComparisonSection, FaqSection, FEATURES, FeaturesSection, Footer, Formats, HeroBgScene, WheatStalks, Hero, HowItWorks, FadeUp, CheckIcon, PricingTable, ProcessSection
 **shared**: LoginCard, OAuthButtons, StatusBadge, UpgradeGate
-**components**: ThemeProvider, ThemeToggle
+**components**: ThemeProvider, ThemeToggle, Toaster
 
 ## Custom Hooks
 
 - `useScanPolling` from `@/hooks/use-scan-polling`
+- `useScanStream` from `@/hooks/use-scan-stream`
 - `useSearch` from `@/hooks/use-search`
 
 ## API Routes
@@ -36,16 +37,18 @@ When generating UI code, use these existing components:
 - `POST` `/api/billing/checkout` (authenticated)
 - `POST` `/api/billing/portal` (authenticated)
 - `POST` `/api/billing/webhook`
+- `GET` `/api/health`
 - `GET` `/api/repos` (authenticated)
 - `POST` `/api/scan/:repoId` (authenticated)
 - `GET` `/api/scan/:repoId/download` (authenticated)
 - `GET` `/api/scan/:repoId/latest` (authenticated)
+- `GET` `/api/scan/:repoId/stream` (authenticated)
 - `GET` `/api/search` (authenticated)
 - `POST` `/api/webhooks/github`
 
 ## Database Models
 
-Using prisma with 9 models:
+Using prisma with 10 models:
 
 - **Account**: id, userId, type, provider, providerAccountId
 - **Session**: id, sessionToken, userId, expires
@@ -56,7 +59,4 @@ Using prisma with 9 models:
 - **GeneratedFile**: id, scanId, fileName, content, tokenCount
 - **CustomRule**: id, userId, name, description, rule
 - **SearchChunk**: id, repositoryId, scanId, sectionHeading, sectionType
-
-## Detected Patterns
-
-- Testing: Vitest
+- **WebhookEvent**: id, processedAt

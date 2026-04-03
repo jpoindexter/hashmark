@@ -2,19 +2,19 @@
 
 # 1. File size validation (300-line limit)
 echo "[hook] Checking file sizes..."
-node scripts/validate-file-size.js
+node scripts/validate-file-size.cjs
 
 # 2. Security validation (secrets, dangerous patterns)
 echo "[hook] Running security checks..."
-node scripts/validate-security.js
+node scripts/validate-security.cjs
 
 # 3. Server/Client component validation
 echo "[hook] Validating components..."
-node scripts/validate-components.js
+node scripts/validate-components.cjs
 
 # 4. Import validation (deep paths, duplicates)
 echo "[hook] Checking imports..."
-node scripts/validate-imports.js
+node scripts/validate-imports.cjs
 
 # 5. Lint-staged (ESLint + format)
 echo "[hook] Running lint-staged..."
@@ -24,5 +24,8 @@ pnpm lint-staged
 echo "[hook] Running tests..."
 pnpm test
 
-# kern-hook
-kern check --staged --strict
+# kern-hook (skip packages/studio — standalone Electron app, not Next.js)
+STAGED_NON_STUDIO=$(git diff --cached --name-only --diff-filter=ACM | grep -v "^packages/studio/" || true)
+if [ -n "$STAGED_NON_STUDIO" ]; then
+  kern check --staged --strict
+fi

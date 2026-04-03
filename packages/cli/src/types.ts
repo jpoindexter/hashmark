@@ -633,6 +633,35 @@ export interface FileASTComplexity {
   loc: number;
 }
 
+/** Per-file complexity snapshot for persistence */
+export interface PersistedFileComplexity {
+  path: string;
+  avgCyclomatic: number;
+  avgCognitive: number;
+  avgMaintainability: number;
+}
+
+/** Persisted complexity state written to .hashmark/last-complexity.json */
+export interface PersistedComplexity {
+  generatedAt: string;
+  files: PersistedFileComplexity[];
+  avgCyclomatic: number;
+  avgCognitive: number;
+  avgMaintainability: number;
+}
+
+/** Delta between current and previous scan complexity */
+export interface ComplexityDelta {
+  /** positive = got more complex */
+  avgCyclomaticDelta: number;
+  /** positive = got more complex */
+  avgCognitiveDelta: number;
+  /** positive = improved (MI goes up when simpler) */
+  maintainabilityDelta: number;
+  trend: "improving" | "stable" | "degrading";
+  topRegressions: Array<{ file: string; metric: string; delta: number }>;
+}
+
 /** AI-Readiness Score results */
 export interface AiReadinessScore {
   total: number; // 0-100
@@ -670,6 +699,27 @@ export interface GitInfo {
   branch: string;
   /** Remote origin URL if configured */
   remoteUrl?: string;
+}
+
+/** Rule compliance report aggregated from custom rules */
+export interface RuleCompliance {
+  /** Total number of configured custom rules */
+  totalRules: number;
+  /** Number of rules that triggered violations */
+  failed: number;
+  /** Number of rules with no violations */
+  passed: number;
+  /** Per-rule violation details */
+  violations: Array<{
+    /** Rule text (truncated if long) */
+    ruleName: string;
+    /** Inferred severity from rule text */
+    severity: "error" | "warning" | "info";
+    /** Files where the violation was detected (empty if not detected) */
+    matchedFiles: string[];
+    /** Violation count */
+    count: number;
+  }>;
 }
 
 /** Complete scan result containing all analysis data */
@@ -729,4 +779,18 @@ export interface ScanResult {
   aiRecommendations?: AIRecommendations;
   /** GraphQL schemas (optional) */
   graphqlSchemas?: Map<string, ApiSchema>;
+  /** Git log and diff info (optional) */
+  git?: GitInfo | null;
+  /** Complexity delta vs last scan (optional) */
+  complexityDelta?: ComplexityDelta | null;
+  /** Context validation results (TypeScript, lint, build, tests) */
+  contextValidation?: import("./scanners/context-validator.js").ContextValidation;
+  /** Section-level freshness info from freshness tracker */
+  sectionFreshness?: import("./lib/freshness.js").SectionFreshness[];
+  /** Current scan count from freshness store (used for freshness summary) */
+  freshnessStoreCount?: number;
+  /** Source file path of a merged existing context (e.g., "CLAUDE.md") */
+  mergedContextSource?: string;
+  /** Rule compliance report — populated when custom rules are configured */
+  ruleCompliance?: RuleCompliance;
 }

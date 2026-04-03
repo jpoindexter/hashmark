@@ -1,0 +1,1412 @@
+[ 1204817ms] [ERROR] Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING @ http://localhost:3201/api/agent-state/stream?token=4895a82deb084124a160cb166c79f24f&since=1774546914967:0
+[ 1204818ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1205821ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1206822ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1207575ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1207819ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=4895a82deb084124a160cb166c79f24f&since=1774546914967:0
+[ 1207824ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1208827ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1209821ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3201/api/agent-state:0
+[ 1209824ms] TypeError: data.agents is not iterable
+    at http://localhost:3201/src/hooks/useAgentState.ts:142:38
+    at basicStateReducer (http://localhost:3201/@fs/Users/jasonpoindexter/Documents/GitHub/_active/hashmark/node_modules/.vite/deps/react-dom_client.js?v=afff361b:5854:47)
+    at updateReducerImpl (http://localhost:3201/@fs/Users/jasonpoindexter/Documents/GitHub/_active/hashmark/node_modules/.vite/deps/react-dom_client.js?v=afff361b:5943:54)
+    at updateReducer (http://localhost:3201/@fs/Users/jasonpoindexter/Documents/GitHub/_active/hashmark/node_modules/.vite/deps/react-dom_client.js?v=afff361b:5887:16)
+    at Object.useState (http://localhost:3201/@fs/Users/jasonpoindexter/Documents/GitHub/_active/hashmark/node_modules/.vite/deps/react-dom_client.js?v=afff361b:18996:20)
+    at exports.useState (http://localhost:3201/@fs/Users/jasonpoindexter/Documents/GitHub/_active/hashmark/node_modules/.vite/deps/chunk-6KCF6AHO.js?v=afff361b:959:36)
+    at useAgentState (http://localhost:3201/src/hooks/useAgentState.ts:21:31)
+    at EmptyState (http://localhost:3201/src/components/chat/WarRoom.tsx:155:57)
+    at Object.react_stack_bottom_frame (http://localhost:3201/@fs/Users/jasonpoindexter/Documents/GitHub/_active/hashmark/node_modules/.vite/deps/react-dom_client.js?v=afff361b:18509:20)
+    at renderWithHooks (http://localhost:3201/@fs/Users/jasonpoindexter/Documents/GitHub/_active/hashmark/node_modules/.vite/deps/react-dom_client.js?v=afff361b:5654:24)
+[ 1209824ms] [WARNING] %s
+
+%s
+ An error occurred in the <EmptyState> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:3201/@fs/Users/jasonpoindexter/Documents/GitHub/_active/hashmark/node_modules/.vite/deps/react-dom_client.js?v=afff361b:6965
+[ 1729224ms] [ERROR] Failed to load resource: net::ERR_EMPTY_RESPONSE @ http://localhost:3201/api/files/git:0
+[ 1729224ms] [ERROR] Failed to load resource: net::ERR_EMPTY_RESPONSE @ http://localhost:3201/api/providers/custom:0
+[ 1729224ms] [ERROR] Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1729224ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agents:0
+[ 1729224ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agents:0
+[ 1729224ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/files/list:0
+[ 1729224ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1729224ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/models/registry:0
+[ 1729225ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agents/effectiveness:0
+[ 1729225ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1729225ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1729226ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1729226ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/src/components/shell/ShellV2.tsx?t=1774548616042:0
+[ 1729226ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/src/index.css?t=1774548616042:0
+[ 1729226ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 1729226ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1729226ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1729226ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/files/git:0
+[ 1729226ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/files/list:0
+[ 1729226ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/models/registry:0
+[ 1729226ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1729226ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1729226ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1729226ms] [ERROR] [vite] Failed to reload /src/components/shell/ShellV2.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3201/@vite/client:881
+[ 1729226ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3201/@vite/client:881
+[ 1729227ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1729227ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1729227ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1729227ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1729227ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1729227ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3201/@vite/client:881
+[ 1729227ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/src/components/chat/WarRoomSections.tsx?t=1774548616042:0
+[ 1729227ms] [ERROR] [vite] Failed to reload /src/components/chat/WarRoomSections.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3201/@vite/client:881
+[ 1729227ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/src/index.css?t=1774548620115:0
+[ 1729228ms] [ERROR] [vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3201/@vite/client:881
+[ 1729228ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1730230ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1731225ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1731228ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1731232ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1732225ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1732234ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1732657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1733227ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1733230ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1733248ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1734227ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1734251ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1735227ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1735228ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1735253ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1736256ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1737232ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1737258ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1737640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1737640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1737657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1738229ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1738261ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1739226ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1739235ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1739263ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1740265ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1741231ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1741237ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1741268ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1742272ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1742656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1743240ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1743277ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1744227ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1744234ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1744280ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1745243ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1745286ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1746293ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1747236ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1747246ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1747301ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1747640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1747641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1747656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1748310ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1749228ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1749248ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1749314ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1750240ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1750335ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1751250ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1751355ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1752372ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1752656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1753243ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1753253ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1753402ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1754226ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1754417ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1755256ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1755458ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1756245ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1756488ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1757261ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1757304ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 1757543ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1757640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1757641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1757656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1758622ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1759233ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1759234ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1759263ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1759684ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1760763ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1761266ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1761805ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1762238ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1762657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1763035ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1763268ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1764230ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1764237ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1765240ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1765271ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1765513ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1767076ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1767274ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1767640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1767640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1767657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1768243ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1768335ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1769237ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1769277ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1769925ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1771246ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1771278ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1772091ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1772657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1773280ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1773662ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1774238ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1774248ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1775284ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1775583ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1777251ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1777288ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1777396ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1777640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1777640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1777657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1779236ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1779291ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1779784ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1780253ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1781294ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1781479ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1782657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1783255ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1783296ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1784237ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1785299ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1786259ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1786912ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1787303ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1787304ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 1787642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1787643ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1787655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1789239ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1789239ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1789305ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1790421ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1791309ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1792243ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1792657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1793311ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1794242ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1795205ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1795247ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1795314ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1797318ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1797639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1797639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1797656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1798251ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1799092ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1799243ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1799322ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1801255ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1801326ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1802656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1803129ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1803330ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1804243ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1804258ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1805334ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1807259ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1807280ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1807338ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1807642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1807642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1807656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1809244ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1809342ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1810263ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1811344ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1812226ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1812656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1813265ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1813347ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1814243ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1815349ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1816268ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1817275ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1817304ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 1817351ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1817640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1817640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1817656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1819251ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1819252ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1819353ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1821356ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1822254ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1822656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1823093ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1823359ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1824255ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1825257ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1825363ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1825567ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1827365ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1827642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1827642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1827655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1828259ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1829256ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1829369ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1830863ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1831262ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1831372ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1832657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1833375ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1834256ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1834265ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1835378ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1836404ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1837266ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1837380ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1837639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1837640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1837656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1839256ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1839384ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1840269ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1840610ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1841387ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1842657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1843272ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1843389ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1844255ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1845200ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1845394ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1846276ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1847303ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 1847397ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1847640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1847642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1847655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1849263ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1849264ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1849400ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1851200ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1851404ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1852267ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1852656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1853408ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1854266ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1854959ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1855269ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1855412ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1857415ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1857641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1857642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1857656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1858272ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1859267ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1859418ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1859565ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1861274ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1861421ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1862656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1863424ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1863737ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1864268ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1864276ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1865427ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1866398ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1867278ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1867430ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1867642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1867642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1867656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1869268ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1869435ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1870281ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1870625ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1871438ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1872656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1873285ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1873442ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1874037ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1874266ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1875443ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1876289ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1877303ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 1877446ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1877642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1877642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1877656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1879271ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1879272ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1879449ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1879803ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1881453ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1882065ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1882276ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1882659ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1883456ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1884275ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1885278ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1885459ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1886688ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1887462ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1887640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1887640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1887656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1888280ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1889274ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1889463ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1891282ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1891465ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1892109ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1892659ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1893468ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1894276ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1894284ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1894649ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1895470ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1897286ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1897473ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1897642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1897642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1897655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1899276ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1899477ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1899537ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1900289ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1901479ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1902656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1903293ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1903481ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1904062ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1904278ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1905484ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1906296ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1907304ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 1907487ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1907643ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1907643ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1907656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1907854ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1909281ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1909282ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1909491ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1911495ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1912285ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1912656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1913264ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1913498ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1914285ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1915287ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1915501ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1917504ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1917640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1917641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1917656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1918258ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1918290ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1919285ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1919509ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1920408ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1921293ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1921513ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1922655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1923516ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1923536ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1924286ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1924295ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1925519ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1927298ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1927522ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1927640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1927640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1927656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1929285ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1929526ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1929541ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1930299ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1931529ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1932656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1933301ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1933530ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1934285ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1934831ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1935534ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1936303ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1937303ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 1937536ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1937640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1937642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1937655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1939288ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1939289ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1939539ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1939970ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1941541ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1942293ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1942657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1942892ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1943544ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1944293ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1945296ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1945546ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1946370ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1947549ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1947640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1947641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1947656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1948303ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1949291ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1949551ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1951305ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1951553ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1951737ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1952656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1953555ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1954293ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1954309ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1955559ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1955945ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1957313ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1957561ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1957639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1957639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1957656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1959278ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1959291ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1959563ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1960317ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1961566ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1961842ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1962658ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1963321ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1963569ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1964292ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1965572ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1966324ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1966677ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1967303ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 1967575ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1967640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1967641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1967656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1969293ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1969294ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1969579ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1971582ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1972297ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1972608ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1972655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1973584ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1974296ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1975300ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1975588ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1975766ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1977592ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1977641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1977641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1977656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1978302ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1979296ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1979595ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1981037ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1981304ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1981596ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1982658ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1983600ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1984297ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1984306ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1984938ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1985602ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1987310ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1987604ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1987641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1987642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1987656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1989299ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1989609ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1990313ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1990878ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1991612ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1992656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1993314ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1993615ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1994298ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1995587ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1995616ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1996316ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1997304ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 1997619ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 1997639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 1997639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 1997656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 1997847ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 1999304ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 1999305ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 1999620ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2000581ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2001623ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2002306ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2002655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2003627ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2004149ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2004309ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2005310ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2005632ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2007635ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2007639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2007639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2007655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2008313ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2009309ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2009580ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2009639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2011316ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2011642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2012657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2013644ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2014309ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2014320ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2014820ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2015648ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2017322ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2017639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2017639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2017651ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2017655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2019244ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2019307ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2019652ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2020325ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2021655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2022656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2023327ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2023658ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2024198ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2024306ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2025660ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2026329ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2026735ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2027302ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 2027639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2027639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2027655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2027662ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2029246ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2029310ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2029310ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2029663ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2031664ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2032313ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2032655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2033667ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2033969ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2034313ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2035316ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2035671ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2037352ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2037641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2037641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2037655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2037672ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2038318ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2039312ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2039674ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2039944ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2041322ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2041677ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2042657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2042850ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2043680ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2044313ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2044324ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2045159ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2045683ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2047328ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2047640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2047640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2047655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2047686ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2049314ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2049690ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2049803ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2050330ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2051694ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2052655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2053333ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2053696ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2054313ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2054369ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2055698ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2056335ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2057303ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 2057640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2057640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2057656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2057702ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2058647ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2059320ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2059321ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2059705ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2061707ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2062323ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2062656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2063709ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2063878ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2064325ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2064880ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2065324ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2065713ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2065883ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2066885ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2067642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2067642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2067655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2067715ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2067888ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2068328ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2068892ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2069325ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2069720ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2069898ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2070905ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2071330ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2071722ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2071928ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2072655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2072967ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2073725ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2074002ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2074325ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2074333ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2075112ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2075729ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2076243ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2077336ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2077639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2077639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2077656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2077730ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2077788ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2079326ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2079507ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2079734ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2080339ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2081737ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2081880ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2082657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2083342ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2083739ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2084325ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2084640ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2085743ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2086344ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2087303ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 2087640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2087641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2087654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2087745ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2089326ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2089327ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2089747ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2090070ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2091751ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2092328ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2092655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2093261ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2093754ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2094330ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2095330ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2095759ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2096281ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2097642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2097643ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2097654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2097761ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2098333ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2099329ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2099764ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2100146ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2101337ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2101767ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2102658ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2102919ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2103771ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2104330ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2104339ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2105774ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2106536ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2107342ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2107641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2107641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2107657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2107778ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2109329ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2109781ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2110345ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2111519ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2111784ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2112657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2113347ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2113787ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2114330ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2115790ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2116350ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2117004ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2117301ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 2117639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2117640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2117656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2117794ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2119331ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2119332ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2119797ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2121799ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2121812ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2122334ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2122655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2123800ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2124145ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2124334ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2125336ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2125802ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2127473ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2127638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2127638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2127655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2127805ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2128339ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2129334ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2129808ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2131342ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2131809ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2132034ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2132655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2133811ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2134334ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2134344ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2135814ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2137052ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2137348ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2137640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2137640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2137655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2137817ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2139335ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2139345ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2139819ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2140350ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2141527ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2141822ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2142655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2143354ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2143825ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2144333ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2145827ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2146357ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2147157ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2147302ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 2147637ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2147637ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2147655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2147829ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2149337ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2149339ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2149833ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2149841ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2151835ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2152341ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2152655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2153837ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2154186ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2154341ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2155344ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2155841ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2157638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2157638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2157654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2157843ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2158346ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2158918ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2159342ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2159847ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2161350ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2161850ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2162069ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2162655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2163852ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2164343ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2164352ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2164491ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2165854ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2167358ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2167639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2167639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2167657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2167856ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2169340ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2169860ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2170361ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2170442ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2171864ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2172655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2173365ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2173868ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2174343ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2175189ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2175871ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2176369ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2177302ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 2177577ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2177638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2177638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2177655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2177874ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2179349ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2179351ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2179877ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2181880ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2182352ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2182655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2183235ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2183882ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2184353ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2185354ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2185885ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2186135ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2187639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2187639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2187655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2187888ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2188355ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2189353ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2189892ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2191359ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2191419ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2191895ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2192654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2193899ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2194352ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2194361ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2195903ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2196340ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2197364ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2197638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2197638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2197655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2197905ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2198517ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2199352ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2199909ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2200367ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2201912ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2202654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2203369ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2203817ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2203914ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2204352ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2205918ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2206373ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2207302ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 2207564ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2207638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2207638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2207655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2207922ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2209362ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2209363ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2209924ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2211928ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2212042ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2212364ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2212654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2213930ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2214367ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2215367ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2215935ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2216314ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2217642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2217642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2217654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2217938ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2218369ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2219365ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2219719ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2219942ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2221373ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2221945ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2222653ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2223951ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2224367ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2224376ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2224585ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2225954ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2227379ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2227640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2227641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2227654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2227958ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2229367ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2229962ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2230383ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2230536ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2231967ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2232654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2233387ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2233970ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2234367ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2234745ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2235974ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2236390ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2237303ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 2237639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2237639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2237655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2237977ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2239292ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2239372ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2239373ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2239979ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2241983ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2242376ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2242655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2243986ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2244377ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2245210ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2245378ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2245988ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2247562ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2247642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2247642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2247654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2247992ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2248382ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2249377ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2249994ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2251385ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2251995ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2251996ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2252655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2254000ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2254377ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2254387ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2256004ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2257390ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2257638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2257639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2257654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2257976ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2258008ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2259377ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2260010ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2260393ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2261126ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2262015ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2262654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2263396ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2264018ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2264377ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2264919ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2266021ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2266398ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2267302ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 2267639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2267639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2267654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2267931ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2268024ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2269382ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2269383ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2270027ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2270844ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2272030ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2272385ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2272654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2274034ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2274320ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2274386ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2275388ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2276037ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2277639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2277640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2277656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2277932ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2278040ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2278393ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2279386ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2280042ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2281289ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2281394ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2282045ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2282655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2283510ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2284049ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2284385ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2284397ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2286052ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2287400ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2287638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2287638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2287653ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2287887ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2288056ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2289387ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2290060ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2290403ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2292063ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2292635ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2292654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2293409ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2294067ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2294387ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2296070ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2296412ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2297302ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 2297641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2297642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2297654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2298072ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2298564ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2299395ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2299396ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2300075ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2301303ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2302077ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2302398ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2302654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2304079ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2304161ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2304398ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2305164ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2305401ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2306083ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2306166ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2307169ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2307639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2307640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2307655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2308086ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2308174ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2308404ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2309179ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2309398ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2310088ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2310186ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2311191ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2311408ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2312090ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2312198ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2312657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2313220ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2314094ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2314258ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2314400ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2314410ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2315420ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2316097ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2316519ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2317412ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2317640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2317640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2317655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2317909ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2318100ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2319399ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2320024ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2320103ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2320415ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2322066ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2322107ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2322655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2323417ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2324110ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2324399ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2326112ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2326419ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2326662ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2327302ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 2327641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2327642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2327654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2328116ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2328815ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2329407ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2329408ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2330119ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2332121ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2332410ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2332468ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2332655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2334124ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2334411ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2335412ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2336126ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2336261ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2337639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2337640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2337654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2338128ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2338415ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2339410ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2340132ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2340577ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2341417ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2342136ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2342654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2343805ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2344139ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2344411ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2344419ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2346142ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2347045ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2347423ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2347640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2347641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2347655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2348144ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2349411ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2350057ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2350149ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2350425ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2352152ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2352654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2353317ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2353428ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2354154ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2354411ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2356157ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2356430ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2357302ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 2357641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2357641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2357654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2358160ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2358285ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2359419ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2359420ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2360166ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2362169ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2362423ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2362655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2364172ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2364248ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2364426ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2365425ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2366176ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2367181ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2367637ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2367638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2367655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2368178ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2368429ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2369424ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2370183ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2371432ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2372185ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2372393ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2372654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2374191ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2374425ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2374435ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2376096ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2376194ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2377438ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2377640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2377640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2377654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2378199ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2379425ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2380202ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2380443ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2381831ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2382204ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2382654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2383446ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2384206ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2384357ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2384425ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2386209ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2386450ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2387302ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 2387639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2387640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2387654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2388211ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2388845ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2389427ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2389428ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2390215ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2392218ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2392430ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2392655ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2393618ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2394222ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2394433ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2395433ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2395965ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2396226ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2397641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2397641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2397654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2398229ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2398435ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2399250ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2399432ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2400234ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2401439ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2402237ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2402513ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2402654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2404241ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2404432ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2404441ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2405190ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2406244ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2407444ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2407639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2407640ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2407653ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2408248ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2408614ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2409433ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2410251ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2410445ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2412254ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2412654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2413449ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2413524ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2414258ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2414432ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2416099ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2416260ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2416452ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2417301ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 2417637ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2417638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2417657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2418263ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2419439ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2419440ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2420266ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2420752ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2422270ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2422442ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2422653ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2424276ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2424444ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2425445ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2425624ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2426279ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2427641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2427641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2427657ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2428283ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2428395ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2428449ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2429442ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2430286ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2431452ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2431682ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2432288ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2432654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2434291ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2434443ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2434454ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2436294ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2437458ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2437634ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2437638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2437638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2437654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2438299ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2439443ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2440302ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2440461ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2442307ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2442653ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2442792ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2443466ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2444310ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2444443ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2446312ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2446469ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2447302ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 2447637ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2447637ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2447654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2447706ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2448315ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2449451ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2449452ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2450319ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2452324ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2452453ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2452653ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2452776ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2454327ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2454457ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2455457ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2456331ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2456363ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2457642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2457642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2457653ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2458335ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2458460ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2459457ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2460337ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2461463ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2461681ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2462341ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2462653ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2463959ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2464343ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2464456ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2464466ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2466350ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2467469ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2467642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2467642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2467654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2468352ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2469454ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2469707ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2470356ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2470472ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2472359ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2472654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2473475ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2474361ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2474456ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2475188ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2476366ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2476476ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2477302ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/reviews:0
+[ 2477508ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2477638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/sessions:0
+[ 2477639ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/projects/status:0
+[ 2477656ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2478368ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2479463ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2479464ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2480373ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2480659ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2482376ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2482466ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2482653ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/pipelines:0
+[ 2484378ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2484467ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state:0
+[ 2485468ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0
+[ 2486067ms] [ERROR] WebSocket connection to 'ws://localhost:3201/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/@vite/client:1034
+[ 2486380ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3201/api/health:0
+[ 2487649ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3201/api/sessions:0
+[ 2487653ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3201/api/projects/status:0
+[ 2487657ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3201/api/pipelines:0
+[ 2488476ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3201/api/agent-state/stream?token=29e952fe73ae491497a6bdcb68072a74&since=1774548570459:0

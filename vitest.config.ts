@@ -5,12 +5,17 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["src/**/*.test.{ts,tsx}"],
-    exclude: ["node_modules", "packages", ".next"],
+    include: [
+      "server/**/*.test.ts",
+      "server/__tests__/**/*.test.ts",
+      "packages/cli/src/**/*.test.ts",
+    ],
+    exclude: ["node_modules", ".next", ".hashmark", "dist"],
+    forceExit: true,
   },
   resolve: {
     alias: {
-      "@": resolve(__dirname, "src"),
+      "@": resolve(__dirname, "server"),
     },
   },
 });

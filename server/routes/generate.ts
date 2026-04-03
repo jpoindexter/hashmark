@@ -1,0 +1,162 @@
+/**
+ * /api/generate — generate agents via AI, stream results via SSE
+ */
+
+import { Hono } from "hono";
+import { spawn } from "child_process";
+import { mkdirSync, writeFileSync, existsSync } from "fs";
+import { join, resolve, dirname } from "path";
+import { z } from "zod";
+import type { WorkspaceCtx } from "./workspaces.js";
+
+const GenerateBodySchema = z.object({
+  companyType: z.string().min(1).max(200),
+  projectName: z.string().min(1).max(200),
+  provider: z.string().min(1).max(100),
+  apiKey: z.string().max(500).optional(),
+  baseURL: z.string().url().max(500).optional().or(z.literal("")),
+});
+
+type GenerateRequest = z.infer<typeof GenerateBodySchema>;
+
+interface SaveRequest {
+  agents: Array<{ path: string; content: string }>;
+}
+
+export function generateRoutes(ctx: WorkspaceCtx) {
+  const app = new Hono();
+
+  // POST /api/generate — stream agent generation via SSE
+  app.post("/", async (c) => {
+    const parsed = GenerateBodySchema.safeParse(await c.req.json().catch(() => ({})));
+    if (!parsed.success) {
+      return c.json({ error: parsed.error.issues[0]?.message ?? "invalid input" }, 400);
+    }
+    const body: GenerateRequest = parsed.data;
+
+    const stream = new ReadableStream({
+      start(controller) {
+        const send = (data: object) => {
+          const chunk = `data: ${JSON.stringify(data)}\n\n`;
+          controller.enqueue(new TextEncoder().encode(chunk));
+        };
+
+        send({ type: "start", message: "Starting agent generation..." });
+
+        // Build the hashmark agents command args
+        const args = [
+          "agents",
+          "--yes",
+          "--json-stream",
+          "--type", body.companyType,
+        ];
+
+        if (body.projectName) {
+          args.push("--name", body.projectName);
+        }
+
+        // Find hashmark binary — check local install, monorepo, then global
+        const localBin = join(ctx.projectDir, "node_modules", ".bin", "hashmark");
+        const monoBin = join(ctx.projectDir, "packages", "cli", "dist", "cli.js");
+        const isMonorepo = !existsSync(localBin) && existsSync(monoBin);
+        const resolvedBin = existsSync(localBin) ? localBin
+          : isMonorepo ? "node" : "hashmark";
+        if (resolvedBin === "node") {
+          // For monorepo: node <cli.js> agents <projectDir> ...rest
+          // Insert monoBin first, then projectDir after "agents"
+          const agentsIdx = args.indexOf("agents");
+          args.splice(0, 0, monoBin);
+          // Insert projectDir right after "agents" (now at agentsIdx + 1)
+          args.splice(agentsIdx + 2, 0, ctx.projectDir);
+        }
+
+        const env: NodeJS.ProcessEnv = { ...process.env };
+        if (body.apiKey) {
+          const keyMap: Record<string, string> = {
+            anthropic: "ANTHROPIC_API_KEY",
+            openai: "OPENAI_API_KEY",
+            gemini: "GOOGLE_AI_API_KEY",
+            xai: "XAI_API_KEY",
+            mistral: "MISTRAL_API_KEY",
+            groq: "GROQ_API_KEY",
+          };
+          const envVar = keyMap[body.provider];
+          if (envVar) env[envVar] = body.apiKey;
+          if (body.baseURL) env.OPENAI_BASE_URL = body.baseURL;
+        }
+
+        // When using monorepo bin, set CWD to packages/cli so Node resolves
+        // ESM imports from the CLI's own node_modules. Target dir is passed as positional arg.
+        const spawnCwd = isMonorepo
+          ? join(ctx.projectDir, "packages", "cli")
+          : ctx.projectDir;
+
+        const proc = spawn(resolvedBin, args, { cwd: spawnCwd, env });
+
+        let buffer = "";
+        proc.stdout.on("data", (chunk: Buffer) => {
+          buffer += chunk.toString();
+          // Parse NDJSON lines for agent events
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            try {
+              const event = JSON.parse(trimmed);
+              send(event);
+            } catch {
+              // Not JSON — could be progress text
+              if (trimmed.startsWith("{")) continue;
+              send({ type: "progress", message: trimmed });
+            }
+          }
+        });
+
+        proc.stderr.on("data", (chunk: Buffer) => {
+          const line = chunk.toString().trim();
+          if (line) send({ type: "progress", message: line });
+        });
+
+        proc.on("close", (code: number) => {
+          send({ type: "done", success: code === 0 });
+          controller.close();
+        });
+
+        proc.on("error", (err: Error) => {
+          send({ type: "error", message: err.message });
+          controller.close();
+        });
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
+    });
+  });
+
+  // POST /api/generate/save — write generated agents to disk
+  app.post("/save", async (c) => {
+    const body = await c.req.json<SaveRequest>();
+    const agentsDir = join(ctx.projectDir, ".claude", "agents");
+
+    let written = 0;
+    for (const agent of body.agents) {
+      if (!agent.path || typeof agent.path !== "string") continue;
+      const fullPath = resolve(agentsDir, agent.path);
+      // Path traversal guard: must stay within agentsDir
+      if (!fullPath.startsWith(agentsDir + "/") && fullPath !== agentsDir) continue;
+      mkdirSync(dirname(fullPath), { recursive: true });
+      writeFileSync(fullPath, agent.content, "utf-8");
+      written++;
+    }
+
+    return c.json({ ok: true, count: written });
+  });
+
+  return app;
+}

@@ -5,17 +5,23 @@
 ## Project
 
 **Stack**: Next.js 16.1.6, App Router, TypeScript, Tailwind CSS, prisma
-**Size**: 212 files, 31,337 lines
-**Components**: 36
+**Size**: 319 files, 40,163 lines
+**Components**: 46
 
 ## Commands
 
 ```bash
+npm run dev          # Start dev server
+npm run build        # Production build
+npm test             # Run tests
+npm run lint         # Lint code
+npm run typecheck    # Type check
+npm run hashmark     # Run hashmark CLI
 ```
 
 ## Coding Rules
 
-- Use existing 36 components. Don't create duplicates.
+- Use existing 46 components. Don't create duplicates.
 - Use semantic design tokens: `bg-primary`, `text-foreground`, `border-border`.
 - Never hardcode color values.
 - Default to Server Components. Add `'use client'` only for interactivity.
@@ -27,8 +33,8 @@
 ### Components
 
 - **app**: OGImage, TwitterImage
-- **dashboard**: UpgradeButton, ComplexityPage, ConnectRepoDialog, DashboardBreadcrumbs, PlanUsageSection, DashboardShellWrapper, FilesPage, IntelligencePage, RepoCard, RepoSettingsPage, RepoSubNav, ReposPage, RuleCard, RuleDialog, ScanHistoryPage, LatentHooksSection, ScanResultsTables, SearchDialog, SettingsPage, TrialBanner, UpgradeSuccessToast
-- **landing**: CliSection, Footer, Formats, Hero, HowItWorks, PricingTable
+- **dashboard**: UpgradeButton, ComplexityPage, ConnectRepoDialog, DashboardBreadcrumbs, PlanUsageSection, DashboardShellWrapper, FilesPage, FormatToggles, IntelligencePage, RepoCard, RepoSettingsPage, RepoSubNav, ReposPage, RuleCard, RuleDialog, ScanHistoryPage, LatentHooksSection, ScanResultsTables, SearchDialog, SettingsPage, TrialBanner, UpgradeSuccessToast
+- **landing**: CliSection, ComparisonSection, FaqSection, FEATURES, FeaturesSection, Footer, Formats, HeroBgScene, WheatStalks, Hero, HowItWorks, FadeUp, CheckIcon, PricingTable, ProcessSection
 - **shared**: LoginCard, OAuthButtons, StatusBadge, UpgradeGate
 - **components**: ThemeProvider, ThemeToggle, Toaster
 
@@ -43,6 +49,7 @@
 - `POST` `/api/billing/checkout` (auth)
 - `POST` `/api/billing/portal` (auth)
 - `POST` `/api/billing/webhook`
+- `GET` `/api/health`
 - `GET` `/api/repos` (auth)
 - `POST` `/api/scan/:repoId` (auth)
 - `GET` `/api/scan/:repoId/download` (auth)
@@ -53,7 +60,7 @@
 
 ### Database
 
-prisma with 9 models:
+prisma with 10 models:
 
 - **Account**: id, userId, type, provider, providerAccountId
   Relations: user
@@ -72,6 +79,7 @@ prisma with 9 models:
   Relations: scope, user
 - **SearchChunk**: id, repositoryId, scanId, sectionHeading, sectionType
   Relations: searchVector, repository, scan
+- **WebhookEvent**: id, processedAt
 
 ### AI Automation Hooks
 

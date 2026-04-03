@@ -19,6 +19,12 @@ import { formatImportGraph } from "./scanners/imports.js";
 import { formatTypes } from "./scanners/types.js";
 import { formatAntiPatterns } from "./scanners/anti-patterns.js";
 import { groupComponentsByDirectory, formatDirectoryName } from "./utils/grouping.js";
+import { getStackPatternSections } from "./templates/stack-patterns.js";
+
+/** Returns true for JS/TS stacks where React component and styling patterns apply */
+function isJsStack(framework: Framework): boolean {
+  return framework.language === "TypeScript" || framework.language === "JavaScript";
+}
 
 /** Options for controlling AGENTS.md generation */
 export interface GeneratorOptions {
@@ -81,15 +87,19 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
   if (utilities.hasShadcn) stackParts.push("shadcn/ui");
   lines.push(`- **Stack**: ${stackParts.join(" + ")}`);
 
-  // Components
-  lines.push(`- **Components**: ${components.length} total — USE EXISTING, don't create new`);
+  // Components (JS/TS stacks only)
+  if (isJsStack(framework) && components.length > 0) {
+    lines.push(`- **Components**: ${components.length} total — USE EXISTING, don't create new`);
+  }
 
-  // Key imports
-  const keyImports: string[] = [];
-  if (utilities.hasCn) keyImports.push(`\`cn()\` from \`${utilities.cnPath}\``);
-  if (utilities.hasMode) keyImports.push(`\`mode\` from \`${utilities.modePath}\``);
-  if (keyImports.length > 0) {
-    lines.push(`- **Key imports**: ${keyImports.join(", ")}`);
+  // Key imports (JS/TS stacks only)
+  if (isJsStack(framework)) {
+    const keyImports: string[] = [];
+    if (utilities.hasCn) keyImports.push(`\`cn()\` from \`${utilities.cnPath}\``);
+    if (utilities.hasMode) keyImports.push(`\`mode\` from \`${utilities.modePath}\``);
+    if (keyImports.length > 0) {
+      lines.push(`- **Key imports**: ${keyImports.join(", ")}`);
+    }
   }
 
   // Hub files (most impactful)
@@ -117,9 +127,25 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
     lines.push(`- **API**: ${apiRoutes.length} routes (${protectedCount} protected)`);
   }
 
-  // Critical rules summary
+  // Critical rules summary — stack-appropriate
+  const tldrRules: string[] = [];
+  if (isJsStack(framework)) {
+    if (tokens && Object.keys(tokens.colors).length > 0) tldrRules.push("use design tokens (not hardcoded colors)");
+    if (utilities.hasCn) tldrRules.push("use `cn()` for classes");
+    if (components.length > 0) tldrRules.push("check existing components first");
+  } else if (framework.language === "Python") {
+    tldrRules.push("follow PEP 8", "use type hints on all function signatures");
+  } else if (framework.language === "Go") {
+    tldrRules.push("handle errors explicitly", "use context.Context for cancellation");
+  } else if (framework.language === "Rust") {
+    tldrRules.push("handle Result/Option explicitly", "avoid unwrap() in production code");
+  } else if (framework.language === "Java" || framework.language === "Kotlin") {
+    tldrRules.push("use constructor injection", "keep business logic in services not controllers");
+  }
   lines.push("");
-  lines.push("**Rules**: Use design tokens (not hardcoded colors), use `cn()` for classes, check existing components first");
+  if (tldrRules.length > 0) {
+    lines.push(`**Rules**: ${tldrRules.join(", ")}`);
+  }
   lines.push("");
 
   // Getting Started Section (auto-generated setup guide)
@@ -147,8 +173,10 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
   if (utilities.hasMode) {
     lines.push(`| **Design System** | \`mode\` from \`${utilities.modePath}\` |`);
   }
-  lines.push(`| **Components** | ${components.length} |`);
-  if (hooks.length > 0) {
+  if (isJsStack(framework) && components.length > 0) {
+    lines.push(`| **Components** | ${components.length} |`);
+  }
+  if (isJsStack(framework) && hooks.length > 0) {
     lines.push(`| **Custom Hooks** | ${hooks.length} |`);
   }
   if (apiRoutes.length > 0) {
@@ -192,8 +220,8 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
   lines.push("");
   lines.push("```tsx");
   lines.push("// WRONG");
-  lines.push(`className="bg-blue-500 text-white"`);
-  lines.push(`style={{ color: "#3b82f6" }}`);
+  lines.push(`className="bg-blue-500 text-on-surface"`);
+  lines.push(`style={{"color": "#3b82f6"}}`);
   lines.push("");
   lines.push("// RIGHT");
   lines.push(`className="bg-primary text-primary-foreground"`);
@@ -688,6 +716,17 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
     }
   }
 
+  // Non-JS stack patterns (Python / Go / Rust / Java / Kotlin)
+  if (!isJsStack(framework)) {
+    const stackSections = getStackPatternSections(framework);
+    for (const section of stackSections) {
+      lines.push(`## ${section.title}`);
+      lines.push("");
+      lines.push(section.content);
+      lines.push("");
+    }
+  }
+
   // Design Tokens
   if (Object.keys(tokens.colors).length > 0) {
     lines.push("## Design Tokens");
@@ -727,7 +766,7 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
     lines.push("border-border, border-primary, border-destructive");
     lines.push("");
     lines.push("// NEVER USE:");
-    lines.push("// bg-white, bg-black, bg-gray-500, text-gray-600, #ffffff, rgb(...)");
+    lines.push("// bg-surface, bg-on-surface, bg-secondary-container, text-muted-foreground, #ffffff, rgb(...)");
     lines.push("```");
     lines.push("");
 
@@ -958,6 +997,10 @@ export function generateAgentsMd(result: ScanResult, options: GeneratorOptions =
   }
   lines.push("");
 
+  lines.push("---");
+  lines.push("*Generated by [hashmark](https://hashmark.md)*");
+  lines.push("");
+
   return lines.join("\n");
 }
 
@@ -1008,6 +1051,62 @@ function getFrameworkRules(framework: Framework, tokens: Tokens, utilities: Util
   if (framework.language === "TypeScript") {
     rules.push("Type all props and function parameters");
     rules.push("Avoid `any` — use proper types or `unknown`");
+  }
+
+  // Python rules
+  if (framework.language === "Python") {
+    rules.push("Follow PEP 8 — 4-space indentation, snake_case names");
+    rules.push("Add type hints to all function signatures");
+    rules.push("Use virtual environments (venv or poetry) — never install globally");
+    if (framework.name === "FastAPI") {
+      rules.push("Use Pydantic models for request/response validation");
+      rules.push("Prefer `async def` for route handlers");
+    } else if (framework.name === "Django") {
+      rules.push("Use Django ORM — avoid raw SQL unless absolutely necessary");
+      rules.push("Keep business logic in models and service modules, not views");
+    } else if (framework.name === "Flask") {
+      rules.push("Use Flask Blueprints to organize routes by domain");
+    }
+  }
+
+  // Go rules
+  if (framework.language === "Go") {
+    rules.push("Handle errors explicitly — never ignore error return values");
+    rules.push("Use `context.Context` as the first parameter for cancellation and deadlines");
+    rules.push("Prefer table-driven tests");
+    if (framework.name === "Gin") {
+      rules.push("Use Gin binding tags (binding:\"required\") for request validation");
+    } else if (framework.name === "Echo") {
+      rules.push("Use Echo's binder and validator for request validation");
+    } else if (framework.name === "Fiber") {
+      rules.push("Use Fiber's BodyParser and validator middleware for request handling");
+    }
+  }
+
+  // Rust rules
+  if (framework.language === "Rust") {
+    rules.push("Handle `Result<T, E>` and `Option<T>` explicitly — avoid `.unwrap()` in production paths");
+    rules.push("Prefer owned types in structs, borrowed types (`&T`, `&str`) in function signatures");
+    rules.push("Use `thiserror` for library errors, `anyhow` for application errors");
+    if (framework.name === "Axum") {
+      rules.push("Use Axum extractors (`Json`, `Query`, `Path`, `State`) for request parsing");
+    } else if (framework.name === "Actix Web") {
+      rules.push("Use Actix extractors and `Data<T>` for shared state injection");
+    }
+  }
+
+  // Java/Kotlin rules
+  if (framework.language === "Java" || framework.language === "Kotlin") {
+    if (framework.name === "Spring Boot") {
+      rules.push("Use constructor injection — avoid `@Autowired` field injection");
+      rules.push("Annotate service methods that modify data with `@Transactional`");
+      rules.push("Keep controllers thin — delegate business logic to `@Service` classes");
+    }
+    if (framework.language === "Kotlin") {
+      rules.push("Use data classes for DTOs and value objects");
+      rules.push("Prefer sealed classes over checked exceptions for result types");
+      rules.push("Use `?.` and `?:` instead of manual null checks");
+    }
   }
 
   return rules;
@@ -1152,6 +1251,10 @@ function generateMinimalOutput(result: ScanResult, options: GeneratorOptions): s
     lines.push("");
   }
 
+  lines.push("---");
+  lines.push("*Generated by [hashmark](https://hashmark.md)*");
+  lines.push("");
+
   return lines.join("\n");
 }
 
@@ -1189,7 +1292,7 @@ function generateXmlOutput(result: ScanResult): string {
   lines.push('    </rule>');
   lines.push('    <rule name="use-design-tokens">');
   lines.push('      <description>Never hardcode colors. Use semantic tokens.</description>');
-  lines.push('      <example type="wrong"><![CDATA[className="bg-blue-500 text-white"]]></example>');
+  lines.push('      <example type="wrong"><![CDATA[className="bg-blue-500 text-on-surface"]]></example>');
   lines.push('      <example type="right"><![CDATA[className="bg-primary text-primary-foreground"]]></example>');
   lines.push('    </rule>');
   if (utilities.hasCn) {
@@ -1283,7 +1386,7 @@ function generateXmlOutput(result: ScanResult): string {
     lines.push('    <colors>bg-background, bg-card, bg-muted, bg-primary, bg-secondary, bg-destructive</colors>');
     lines.push('    <text>text-foreground, text-muted-foreground, text-primary-foreground</text>');
     lines.push('    <borders>border-border, border-primary</borders>');
-    lines.push('    <forbidden>bg-white, bg-black, bg-gray-*, #hexvalues</forbidden>');
+    lines.push('    <forbidden>bg-surface, bg-on-surface, bg-gray-*, #hexvalues</forbidden>');
     lines.push('  </design-tokens>');
     lines.push('');
   }
@@ -1320,19 +1423,37 @@ function generateGettingStarted(result: ScanResult): string | null {
   const { commands, database, envVars, framework } = result;
   const steps: string[] = [];
 
-  // 1. Install dependencies
-  steps.push("npm install");
+  // 1. Install dependencies — stack-aware
+  if (isJsStack(framework)) {
+    steps.push("npm install");
+  } else if (framework.language === "Python") {
+    steps.push("python -m venv .venv && source .venv/bin/activate");
+    steps.push("pip install -r requirements.txt");
+  } else if (framework.language === "Go") {
+    steps.push("go mod download");
+  } else if (framework.language === "Rust") {
+    steps.push("cargo build");
+  } else if (framework.language === "Java" || framework.language === "Kotlin") {
+    steps.push("./mvnw install    # or: ./gradlew build");
+  } else {
+    steps.push("npm install");
+  }
 
   // 2. Environment setup (if env vars detected)
   if (envVars.length > 0) {
     steps.push("");
     steps.push("# Set up environment");
-    steps.push("cp .env.example .env.local");
-    steps.push("# Edit .env.local with your values");
+    if (isJsStack(framework)) {
+      steps.push("cp .env.example .env.local");
+      steps.push("# Edit .env.local with your values");
+    } else {
+      steps.push("cp .env.example .env");
+      steps.push("# Edit .env with your values");
+    }
   }
 
-  // 3. Database setup (if database detected)
-  if (database) {
+  // 3. Database setup (if database detected — JS/TS only for ORM-specific commands)
+  if (database && isJsStack(framework)) {
     steps.push("");
     steps.push("# Database setup");
     if (database.provider === "prisma") {
@@ -1355,11 +1476,22 @@ function generateGettingStarted(result: ScanResult): string | null {
     }
   }
 
-  // 4. Dev server
+  // 4. Dev server — stack-aware
   steps.push("");
   steps.push("# Start development");
-  if (commands.dev) {
+  if (isJsStack(framework) && commands.dev) {
     steps.push("npm run dev");
+  } else if (framework.language === "Python") {
+    if (framework.name === "FastAPI") steps.push("uvicorn main:app --reload");
+    else if (framework.name === "Django") steps.push("python manage.py runserver");
+    else if (framework.name === "Flask") steps.push("flask run --debug");
+    else steps.push("python main.py");
+  } else if (framework.language === "Go") {
+    steps.push("go run ./...");
+  } else if (framework.language === "Rust") {
+    steps.push("cargo run");
+  } else if (framework.language === "Java" || framework.language === "Kotlin") {
+    steps.push("./mvnw spring-boot:run    # or: ./gradlew bootRun");
   } else {
     steps.push("npm run dev");
   }

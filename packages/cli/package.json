@@ -1,21 +1,25 @@
 {
-  "name": "hashmark-cli",
+  "name": "hashmark",
   "version": "2.0.0",
   "description": "Scan your codebase and generate AI context files for every coding tool",
   "type": "module",
   "bin": {
     "hashmark": "dist/cli.js",
     "agent-smith": "dist/cli.js",
-    "agentsmith": "dist/cli.js"
+    "agentsmith": "dist/cli.js",
+    "hashmark-mcp": "dist/mcp-server.js"
   },
   "scripts": {
     "build": "tsup src/cli.ts --format esm --dts",
+    "build:bundle": "esbuild src/cli.ts --bundle --platform=node --target=node20 --format=cjs --define:import.meta.url=undefined --outfile=dist-ncc/cli.cjs",
+    "build:bin": "npm run build:bundle && pkg dist-ncc/cli.cjs --targets node20-macos-arm64,node20-macos-x64,node20-linux-x64,node20-win-x64 --output dist-bin/hashmark",
     "dev": "tsup src/cli.ts --format esm --watch",
     "start": "node dist/cli.js",
-    "test": "vitest run",
+    "test": "cd packages/cli && npm test",
     "typecheck": "tsc --noEmit",
     "sync-version": "./scripts/sync-version.sh",
-    "prebuild": "./scripts/sync-version.sh"
+    "prebuild": "./scripts/sync-version.sh",
+    "test:watch": "cd packages/cli && npx vitest"
   },
   "keywords": [
     "hashmark",
@@ -37,8 +41,14 @@
   "author": "Jason Poindexter",
   "license": "MIT",
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jpoindexter/hashmark.git",
@@ -51,13 +61,25 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/picomatch": "^4.0.2",
+    "@vercel/ncc": "^0.38.4",
+    "@yao-pkg/pkg": "^6.14.1",
+    "esbuild": "^0.27.4",
     "tsup": "^8.0.0",
     "typescript": "^5.7.0",
     "vitest": "^4.0.18"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.58",
+    "@ai-sdk/google": "^3.0.43",
+    "@ai-sdk/groq": "^3.0.29",
+    "@ai-sdk/mistral": "^3.0.24",
+    "@ai-sdk/openai": "^3.0.41",
+    "@ai-sdk/xai": "^3.0.67",
+    "@anthropic-ai/sdk": "^0.79.0",
+    "@clack/prompts": "^1.1.0",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@typescript-eslint/typescript-estree": "^8.54.0",
+    "ai": "^6.0.116",
     "cac": "^6.7.14",
     "chokidar": "^5.0.0",
     "clipboardy": "^5.2.1",

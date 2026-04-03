@@ -36,12 +36,17 @@ export class CodebaseVisitor {
     const framework = await detectFramework(dir);
     const utilities = await scanUtilities(dir);
 
+    const changedFilesOnly: Set<string> | undefined = options.changedFilesOnly
+      ? new Set<string>(options.changedFilesOnly as string[])
+      : undefined;
+
     const context: ScannerContext = {
       cwd: dir,
       framework,
       utilities,
       excludePatterns,
       options,
+      changedFilesOnly,
     };
 
     // 2. Prepare all plugins for the scan
@@ -69,10 +74,13 @@ export class CodebaseVisitor {
 
     // 4. Sequential dispatch to maintain memory safety
     for (const file of files) {
+      // In incremental mode, skip files that haven't changed
+      if (changedFilesOnly && !changedFilesOnly.has(file)) continue;
+
       try {
         const fullPath = join(dir, file);
         if (!existsSync(fullPath)) continue;
-        
+
         const stats = statSync(fullPath);
         if (stats.size > MAX_FILE_SIZE) continue;
 

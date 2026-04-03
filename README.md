@@ -26,9 +26,10 @@ AI coding tools work better with context files, but every tool has its own forma
 | `.cursorrules` | Cursor (legacy) |
 | `.github/copilot-instructions.md` | GitHub Copilot |
 | `.windsurfrules` | Windsurf |
-| `gemini.md` | Gemini CLI |
+| `GEMINI.md` | Gemini CLI |
+| `.clinerules` | Cline / Roo Code |
 
-Maintaining 7 files with the same content is painful. They drift out of sync. They get stale. Nobody updates them after initial setup.
+Maintaining 8 files with the same content is painful. They drift out of sync. They get stale. Nobody updates them after initial setup.
 
 ## How It Works
 
@@ -45,7 +46,7 @@ No PRs to review. No manual updates. Every AI tool gets fresh, high-fidelity con
 npx hashmark
 ```
 
-The [hashmark CLI](https://www.npmjs.com/package/hashmark-cli) generates AGENTS.md locally for free. Hashmark is the cloud product that handles all formats and keeps them in sync.
+The [hashmark CLI](https://www.npmjs.com/package/hashmark) generates all 8 formats locally for free. Hashmark is the cloud product that keeps them in sync automatically on every push.
 
 ## Pricing
 
@@ -54,7 +55,7 @@ The [hashmark CLI](https://www.npmjs.com/package/hashmark-cli) generates AGENTS.
 | Repos | 1 | Unlimited | Unlimited |
 | Manual scan via web UI | Yes | Yes | Yes |
 | Auto-sync via GitHub Action | — | Yes | Yes |
-| All 7 output formats | Yes | Yes | Yes |
+| All 8 output formats | Yes | Yes | Yes |
 | Codebase intelligence dashboard | Basic | Full | Full |
 | Custom rules | — | Yes | Yes |
 | Scan history | — | Yes | Yes |

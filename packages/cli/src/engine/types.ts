@@ -9,6 +9,8 @@ export interface ScannerContext {
   utilities: Utilities;
   excludePatterns: string[];
   options?: any;
+  /** If set, only these relative file paths will be dispatched to plugins */
+  changedFilesOnly?: Set<string>;
 }
 
 /**

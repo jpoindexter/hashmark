@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .hashmark/hooks/context-inject.mjs",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

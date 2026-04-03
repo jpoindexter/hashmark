@@ -14,6 +14,7 @@ import { TestScanner } from "../scanners/tests.js";
 import { GitScanner } from "../scanners/git.js";
 import { ComplexityScanner } from "../scanners/complexity.js";
 import { calculateAiReadiness } from "../scanners/ai-readiness.js";
+import { scanCommands } from "../scanners/commands.js";
 import type { ScanResult } from "../types.js";
 
 /**
@@ -54,6 +55,7 @@ export class ScannerEngine {
     
     // 3. Consolidate plugin metadata into the unified Context IR
     const results = registry.getResults();
+    const commands = await scanCommands(dir);
     
     const scanResult: ScanResult = {
       framework: base.framework,
@@ -72,7 +74,7 @@ export class ScannerEngine {
       aiRecommendations: results.complexity || null,
       
       // Legacy compatibility layers
-      commands: { custom: {} },
+      commands,
       variants: [],
       patterns: { 
         patterns: [], 

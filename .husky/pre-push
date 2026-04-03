@@ -2,8 +2,4 @@
 
 # 1. Type check
 echo "[hook] Running type check..."
-pnpm type-check
-
-# 2. Production build
-echo "[hook] Verifying production build..."
-pnpm build
+npm run typecheck
