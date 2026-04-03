@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { Copy } from "lucide-react";
 import type { ToolResultBlockData } from "../ChatMessages";
 
 function truncate(text: string, maxLines: number): { text: string; truncated: boolean } {
@@ -27,7 +28,16 @@ export default function ToolResultCard({ block }: { block: ToolResultBlockData }
       overflow: "hidden",
       fontSize: 11,
       fontFamily: "var(--font)",
+      position: "relative",
     }}>
+      <button
+        className="btn-icon"
+        title="Copy output"
+        onClick={() => navigator.clipboard.writeText(raw)}
+        style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, zIndex: 1 }}
+      >
+        <Copy size={10} />
+      </button>
       <div style={{
         padding: "6px 8px",
         color: block.isError ? "var(--red)" : "var(--text-dim)",

@@ -25,15 +25,22 @@ export function initTauriBridge(): void {
     window.location.reload();
   }).catch(() => {});
 
+  // Dev mode: project saved but server can't switch. Notify user.
+  listen("studio:project-saved", () => {
+    window.dispatchEvent(new CustomEvent("studio:toast", {
+      detail: { type: "success", message: "Project saved. Run tauri:dev from that folder to switch." },
+    }));
+  }).catch(() => {});
+
   // Handle "Open Project..." from the native File menu.
-  // Rust emits this event; the bridge shows the folder picker and persists the choice.
   listen("menu:open-project", () => {
     invoke<string | null>("pick_folder")
       .then((dir) => {
         if (dir) return invoke("set_project_dir", { dir });
       })
-      .catch(() => {});
+      .catch((err) => console.error("[tauri] open-project failed:", err));
   }).catch(() => {});
+
 
   window.studio = {
     platform: "darwin",

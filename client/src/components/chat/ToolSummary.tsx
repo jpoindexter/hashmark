@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronRight, ChevronDown, FileText, Terminal, Pencil, Search } from "lucide-react";
 
 interface ToolUseBlockData {
   type: "tool_use";
@@ -90,6 +90,7 @@ function FileBadge({ filePath }: { filePath: string }) {
 
   return (
     <span
+      className="hoverable"
       onClick={(e) => {
         e.stopPropagation();
         window.dispatchEvent(
@@ -102,8 +103,9 @@ function FileBadge({ filePath }: { filePath: string }) {
         gap: 4,
         background: "var(--bg-3)",
         border: "1px solid var(--border-dim)",
+        borderRadius: 100,
         fontSize: 11,
-        padding: "2px 8px",
+        padding: "2px 10px 2px 6px",
         fontFamily: "var(--font)",
         cursor: "pointer",
         lineHeight: 1.4,
@@ -111,25 +113,10 @@ function FileBadge({ filePath }: { filePath: string }) {
         overflow: "hidden",
         textOverflow: "ellipsis",
         whiteSpace: "nowrap",
-        transition: "border-color 0.1s",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = color;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "var(--border-dim)";
       }}
       title={filePath}
     >
-      <span
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: "50%",
-          background: color,
-          flexShrink: 0,
-        }}
-      />
+      <FileText size={11} style={{ color, flexShrink: 0 }} />
       <span style={{ color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis" }}>
         {name}
       </span>
@@ -149,7 +136,12 @@ export default function ToolCallSummary({ groups }: ToolCallSummaryProps) {
 
   if (groups.length === 0) return null;
 
-  const totalLabel = `${groups.length} tool call${groups.length !== 1 ? "s" : ""}`;
+  // Detect context-gathering groups (all Read/Glob/Grep)
+  const contextTools = new Set(["Read", "Glob", "Grep"]);
+  const isContextGroup = groups.every(g => contextTools.has(categorize(g.block.tool)));
+  const totalLabel = isContextGroup
+    ? `Gathering context`
+    : `${groups.length} tool call${groups.length !== 1 ? "s" : ""}`;
   const summaryLine = buildSummaryLine(groups);
 
   // Collect file badges for Read calls
@@ -166,6 +158,7 @@ export default function ToolCallSummary({ groups }: ToolCallSummaryProps) {
       {/* Header row */}
       <div
         onClick={() => setExpanded((v) => !v)}
+        className="hoverable"
         style={{
           display: "flex",
           alignItems: "center",
@@ -175,16 +168,8 @@ export default function ToolCallSummary({ groups }: ToolCallSummaryProps) {
           fontSize: 11,
           color: "var(--text-dimmer)",
           border: "1px solid var(--border-dim)",
-          borderRadius: "var(--radius)",
+          borderRadius: "var(--radius-lg)",
           padding: "6px 10px",
-          fontFamily: "var(--font)",
-          transition: "border-color 0.15s",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "var(--border)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = "var(--border-dim)";
         }}
       >
         {expanded ? (
@@ -199,12 +184,7 @@ export default function ToolCallSummary({ groups }: ToolCallSummaryProps) {
           />
         )}
         <span style={{ fontWeight: 600 }}>{totalLabel}</span>
-        {!expanded && summaryLine && (
-          <>
-            <span style={{ color: "var(--border)" }}>|</span>
-            <span>{summaryLine}</span>
-          </>
-        )}
+        {!expanded && <SummaryIcons groups={groups} />}
       </div>
 
       {/* File badges for Read calls (always visible when collapsed) */}
@@ -224,15 +204,46 @@ export default function ToolCallSummary({ groups }: ToolCallSummaryProps) {
         </div>
       )}
 
-      {/* Expanded: individual tool calls */}
-      {expanded && (
+      {/* Expanded: individual tool calls (spring-animated) */}
+      <div className="collapsible-content" data-open={expanded}>
         <div style={{ paddingLeft: 4, paddingTop: 4 }}>
           {groups.map((g, i) => (
             <div key={i}>{g.node}</div>
           ))}
         </div>
-      )}
+      </div>
     </div>
+  );
+}
+
+function categoryIcon(cat: string): React.ReactNode {
+  const s = 10;
+  if (cat === "Read") return <FileText size={s} />;
+  if (cat === "Edit" || cat === "Write") return <Pencil size={s} />;
+  if (cat === "Bash") return <Terminal size={s} />;
+  if (cat === "Glob" || cat === "Grep") return <Search size={s} />;
+  return null;
+}
+
+function SummaryIcons({ groups }: { groups: ToolCallGroup[] }) {
+  const counts: Record<string, number> = {};
+  for (const g of groups) {
+    const cat = categorize(g.block.tool);
+    counts[cat] = (counts[cat] ?? 0) + 1;
+  }
+  const entries = Object.entries(counts);
+  if (entries.length === 0) return null;
+
+  return (
+    <>
+      <span style={{ color: "var(--border)" }}>|</span>
+      {entries.map(([cat, count]) => (
+        <span key={cat} style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+          {categoryIcon(cat)}
+          <span>{count}</span>
+        </span>
+      ))}
+    </>
   );
 }
 

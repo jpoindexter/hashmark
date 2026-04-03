@@ -4,6 +4,8 @@ import { Outlet, useLocation } from "react-router-dom";
 import Titlebar from "./Titlebar";
 import Rail from "./Rail";
 import SessionsPanel from "./SessionsPanel";
+import SessionTabs from "./SessionTabs";
+import ChangesPanel from "./ChangesPanel";
 import TerminalPanel from "./TerminalPanel";
 import ChatMessages, { type StreamingState } from "../ChatMessages";
 import ChatInputBar from "../ChatInputBar";
@@ -17,7 +19,9 @@ import AboutDialog from "../shared/AboutDialog";
 import { useProjectInfo } from "../../hooks/useProjectInfo";
 import { useKeyboardNav } from "../../hooks/useKeyboardNav";
 import { useTheme } from "../../hooks/useTheme";
+import { fetchApi } from "../../lib/api";
 import { useSessionManager } from "../../hooks/useSessionManager";
+import { useSessionTabs } from "../../hooks/useSessionTabs";
 import { useStudioEvents } from "../../hooks/useStudioEvents";
 import { MODELS } from "../../lib/models";
 
@@ -46,9 +50,9 @@ export default function Shell() {
 
   const isHome = location.pathname === "/" || location.pathname === "/sessions";
 
+  const [sessionsOpen, setSessionsOpen] = useState(() => restore("sessionsOpen", false));
   const [termOpen, setTermOpen] = useState(() => restore("termOpen", false));
   const [termBig, setTermBig] = useState(false);
-  const [activeTab, setActiveTab] = useState<"TERMINAL" | "OUTPUT">("TERMINAL");
   const [selectedModel, setSelectedModel] = useState(() => restore("selectedModel", "claude-sonnet-4-6"));
   const [thinking, setThinking] = useState(() => restore("thinking", false));
   const [planMode, setPlanMode] = useState(() => restore("planMode", false));
@@ -76,11 +80,30 @@ export default function Shell() {
     handleRetry,
   } = useSessionManager();
 
+  const { tabs, openTab, closeTab, updateTitle } = useSessionTabs(activeSessionId);
+
   const onDiffShouldOpen = useCallback(() => setDiffOpen(true), []);
   const { info, git, drift, changedFiles, refreshGit } = useProjectInfo(streaming, onDiffShouldOpen);
 
-  useKeyboardNav({ navigate: () => {}, setCmdOpen, setPaletteMode, shortcutsOpen, setShortcutsOpen, setTermOpen, setSidebarOpen: () => {} });
+  const onNewSession = useCallback(() => {
+    handleNewSession();
+    setSessionsOpen(true);
+  }, [handleNewSession]);
 
+  useKeyboardNav({ navigate: () => {}, setCmdOpen, setPaletteMode, shortcutsOpen, setShortcutsOpen, setTermOpen, setSidebarOpen: setSessionsOpen });
+
+  // Update tab title when switching sessions
+  useEffect(() => {
+    if (!activeSessionId) return;
+    fetchApi(`/api/sessions/${activeSessionId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { title?: string } | null) => {
+        if (d?.title) updateTitle(activeSessionId, d.title);
+      })
+      .catch(() => {});
+  }, [activeSessionId, updateTitle]);
+
+  useEffect(() => { persist("sessionsOpen", sessionsOpen); }, [sessionsOpen]);
   useEffect(() => { persist("termOpen", termOpen); }, [termOpen]);
   useEffect(() => { persist("selectedModel", selectedModel); }, [selectedModel]);
   useEffect(() => { persist("thinking", thinking); }, [thinking]);
@@ -100,7 +123,7 @@ export default function Shell() {
     setPaletteMode,
     setAboutOpen,
     refreshGit,
-    handleNewSession,
+    handleNewSession: onNewSession,
     toggleTheme,
   });
 
@@ -111,6 +134,27 @@ export default function Shell() {
     return () => window.removeEventListener("studio:open-diff", handler);
   }, []);
 
+  // When studio:suggest fires but the input bar isn't mounted (chatHasMessages is false),
+  // ensure a session exists, show the input bar, then re-dispatch so ChatInputBar picks it up.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      if (chatHasMessages) return; // input bar is already mounted, it handles the event
+      const text = (e as CustomEvent<{ text: string }>).detail?.text;
+      if (!text) return;
+      if (!activeSessionId) {
+        handleNewSession();
+      } else {
+        setChatHasMessages(true);
+      }
+      // Re-dispatch after a tick so the now-mounted ChatInputBar catches it
+      requestAnimationFrame(() => {
+        window.dispatchEvent(new CustomEvent("studio:suggest", { detail: { text } }));
+      });
+    };
+    window.addEventListener("studio:suggest", handler);
+    return () => window.removeEventListener("studio:suggest", handler);
+  }, [chatHasMessages, activeSessionId, handleNewSession, setChatHasMessages]);
+
   const currentModelEntry = MODELS.find((m) => m.id === selectedModel);
   const modelLabel = currentModelEntry?.label ?? "Sonnet 4.6";
 
@@ -120,11 +164,11 @@ export default function Shell() {
         projectName={info?.projectName}
         git={git}
         drift={drift}
-        sidebarOpen={false}
-        onToggleSidebar={() => {}}
+        sidebarOpen={sessionsOpen}
+        onToggleSidebar={() => setSessionsOpen(v => !v)}
         termOpen={termOpen}
         onToggleTerm={() => setTermOpen((v) => !v)}
-        splitOpen={false}
+        splitOpen={diffOpen}
         changedFiles={changedFiles}
         onDiffOpen={() => setDiffOpen(true)}
         streaming={streaming}
@@ -138,19 +182,34 @@ export default function Shell() {
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
         <Rail theme={theme === "light" ? "light" : "dark"} themeSetting={setting} />
 
-        {/* Chat-first home: sessions panel + chat */}
+        {/* Chat-first home: sessions panel (toggle) + chat */}
         {isHome && (
           <>
-            <SessionsPanel
-              activeSessionId={activeSessionId}
-              onSessionSelect={handleSessionSelect}
-              onNewSession={handleNewSession}
-              streaming={streaming}
-              streamingSessionId={streaming ? activeSessionId : null}
-              git={git}
-            />
+            {sessionsOpen && (
+              <SessionsPanel
+                activeSessionId={activeSessionId}
+                onSessionSelect={handleSessionSelect}
+                onNewSession={onNewSession}
+                streaming={streaming}
+                streamingSessionId={streaming ? activeSessionId : null}
+                git={git}
+              />
+            )}
 
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+              <SessionTabs
+                tabs={tabs}
+                activeId={activeSessionId}
+                streaming={streaming}
+                streamingSessionId={streaming ? activeSessionId : null}
+                onSelect={(id) => { handleSessionSelect(id); openTab(id); }}
+                onClose={(id) => {
+                  const next = closeTab(id);
+                  if (next) handleSessionSelect(next);
+                  else handleSessionSelect("");
+                }}
+                onNew={onNewSession}
+              />
               {sessionError && (
                 <div style={{ padding: 20, textAlign: "center", color: "var(--red)" }}>
                   <div>Failed to create session</div>
@@ -182,14 +241,15 @@ export default function Shell() {
                     streamingState={streamingState ?? undefined}
                     modelLabel={modelLabel}
                     planMode={planMode}
+                    projectInfo={info ?? undefined}
+                    gitStatus={git ?? undefined}
+                    onNewSession={onNewSession}
                   />
                 </div>
               </ErrorBoundary>
 
               <ResizableDrawer open={termOpen} onToggle={() => setTermOpen((v) => !v)} defaultHeight={280}>
                 <TerminalPanel
-                  activeTab={activeTab}
-                  onTabChange={setActiveTab}
                   termBig={termBig}
                   onToggleBig={() => setTermBig((v) => !v)}
                   onClose={() => setTermOpen(false)}
@@ -197,21 +257,32 @@ export default function Shell() {
                 />
               </ResizableDrawer>
 
-              <ChatInputBar
-                sessionId={activeSessionId}
-                hasMessages={chatHasMessages}
-                onNewSession={handleNewSession}
-                onSessionCreated={() => {}}
-                onStreamText={setStreamText}
-                onStreamingState={setStreamingState}
-                onStreamingChange={setStreaming}
-                streaming={streaming}
-                terminalCwd={terminalCwd || undefined}
-                selectedModel={selectedModel}
-                thinking={thinking}
-                planMode={planMode}
-              />
+              {activeSessionId && chatHasMessages && (
+                <ChatInputBar
+                  sessionId={activeSessionId}
+                  hasMessages={chatHasMessages}
+                  onNewSession={onNewSession}
+                  onSessionCreated={() => {}}
+                  onStreamText={setStreamText}
+                  onStreamingState={setStreamingState}
+                  onStreamingChange={setStreaming}
+                  streaming={streaming}
+                  terminalCwd={terminalCwd || undefined}
+                  selectedModel={selectedModel}
+                  thinking={thinking}
+                  planMode={planMode}
+                />
+              )}
             </div>
+
+            {diffOpen && changedFiles > 0 && git?.files && (
+              <ChangesPanel
+                files={git.files.map(f => ({ status: f.status, path: f.file }))}
+                onFileClick={(path) => {
+                  window.dispatchEvent(new CustomEvent("studio:open-file", { detail: { path } }));
+                }}
+              />
+            )}
           </>
         )}
 

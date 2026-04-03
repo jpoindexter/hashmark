@@ -5,6 +5,7 @@ import { WebLinksAddon } from "@xterm/addon-web-links";
 import { SearchAddon } from "@xterm/addon-search";
 import "@xterm/xterm/css/xterm.css";
 import { encodeTerminalMsg } from "../../../shared/ws-contracts";
+import { apiUrl, prefetchToken } from "../lib/api";
 
 export interface TerminalHandle {
   clear: () => void;
@@ -150,52 +151,55 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
     fitRef.current   = fit;
     searchRef.current = search;
 
-    // --- WebSocket connection ---
-    const token = (window as Window).__STUDIO_TOKEN__ ?? "";
-    const wsUrl = tabId
-      ? `ws://localhost:3200/api/terminal/ws?tab=${tabId}&token=${token}`
-      : `ws://localhost:3200/api/terminal/ws?token=${token}`;
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    // --- WebSocket connection (await token before connecting) ---
+    let ws: WebSocket | null = null;
+    prefetchToken().then(() => {
+      if (!termRef.current) return; // component unmounted
+      const tokenUrl = apiUrl("/api/terminal/ws" + (tabId ? `?tab=${tabId}` : ""));
+      const wsHost = window.location.host || "localhost:3200";
+      const wsUrl = `ws://${wsHost}${tokenUrl}`;
+      ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
 
-    ws.onopen = () => {
-      ws.send(encodeTerminalMsg({ type: "resize", cols: term.cols, rows: term.rows }));
-    };
+      ws.onopen = () => {
+        ws!.send(encodeTerminalMsg({ type: "resize", cols: term.cols, rows: term.rows }));
+      };
 
-    ws.onmessage = (evt) => {
-      if (typeof evt.data === "string") {
-        const filtered = processOsc633.current(evt.data, onCwdChange, onShellIntegration);
-        term.write(filtered);
-      } else {
-        term.write(new Uint8Array(evt.data as ArrayBuffer));
-      }
-    };
+      ws.onmessage = (evt) => {
+        if (typeof evt.data === "string") {
+          const filtered = processOsc633.current(evt.data, onCwdChange, onShellIntegration);
+          term.write(filtered);
+        } else {
+          term.write(new Uint8Array(evt.data as ArrayBuffer));
+        }
+      };
 
-    ws.onclose = () => {
-      term.write("\r\n\x1b[2m[connection closed]\x1b[0m\r\n");
-    };
+      ws.onclose = () => {
+        term.write("\r\n\x1b[2m[connection closed]\x1b[0m\r\n");
+      };
 
-    ws.onerror = () => {
-      term.write("\r\n\x1b[31m[terminal connection error]\x1b[0m\r\n");
-    };
+      ws.onerror = () => {
+        term.write("\r\n\x1b[31m[terminal connection error]\x1b[0m\r\n");
+      };
 
-    term.onData((data) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(encodeTerminalMsg({ type: "input", data }));
-      }
+      term.onData((data) => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(encodeTerminalMsg({ type: "input", data }));
+        }
+      });
     });
 
     const observer = new ResizeObserver(() => {
       fit.fit();
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(encodeTerminalMsg({ type: "resize", cols: term.cols, rows: term.rows }));
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(encodeTerminalMsg({ type: "resize", cols: term.cols, rows: term.rows }));
       }
     });
     observer.observe(containerRef.current);
 
     return () => {
       observer.disconnect();
-      ws.close();
+      if (ws) ws.close();
       term.dispose();
       termRef.current   = null;
       wsRef.current     = null;

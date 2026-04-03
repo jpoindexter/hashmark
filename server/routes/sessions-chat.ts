@@ -20,7 +20,7 @@ import {
 } from "../lib/context-analytics.js";
 import { createStreamParser } from "../lib/claude-stream.js";
 import { createCheckpoint } from "../lib/checkpoint.js";
-import { smartPrune, checkContextUsage, shouldAutoCompact } from "../lib/compaction.js";
+import { smartPrune, checkContextUsage, shouldAutoCompact, compactSession, estimateTokens } from "../lib/compaction.js";
 import { loadProjectEnvVars } from "../lib/env.js";
 import { createStudioMcpConfig } from "../lib/mcp-studio.js";
 import { findBin } from "../lib/bin-resolver.js";
@@ -124,6 +124,8 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
     const db = getDb(dataDir);
     const session = db.prepare("SELECT * FROM sessions WHERE id = ?").get(sessionId) as {
       id: string; title: string; agent_name: string | null; claude_session_id: string | null;
+      compaction_summary: string | null; compaction_count: number;
+      total_input_tokens: number; total_output_tokens: number; model: string;
     } | undefined;
 
     if (!session) return c.json({ error: "Not found" }, 404);
@@ -139,12 +141,36 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
       "SELECT role, content FROM session_messages WHERE session_id = ? AND (role = 'assistant' OR sent_at IS NOT NULL) ORDER BY created_at ASC"
     ).all(sessionId) as Array<{ role: string; content: string }>;
 
-    // Smart prune: selectively strip tool outputs from older turns while keeping
-    // recent context intact. Falls back to microcompact for stubborn messages.
+    // Context management pipeline:
+    // 1. smartPrune -- selectively strip tool outputs from older turns
+    // 2. If still over threshold, compactSession -- replace old messages with structured summary
     // Skip for resumed Claude sessions -- they manage their own context window.
-    const { messages: history } = session.claude_session_id
-      ? { messages: rawHistory }
-      : smartPrune(rawHistory);
+    let history: Array<{ role: string; content: string }>;
+    let compactionEvent: { removedCount: number; summary: string } | null = null;
+
+    if (session.claude_session_id) {
+      history = rawHistory;
+    } else {
+      const pruned = smartPrune(rawHistory);
+      const totalTokens = session.total_input_tokens + session.total_output_tokens;
+      const model = body.model || session.model || "claude-sonnet-4-6";
+
+      if (shouldAutoCompact(totalTokens, model) || estimateTokens(pruned.messages) > 120_000) {
+        const result = compactSession(pruned.messages, session.compaction_summary);
+        if (result) {
+          history = result.messages;
+          compactionEvent = { removedCount: result.removedCount, summary: result.summary };
+          // Persist compaction state so next turn starts from the compacted view
+          db.prepare(
+            "UPDATE sessions SET compaction_summary = ?, compaction_count = compaction_count + 1 WHERE id = ?"
+          ).run(result.summary, sessionId);
+        } else {
+          history = pruned.messages;
+        }
+      } else {
+        history = pruned.messages;
+      }
+    }
 
     // Check for pending (unsent) messages from previous failed attempts
     const pendingMessages = db.prepare(
@@ -226,6 +252,15 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
             db.prepare("UPDATE session_messages SET sent_at = ? WHERE id = ?").run(now, pm.id);
           }
         };
+
+        // Notify client if compaction occurred this turn
+        if (compactionEvent) {
+          send({
+            type: "compaction",
+            removedCount: compactionEvent.removedCount,
+            message: `Context compacted -- ${compactionEvent.removedCount} messages summarized`,
+          });
+        }
 
         const streamStart = Date.now();
         db.prepare("UPDATE sessions SET status = 'streaming', started_at = COALESCE(started_at, ?), updated_at = ? WHERE id = ?")
@@ -437,6 +472,9 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
           proc.stdin.write(fullPrompt + "\n");
           proc.stdin.end();
 
+          // Track whether 'done' was already sent (e.g. via 'cost' event in flush)
+          let doneSent = false;
+
           // Delta-aware message storage for CLI path
           let cliMsgId: string | null = null;
           let cliTotalLength = 0;
@@ -499,6 +537,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
                   break;
                 case "cost": {
                   markMessagesSent();
+                  doneSent = true;
                   send({ type: "done", cost: ev.totalUsd, usage: ev.usage });
                   break;
                 }
@@ -546,6 +585,7 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
                     .run(ev.sessionId, sessionId);
                   break;
                 case "cost":
+                  doneSent = true;
                   send({ type: "done", cost: ev.totalUsd, usage: ev.usage });
                   break;
                 case "error":
@@ -561,29 +601,31 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
             const msgInputEstimate = Math.ceil(body.message.length / 4);
             const msgOutputEstimate = Math.ceil(cliTotalLength / 4);
 
-            if (!cliMsgId) {
-              // No text chunks arrived -- insert placeholder
-              cliMsgId = randomUUID();
-              const placeholder = killed ? "[interrupted]" : "[no response]";
-              db.prepare(
-                "INSERT INTO session_messages (id, session_id, role, content, input_tokens, output_tokens, created_at, sent_at) VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?)"
-              ).run(cliMsgId, sessionId, placeholder, msgInputEstimate, msgOutputEstimate, Date.now(), Date.now());
-            } else {
-              // Update token counts on the already-inserted message
-              db.prepare(
-                "UPDATE session_messages SET input_tokens = ?, output_tokens = ? WHERE id = ?"
-              ).run(msgInputEstimate, msgOutputEstimate, cliMsgId);
-            }
+            // Session may have been deleted while Claude was running -- skip DB writes if gone
+            const sessionExists = db.prepare("SELECT 1 FROM sessions WHERE id = ?").get(sessionId);
+            if (sessionExists) {
+              if (!cliMsgId) {
+                cliMsgId = randomUUID();
+                const placeholder = killed ? "[interrupted]" : "[no response]";
+                db.prepare(
+                  "INSERT INTO session_messages (id, session_id, role, content, input_tokens, output_tokens, created_at, sent_at) VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?)"
+                ).run(cliMsgId, sessionId, placeholder, msgInputEstimate, msgOutputEstimate, Date.now(), Date.now());
+              } else {
+                db.prepare(
+                  "UPDATE session_messages SET input_tokens = ?, output_tokens = ? WHERE id = ?"
+                ).run(msgInputEstimate, msgOutputEstimate, cliMsgId);
+              }
 
-            db.prepare(`
-              UPDATE sessions
-              SET status = 'idle',
-                  total_input_tokens = total_input_tokens + ?,
-                  total_output_tokens = total_output_tokens + ?,
-                  ended_at = ?,
-                  updated_at = ?
-              WHERE id = ?
-            `).run(msgInputEstimate, msgOutputEstimate, Date.now(), Date.now(), sessionId);
+              db.prepare(`
+                UPDATE sessions
+                SET status = 'idle',
+                    total_input_tokens = total_input_tokens + ?,
+                    total_output_tokens = total_output_tokens + ?,
+                    ended_at = ?,
+                    updated_at = ?
+                WHERE id = ?
+              `).run(msgInputEstimate, msgOutputEstimate, Date.now(), Date.now(), sessionId);
+            }
 
             flushAnalytics(dataDir, sessionId).catch(() => {});
             onTurnComplete(sessionId, dataDir, projectDir);
@@ -601,10 +643,14 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
               }
             }
 
-            if (code !== 0 && !killed) {
-              send({ type: "done", success: false });
-            } else if (killed) {
-              send({ type: "done", success: false, interrupted: true });
+            if (!doneSent) {
+              if (code === 0 && !killed) {
+                send({ type: "done", success: true });
+              } else if (killed) {
+                send({ type: "done", success: false, interrupted: true });
+              } else {
+                send({ type: "done", success: false });
+              }
             }
             controller.close();
           });

@@ -17,7 +17,12 @@ const SHELLS = ["zsh", "bash", "node", "python"];
 const FONT_MIN = 12;
 const FONT_MAX = 16;
 
-export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: string) => void }) {
+export default function TerminalTabs({ onCwdChange, onClose, onToggleBig, termBig }: {
+  onCwdChange?: (cwd: string) => void;
+  onClose?: () => void;
+  onToggleBig?: () => void;
+  termBig?: boolean;
+}) {
   const [tabs, setTabs] = useState<TerminalTab[]>([
     { id: genId(), label: "zsh", shell: "zsh", splitId: null },
   ]);
@@ -240,67 +245,8 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
           ))}
         </div>
 
-        {/* Right toolbar actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0, paddingLeft: 4, borderLeft: "1px solid var(--border-dim)" }}>
-
-          {/* Font size controls */}
-          <button
-            onClick={decreaseFontSize}
-            disabled={fontSize <= FONT_MIN}
-            title={`Decrease font size (${fontSize}px)`}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: 22,
-              padding: "0 5px",
-              borderRadius: 4,
-              border: "none",
-              background: "none",
-              color: fontSize <= FONT_MIN ? "var(--text-dimmer)" : "var(--text-dim)",
-              cursor: fontSize <= FONT_MIN ? "not-allowed" : "pointer",
-              fontSize: 11,
-              fontFamily: "var(--font-ui)",
-              fontWeight: 600,
-              flexShrink: 0,
-            }}
-          >
-            A-
-          </button>
-          <button
-            onClick={increaseFontSize}
-            disabled={fontSize >= FONT_MAX}
-            title={`Increase font size (${fontSize}px)`}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: 22,
-              padding: "0 5px",
-              borderRadius: 4,
-              border: "none",
-              background: "none",
-              color: fontSize >= FONT_MAX ? "var(--text-dimmer)" : "var(--text-dim)",
-              cursor: fontSize >= FONT_MAX ? "not-allowed" : "pointer",
-              fontSize: 13,
-              fontFamily: "var(--font-ui)",
-              fontWeight: 600,
-              flexShrink: 0,
-            }}
-          >
-            A+
-          </button>
-
-          {/* Find */}
-          <ToolbarBtn title="Find in Terminal" onClick={findInTerminal}>
-            <Search size={12} />
-          </ToolbarBtn>
-
-          {/* Clear */}
-          <ToolbarBtn title="Clear Terminal" onClick={clearActive}>
-            <span style={{ fontSize: 10, fontFamily: "var(--font-ui)", fontWeight: 600, letterSpacing: "-0.02em" }}>CLR</span>
-          </ToolbarBtn>
-
+        {/* Right toolbar -- minimal, like VSCode */}
+        <div style={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0, paddingLeft: 4 }}>
           {/* New terminal + shell picker */}
           <div style={{ position: "relative" }}>
             <div style={{ display: "flex", alignItems: "center" }}>
@@ -308,23 +254,18 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
                 <Plus size={13} />
               </ToolbarBtn>
               <ToolbarBtn onClick={() => setShellMenuOpen(v => !v)} title="Launch Profile">
-                <ChevronDown size={11} />
+                <ChevronDown size={10} />
               </ToolbarBtn>
             </div>
             {shellMenuOpen && (
               <div
                 ref={shellMenuRef}
+                className="context-menu"
                 style={{
                   position: "absolute",
                   top: "calc(100% + 4px)",
                   right: 0,
-                  background: "var(--bg-3)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 6,
-                  padding: "4px 0",
                   minWidth: 140,
-                  zIndex: 1000,
-                  boxShadow: "var(--shadow-lg)",
                 }}
               >
                 <div className="label" style={{ padding: "3px 10px 5px" }}>
@@ -334,17 +275,7 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
                   <div
                     key={shell}
                     onClick={() => addTab(shell)}
-                    className="hoverable"
-                    style={{
-                      padding: "5px 12px",
-                      fontSize: 12,
-                      fontFamily: "var(--font)",
-                      color: "var(--text)",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                    }}
+                    className="context-menu-item"
                   >
                     <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>$</span>
                     {shell}
@@ -354,20 +285,17 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
             )}
           </div>
 
-          {/* Split / Unsplit */}
+          {/* Split */}
           <ToolbarBtn
             title={activeTab?.splitId ? "Unsplit Terminal" : "Split Terminal"}
             onClick={activeTab?.splitId ? unsplitActive : splitActive}
           >
-            {activeTab?.splitId
-              ? <X size={12} />
-              : <SplitSquareHorizontal size={13} />
-            }
+            <SplitSquareHorizontal size={12} />
           </ToolbarBtn>
 
           {/* Kill */}
           <ToolbarBtn title="Kill Terminal" onClick={killActive} danger>
-            <Trash2 size={13} />
+            <Trash2 size={12} />
           </ToolbarBtn>
 
           {/* More actions */}
@@ -376,51 +304,36 @@ export default function TerminalTabs({ onCwdChange }: { onCwdChange?: (cwd: stri
               <MoreHorizontal size={13} />
             </ToolbarBtn>
             {moreMenuOpen && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 4px)",
-                  right: 0,
-                  background: "var(--bg-3)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 6,
-                  padding: "4px 0",
-                  minWidth: 160,
-                  zIndex: 1000,
-                  boxShadow: "var(--shadow-lg)",
-                }}
-              >
-                <MoreMenuItem
-                  label="Find in Terminal"
-                  shortcut="Cmd+F"
-                  onClick={() => { setMoreMenuOpen(false); findInTerminal(); }}
-                />
-                <MoreMenuItem
-                  label="Clear Terminal"
-                  onClick={() => { setMoreMenuOpen(false); clearActive(); }}
-                />
-                <div style={{ height: 1, background: "var(--border-dim)", margin: "3px 0" }} />
-                <MoreMenuItem
-                  label="New Terminal"
-                  onClick={() => { setMoreMenuOpen(false); addTab(); }}
-                />
-                <MoreMenuItem
-                  label={activeTab?.splitId ? "Unsplit Terminal" : "Split Terminal"}
-                  onClick={() => { setMoreMenuOpen(false); activeTab?.splitId ? unsplitActive() : splitActive(); }}
-                />
-                <div style={{ height: 1, background: "var(--border-dim)", margin: "3px 0" }} />
-                <MoreMenuItem
-                  label="Kill Terminal"
-                  danger
-                  onClick={() => { setMoreMenuOpen(false); killActive(); }}
-                />
+              <div className="context-menu" style={{
+                position: "absolute", top: "calc(100% + 4px)", right: 0, minWidth: 160,
+              }}>
+                <MoreMenuItem label="Find in Terminal" shortcut="Cmd+F"
+                  onClick={() => { setMoreMenuOpen(false); findInTerminal(); }} />
+                <MoreMenuItem label="Clear Terminal"
+                  onClick={() => { setMoreMenuOpen(false); clearActive(); }} />
+                <div className="context-menu-separator" />
+                <MoreMenuItem label="Decrease Font Size"
+                  onClick={() => { setMoreMenuOpen(false); decreaseFontSize(); }} />
+                <MoreMenuItem label="Increase Font Size"
+                  onClick={() => { setMoreMenuOpen(false); increaseFontSize(); }} />
+                <div className="context-menu-separator" />
+                <MoreMenuItem label="Kill Terminal" danger
+                  onClick={() => { setMoreMenuOpen(false); killActive(); }} />
               </div>
             )}
           </div>
 
-          <ToolbarBtn title="Maximize Panel">
-            <Maximize2 size={12} />
-          </ToolbarBtn>
+          {/* Maximize / Close */}
+          {onToggleBig && (
+            <ToolbarBtn title={termBig ? "Restore" : "Maximize"} onClick={onToggleBig}>
+              <Maximize2 size={12} />
+            </ToolbarBtn>
+          )}
+          {onClose && (
+            <ToolbarBtn title="Close terminal" onClick={onClose}>
+              <X size={13} />
+            </ToolbarBtn>
+          )}
         </div>
       </div>
 

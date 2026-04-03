@@ -1,44 +1,44 @@
-/* Void -- dark neutral, zero hue, monospace throughout */
+/* Design system -- Conductor warm dark + competitor consensus */
 
 :root {
-  /* Backgrounds -- lifted from pure black to reduce harshness */
-  --bg:          #111111;
-  --bg-2:        #161616;
-  --bg-3:        #1c1c1c;
-  --bg-4:        #222222;
+  /* Backgrounds -- warm dark (Conductor: #1a1a1a base) */
+  --bg:          #1a1a1a;
+  --bg-2:        #222222;
+  --bg-3:        #2a2a2a;
+  --bg-4:        #333333;
 
-  /* Borders */
-  --border:      #2a2a2a;
-  --border-dim:  #1e1e1e;
+  /* Borders -- warm tint */
+  --border:      rgba(255, 248, 240, 0.08);
+  --border-dim:  rgba(255, 248, 240, 0.04);
 
-  /* Text -- pulled back from pure white */
-  --text:        #d4d4d4;
-  --text-dim:    #808080;
-  --text-dimmer: #505050;
+  /* Text -- warm whites (Conductor uses slightly warm, not pure white) */
+  --text:        #e8e4df;
+  --text-dim:    #9a9590;
+  --text-dimmer: #6a6560;
 
-  /* Accent -- warm grey, slight lift */
-  --accent:        #b0b0b0;
-  --accent-dim:    #808080;
-  --accent-bg:     rgba(255, 255, 255, 0.04);
-  --accent-border: rgba(255, 255, 255, 0.10);
+  /* Accent -- terra cotta/amber (Conductor's brand) */
+  --accent:        #d4956a;
+  --accent-dim:    #b07a52;
+  --accent-bg:     rgba(212, 149, 106, 0.08);
+  --accent-border: rgba(212, 149, 106, 0.15);
 
-  /* Semantic -- muted, no saturation */
-  --blue:      #888888;
-  --blue-bg:   rgba(255, 255, 255, 0.04);
-  --red:       #9e5a5a;
-  --red-bg:    rgba(158, 90, 90, 0.10);
-  --yellow:    #9a7a32;
-  --yellow-bg: rgba(154, 122, 50, 0.10);
-  --green:     #5a9e6e;
-  --green-bg:  rgba(90, 158, 110, 0.10);
-  --orange:    #9e7040;
-  --orange-bg: rgba(158, 112, 64, 0.10);
-  --purple:    #7a6aa8;
-  --purple-bg: rgba(122, 106, 168, 0.10);
+  /* Semantic -- muted but with hue */
+  --blue:      #7aa2f7;
+  --blue-bg:   rgba(122, 162, 247, 0.10);
+  --red:       #d46a6a;
+  --red-bg:    rgba(212, 106, 106, 0.10);
+  --yellow:    #d4a54a;
+  --yellow-bg: rgba(212, 165, 74, 0.10);
+  --green:     #7dba6a;
+  --green-bg:  rgba(125, 186, 106, 0.10);
+  --orange:    #d4956a;
+  --orange-bg: rgba(212, 149, 106, 0.10);
+  --purple:    #b49af7;
+  --purple-bg: rgba(180, 154, 247, 0.10);
 
-  /* Badge border tokens (20% of semantic color) */
-  --blue-border:   rgba(136, 136, 136, 0.20);
-  --yellow-border: rgba(154, 122, 50, 0.20);
+  /* Badge border tokens */
+  --blue-border:   rgba(122, 162, 247, 0.20);
+  --yellow-border: rgba(224, 175, 104, 0.20);
 
   /* Tool event colors */
   --tool-read: var(--blue);
@@ -55,9 +55,9 @@
   --activity-border: var(--border-dim);
   --activity-event-hover: var(--bg-2);
 
-  /* Typography -- monospace throughout */
+  /* Typography -- proportional UI, monospace code */
   --font:    'JetBrains Mono', 'Fira Code', Menlo, monospace;
-  --font-ui: 'JetBrains Mono', 'Fira Code', Menlo, monospace;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
 
   /* Typography scale */
   --font-size-2xs:  9px;
@@ -79,13 +79,13 @@
   --weight-normal:   400;
   --weight-semibold: 600;
 
-  /* Border radius -- slightly softened */
-  --radius:    3px;
-  --radius-sm: 2px;
-  --radius-lg: 5px;
+  /* Border radius -- match OpenCode scale */
+  --radius:    6px;
+  --radius-sm: 4px;
+  --radius-lg: 8px;
 
   /* Typography scale (xs/sm/lg defined above near font declarations) */
-  --font-size-base: 13px;
+  --font-size-base: 14px;
 
   /* Spacing constants */
   --titlebar-height:       35px;
@@ -98,11 +98,11 @@
   --surface:   var(--bg-2);
   --surface-2: var(--bg-3);
 
-  /* Modal overlay + shadow */
+  /* Modal overlay + shadow -- layered like OpenCode */
   --overlay-bg:  rgba(0, 0, 0, 0.55);
-  --shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.35);
-  --shadow-md:   0 4px 20px rgba(0, 0, 0, 0.3);
-  --shadow-sm:   0 2px 12px rgba(0, 0, 0, 0.25);
+  --shadow-lg:   0 16px 48px -6px rgba(0, 0, 0, 0.15), 0 6px 12px -2px rgba(0, 0, 0, 0.10), 0 1px 2.5px rgba(0, 0, 0, 0.10);
+  --shadow-md:   0 6px 12px -2px rgba(0, 0, 0, 0.10), 0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.15);
+  --shadow-sm:   0 1px 2px -0.5px rgba(0, 0, 0, 0.06), 0 0.5px 1.5px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.10);
 
   /* Interactive surface overlays (theme-aware) */
   --hover-bg:        rgba(255, 255, 255, 0.04);
@@ -144,7 +144,7 @@
   --z-overlay: 3000;
 
   /* Color on accent (text that sits on accent backgrounds) */
-  --color-on-accent: var(--bg);
+  --color-on-accent: #1a1a1a;
 
   /* Transitions */
   --transition-fast:    0.1s ease;
@@ -152,47 +152,46 @@
   --transition-status:  0.15s ease-out;
 }
 
-/* Light -- warm neutral, softer than pure white */
+/* Light theme -- informed by OpenCode light palette */
 [data-theme="light"] {
-  --bg:          #f0f0ee;
-  --bg-2:        #e9e9e6;
-  --bg-3:        #e0e0dd;
-  --bg-4:        #d6d6d2;
+  --bg:          #f8f8f8;
+  --bg-2:        #f3f3f3;
+  --bg-3:        #ededed;
+  --bg-4:        #e8e8e8;
 
-  --border:      #ccccc8;
-  --border-dim:  #ddddd9;
+  --border:      rgba(0, 0, 0, 0.12);
+  --border-dim:  rgba(0, 0, 0, 0.06);
 
-  --text:        #1e1e1e;
-  --text-dim:    #6a6a6a;
-  --text-dimmer: #9a9a9a;
+  --text:        rgba(0, 0, 0, 0.87);
+  --text-dim:    rgba(0, 0, 0, 0.55);
+  --text-dimmer: rgba(0, 0, 0, 0.30);
 
-  /* Accent -- dark but not black */
-  --accent:        #2a2a2a;
-  --accent-dim:    #4a4a4a;
+  --accent:        rgba(0, 0, 0, 0.80);
+  --accent-dim:    rgba(0, 0, 0, 0.55);
   --accent-bg:     rgba(0, 0, 0, 0.04);
   --accent-border: rgba(0, 0, 0, 0.12);
 
-  /* Semantic — muted, no saturation */
-  --blue:      #666666;
-  --blue-bg:   rgba(0, 0, 0, 0.04);
-  --red:       #8b3a3a;
-  --red-bg:    rgba(139, 58, 58, 0.08);
-  --yellow:    #7a6020;
-  --yellow-bg: rgba(122, 96, 32, 0.08);
-  --green:     #3a7a50;
-  --green-bg:  rgba(58, 122, 80, 0.08);
-  --orange:    #7a4a20;
-  --orange-bg: rgba(122, 74, 32, 0.08);
-  --purple:    #5a4a88;
-  --purple-bg: rgba(90, 74, 136, 0.08);
+  /* Semantic -- actual hues, slightly muted for light bg */
+  --blue:      #2563eb;
+  --blue-bg:   rgba(37, 99, 235, 0.08);
+  --red:       #dc2626;
+  --red-bg:    rgba(220, 38, 38, 0.08);
+  --yellow:    #b45309;
+  --yellow-bg: rgba(180, 83, 9, 0.08);
+  --green:     #16a34a;
+  --green-bg:  rgba(22, 163, 74, 0.08);
+  --orange:    #c2410c;
+  --orange-bg: rgba(194, 65, 12, 0.08);
+  --purple:    #7c3aed;
+  --purple-bg: rgba(124, 58, 237, 0.08);
 
-  --blue-border:   rgba(102, 102, 102, 0.20);
-  --yellow-border: rgba(122, 96, 32, 0.20);
+  --blue-border:   rgba(37, 99, 235, 0.20);
+  --yellow-border: rgba(180, 83, 9, 0.20);
 
   --overlay-bg:  rgba(0, 0, 0, 0.30);
-  --shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.15);
-  --shadow-md:   0 4px 20px rgba(0, 0, 0, 0.12);
-  --shadow-sm:   0 2px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg:   0 16px 48px -6px rgba(0, 0, 0, 0.05), 0 6px 12px -2px rgba(0, 0, 0, 0.04), 0 1px 2.5px rgba(0, 0, 0, 0.04);
+  --shadow-md:   0 6px 12px -2px rgba(0, 0, 0, 0.075), 0 4px 8px -2px rgba(0, 0, 0, 0.075), 0 1px 2px rgba(0, 0, 0, 0.10);
+  --shadow-sm:   0 1px 2px -0.5px rgba(0, 0, 0, 0.04), 0 0.5px 1.5px rgba(0, 0, 0, 0.025), 0 1px 3px rgba(0, 0, 0, 0.05);
 
   --hover-bg:        rgba(0, 0, 0, 0.04);
   --hover-bg-strong: rgba(0, 0, 0, 0.08);
@@ -205,8 +204,8 @@
   --avatar-fallback-bg:   rgba(0, 0, 0, 0.08);
   --avatar-fallback-text: rgba(0, 0, 0, 0.5);
 
-  --cyan:    #3a7a8a;
-  --cyan-bg: rgba(58, 122, 138, 0.10);
+  --cyan:    #0891b2;
+  --cyan-bg: rgba(8, 145, 178, 0.10);
 
   --color-on-accent: #ffffff;
 }
@@ -223,10 +222,10 @@
 :root[data-density="compact"] {
   --titlebar-height:    28px;
   --status-bar-height:  18px;
-  --font-size-base:     11px;
-  --radius:             3px;
-  --radius-sm:          2px;
-  --radius-lg:          5px;
+  --font-size-base:     12px;
+  --radius:             4px;
+  --radius-sm:          3px;
+  --radius-lg:          6px;
   --activity-bar-width: 140px;
   --sidebar-default-width: 200px;
   --sidebar-min-width:  140px;

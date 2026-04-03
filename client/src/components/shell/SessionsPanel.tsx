@@ -94,10 +94,13 @@ export default function SessionsPanel({
 
   const bulkDelete = useCallback(async () => {
     const ids = Array.from(sel.selected);
-    await Promise.all(ids.map(id => deleteSession(id).catch(() => {})));
+    if (ids.length === 0) return;
+    for (const id of ids) {
+      try { await deleteSession(id); } catch { /* ignore */ }
+    }
     sel.clear();
-    fetchSessions();
     setConfirmBulkDelete(false);
+    fetchSessions();
   }, [sel, fetchSessions]);
 
   useEffect(() => {
@@ -170,7 +173,7 @@ export default function SessionsPanel({
           flexShrink: 0,
         }}>
           <span style={{ color: "var(--accent)" }}>{git.branch}</span>
-          {git.files.length > 0 && (
+          {git.files?.length > 0 && (
             <span style={{ color: "var(--yellow)" }}>{git.files.length} changed</span>
           )}
         </div>

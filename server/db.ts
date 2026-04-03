@@ -84,8 +84,11 @@ function migrate(db: Database.Database) {
   const msgCols = (db.pragma("table_info(session_messages)") as Array<{ name: string }>).map(r => r.name);
   if (!msgCols.includes("sent_at")) {
     db.exec("ALTER TABLE session_messages ADD COLUMN sent_at INTEGER");
-    // Backfill existing messages as already sent
     db.exec("UPDATE session_messages SET sent_at = created_at WHERE sent_at IS NULL AND role = 'user'");
+  }
+  // Structured message blocks (JSON array of typed blocks)
+  if (!msgCols.includes("blocks")) {
+    db.exec("ALTER TABLE session_messages ADD COLUMN blocks TEXT");
   }
 
   db.exec(`
@@ -247,6 +250,15 @@ function migrate(db: Database.Database) {
   // Session cost tracking (actual from Claude result events)
   if (!sessionCols.includes('cost_usd')) {
     db.exec('ALTER TABLE sessions ADD COLUMN cost_usd REAL NOT NULL DEFAULT 0');
+  }
+
+  // Compaction state -- persists the summary across requests so subsequent
+  // chat turns start from the compacted view instead of replaying everything.
+  if (!sessionCols.includes('compaction_summary')) {
+    db.exec('ALTER TABLE sessions ADD COLUMN compaction_summary TEXT');
+  }
+  if (!sessionCols.includes('compaction_count')) {
+    db.exec('ALTER TABLE sessions ADD COLUMN compaction_count INTEGER NOT NULL DEFAULT 0');
   }
 
   // Studio settings key-value store

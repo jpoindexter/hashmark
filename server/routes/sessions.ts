@@ -154,7 +154,8 @@ export function sessionsRoutes(ctx: WorkspaceCtx) {
     const archived = c.req.query("archived") === "true" ? 1 : 0;
     const sessions = db.prepare(`
       SELECT s.*,
-        (SELECT COUNT(*) FROM session_messages WHERE session_id = s.id) as message_count
+        (SELECT COUNT(*) FROM session_messages WHERE session_id = s.id) as message_count,
+        (SELECT SUBSTR(content, 1, 120) FROM session_messages WHERE session_id = s.id AND role = 'assistant' ORDER BY created_at DESC LIMIT 1) as last_message
       FROM sessions s
       WHERE s.archived = ?
       ORDER BY s.updated_at DESC

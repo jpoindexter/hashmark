@@ -3,12 +3,7 @@ import { Copy, ClipboardPaste, Trash2, Plus, XCircle } from "lucide-react";
 import TerminalTabs from "../TerminalTabs";
 import ContextMenu, { type ContextMenuItem } from "../shared/ContextMenu.tsx";
 
-const PANEL_TABS = ["TERMINAL", "OUTPUT"] as const;
-type PanelTab = (typeof PANEL_TABS)[number];
-
 interface TerminalPanelProps {
-  activeTab: PanelTab;
-  onTabChange: (tab: PanelTab) => void;
   termBig: boolean;
   onToggleBig: () => void;
   onClose: () => void;
@@ -16,8 +11,6 @@ interface TerminalPanelProps {
 }
 
 export default function TerminalPanel({
-  activeTab,
-  onTabChange,
   termBig,
   onToggleBig,
   onClose,
@@ -88,82 +81,12 @@ export default function TerminalPanel({
       background: "var(--bg)",
       overflow: "hidden",
     }}>
-      {/* Tab bar */}
-      <div style={{
-        height: 30,
-        background: "var(--bg-3)",
-        borderBottom: "1px solid var(--border-dim)",
-        display: "flex",
-        alignItems: "stretch",
-        flexShrink: 0,
-      }}>
-        {PANEL_TABS.map(tab => {
-          const isActive = activeTab === tab;
-          return (
-            <button
-              className="hoverable"
-              key={tab}
-              onClick={() => onTabChange(tab)}
-              style={{
-                background: "none",
-                border: "none",
-                padding: "0 14px",
-                fontSize: 11,
-                fontFamily: "var(--font)",
-                color: isActive ? "var(--text)" : "var(--text-dimmer)",
-                borderBottom: isActive ? "1px solid var(--accent)" : "1px solid transparent",
-                letterSpacing: "0.05em",
-              }}
-            >
-              {tab}
-            </button>
-          );
-        })}
-        <div style={{ flex: 1 }} />
-        <button
-          className="hoverable-strong"
-          title={termBig ? "Restore terminal" : "Maximize terminal"}
-          aria-label={termBig ? "Restore terminal" : "Maximize terminal"}
-          onClick={onToggleBig}
-          style={{
-            background: "none",
-            border: "none",
-            color: "var(--text-dimmer)",
-            fontSize: 13,
-            padding: "0 10px",
-          }}
-        >
-          {termBig ? "\u2291" : "\u229E"}
-        </button>
-        <button
-          className="hoverable-strong"
-          title="Close terminal (\u2318`)"
-          aria-label="Close terminal"
-          onClick={onClose}
-          style={{
-            background: "none",
-            border: "none",
-            color: "var(--text-dimmer)",
-            fontSize: 14,
-            padding: "0 10px",
-          }}
-        >
-          x
-        </button>
-      </div>
-
-      {/* Terminal content */}
       <div
         onContextMenu={handleTerminalContextMenu}
-        style={{ flex: 1, overflow: "hidden", display: activeTab === "TERMINAL" ? "flex" : "none", flexDirection: "column" }}
+        style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}
       >
-        <TerminalTabs onCwdChange={onCwdChange} />
+        <TerminalTabs onCwdChange={onCwdChange} onClose={onClose} onToggleBig={onToggleBig} termBig={termBig} />
       </div>
-      {activeTab === "OUTPUT" && (
-        <div style={{ flex: 1, padding: "12px 16px", overflow: "auto", fontSize: 12, color: "var(--text-dimmer)", fontFamily: "var(--font)" }}>
-          No output yet.
-        </div>
-      )}
 
       <ContextMenu
         items={ctxMenuItems}

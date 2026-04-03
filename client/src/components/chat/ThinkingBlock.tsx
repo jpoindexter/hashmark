@@ -43,11 +43,7 @@ export default function ThinkingBlock({ content, id }: ThinkingBlockProps) {
         )}
       </div>
 
-      <div style={{
-        maxHeight: expanded ? 2000 : 0,
-        overflow: "hidden",
-        transition: "max-height 0.15s ease",
-      }}>
+      <div className="collapsible-content" data-open={expanded}>
         <div style={{
           paddingLeft: 24,
           paddingTop: 4,

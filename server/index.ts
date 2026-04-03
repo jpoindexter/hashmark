@@ -167,7 +167,7 @@ export function createServer(opts: ServerOptions) {
 
     // DB is required for startup; claude binary is optional (only needed for agent runs)
     const ok = checks.db === true;
-    return c.json({ ok, checks, timestamp: Date.now() }, ok ? 200 : 503);
+    return c.json({ ok, checks, token: studioToken, timestamp: Date.now() }, ok ? 200 : 503);
   });
 
   // Shared info helper -- used by /api/info and /api/status

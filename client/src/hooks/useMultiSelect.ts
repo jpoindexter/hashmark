@@ -29,7 +29,8 @@ export function useMultiSelect<T extends string>(orderedIds: T[]) {
         return next;
       });
     } else {
-      setSelected(new Set([id]));
+      // Plain click: clear selection, just set anchor for future shift-clicks
+      setSelected(new Set());
     }
 
     lastClicked.current = id;

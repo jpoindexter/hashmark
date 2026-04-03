@@ -12,6 +12,12 @@ use tauri_plugin_dialog::DialogExt;
 
 struct ServerProcess(Mutex<Option<Child>>);
 
+/// Check if port 3200 is already in use (dev server running from npm script)
+fn port_in_use() -> bool {
+    std::net::TcpStream::connect("127.0.0.1:3200").is_ok()
+}
+
+
 /// Spawn the Node.js Hono server as a managed child process.
 /// The server binary is at `dist/bin.js` relative to the app resource dir.
 fn spawn_server(app: &AppHandle, project_dir: &str) -> Option<Child> {
@@ -28,11 +34,15 @@ fn spawn_server(app: &AppHandle, project_dir: &str) -> Option<Child> {
         if dev_path.exists() { dev_path } else { return None; }
     };
 
-    Command::new("node")
-        .arg(&bin_path)
-        .env("STUDIO_PORT", "3200")
-        .env("HASHMARK_PROJECT_DIR", project_dir)
-        .env("HASHMARK_NO_OPEN", "1")
+    // Spawn through user's login shell to inherit PATH (node, claude, etc.)
+    // This matches OpenCode's sidecar spawn pattern.
+    let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string());
+    let cmd = format!(
+        "STUDIO_PORT=3200 HASHMARK_PROJECT_DIR='{}' HASHMARK_NO_OPEN=1 node '{}'",
+        project_dir, bin_path.display()
+    );
+    Command::new(&shell)
+        .args(["-l", "-c", &cmd])
         .spawn()
         .ok()
 }
@@ -121,18 +131,24 @@ fn open_external(url: String) {
 /// Show OS folder-picker dialog; returns the chosen path or null
 #[tauri::command]
 async fn pick_folder(app: AppHandle) -> Option<String> {
-    let (tx, rx) = std::sync::mpsc::channel::<Option<String>>();
-    app.dialog()
-        .file()
-        .set_title("Select Project Folder")
-        .pick_folder(move |path| {
-            let _ = tx.send(path.map(|p| p.to_string()));
-        });
-    // Use spawn_blocking so we don't block the async runtime
-    tauri::async_runtime::spawn_blocking(move || rx.recv().ok().flatten())
-        .await
-        .ok()
-        .flatten()
+    let handle = app.clone();
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        handle.dialog()
+            .file()
+            .set_title("Select Project Folder")
+            .blocking_pick_folder()
+            .map(|p| p.to_string())
+    })
+    .await
+    .ok()
+    .flatten();
+
+    // Re-focus the main window after dialog closes (prevents keyboard leak to macOS)
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.set_focus();
+    }
+
+    result
 }
 
 /// Return the active project directory (null if unset)
@@ -142,11 +158,14 @@ fn get_project_dir(state: tauri::State<ProjectDir>) -> Option<String> {
     if dir == "__unset__" { None } else { Some(dir) }
 }
 
-/// Persist a new project directory and signal the webview to reload
+/// Persist a new project directory to disk config.
+/// The server-side /api/workspaces/:id/activate already switched ctx.projectDir,
+/// and the client reloads the page after this call. No app restart needed.
 #[tauri::command]
 fn set_project_dir(
-    app: AppHandle,
+    _app: AppHandle,
     state: tauri::State<ProjectDir>,
+    _server: tauri::State<ServerProcess>,
     dir: String,
 ) -> bool {
     let mut cfg = read_config();
@@ -154,7 +173,6 @@ fn set_project_dir(
     cfg.project_dir = Some(dir.clone());
     write_config(&cfg);
     *state.0.lock().unwrap() = dir;
-    emit_to_main(&app, "studio:reload", "");
     true
 }
 
@@ -513,11 +531,17 @@ pub fn run() {
                 });
             }
 
-            // Spawn the Node.js server as a managed child process
-            let project_dir = app.state::<ProjectDir>().0.lock().unwrap().clone();
-            if let Some(child) = spawn_server(&app.handle(), &project_dir) {
-                let server = app.state::<ServerProcess>();
-                *server.0.lock().unwrap() = Some(child);
+            // Spawn the Node.js server -- skip if already running (dev mode uses npm script)
+            if port_in_use() {
+                eprintln!("[tauri] port 3200 already in use, using existing server");
+            } else {
+                let project_dir = app.state::<ProjectDir>().0.lock().unwrap().clone();
+                if project_dir != "__unset__" {
+                    if let Some(child) = spawn_server(&app.handle(), &project_dir) {
+                        let server = app.state::<ServerProcess>();
+                        *server.0.lock().unwrap() = Some(child);
+                    }
+                }
             }
 
             Ok(())

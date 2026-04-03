@@ -31,7 +31,7 @@ export function useSessionManager() {
     const savedId = localStorage.getItem("studio_active_session_id");
 
     if (savedId) {
-      // Validate the saved session still exists
+      // Validate the saved session still exists (suppress 404 console noise)
       fetchApi(`/api/sessions/${savedId}`)
         .then((r) => {
           if (r.ok) {
@@ -40,10 +40,14 @@ export function useSessionManager() {
               if (data?.messages && data.messages.length > 0) setChatHasMessages(true);
             });
           }
-          // Saved session gone -- fall through to pick most recent
+          // Saved session gone -- clear stale reference, pick most recent
+          localStorage.removeItem("studio_active_session_id");
           return pickMostRecent();
         })
-        .catch(() => pickMostRecent());
+        .catch(() => {
+          localStorage.removeItem("studio_active_session_id");
+          pickMostRecent();
+        });
     } else {
       pickMostRecent();
     }
@@ -75,7 +79,10 @@ export function useSessionManager() {
 
   const handleNewSession = useCallback(() => {
     setChatHasMessages(false);
-    createSession().then(setActiveSessionId).catch(() => {
+    createSession().then((id) => {
+      setActiveSessionId(id);
+      setChatHasMessages(true);
+    }).catch(() => {
       toast.error("Failed to create session");
     });
   }, []);

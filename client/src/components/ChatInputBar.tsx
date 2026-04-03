@@ -179,18 +179,23 @@ export default function ChatInputBar({
     e.preventDefault();
   }, []);
 
+  const sendRef = useRef(sendMessageWithText);
+  sendRef.current = sendMessageWithText;
+  const attachedImageRef = useRef(attachedImage);
+  attachedImageRef.current = attachedImage;
+
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<{ text: string }>).detail;
       if (detail?.text) {
         retryCountRef.current = 0;
         lastSentMessageRef.current = detail.text;
-        void sendMessageWithText(detail.text, attachedImage);
+        void sendRef.current(detail.text, attachedImageRef.current);
       }
     };
     window.addEventListener("studio:retry-message", handler);
     return () => window.removeEventListener("studio:retry-message", handler);
-  }, [sessionId, selectedModel, thinking, planMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [retryCountRef, lastSentMessageRef]);
 
   useEffect(() => {
     return () => {
@@ -341,7 +346,7 @@ export default function ChatInputBar({
         <div style={{
           display: "flex",
           alignItems: "flex-start",
-          padding: "12px 14px 4px",
+          padding: "10px 14px 4px",
           gap: 8,
         }}>
           <textarea
@@ -353,7 +358,7 @@ export default function ChatInputBar({
             onPaste={handlePaste}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
-            placeholder={hasMessages || streaming ? "Follow up..." : "What do you want to build?"}
+            placeholder={hasMessages || streaming ? "Follow up..." : "Ask a question, @mention files, /commands"}
             disabled={streaming}
             rows={1}
             style={{

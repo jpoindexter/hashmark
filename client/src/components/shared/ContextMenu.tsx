@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from "react";
 
 export interface ContextMenuItem {
   label: string;
@@ -26,10 +26,10 @@ export default function ContextMenu({ items, position, onClose }: ContextMenuPro
   const [focusIndex, setFocusIndex] = useState(-1);
   const [clamped, setClamped] = useState<{ x: number; y: number } | null>(null);
 
-  const actionableIndices = items.reduce<number[]>((acc, item, i) => {
-    if (!item.separator) acc.push(i);
-    return acc;
-  }, []);
+  const actionableIndices = useMemo(
+    () => items.reduce<number[]>((acc, item, i) => { if (!item.separator) acc.push(i); return acc; }, []),
+    [items]
+  );
 
   useEffect(() => {
     if (!position || !menuRef.current) {
@@ -94,7 +94,7 @@ export default function ContextMenu({ items, position, onClose }: ContextMenuPro
 
   return (
     <>
-      <div style={{ position: "fixed", inset: 0, zIndex: 199 }} onClick={onClose} />
+      <div style={{ position: "fixed", inset: 0, zIndex: 99 }} onClick={onClose} />
 
       <div
         ref={menuRef}

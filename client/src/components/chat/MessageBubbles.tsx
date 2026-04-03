@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import { useRef, useCallback, useState } from "react";
+import { Copy, RotateCcw, Pencil } from "lucide-react";
 import { AssistantContent } from "./AssistantContent";
 import PlanReviewGate from "./PlanReviewGate";
 import { fmtTime, fmtTokens } from "../../lib/format";
@@ -25,30 +26,11 @@ function fmtDuration(ms: number): string {
 
 export { fmtDuration };
 
-const USER_AVATAR_STYLE: React.CSSProperties = {
-  width: 22,
-  height: 22,
-  borderRadius: "50%",
-  background: "var(--bg-4)",
-  border: "1px solid var(--border)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: 9,
-  color: "var(--text-dim)",
-  flexShrink: 0,
-  fontFamily: "var(--font)",
-  fontWeight: 600,
-  letterSpacing: "0.05em",
-  marginTop: 2,
-};
 
 export const ASSISTANT_CONTENT_STYLE: React.CSSProperties = {
-  paddingLeft: 12,
-  fontSize: 13,
+  fontSize: 14,
   color: "var(--text)",
   lineHeight: 1.6,
-  fontFamily: "var(--font-ui)",
 };
 
 const TIMESTAMP_STYLE: React.CSSProperties = {
@@ -64,38 +46,35 @@ function UserBubble({ msg, onContextMenu, showRetry, onRetry }: {
   showRetry?: boolean;
   onRetry?: () => void;
 }) {
-  const timestampRef = useRef<HTMLDivElement>(null);
+  const [hovered, setHovered] = useState(false);
   return (
     <div
       style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}
-      onMouseEnter={() => { if (timestampRef.current) timestampRef.current.style.opacity = "1"; }}
-      onMouseLeave={() => { if (timestampRef.current) timestampRef.current.style.opacity = "0"; }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       onContextMenu={onContextMenu}
     >
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 8, maxWidth: "80%" }}>
-        <div style={{ flex: 1 }}>
-          <div style={{
-            background: "var(--bg-4)",
-            border: `1px solid ${showRetry ? "var(--red, #f85149)" : "var(--border)"}`,
-            padding: "8px 12px 8px 14px",
-            fontSize: 13,
-            color: "var(--text)",
-            lineHeight: 1.6,
-            whiteSpace: "pre-wrap",
-            fontFamily: "var(--font-ui)",
-          }}>
-            {msg.content}
-          </div>
+      <div style={{ maxWidth: "85%" }}>
+        <div style={{
+          background: "var(--bg-3)",
+          border: `1px solid ${showRetry ? "var(--red)" : "var(--border-dim)"}`,
+          borderRadius: "var(--radius-lg)",
+          padding: "10px 14px",
+          fontSize: 14,
+          color: "var(--text)",
+          lineHeight: 1.6,
+          whiteSpace: "pre-wrap",
+        }}>
+          {msg.content}
         </div>
-        <div style={USER_AVATAR_STYLE}>U</div>
       </div>
-      {showRetry && onRetry && (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginRight: 30, marginTop: 4 }}>
-          <RetryButton onClick={onRetry} />
-        </div>
-      )}
-      <div ref={timestampRef} style={{ ...TIMESTAMP_STYLE, marginTop: 3, marginRight: 30, opacity: 0 }}>
-        {fmtTime(msg.created_at)}
+      {showRetry && onRetry && <RetryButton onClick={onRetry} />}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 4, marginTop: 4,
+        opacity: hovered ? 1 : 0, transition: "opacity 0.1s",
+      }}>
+        <span style={{ fontSize: 10, color: "var(--text-dimmer)" }}>{fmtTime(msg.created_at)}</span>
+        <CopyButton text={msg.content} />
       </div>
     </div>
   );
@@ -108,7 +87,6 @@ function RetryButton({ onClick }: { onClick: () => void }) {
       alignItems: "center",
       gap: 8,
       marginTop: 8,
-      paddingLeft: 14,
     }}>
       <div style={{
         fontSize: 11,
@@ -142,6 +120,69 @@ function RetryButton({ onClick }: { onClick: () => void }) {
   );
 }
 
+function HoverActions({ children }: { children: React.ReactNode }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ position: "relative" }}
+    >
+      {children}
+      {hovered && (
+        <div style={{
+          position: "absolute", top: -12, right: 0,
+          display: "flex", gap: 2, background: "var(--bg-2)",
+          border: "1px solid var(--border-dim)", borderRadius: "var(--radius)",
+          padding: "2px 4px", zIndex: 10,
+        }}>
+          {/* Action buttons are rendered as children in the parent */}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ActionBar({ visible, children }: { visible: boolean; children: React.ReactNode }) {
+  if (!visible) return null;
+  return (
+    <div style={{
+      display: "flex", gap: 2, marginTop: 4,
+      opacity: 0.7, transition: "opacity 0.1s",
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function CopyButton({ text }: { text: string }) {
+  const copied = useRef(false);
+  const iconRef = useRef<HTMLButtonElement>(null);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(text).then(() => {
+      copied.current = true;
+      if (iconRef.current) iconRef.current.dataset.copied = "true";
+      setTimeout(() => {
+        copied.current = false;
+        if (iconRef.current) iconRef.current.dataset.copied = "false";
+      }, 1500);
+    });
+  }, [text]);
+
+  return (
+    <button
+      ref={iconRef}
+      onClick={handleCopy}
+      className="btn-icon"
+      title="Copy response"
+      style={{ width: 18, height: 18 }}
+    >
+      <Copy size={11} />
+    </button>
+  );
+}
+
 function AssistantBubble({ msg, onContextMenu, showRetry, onRetry, responseTime }: {
   msg: Message;
   onContextMenu: (e: React.MouseEvent) => void;
@@ -149,30 +190,32 @@ function AssistantBubble({ msg, onContextMenu, showRetry, onRetry, responseTime 
   onRetry?: () => void;
   responseTime?: number;
 }) {
-  const timestampRef = useRef<HTMLDivElement>(null);
+  const [hovered, setHovered] = useState(false);
   return (
     <div
       style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}
-      onMouseEnter={() => { if (timestampRef.current && responseTime == null) timestampRef.current.style.opacity = "1"; }}
-      onMouseLeave={() => { if (timestampRef.current && responseTime == null) timestampRef.current.style.opacity = "0"; }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       onContextMenu={onContextMenu}
     >
       <div style={{
         ...ASSISTANT_CONTENT_STYLE,
-        borderLeft: `2px solid ${showRetry ? "var(--red, #f85149)" : "var(--accent)"}`,
         animation: "fadeIn 0.2s ease forwards",
       }}>
         <AssistantContent text={msg.content} />
       </div>
       {showRetry && onRetry && <RetryButton onClick={onRetry} />}
-      <div ref={timestampRef} style={{ ...TIMESTAMP_STYLE, display: "flex", gap: 8, marginTop: 3, paddingLeft: 14, opacity: responseTime != null ? 1 : 0 }}>
+      <div style={{
+        display: "flex", alignItems: "center", gap: 8,
+        marginTop: 6, fontSize: 10, color: "var(--text-dimmer)", userSelect: "none",
+        opacity: hovered ? 1 : 0.5, transition: "opacity 0.1s",
+      }}>
         <span>{fmtTime(msg.created_at)}</span>
-        {responseTime != null && (
-          <span>{fmtDuration(responseTime)}</span>
-        )}
+        {responseTime != null && <span>{fmtDuration(responseTime)}</span>}
         {msg.output_tokens != null && msg.output_tokens > 0 && (
           <span>{fmtTokens(msg.output_tokens)} tok</span>
         )}
+        <CopyButton text={msg.content} />
       </div>
     </div>
   );

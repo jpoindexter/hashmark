@@ -62,6 +62,9 @@ interface ChatMessagesProps {
   streamingState?: StreamingState;
   modelLabel?: string;
   planMode?: boolean;
+  projectInfo?: { projectName: string; projectDir: string };
+  gitStatus?: { branch: string; files: { status: string }[] };
+  onNewSession?: () => void;
 }
 
 
@@ -80,7 +83,7 @@ function isLastWithRole(msgs: Message[], role: Message["role"], id: string): boo
   return false;
 }
 
-export default function ChatMessages({ sessionId, streamText, streaming, streamingState, modelLabel = "Sonnet 4.6", planMode = false }: ChatMessagesProps) {
+export default function ChatMessages({ sessionId, streamText, streaming, streamingState, modelLabel = "Sonnet 4.6", planMode = false, projectInfo, gitStatus, onNewSession }: ChatMessagesProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [loadingEarlier, setLoadingEarlier] = useState(false);
@@ -154,8 +157,12 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
     }
   }, [sessionId, loadMessages]);
 
+  const wasStreamingRef = useRef(false);
   useEffect(() => {
-    if (!streaming) {
+    if (streaming) {
+      wasStreamingRef.current = true;
+    } else if (wasStreamingRef.current) {
+      wasStreamingRef.current = false;
       if (sessionId) void loadMessages(sessionId);
     }
   }, [streaming, sessionId, loadMessages]);
@@ -237,8 +244,8 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
 
   // Pretext-powered height estimation -- avoids DOM reflow for initial sizing
   const { estimateHeight, updateWidth } = useTextMeasure({
-    font: '13px "JetBrains Mono Variable", "JetBrains Mono", monospace',
-    lineHeight: 20.8, // 13px * 1.6
+    font: '14px -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif',
+    lineHeight: 22.4, // 14px * 1.6
     basePadding: 24,   // top + bottom padding on message bubbles
   });
 
@@ -306,7 +313,7 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
     return (
       <div style={{
         flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-        color: "var(--text-dimmer)", fontSize: "11px", fontFamily: "var(--font)",
+        color: "var(--text-dimmer)", fontSize: "11px",
       }}>
         loading...
       </div>
@@ -314,13 +321,13 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
   }
 
   if (!sessionId || (messages.length === 0 && !streaming)) {
-    return <EmptyState modelLabel={modelLabel} />;
+    return <EmptyState modelLabel={modelLabel} projectInfo={projectInfo} gitStatus={gitStatus} onNewSession={onNewSession} />;
   }
 
   return (
     <div
       ref={parentRef}
-      style={{ flex: 1, overflow: "auto", fontFamily: "var(--font)", position: "relative" }}
+      style={{ flex: 1, overflow: "auto", position: "relative" }}
     >
       {hasMore && (
         <div style={{ padding: "8px 24px", textAlign: "center" }}>
@@ -350,6 +357,7 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
               key={vrow.key}
               data-index={vrow.index}
               ref={virtualizer.measureElement}
+              className="msg-offscreen"
               style={{
                 position: "absolute",
                 top: 0,
@@ -361,7 +369,7 @@ export default function ChatMessages({ sessionId, streamText, streaming, streami
               <div style={{
                 maxWidth: 900,
                 margin: "0 auto",
-                padding: vrow.index === 0 ? "20px 24px 14px" : "0 24px 20px",
+                padding: vrow.index === 0 ? "16px 20px 10px" : "0 20px 14px",
               }}>
                 {item.id === RESUME_DIVIDER_ID ? (
                   <ResumedDivider timestamp={(item as { timestamp: number }).timestamp} />

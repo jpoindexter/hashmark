@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { FileText, Terminal, Pencil, Search, Globe, Bot, Wrench, FilePlus } from "lucide-react";
 import ThinkingBlock from "./ThinkingBlock";
 import ToolCallSummary, { FileBadge, getReadFilePath, categorize } from "./ToolSummary";
 import { ASSISTANT_CONTENT_STYLE, fmtDuration } from "./MessageBubbles";
@@ -20,12 +21,45 @@ export const CURSOR_STYLE: React.CSSProperties = {
   animation: "cursor-blink 1s step-end infinite",
 };
 
-function toolAccentColor(tool: string): string {
+function toolIcon(tool: string): React.ReactNode {
   const name = tool.toLowerCase();
-  if (["write", "edit", "create", "multiedit"].includes(name)) return "var(--accent)";
-  if (["bash", "shell"].includes(name)) return "var(--yellow)";
-  if (["read", "glob", "grep"].includes(name)) return "var(--blue)";
+  const s = 13;
+  if (name === "read") return <FileText size={s} />;
+  if (name === "write") return <FilePlus size={s} />;
+  if (name === "edit" || name === "multiedit") return <Pencil size={s} />;
+  if (name === "bash" || name === "shell") return <Terminal size={s} />;
+  if (name === "glob" || name === "grep") return <Search size={s} />;
+  if (name === "agent") return <Bot size={s} />;
+  if (name === "webfetch" || name === "websearch") return <Globe size={s} />;
+  if (name === "toolsearch") return <Wrench size={s} />;
+  return <Wrench size={s} />;
+}
+
+function toolColor(tool: string): string {
+  const name = tool.toLowerCase();
+  if (name === "read") return "var(--blue)";
+  if (name === "write") return "var(--green)";
+  if (name === "edit" || name === "multiedit") return "var(--yellow)";
+  if (name === "bash" || name === "shell") return "var(--orange)";
+  if (name === "glob" || name === "grep") return "var(--text-dim)";
+  if (name === "agent") return "var(--purple)";
   return "var(--text-dimmer)";
+}
+
+function toolLabel(tool: string): string {
+  const name = tool.toLowerCase();
+  if (name === "read") return "Read";
+  if (name === "write") return "Write";
+  if (name === "edit") return "Edit";
+  if (name === "multiedit") return "MultiEdit";
+  if (name === "bash" || name === "shell") return "Bash";
+  if (name === "glob") return "Glob";
+  if (name === "grep") return "Grep";
+  if (name === "agent") return "Agent";
+  if (name === "webfetch") return "Fetch";
+  if (name === "websearch") return "Search";
+  if (name === "toolsearch") return "ToolSearch";
+  return tool;
 }
 
 function primaryArg(tool: string, input: Record<string, unknown>): string {
@@ -41,33 +75,53 @@ function primaryArg(tool: string, input: Record<string, unknown>): string {
   return "";
 }
 
-export function ToolUseBlock({ block }: { block: ToolUseBlockData }) {
-  const accent = toolAccentColor(block.tool);
+function shortenPath(p: string): string {
+  const parts = p.split("/");
+  if (parts.length <= 3) return p;
+  return ".../" + parts.slice(-2).join("/");
+}
+
+export function ToolUseBlock({ block, pending }: { block: ToolUseBlockData; pending?: boolean }) {
+  const color = toolColor(block.tool);
   const arg = primaryArg(block.tool, block.input);
+  const lbl = toolLabel(block.tool);
+  const isBash = ["bash", "shell"].includes(block.tool.toLowerCase());
+
   return (
     <div style={{
       display: "flex",
       alignItems: "center",
       gap: 8,
-      background: "var(--bg-3)",
-      border: "1px solid var(--border-dim)",
-      borderLeft: `2px solid ${accent}`,
-      borderRadius: "var(--radius-sm, 4px)",
-      padding: "4px 8px",
-      fontSize: 11,
-      fontFamily: "var(--font)",
-      margin: "4px 0",
+      padding: "6px 10px",
+      margin: "3px 0",
+      fontSize: 13,
       lineHeight: 1.4,
+      background: "var(--bg-3)",
+      borderLeft: `2px solid ${color}`,
+      borderRadius: "var(--radius)",
     }}>
-      <span style={{ color: accent, fontWeight: 600, flexShrink: 0 }}>[{block.tool}]</span>
+      <span style={{ color, flexShrink: 0, display: "flex" }}>{toolIcon(block.tool)}</span>
+      <span style={{
+        fontWeight: 500, color: "var(--text)", flexShrink: 0,
+        ...(pending ? {
+          background: `linear-gradient(90deg, var(--text) 40%, var(--text-dimmer) 50%, var(--text) 60%)`,
+          backgroundSize: "200% 100%",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          animation: "text-shimmer 1.5s ease-in-out infinite",
+        } : {}),
+      }}>{lbl}</span>
       {arg && (
         <span style={{
           color: "var(--text-dim)",
+          fontFamily: "var(--font)",
+          fontSize: 12,
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
+          flex: 1,
         }}>
-          {arg}
+          {isBash ? arg : shortenPath(arg)}
         </span>
       )}
     </div>
@@ -84,9 +138,7 @@ function CostLine({ cost, usage, responseTime }: { cost?: number; usage?: { inpu
     <div style={{
       fontSize: 10,
       color: "var(--text-dimmer)",
-      fontFamily: "var(--font)",
       marginTop: 6,
-      paddingLeft: 14,
       userSelect: "none",
     }}>
       {parts.join(" · ")}
@@ -143,7 +195,6 @@ export function segmentBlocks(blocks: ContentBlock[]): StreamSegment[] {
           <div style={{
             fontSize: 11,
             color: "var(--text-dimmer)",
-            fontFamily: "var(--font)",
             margin: "2px 0",
             fontStyle: "italic",
           }}>
@@ -188,11 +239,22 @@ export default function StreamingBubble({ state, legacyText, streamStartTime }: 
     [hasBlocks, state?.blocks]
   );
 
+  // Find the last tool_use block index that has no matching tool_result (= still running)
+  const pendingToolIds = useMemo(() => {
+    if (!hasBlocks) return new Set<string>();
+    const resultIds = new Set<string>();
+    const useIds: string[] = [];
+    for (const b of state.blocks) {
+      if (b.type === "tool_result") resultIds.add(b.toolUseId);
+      if (b.type === "tool_use" && b.toolUseId) useIds.push(b.toolUseId);
+    }
+    return new Set(useIds.filter(id => !resultIds.has(id)));
+  }, [hasBlocks, state?.blocks]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
       <div style={{
         ...ASSISTANT_CONTENT_STYLE,
-        borderLeft: "2px solid var(--accent)",
         width: "100%",
       }}>
         {hasBlocks ? (
@@ -206,9 +268,10 @@ export default function StreamingBubble({ state, legacyText, streamStartTime }: 
                 const isRead = categorize(b.tool) === "Read";
                 const isEdit = ["edit", "write", "multiedit"].includes(b.tool.toLowerCase());
                 const fp = isRead ? getReadFilePath(b.input) : null;
+                const isPending = !!(b.toolUseId && pendingToolIds.has(b.toolUseId));
                 return (
                   <div key={seg.key}>
-                    <ToolUseBlock block={b} />
+                    <ToolUseBlock block={b} pending={isPending} />
                     {fp && (
                       <div style={{ paddingLeft: 2, marginTop: 2, marginBottom: 4 }}>
                         <FileBadge filePath={fp} />
@@ -236,24 +299,23 @@ export default function StreamingBubble({ state, legacyText, streamStartTime }: 
             <span style={CURSOR_STYLE} />
           </>
         ) : (
-          <div style={{ display: "flex", gap: 4, alignItems: "center", paddingTop: 4 }}>
-            {[0, 1, 2].map(i => (
-              <span key={i} style={{
-                width: 5,
-                height: 5,
-                background: "var(--accent)",
-                borderRadius: "50%",
-                animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
-              }} />
-            ))}
-          </div>
+          <span style={{
+            fontSize: 13, fontWeight: 500,
+            background: "linear-gradient(90deg, var(--text-dim) 40%, var(--text-dimmer) 50%, var(--text-dim) 60%)",
+            backgroundSize: "200% 100%",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            animation: "text-shimmer 1.5s ease-in-out infinite",
+          }}>
+            Thinking...
+          </span>
         )}
       </div>
 
       {state && (state.cost != null || state.usage != null) ? (
         <CostLine cost={state.cost} usage={state.usage} />
       ) : (
-        <div style={{ display: "flex", gap: 8, fontSize: 10, color: "var(--text-dimmer)", marginTop: 3, paddingLeft: 14, userSelect: "none" }}>
+        <div style={{ display: "flex", gap: 8, fontSize: 10, color: "var(--text-dimmer)", marginTop: 3, userSelect: "none" }}>
           <span>typing...</span>
           {streamStartTime != null && <StreamingTimer startTime={streamStartTime} />}
         </div>

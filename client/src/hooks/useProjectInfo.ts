@@ -7,9 +7,14 @@ export interface ProjectInfo {
   projectDir: string;
 }
 
+export interface GitFile {
+  status: string;
+  file: string;
+}
+
 export interface GitStatus {
   branch: string;
-  files: { status: string }[];
+  files: GitFile[];
 }
 
 export type DriftLevel = "none" | "minor" | "major";
@@ -88,16 +93,17 @@ export function useProjectInfo(
   const prevStreamingRef = useRef(false);
   useEffect(() => {
     if (!streaming) {
+      const wasStreaming = prevStreamingRef.current;
+      prevStreamingRef.current = false;
       fetchApi("/api/files/git")
         .then(r => r.json())
         .then((data: GitStatus) => {
           setGit(data);
-          if (prevStreamingRef.current && (data.files?.length ?? 0) > 0) {
+          if (wasStreaming && (data.files?.length ?? 0) > 0) {
             onDiffShouldOpen?.();
           }
         })
         .catch(() => {});
-      prevStreamingRef.current = false;
       return;
     }
     prevStreamingRef.current = true;

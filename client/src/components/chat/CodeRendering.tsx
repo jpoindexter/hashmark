@@ -1,9 +1,9 @@
 import { useState } from "react";
 
 export const CODE_CONTAINER_STYLE: React.CSSProperties = {
-  background: "var(--bg-3)",
+  background: "var(--bg-2)",
   border: "1px solid var(--border-dim)",
-  borderRadius: "var(--radius)",
+  borderRadius: "var(--radius-lg)",
   margin: "8px 0",
   overflow: "hidden",
   position: "relative",

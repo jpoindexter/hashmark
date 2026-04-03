@@ -12,15 +12,6 @@ const ICON_BTN_BASE: React.CSSProperties = {
   flexShrink: 0,
 };
 
-function dimBorderHover(e: React.MouseEvent<HTMLButtonElement>) {
-  e.currentTarget.style.borderColor = "var(--border)";
-  e.currentTarget.style.color = "var(--text-dim)";
-}
-
-function dimBorderUnhover(e: React.MouseEvent<HTMLButtonElement>) {
-  e.currentTarget.style.borderColor = "var(--border-dim)";
-  e.currentTarget.style.color = "var(--text-dimmer)";
-}
 
 interface ChatBottomBarProps {
   selectedModel: string;
@@ -84,15 +75,13 @@ export function ChatBottomBar({
         <button
           onClick={onNewSession}
           title="New conversation"
+          className="hoverable"
           style={{
             ...ICON_BTN_BASE,
             background: "none",
             border: "1px solid var(--border-dim)",
             color: "var(--text-dimmer)",
-            transition: "border-color 0.1s, color 0.1s",
           }}
-          onMouseEnter={dimBorderHover}
-          onMouseLeave={dimBorderUnhover}
         >
           <Plus size={14} />
         </button>
@@ -109,8 +98,7 @@ export function ChatBottomBar({
               transition: "border-color 0.1s, color 0.1s, background 0.1s",
               animation: listening ? "pulse 1.5s ease-in-out infinite" : "none",
             }}
-            onMouseEnter={e => { if (!listening) dimBorderHover(e); }}
-            onMouseLeave={e => { if (!listening) dimBorderUnhover(e); }}
+            className={listening ? "" : "hoverable"}
           >
             <Mic size={14} />
           </button>

@@ -94,34 +94,37 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
+  height: 28px;
+  padding: 0 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   font-family: var(--font-ui);
   cursor: pointer;
-  background: rgba(255,255,255,0.06);
+  background: var(--bg-3);
   color: var(--text-dim);
   transition: border-color 0.12s, color 0.12s, background 0.12s;
 }
 .btn:hover {
   border-color: var(--border);
   color: var(--text);
-  background: var(--bg-3);
+  background: var(--bg-4);
 }
 .btn-primary {
   background: var(--accent);
-  border-color: var(--accent);
+  border-color: transparent;
   color: var(--color-on-accent);
-  font-weight: 600;
+  font-weight: 500;
 }
 .btn-primary:hover {
   background: var(--accent-dim);
-  border-color: var(--accent-dim);
+  border-color: transparent;
 }
 .btn-sm {
-  padding: 3px 8px;
-  font-size: 11px;
+  height: 24px;
+  padding: 0 8px;
+  font-size: 12px;
 }
 .btn:disabled {
   opacity: 0.4;
@@ -132,13 +135,14 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 /* ---- Utility: cards / badges ---- */
 .card {
   background: var(--bg-2);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-dim);
   border-radius: var(--radius-lg);
   padding: 16px;
-  transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 .card:hover {
   border-color: var(--border);
+  box-shadow: var(--shadow-sm);
 }
 
 .badge {
@@ -425,6 +429,26 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
   background-size: 100% 100%;
 }
 
+/* ---- Performance: content-visibility (from OpenCode) ---- */
+.msg-offscreen {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
+}
+
+/* ---- Collapsible spring animation (from OpenCode: 0.35s spring) ---- */
+.collapsible-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  overflow: hidden;
+}
+.collapsible-content[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+.collapsible-content > div {
+  min-height: 0;
+}
+
 /* ---- Keyframe animations ---- */
 @keyframes blink        { 0%,100%{opacity:1} 50%{opacity:0} }
 @keyframes fadeIn       { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
@@ -441,6 +465,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 @keyframes verify-spin { to{transform:rotate(360deg)} }
 @keyframes page-enter      { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 @keyframes skeleton-pulse  { 0%,100%{opacity:.4} 50%{opacity:.8} }
+@keyframes text-shimmer    { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
 
 /* ---- Utility: animation classes ---- */
 .fade-in  { animation: fadeIn .15s ease forwards; }
@@ -479,8 +504,8 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 [data-theme="light"] input:focus,
 [data-theme="light"] textarea:focus,
 [data-theme="light"] select:focus { border-color: var(--blue); }
-[data-theme="light"] .btn { background: var(--bg-2); color: var(--text-dim); border-color: var(--border); }
-[data-theme="light"] .btn:hover { background: var(--bg-3); color: var(--text); }
+[data-theme="light"] .btn { background: var(--bg-2); color: var(--text-dim); border-color: var(--border-dim); }
+[data-theme="light"] .btn:hover { background: var(--bg-3); color: var(--text); border-color: var(--border); }
 [data-theme="light"] .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--color-on-accent); }
 [data-theme="light"] .btn-primary:hover { background: var(--accent-dim); border-color: var(--accent-dim); }
 

@@ -4,9 +4,13 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.tsx";
 import "./index.css";
 import { initTauriBridge } from "./lib/tauri-bridge";
+import { prefetchToken } from "./lib/api";
 
 // Must run before window.studio is read below
 initTauriBridge();
+
+// Pre-fetch auth token so it's ready for WebSocket URLs (which need it synchronously)
+prefetchToken();
 
 // Restore appearance settings before first paint (matches Settings.tsx `studio:` prefix)
 const savedTheme = localStorage.getItem("studio:theme");

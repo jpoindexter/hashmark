@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, type CSSProperties } from "react";
-import { RefreshCw, Terminal, GitPullRequest, ArrowDownToLine } from "lucide-react";
+import { RefreshCw, Terminal, GitPullRequest, ArrowDownToLine, PanelLeft, Columns2, FileDiff } from "lucide-react";
 import type { GitStatus, DriftResult } from "../../hooks/useProjectInfo";
 import BranchPicker from "../BranchPicker";
 import { DriftBadge } from "../DriftIndicator";
@@ -11,7 +11,7 @@ interface TitlebarProps {
   git: GitStatus | null;
   drift: DriftResult | null;
   sidebarOpen: boolean;
-  onToggleSidebar: () => void;
+  onToggleSidebar?: () => void;
   termOpen?: boolean;
   onToggleTerm?: () => void;
   splitOpen?: boolean;
@@ -197,16 +197,29 @@ export default function Titlebar({
         }}
       >
         {projectName && (
-          <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 160 }}>
+          <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 160, fontWeight: 500 }}>
             {projectName}
           </span>
         )}
         {projectName && git?.branch && (
-          <span style={{ color: "var(--text-dimmer)", fontSize: 10 }}>{">"}</span>
+          <span style={{ color: "var(--text-dimmer)", fontSize: 9 }}>{"/"}</span>
         )}
         {git?.branch && (
           <span style={noDrag}>
             <BranchPicker currentBranch={git.branch} />
+          </span>
+        )}
+        {streaming && (
+          <span style={{
+            fontSize: 11, color: "var(--green)",
+            display: "flex", alignItems: "center", gap: 5,
+          }}>
+            <span style={{
+              width: 5, height: 5, borderRadius: "50%",
+              background: "var(--green)",
+              animation: "pulse 1.5s ease-in-out infinite",
+            }} />
+            Working...
           </span>
         )}
       </div>
@@ -255,12 +268,28 @@ export default function Titlebar({
 
         {/* Layout toggle group */}
         <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+          {onToggleSidebar && (
+            <LayoutToggle
+              title="Toggle sidebar"
+              active={sidebarOpen}
+              onClick={onToggleSidebar}
+            >
+              <PanelLeft size={15} />
+            </LayoutToggle>
+          )}
           <LayoutToggle
             title="Toggle terminal"
             active={!!termOpen}
-            onClick={() => window.dispatchEvent(new CustomEvent("studio:toggle-terminal"))}
+            onClick={() => onToggleTerm?.()}
           >
-            <Terminal size={16} />
+            <Terminal size={15} />
+          </LayoutToggle>
+          <LayoutToggle
+            title="View changes"
+            active={!!splitOpen}
+            onClick={onDiffOpen}
+          >
+            <FileDiff size={15} />
           </LayoutToggle>
         </div>
       </div>
