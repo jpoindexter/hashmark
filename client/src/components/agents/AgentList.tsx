@@ -148,8 +148,8 @@ export default function AgentList({
               {deptAgents.map((agent) => (
                 <AgentCard
                   key={agent.id} agent={agent} stats={allStats[agent.id]}
-                  onClick={() => { window.dispatchEvent(new CustomEvent("studio:open-agent", { detail: { id: agent.id } })); }}
-                  onRun={() => navigate(`/run?agent=${agent.id}`)}
+                  onClick={() => onOpenAgent(agent)}
+                  onRun={() => onOpenAgent(agent)}
                   onDelete={() => onDeleteAgent(agent)}
                   onDuplicate={() => onDuplicateAgent(agent)}
                 />
