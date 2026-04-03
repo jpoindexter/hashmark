@@ -300,8 +300,9 @@ export default function ChatInputBar({
       <div style={{ width: "100%" }}>
       <div style={{
         position: "relative",
-        background: "var(--bg-2)",
+        background: "var(--composer-background)",
         borderTop: "1px solid var(--border-dim)",
+        borderRadius: "12px 12px 0 0",
       }}>
         {slashOpen && (
           <div style={{ position: "absolute", bottom: "100%", left: 0, right: 0, padding: "0 14px" }}>

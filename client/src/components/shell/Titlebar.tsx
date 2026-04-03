@@ -32,11 +32,12 @@ const containerStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   flexShrink: 0,
-  fontSize: 12,
+  fontSize: 13,
   fontFamily: "var(--font-ui)",
   color: "var(--text-dim)",
   WebkitAppRegion: "drag",
-  paddingLeft: 70,
+  paddingLeft: 78,
+  paddingRight: 12,
 } as CSSProperties;
 
 function LayoutToggle({

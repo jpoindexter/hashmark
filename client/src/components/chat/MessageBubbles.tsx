@@ -54,14 +54,14 @@ function UserBubble({ msg, onContextMenu, showRetry, onRetry }: {
       onMouseLeave={() => setHovered(false)}
       onContextMenu={onContextMenu}
     >
-      <div style={{ maxWidth: "85%" }}>
+      <div style={{ maxWidth: "48rem" }}>
         <div style={{
-          background: "var(--bg-3)",
-          border: `1px solid ${showRetry ? "var(--red)" : "var(--border-dim)"}`,
-          borderRadius: "var(--radius-lg)",
-          padding: "10px 14px",
+          background: "var(--highlight)",
+          border: `1px solid ${showRetry ? "var(--red)" : "transparent"}`,
+          borderRadius: 16,
+          padding: "10px 16px",
           fontSize: 14,
-          color: "var(--text)",
+          color: "var(--highlight-foreground)",
           lineHeight: 1.6,
           whiteSpace: "pre-wrap",
         }}>

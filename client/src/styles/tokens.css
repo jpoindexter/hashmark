@@ -150,7 +150,7 @@
   --input-padding: var(--space-2) var(--space-3);
 
   /* === LAYOUT === */
-  --titlebar-height:       35px;
+  --titlebar-height:       41px;
   --activity-bar-width:    160px;
   --status-bar-height:     22px;
   --sidebar-default-width: 240px;

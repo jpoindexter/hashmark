@@ -20,9 +20,9 @@ export default function SessionTabs({
     <div style={{
       display: "flex",
       alignItems: "stretch",
-      height: 30,
+      height: 40,
       borderBottom: "1px solid var(--border-dim)",
-      background: "var(--bg)",
+      background: "var(--bg-2)",
       flexShrink: 0,
       overflow: "hidden",
     }}>

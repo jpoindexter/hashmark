@@ -140,13 +140,12 @@ export default function SessionsPanel({
   }, [renaming, renameValue, fetchSessions]);
 
   const panel: CSSProperties = {
-    width: 196,
-    borderRight: "0.5px solid var(--border-dim)",
+    width: "100%",
+    height: "100%",
     display: "flex",
     flexDirection: "column",
-    flexShrink: 0,
     overflow: "hidden",
-    background: "var(--bg)",
+    background: "var(--sidebar-background)",
   };
 
   const hdr: CSSProperties = {

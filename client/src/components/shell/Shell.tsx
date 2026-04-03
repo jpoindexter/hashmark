@@ -5,10 +5,10 @@ import Titlebar from "./Titlebar";
 import Rail from "./Rail";
 import SessionsPanel from "./SessionsPanel";
 import SessionTabs from "./SessionTabs";
-import ChangesPanel from "./ChangesPanel";
 import TerminalPanel from "./TerminalPanel";
 import ChatMessages, { type StreamingState } from "../ChatMessages";
 import ChatInputBar from "../ChatInputBar";
+import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from "react-resizable-panels";
 import ResizableDrawer from "../ResizableDrawer";
 import CommandPalette from "../CommandPalette";
 import DiffPanel from "../DiffPanel";
@@ -182,112 +182,102 @@ export default function Shell() {
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
         <Rail theme={theme === "light" ? "light" : "dark"} themeSetting={setting} />
 
-        {/* Chat-first home: sessions panel (toggle) + chat */}
-        {isHome && (
-          <>
+        {isHome ? (
+          <PanelGroup direction="horizontal" style={{ flex: 1 }}>
+            {/* Sidebar panel */}
             {sessionsOpen && (
-              <SessionsPanel
-                activeSessionId={activeSessionId}
-                onSessionSelect={handleSessionSelect}
-                onNewSession={onNewSession}
-                streaming={streaming}
-                streamingSessionId={streaming ? activeSessionId : null}
-                git={git}
-              />
-            )}
-
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
-              <SessionTabs
-                tabs={tabs}
-                activeId={activeSessionId}
-                streaming={streaming}
-                streamingSessionId={streaming ? activeSessionId : null}
-                onSelect={(id) => { handleSessionSelect(id); openTab(id); }}
-                onClose={(id) => {
-                  const next = closeTab(id);
-                  if (next) handleSessionSelect(next);
-                  else handleSessionSelect("");
-                }}
-                onNew={onNewSession}
-              />
-              {sessionError && (
-                <div style={{ padding: 20, textAlign: "center", color: "var(--red)" }}>
-                  <div>Failed to create session</div>
-                  <button
-                    onClick={handleRetry}
-                    style={{
-                      marginTop: 8, padding: "4px 12px",
-                      background: "var(--bg-3)", border: "1px solid var(--border)",
-                      borderRadius: "var(--radius)", color: "var(--text-dim)", cursor: "pointer",
-                      fontFamily: "var(--font-ui)", fontSize: 12,
-                    }}
-                  >
-                    Retry
-                  </button>
-                </div>
-              )}
-              <ErrorBoundary>
-                <div style={{
-                  flex: termBig ? 0 : 1,
-                  overflow: "hidden",
-                  display: termBig ? "none" : "flex",
-                  flexDirection: "column",
-                  minHeight: 0,
-                }}>
-                  <ChatMessages
-                    sessionId={activeSessionId}
-                    streamText={streamText}
-                    streaming={streaming}
-                    streamingState={streamingState ?? undefined}
-                    modelLabel={modelLabel}
-                    planMode={planMode}
-                    projectInfo={info ?? undefined}
-                    gitStatus={git ?? undefined}
+              <>
+                <Panel defaultSize={20} minSize={12} maxSize={30} order={1}>
+                  <SessionsPanel
+                    activeSessionId={activeSessionId}
+                    onSessionSelect={handleSessionSelect}
                     onNewSession={onNewSession}
+                    streaming={streaming}
+                    streamingSessionId={streaming ? activeSessionId : null}
+                    git={git}
                   />
-                </div>
-              </ErrorBoundary>
-
-              <ResizableDrawer open={termOpen} onToggle={() => setTermOpen((v) => !v)} defaultHeight={280}>
-                <TerminalPanel
-                  termBig={termBig}
-                  onToggleBig={() => setTermBig((v) => !v)}
-                  onClose={() => setTermOpen(false)}
-                  onCwdChange={setTerminalCwd}
-                />
-              </ResizableDrawer>
-
-              {activeSessionId && chatHasMessages && (
-                <ChatInputBar
-                  sessionId={activeSessionId}
-                  hasMessages={chatHasMessages}
-                  onNewSession={onNewSession}
-                  onSessionCreated={() => {}}
-                  onStreamText={setStreamText}
-                  onStreamingState={setStreamingState}
-                  onStreamingChange={setStreaming}
-                  streaming={streaming}
-                  terminalCwd={terminalCwd || undefined}
-                  selectedModel={selectedModel}
-                  thinking={thinking}
-                  planMode={planMode}
-                />
-              )}
-            </div>
-
-            {diffOpen && changedFiles > 0 && git?.files && (
-              <ChangesPanel
-                files={git.files.map(f => ({ status: f.status, path: f.file }))}
-                onFileClick={(path) => {
-                  window.dispatchEvent(new CustomEvent("studio:open-file", { detail: { path } }));
-                }}
-              />
+                </Panel>
+                <PanelResizeHandle style={{ width: 1, background: "var(--border-dim)", cursor: "col-resize" }} />
+              </>
             )}
-          </>
-        )}
 
-        {/* Non-home routes */}
-        {!isHome && (
+            {/* Main chat panel */}
+            <Panel defaultSize={diffOpen ? 60 : 80} minSize={30} order={2}>
+              <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+                <SessionTabs
+                  tabs={tabs}
+                  activeId={activeSessionId}
+                  streaming={streaming}
+                  streamingSessionId={streaming ? activeSessionId : null}
+                  onSelect={(id) => { handleSessionSelect(id); openTab(id); }}
+                  onClose={(id) => {
+                    const next = closeTab(id);
+                    if (next) handleSessionSelect(next);
+                    else handleSessionSelect("");
+                  }}
+                  onNew={onNewSession}
+                />
+                {sessionError && (
+                  <div style={{ padding: 20, textAlign: "center", color: "var(--red)" }}>
+                    <div>Failed to create session</div>
+                    <button onClick={handleRetry} className="btn btn-sm" style={{ marginTop: 8 }}>Retry</button>
+                  </div>
+                )}
+                <ErrorBoundary>
+                  <div style={{ flex: termBig ? 0 : 1, overflow: "hidden", display: termBig ? "none" : "flex", flexDirection: "column", minHeight: 0 }}>
+                    <ChatMessages
+                      sessionId={activeSessionId}
+                      streamText={streamText}
+                      streaming={streaming}
+                      streamingState={streamingState ?? undefined}
+                      modelLabel={modelLabel}
+                      planMode={planMode}
+                      projectInfo={info ?? undefined}
+                      gitStatus={git ?? undefined}
+                      onNewSession={onNewSession}
+                    />
+                  </div>
+                </ErrorBoundary>
+
+                <ResizableDrawer open={termOpen} onToggle={() => setTermOpen((v) => !v)} defaultHeight={280}>
+                  <TerminalPanel
+                    termBig={termBig}
+                    onToggleBig={() => setTermBig((v) => !v)}
+                    onClose={() => setTermOpen(false)}
+                    onCwdChange={setTerminalCwd}
+                  />
+                </ResizableDrawer>
+
+                {activeSessionId && chatHasMessages && (
+                  <ChatInputBar
+                    sessionId={activeSessionId}
+                    hasMessages={chatHasMessages}
+                    onNewSession={onNewSession}
+                    onSessionCreated={() => {}}
+                    onStreamText={setStreamText}
+                    onStreamingState={setStreamingState}
+                    onStreamingChange={setStreaming}
+                    streaming={streaming}
+                    terminalCwd={terminalCwd || undefined}
+                    selectedModel={selectedModel}
+                    thinking={thinking}
+                    planMode={planMode}
+                  />
+                )}
+              </div>
+            </Panel>
+
+            {/* Right panel: diff/changes */}
+            {diffOpen && (
+              <>
+                <PanelResizeHandle style={{ width: 1, background: "var(--border-dim)", cursor: "col-resize" }} />
+                <Panel defaultSize={30} minSize={15} maxSize={50} order={3}>
+                  <DiffPanel open={diffOpen} onClose={() => setDiffOpen(false)} />
+                </Panel>
+              </>
+            )}
+          </PanelGroup>
+        ) : (
           <ErrorBoundary>
             <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", minWidth: 0 }}>
               <Outlet />
