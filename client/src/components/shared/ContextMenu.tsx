@@ -77,8 +77,8 @@ export default function ContextMenu({ items, position, onClose }: ContextMenuPro
       e.preventDefault();
       const item = items[focusIndex];
       if (item && !item.separator) {
-        onClose();
         item.onClick();
+        onClose();
       }
     }
   }, [position, focusIndex, items, actionableIndices, onClose]);
@@ -150,8 +150,8 @@ function ContextMenuItemRow({
       } : undefined}
       onMouseEnter={onHover}
       onClick={() => {
-        onClose();
         item.onClick();
+        onClose();
       }}
     >
       {item.icon && (

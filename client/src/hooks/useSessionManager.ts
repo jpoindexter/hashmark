@@ -45,16 +45,26 @@ export function useSessionManager() {
     if (!activeSessionId) {
       sessionValidated.current = false;
       setSessionError(false);
-      const attemptCreate = () => {
-        createSession()
-          .then((id) => { sessionValidated.current = true; sessionRetryCount.current = 0; setActiveSessionId(id); })
-          .catch(() => {
-            sessionRetryCount.current += 1;
-            if (sessionRetryCount.current < 3) setTimeout(attemptCreate, 2000);
-            else { sessionRetryCount.current = 0; setSessionError(true); }
-          });
-      };
-      attemptCreate();
+      // Try to select the most recent session before creating a new one
+      fetchApi("/api/sessions?limit=1")
+        .then((r) => r.json())
+        .then((d: { sessions?: { id: string; message_count: number }[] }) => {
+          const recent = d.sessions?.[0];
+          if (recent) {
+            sessionValidated.current = true;
+            setActiveSessionId(recent.id);
+            if (recent.message_count > 0) setChatHasMessages(true);
+          } else {
+            createSession()
+              .then((id) => { sessionValidated.current = true; setActiveSessionId(id); })
+              .catch(() => setSessionError(true));
+          }
+        })
+        .catch(() => {
+          createSession()
+            .then((id) => { sessionValidated.current = true; setActiveSessionId(id); })
+            .catch(() => setSessionError(true));
+        });
     }
   }, [activeSessionId]);
 
