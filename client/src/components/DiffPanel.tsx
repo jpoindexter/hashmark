@@ -1,233 +1,78 @@
-interface DiffPanelProps {
-  diff: string;
-  filename?: string;
-  onClose?: () => void;
-  fullWidth?: boolean;
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { FileText, FilePlus, FileX, FilePen, Columns2, AlignLeft, X, RotateCcw } from "lucide-react";
+import { fetchApi } from "../lib/api";
+
+const MonacoDiffEditor = lazy(() => import("./MonacoDiffEditor"));
+
+interface DiffFile { path: string; status: string; added: number; removed: number; }
+
+function statusIcon(s: string) {
+  if (s.includes("A") || s.includes("?")) return <FilePlus size={12} style={{ color: "var(--green)" }} />;
+  if (s.includes("D")) return <FileX size={12} style={{ color: "var(--red)" }} />;
+  if (s.includes("M")) return <FilePen size={12} style={{ color: "var(--yellow)" }} />;
+  return <FileText size={12} style={{ color: "var(--text-dimmer)" }} />;
 }
 
-type LineType = "add" | "remove" | "hunk" | "header" | "context";
-
-interface DiffLine {
-  type: LineType;
-  content: string;
-  oldLine?: number;
-  newLine?: number;
+function getLang(p: string): string {
+  const ext = p.split(".").pop()?.toLowerCase() ?? "";
+  const m: Record<string, string> = { ts: "typescript", tsx: "typescript", js: "javascript", jsx: "javascript", py: "python", rs: "rust", go: "go", css: "css", html: "html", json: "json", md: "markdown", yaml: "yaml", yml: "yaml", sql: "sql", sh: "shell" };
+  return m[ext] ?? "plaintext";
 }
 
-function parseDiff(diffText: string): DiffLine[] {
-  const lines = diffText.split("\n");
-  const result: DiffLine[] = [];
-  let oldNum = 0;
-  let newNum = 0;
+export default function DiffPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [files, setFiles] = useState<DiffFile[]>([]);
+  const [sel, setSel] = useState<string | null>(null);
+  const [orig, setOrig] = useState("");
+  const [mod, setMod] = useState("");
+  const [sbs, setSbs] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  for (const line of lines) {
-    if (line.startsWith("---") || line.startsWith("+++") || line.startsWith("diff ") || line.startsWith("index ")) {
-      result.push({ type: "header", content: line });
-    } else if (line.startsWith("@@")) {
-      const m = line.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
-      if (m) {
-        oldNum = parseInt(m[1]) - 1;
-        newNum = parseInt(m[2]) - 1;
-      }
-      result.push({ type: "hunk", content: line });
-    } else if (line.startsWith("+")) {
-      newNum++;
-      result.push({ type: "add", content: line.slice(1), newLine: newNum });
-    } else if (line.startsWith("-")) {
-      oldNum++;
-      result.push({ type: "remove", content: line.slice(1), oldLine: oldNum });
-    } else if (line.startsWith(" ")) {
-      oldNum++;
-      newNum++;
-      result.push({ type: "context", content: line.slice(1), oldLine: oldNum, newLine: newNum });
-    }
-  }
+  const reload = useCallback(() => {
+    fetchApi("/api/files/git").then(r => r.json()).then((d: { files?: Array<{ path?: string; file?: string; status: string; added: number; removed: number }> }) => {
+      const changed = (d.files ?? []).map(f => ({ ...f, path: f.path ?? f.file ?? "" })).filter(f => f.path && !f.status.includes("?"));
+      setFiles(changed);
+      if (changed.length > 0 && !sel) setSel(changed[0].path);
+    }).catch(() => {});
+  }, [sel]);
 
-  return result;
-}
+  useEffect(() => { if (open) reload(); }, [open, reload]);
 
-const ROW_BG: Record<LineType, string> = {
-  add:     "var(--accent-bg)",
-  remove:  "var(--red-bg)",
-  hunk:    "var(--surface-subtle)",
-  header:  "transparent",
-  context: "transparent",
-};
+  useEffect(() => {
+    if (!sel) { setOrig(""); setMod(""); return; }
+    setLoading(true);
+    Promise.all([
+      fetchApi(`/api/files/content?path=${encodeURIComponent(sel)}&ref=HEAD`).then(r => r.ok ? r.text() : "").catch(() => ""),
+      fetchApi(`/api/files/content?path=${encodeURIComponent(sel)}`).then(r => r.ok ? r.text() : "").catch(() => ""),
+    ]).then(([o, m]) => { setOrig(o); setMod(m); setLoading(false); });
+  }, [sel]);
 
-const ROW_BORDER: Record<LineType, string | undefined> = {
-  add:    "var(--accent)",
-  remove: "var(--red)",
-  hunk:   undefined,
-  header: undefined,
-  context: undefined,
-};
-
-const ROW_FG: Record<LineType, string> = {
-  add:     "var(--accent)",
-  remove:  "var(--red)",
-  hunk:    "var(--text-dimmer)",
-  header:  "var(--text-dimmer)",
-  context: "var(--text-dim)",
-};
-
-function DiffRow({ line }: { line: DiffLine }) {
-  const bg = ROW_BG[line.type];
-  const borderColor = ROW_BORDER[line.type];
-  const fg = ROW_FG[line.type];
-
-  if (line.type === "header" || line.type === "hunk") {
-    return (
-      <tr style={{ background: bg }}>
-        <td colSpan={3} style={{
-          padding: "2px 12px",
-          fontFamily: "var(--font, monospace)",
-          fontSize: 11,
-          color: fg,
-          fontStyle: line.type === "hunk" ? "italic" : undefined,
-          userSelect: "text",
-        }}>
-          {line.content}
-        </td>
-      </tr>
-    );
-  }
-
-  const prefix = line.type === "add" ? "+" : line.type === "remove" ? "-" : " ";
+  if (!open) return null;
 
   return (
-    <tr style={{
-      background: bg,
-      borderLeft: borderColor ? `2px solid ${borderColor}` : "2px solid transparent",
-    }}>
-      <td style={{
-        width: 38, minWidth: 38,
-        textAlign: "right",
-        padding: "1px 6px",
-        color: "var(--text-dimmer)",
-        userSelect: "none",
-        borderRight: "1px solid var(--border-dim)",
-        fontFamily: "var(--font, monospace)",
-        fontSize: 11,
-      }}>
-        {line.type !== "add" ? (line.oldLine ?? "") : ""}
-      </td>
-      <td style={{
-        width: 38, minWidth: 38,
-        textAlign: "right",
-        padding: "1px 6px",
-        color: "var(--text-dimmer)",
-        userSelect: "none",
-        borderRight: "1px solid var(--border-dim)",
-        fontFamily: "var(--font, monospace)",
-        fontSize: 11,
-      }}>
-        {line.type !== "remove" ? (line.newLine ?? "") : ""}
-      </td>
-      <td style={{
-        padding: "1px 10px",
-        color: fg,
-        whiteSpace: "pre",
-        fontFamily: "var(--font, monospace)",
-        fontSize: 12,
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-      }}>
-        <span style={{ color: fg, marginRight: 8, userSelect: "none", opacity: 0.7 }}>{prefix}</span>
-        {line.content}
-      </td>
-    </tr>
-  );
-}
-
-export function DiffPanel({ diff, filename, onClose, fullWidth }: DiffPanelProps) {
-  const panelWidth = fullWidth ? "100%" : "clamp(320px, 40vw, 680px)";
-  const lines = parseDiff(diff);
-  const isEmpty = lines.length === 0 || !diff.trim();
-
-  return (
-    <div style={{
-      width: panelWidth,
-      height: "100%",
-      display: "flex",
-      flexDirection: "column",
-      background: "var(--bg)",
-      borderLeft: fullWidth ? "none" : "1px solid var(--border-dim)",
-      overflow: "hidden",
-      flexShrink: 0,
-    }}>
-      {/* Sticky filename header */}
-      <div style={{
-        height: 36,
-        minHeight: 36,
-        display: "flex",
-        alignItems: "center",
-        padding: "0 12px",
-        background: "var(--bg-2)",
-        borderBottom: "1px solid var(--border-dim)",
-        flexShrink: 0,
-        gap: 8,
-      }}>
-        <span style={{
-          fontFamily: "var(--font, monospace)",
-          fontSize: 11,
-          color: "var(--text-dim)",
-          flex: 1,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}>
-          {filename ?? "diff"}
-        </span>
-        {onClose && (
-          <button
-            onClick={onClose}
-            title="Close"
-            className="hoverable"
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "var(--text-dimmer)",
-              fontSize: 16,
-              padding: "0 4px",
-              lineHeight: 1,
-              flexShrink: 0,
-            }}
-          >
-            ×
-          </button>
-        )}
+    <div style={{ width: 480, borderLeft: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", flexShrink: 0, overflow: "hidden", background: "var(--bg)" }}>
+      <div style={{ height: 34, borderBottom: "1px solid var(--border-dim)", display: "flex", alignItems: "center", padding: "0 10px", gap: 6, flexShrink: 0 }}>
+        <span className="label" style={{ flex: 1 }}>Changes</span>
+        <button className="btn-icon" title={sbs ? "Unified" : "Side-by-side"} onClick={() => setSbs(v => !v)}>{sbs ? <AlignLeft size={13} /> : <Columns2 size={13} />}</button>
+        <button className="btn-icon" title="Refresh" onClick={reload}><RotateCcw size={12} /></button>
+        <button className="btn-icon" title="Close" onClick={onClose}><X size={13} /></button>
       </div>
-
-      {/* Diff content */}
-      <div style={{ flex: 1, overflow: "auto" }}>
-        {isEmpty ? (
-          <div style={{
-            padding: 20,
-            fontFamily: "var(--font, monospace)",
-            fontSize: 12,
-            color: "var(--text-dimmer)",
+      <div style={{ display: "flex", overflowX: "auto", borderBottom: "1px solid var(--border-dim)", flexShrink: 0 }}>
+        {files.map(f => (
+          <button key={f.path} className="hoverable" onClick={() => setSel(f.path)} style={{
+            display: "flex", alignItems: "center", gap: 4, padding: "6px 10px", fontSize: 11,
+            color: sel === f.path ? "var(--text)" : "var(--text-dim)",
+            borderBottom: sel === f.path ? "2px solid var(--accent)" : "2px solid transparent",
+            whiteSpace: "nowrap", background: "none", border: "none", cursor: "pointer",
           }}>
-            No diff available
-          </div>
-        ) : (
-          <table style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            tableLayout: "fixed",
-          }}>
-            <colgroup>
-              <col style={{ width: 38 }} />
-              <col style={{ width: 38 }} />
-              <col />
-            </colgroup>
-            <tbody>
-              {lines.map((line, i) => (
-                <DiffRow key={i} line={line} />
-              ))}
-            </tbody>
-          </table>
-        )}
+            {statusIcon(f.status)} {f.path.split("/").pop()}
+            {(f.added > 0 || f.removed > 0) && <span style={{ fontSize: 10 }}>{f.added > 0 && <span style={{ color: "var(--green)" }}>+{f.added}</span>}{f.removed > 0 && <span style={{ color: "var(--red)", marginLeft: 2 }}>-{f.removed}</span>}</span>}
+          </button>
+        ))}
+      </div>
+      <div style={{ flex: 1, overflow: "hidden" }}>
+        {loading ? <div style={{ padding: 20, color: "var(--text-dimmer)", fontSize: 12 }}>Loading...</div>
+        : sel ? <Suspense fallback={<div style={{ padding: 20, color: "var(--text-dimmer)", fontSize: 12 }}>Loading editor...</div>}><MonacoDiffEditor original={orig} modified={mod} language={getLang(sel)} sideBySide={sbs} /></Suspense>
+        : <div style={{ padding: 20, color: "var(--text-dimmer)", fontSize: 12, textAlign: "center" }}>No file selected</div>}
       </div>
     </div>
   );

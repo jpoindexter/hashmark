@@ -11,7 +11,7 @@ import ChatMessages, { type StreamingState } from "../ChatMessages";
 import ChatInputBar from "../ChatInputBar";
 import ResizableDrawer from "../ResizableDrawer";
 import CommandPalette from "../CommandPalette";
-import DiffDrawer from "../DiffDrawer";
+import DiffPanel from "../DiffPanel";
 import { DriftBanner, isDismissed, dismissFor24h } from "../DriftIndicator";
 import ErrorBoundary from "../ErrorBoundary";
 import ShortcutsHelp from "../ShortcutsHelp";
@@ -299,7 +299,7 @@ export default function Shell() {
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} mode={paletteMode} />
       {shortcutsOpen && <ShortcutsHelp onClose={() => setShortcutsOpen(false)} />}
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
-      <DiffDrawer open={diffOpen} onClose={() => setDiffOpen(false)} projectDir={info?.projectDir ?? ""} />
+      <DiffPanel open={diffOpen} onClose={() => setDiffOpen(false)} />
 
     </div>
   );

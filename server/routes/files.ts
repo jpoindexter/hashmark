@@ -174,6 +174,25 @@ export function filesRoutes(ctx: WorkspaceCtx) {
     } catch { return c.json({ error: "not found" }, 404); }
   });
 
+  // Raw file content -- supports ?ref=HEAD for git version
+  app.get("/content", async (c) => {
+    const relPath = c.req.query("path");
+    if (!relPath) return c.text("path required", 400);
+    const fullPath = join(ctx.projectDir, relPath);
+    if (!fullPath.startsWith(ctx.projectDir + "/") && fullPath !== ctx.projectDir) return c.text("forbidden", 403);
+    const ref = c.req.query("ref");
+    if (ref) {
+      try {
+        const { stdout } = await execAsync("git", ["show", `${ref}:${relPath}`], { cwd: ctx.projectDir, maxBuffer: 5 * 1024 * 1024 });
+        return c.text(stdout);
+      } catch { return c.text("", 200); } // file may not exist in that ref
+    }
+    try {
+      const content = await readFile(fullPath, "utf-8");
+      return c.text(content);
+    } catch { return c.text("", 404); }
+  });
+
   app.get("/diff", async (c) => {
     const relPath = c.req.query("path");
     if (!relPath) return c.json({ error: "path required" }, 400);

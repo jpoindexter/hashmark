@@ -12,6 +12,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           xterm: ["@xterm/xterm", "@xterm/addon-fit", "@xterm/addon-web-links", "@xterm/addon-search"],
+          monaco: ["monaco-editor"],
           react: ["react", "react-dom", "react-router-dom"],
           virtualizer: ["@tanstack/react-virtual"],
         },
