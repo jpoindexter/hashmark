@@ -104,9 +104,14 @@ export function generateRoutes(ctx: WorkspaceCtx) {
             if (!trimmed) continue;
             try {
               const event = JSON.parse(trimmed);
-              send(event);
+              // Normalize _progress events from the CLI into our SSE format
+              if (event._progress) {
+                const label = event.label ?? event.file ?? `${event.phase ?? "scanning"} ${event.current ?? ""}/${event.total ?? ""}`;
+                send({ type: "progress", message: String(label).trim() });
+              } else {
+                send(event);
+              }
             } catch {
-              // Not JSON — could be progress text
               if (trimmed.startsWith("{")) continue;
               send({ type: "progress", message: trimmed });
             }

@@ -156,8 +156,8 @@ const TerminalPane = forwardRef<TerminalHandle, TerminalProps>(function Terminal
     prefetchToken().then(() => {
       if (!termRef.current) return; // component unmounted
       const tokenUrl = apiUrl("/api/terminal/ws" + (tabId ? `?tab=${tabId}` : ""));
-      const wsHost = window.location.host || "localhost:3200";
-      const wsUrl = `ws://${wsHost}${tokenUrl}`;
+      const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = `${proto}//${window.location.host}${tokenUrl}`;
       ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 

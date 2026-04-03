@@ -23,7 +23,8 @@ export function useSessionSocket(opts: UseSessionSocketOpts) {
     if (!sessionId) return;
 
     const tokenUrl = apiUrl(`/api/sessions/${sessionId}/ws`);
-    const wsUrl = `ws://localhost:3200${tokenUrl}`;
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${proto}//${window.location.host}${tokenUrl}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
