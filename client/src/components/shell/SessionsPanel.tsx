@@ -215,10 +215,8 @@ export default function SessionsPanel({
               aria-label={s.title || `session ${i + 1}`}
               onClick={(e) => {
                 if (isRenaming) return;
-                if (e.shiftKey || e.metaKey || e.ctrlKey) {
-                  sel.handleClick(s.id, e);
-                } else {
-                  sel.clear();
+                sel.handleClick(s.id, e);
+                if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
                   onSessionSelect(s.id);
                 }
               }}
