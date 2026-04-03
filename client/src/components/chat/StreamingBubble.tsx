@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import { FileText, Terminal, Pencil, Search, Globe, Bot, Wrench, FilePlus } from "lucide-react";
 import ThinkingBlock from "./ThinkingBlock";
 import ToolCallSummary, { FileBadge, getReadFilePath, categorize } from "./ToolSummary";
+import { CollapsibleToolCard } from "./ToolRenderers";
 import { ASSISTANT_CONTENT_STYLE, fmtDuration } from "./MessageBubbles";
 import ToolResultCard from "./ToolResultCard";
 import ToolApprovalCard from "./ToolApprovalCard";
@@ -272,13 +272,9 @@ export default function StreamingBubble({ state, legacyText, streamStartTime }: 
                 const isPending = !!(b.toolUseId && pendingToolIds.has(b.toolUseId));
                 return (
                   <div key={seg.key}>
-                    <ToolUseBlock block={b} pending={isPending} />
-                    {fp && (
-                      <div style={{ paddingLeft: 2, marginTop: 2, marginBottom: 4 }}>
-                        <FileBadge filePath={fp} />
-                      </div>
-                    )}
-                    {isEdit && <EditPreview block={b} />}
+                    <CollapsibleToolCard tool={b.tool} input={b.input} pending={isPending}>
+                      {isEdit && <EditPreview block={b} />}
+                    </CollapsibleToolCard>
                   </div>
                 );
               }
@@ -287,7 +283,7 @@ export default function StreamingBubble({ state, legacyText, streamStartTime }: 
                   key={seg.key}
                   groups={seg.blocks.map((b) => ({
                     block: b,
-                    node: <ToolUseBlock block={b} />,
+                    node: <CollapsibleToolCard tool={b.tool} input={b.input} />,
                   }))}
                 />
               );
