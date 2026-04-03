@@ -247,6 +247,17 @@ export function useStreamChat({
                   isError: evt.is_error === true,
                 });
               }
+            } else if (evtType === "tool_approval") {
+              activeThinkingIdx = -1;
+              blocks.push({
+                type: "tool_use",
+                tool: (evt.tool ?? "unknown") as string,
+                input: (evt.input ?? {}) as Record<string, unknown>,
+                toolUseId: (evt.toolUseId ?? "") as string,
+              });
+              // TODO: show ToolApprovalCard inline and await user response
+            } else if (evtType === "tool_progress") {
+              // Elapsed time update for a running tool -- ignore for now
             } else if (evtType === "progress") {
               activeThinkingIdx = -1;
               blocks.push({ type: "progress", text: (evt.text ?? "") as string });

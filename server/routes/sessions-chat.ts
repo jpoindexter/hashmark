@@ -27,6 +27,7 @@ import { findBin } from "../lib/bin-resolver.js";
 import { onTurnComplete, loadSessionMemory } from "../lib/session-memory.js";
 import { loadToolPlugins, buildToolPluginPrompt } from "../lib/tool-plugins.js";
 import type { WorkspaceCtx } from "./workspaces.js";
+import { runAgentTurn } from "./sessions-ws.js";
 import type { SessionSharedState } from "./sessions-shared.js";
 
 /**
@@ -267,144 +268,31 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
           .run(streamStart, streamStart, sessionId);
 
         if (useApiStream && activeProvider) {
-          // -- Direct API stream path --
-          const apiMessages = history.map(m => ({
-            role: m.role as "user" | "assistant",
-            content: m.content,
-          }));
-          apiMessages.push({ role: "user", content: expandedMessage });
+          // -- Agentic API path: tool execution loop --
+          shared.activeProcesses.set(sessionId, { kill: () => {} });
 
-          let aborted = false;
-          let totalLength = 0;
-
-          // Delta-aware message storage: INSERT on first chunk, debounced UPDATE appends
-          let assistantMsgId: string | null = null;
-          let pendingDelta = "";
-          let flushTimer: ReturnType<typeof setTimeout> | null = null;
-          const FLUSH_INTERVAL = 500;
-
-          const flushDelta = () => {
-            if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
-            if (pendingDelta && assistantMsgId) {
-              db.prepare("UPDATE session_messages SET content = content || ? WHERE id = ?")
-                .run(pendingDelta, assistantMsgId);
-              pendingDelta = "";
-            }
-          };
-
-          const appendDelta = (text: string) => {
-            totalLength += text.length;
-            if (!assistantMsgId) {
-              // First chunk -- INSERT the message row
-              assistantMsgId = randomUUID();
-              db.prepare(
-                "INSERT INTO session_messages (id, session_id, role, content, created_at, sent_at) VALUES (?, ?, 'assistant', ?, ?, ?)"
-              ).run(assistantMsgId, sessionId, text, Date.now(), Date.now());
-            } else {
-              pendingDelta += text;
-              if (!flushTimer) {
-                flushTimer = setTimeout(flushDelta, FLUSH_INTERVAL);
-              }
-            }
-          };
-
-          shared.activeProcesses.set(sessionId, {
-            kill: () => { aborted = true; },
-          });
-
-          streamAIResponse({
-            provider: providersStore.active,
+          runAgentTurn({
+            sessionId,
+            message: expandedMessage,
             model: providersStore.model,
-            apiKey: activeProvider.apiKey,
-            baseUrl: activeProvider.baseUrl,
-            messages: apiMessages,
-            systemPrompt: effectiveSystemPrompt,
-            onChunk: (text) => {
-              if (aborted) return;
+            apiKey: activeProvider.apiKey!,
+            systemPrompt: effectiveSystemPrompt ?? "",
+            projectDir,
+            dataDir,
+            thinking: body.thinking,
+            send: (data) => {
               markMessagesSent();
-              appendDelta(text);
-              send({ type: "text", text });
-              if (claudeSections.length > 0) {
-                updateAnalytics(dataDir, sessionId, text, claudeSections);
-              }
+              send(data as Record<string, unknown>);
             },
-            onDone: () => {
-              shared.activeProcesses.delete(sessionId);
-              shared.sessionLastActivity.delete(sessionId);
-              markMessagesSent();
-              flushDelta();
-
-              const msgInputEstimate = Math.ceil(body.message.length / 3.5);
-              const msgOutputEstimate = Math.ceil(totalLength / 3.5);
-              const actualModel = body.model || providersStore.model || "claude";
-
-              // If no chunks arrived, insert a placeholder message
-              if (!assistantMsgId) {
-                assistantMsgId = randomUUID();
-                db.prepare(
-                  "INSERT INTO session_messages (id, session_id, role, content, input_tokens, output_tokens, created_at, sent_at) VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?)"
-                ).run(assistantMsgId, sessionId, "[no response]", msgInputEstimate, msgOutputEstimate, Date.now(), Date.now());
-              } else {
-                // Update token counts on the already-inserted message
-                db.prepare(
-                  "UPDATE session_messages SET input_tokens = ?, output_tokens = ? WHERE id = ?"
-                ).run(msgInputEstimate, msgOutputEstimate, assistantMsgId);
-              }
-
-              db.prepare(`
-                UPDATE sessions
-                SET status = 'idle',
-                    model = ?,
-                    total_input_tokens = total_input_tokens + ?,
-                    total_output_tokens = total_output_tokens + ?,
-                    ended_at = ?,
-                    updated_at = ?
-                WHERE id = ?
-              `).run(actualModel, msgInputEstimate, msgOutputEstimate, Date.now(), Date.now(), sessionId);
-
-              flushAnalytics(dataDir, sessionId).catch(() => {});
-              onTurnComplete(sessionId, dataDir, projectDir);
-
-              const updated = db.prepare(
-                "SELECT total_input_tokens, total_output_tokens FROM sessions WHERE id = ?"
-              ).get(sessionId) as { total_input_tokens: number; total_output_tokens: number } | undefined;
-              if (updated) {
-                const warning = checkContextUsage(updated.total_input_tokens, updated.total_output_tokens, actualModel);
-                if (warning) send({ type: "warning", message: warning });
-                const totalTokens = updated.total_input_tokens + updated.total_output_tokens;
-                if (shouldAutoCompact(totalTokens, actualModel)) {
-                  send({ type: "context_limit", needsCompaction: true });
-                }
-              }
-
-              send({ type: "done", success: true });
-              controller.close();
-            },
-            onError: (err) => {
-              shared.activeProcesses.delete(sessionId);
-              shared.sessionLastActivity.delete(sessionId);
-              flushDelta();
-              send({ type: "error", message: err.message });
-
-              // If no message was started, insert the error as a new message
-              if (!assistantMsgId) {
-                db.prepare(
-                  "INSERT INTO session_messages (id, session_id, role, content, created_at, sent_at) VALUES (?, ?, 'assistant', ?, ?, ?)"
-                ).run(randomUUID(), sessionId, `Error: ${err.message}`, Date.now(), Date.now());
-              } else {
-                // Append error to existing partial message
-                db.prepare("UPDATE session_messages SET content = content || ? WHERE id = ?")
-                  .run(`\n\nError: ${err.message}`, assistantMsgId);
-              }
-
-              db.prepare("UPDATE sessions SET status = 'idle', ended_at = ?, error_count = error_count + 1, updated_at = ? WHERE id = ?")
-                .run(Date.now(), Date.now(), sessionId);
-
-              controller.close();
-            },
+          }).then(() => {
+            shared.activeProcesses.delete(sessionId);
+            shared.sessionLastActivity.delete(sessionId);
+            flushAnalytics(dataDir, sessionId).catch(() => {});
+            onTurnComplete(sessionId, dataDir, projectDir);
+            controller.close();
           }).catch((err: unknown) => {
+            shared.activeProcesses.delete(sessionId);
             const msg = err instanceof Error ? err.message : String(err);
-            flushDelta();
             send({ type: "error", message: msg });
             controller.close();
           });
