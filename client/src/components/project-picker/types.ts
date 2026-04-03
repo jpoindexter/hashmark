@@ -60,7 +60,9 @@ export async function openWorkspace(dir: string): Promise<void> {
     const id = data.workspace!.id;
     const activateRes = await fetchApi(`/api/workspaces/${id}/activate`, { method: "POST" });
     if (!activateRes.ok) throw new Error("Failed to activate workspace");
+    // Save to disk config for next launch, then reload to pick up the new project
     await window.studio.setProjectDir(dir);
+    window.location.reload();
     return;
   }
 

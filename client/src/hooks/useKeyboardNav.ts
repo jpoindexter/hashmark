@@ -57,15 +57,16 @@ export function useKeyboardNav({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // Skip when typing in inputs
-      if (
-        e.target instanceof HTMLTextAreaElement ||
-        e.target instanceof HTMLInputElement
-      ) {
-        return;
-      }
-
       const mod = e.metaKey || e.ctrlKey;
+
+      // Check if focus is inside a text-editable element
+      const target = e.target as HTMLElement;
+      const inInput =
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLInputElement ||
+        target.isContentEditable;
+
+      // --- Modifier shortcuts (work even when typing in inputs) ---
 
       // Cmd+` or Cmd+J: toggle terminal
       if (mod && e.key === "`") {
@@ -113,6 +114,9 @@ export function useKeyboardNav({
       if (mod && e.shiftKey && e.key === "A") { e.preventDefault(); navigate("/agents"); return; }
       // Cmd+,: Settings
       if (mod && e.key === ",") { e.preventDefault(); navigate("/settings"); return; }
+
+      // --- Single-key shortcuts (skip when typing in inputs) ---
+      if (inInput) return;
 
       // ?: toggle shortcuts overlay
       if (!mod && e.key === "?") {
