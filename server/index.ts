@@ -22,6 +22,7 @@ import { tasksRoutes } from "./routes/tasks.js";
 import { sessionsRoutes, killAllActiveSessions, setStudioPort } from "./routes/sessions.js";
 export { killAllActiveSessions, killAllDaemons };
 import { attachTerminalWS } from "./routes/terminal.js";
+import { attachSessionWS } from "./routes/sessions-ws.js";
 import { filesRoutes, getGitStatus } from "./routes/files.js";
 import { workspaceRoutes } from "./routes/workspace.js";
 import { checkpointRoutes } from "./routes/checkpoints.js";
@@ -82,6 +83,23 @@ export function createServer(opts: ServerOptions) {
 
   // Global DB lives at the initial dataDir — workspace registry stored here
   const globalDataDir = ctx.dataDir;
+
+  // Multi-project: x-hashmark-project header overrides ctx for that request (OpenCode pattern)
+  app.use("/api/*", async (c, next) => {
+    const projectHeader = c.req.header("x-hashmark-project");
+    if (projectHeader && projectHeader !== ctx.projectDir) {
+      // Temporarily swap ctx for this request
+      const origDir = ctx.projectDir;
+      const origData = ctx.dataDir;
+      ctx.projectDir = projectHeader;
+      ctx.dataDir = `${projectHeader}/.hashmark`;
+      await next();
+      ctx.projectDir = origDir;
+      ctx.dataDir = origData;
+    } else {
+      await next();
+    }
+  });
 
   // Upsert startup workspace into the registry
   if (opts.projectDir !== "__unset__") {
@@ -333,8 +351,9 @@ export function createServer(opts: ServerOptions) {
 
   const server = serve({ fetch: app.fetch, port: opts.port, hostname: "localhost" }, () => {});
 
-  // Attach WebSocket terminal (raw ws, not Hono's upgradeWebSocket)
+  // Attach WebSocket handlers (raw ws, not Hono's upgradeWebSocket)
   attachTerminalWS(server as Parameters<typeof attachTerminalWS>[0], opts.projectDir, studioToken);
+  attachSessionWS(server as Parameters<typeof attachTerminalWS>[0], opts.projectDir, ctx.dataDir, studioToken);
 
   // Mark stuck DB records as crashed (from previous unclean shutdown)
   try {

@@ -4,31 +4,120 @@
  * Frontend sends: user_message, approve_tool, deny_tool, cancel
  */
 
-import { Hono } from "hono";
+import type { IncomingMessage, Server } from "http";
 import { randomUUID } from "crypto";
 import { getDb } from "../db.js";
 import { streamAIResponse, type ContentBlock, type StreamUsage } from "../lib/ai-stream.js";
 import { TOOL_SCHEMAS } from "../lib/tool-schemas.js";
-import { executeTool, needsApproval, type ToolResult } from "../lib/tool-executor.js";
-import type { WorkspaceCtx } from "./workspaces.js";
+import { executeTool, needsApproval } from "../lib/tool-executor.js";
+import { loadProviders } from "../lib/providers.js";
 
 interface WsMessage {
   type: string;
   [key: string]: unknown;
 }
 
-export function registerSessionWsRoutes(
-  app: Hono,
-  ctx: { projectDir: string; dataDir: string },
+/**
+ * Attach WebSocket handler for bidirectional chat at /api/sessions/:id/ws
+ */
+export function attachSessionWS(
+  httpServer: Server,
+  projectDir: string,
+  dataDir: string,
+  studioToken?: string,
 ) {
-  // This is a placeholder for the WebSocket upgrade.
-  // Hono doesn't natively support WebSocket on Node.js (it does on Bun/Deno).
-  // For Node.js, we'll use the existing HTTP upgrade pattern from the terminal WS.
-  //
-  // The actual WebSocket handler will be registered in server/index.ts
-  // alongside the terminal WS, using the same upgrade mechanism.
-  //
-  // For now, export the message handler logic so it can be wired in.
+  import("ws").then(({ WebSocketServer }) => {
+    const wss = new WebSocketServer({ noServer: true });
+
+    httpServer.on("upgrade", (request: IncomingMessage, socket, head) => {
+      const url = request.url ?? "";
+      if (!url.startsWith("/api/sessions/") || !url.includes("/ws")) return;
+
+      // Auth
+      if (studioToken) {
+        const parsed = new URL(url, `http://${request.headers.host ?? "localhost"}`);
+        const token = parsed.searchParams.get("token");
+        if (token !== studioToken) {
+          socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+          socket.destroy();
+          return;
+        }
+      }
+
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        // Extract session ID from URL: /api/sessions/:id/ws
+        const match = url.match(/\/api\/sessions\/([^/]+)\/ws/);
+        const sessionId = match?.[1] ?? "";
+        if (!sessionId) { ws.close(1008, "Missing session ID"); return; }
+
+        // Pending approval resolver
+        let approvalResolver: ((approved: boolean) => void) | null = null;
+
+        const send = (data: WsMessage) => {
+          if (ws.readyState === 1) ws.send(JSON.stringify(data));
+        };
+
+        ws.on("message", (raw: Buffer) => {
+          let msg: WsMessage;
+          try { msg = JSON.parse(raw.toString()); } catch { return; }
+
+          if (msg.type === "user_message") {
+            const text = String(msg.text ?? msg.message ?? "");
+            if (!text) return;
+
+            // Get API key from providers
+            const providers = loadProviders(dataDir);
+            const provider = providers.providers.find(p => p.id === providers.active);
+            if (!provider?.apiKey) {
+              send({ type: "error", error: "No API key configured. Set one in Settings > Providers." });
+              return;
+            }
+
+            runAgentTurn({
+              sessionId,
+              message: text,
+              model: String(msg.model ?? providers.model ?? "claude-sonnet-4-6"),
+              apiKey: provider.apiKey,
+              systemPrompt: String(msg.systemPrompt ?? ""),
+              projectDir,
+              dataDir,
+              thinking: msg.thinking === true,
+              send,
+              onApproval: (toolName, input) => {
+                return new Promise<boolean>((resolve) => {
+                  approvalResolver = resolve;
+                  send({ type: "tool_approval", tool: toolName, input });
+                  // Auto-approve after 30s timeout
+                  setTimeout(() => { if (approvalResolver === resolve) { resolve(true); approvalResolver = null; } }, 30000);
+                });
+              },
+            }).catch((err: unknown) => {
+              send({ type: "error", error: err instanceof Error ? err.message : String(err) });
+            });
+          }
+
+          if (msg.type === "approve_tool" && approvalResolver) {
+            approvalResolver(true);
+            approvalResolver = null;
+          }
+          if (msg.type === "deny_tool" && approvalResolver) {
+            approvalResolver(false);
+            approvalResolver = null;
+          }
+          if (msg.type === "cancel") {
+            // TODO: implement cancellation
+            send({ type: "done", cancelled: true });
+          }
+        });
+
+        ws.on("close", () => {
+          if (approvalResolver) { approvalResolver(false); approvalResolver = null; }
+        });
+
+        send({ type: "connected", sessionId });
+      });
+    });
+  });
 }
 
 /**

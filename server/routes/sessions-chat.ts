@@ -232,7 +232,13 @@ export function chatRoutes(ctx: WorkspaceCtx, shared: SessionSharedState) {
 
     const providersStore = loadProviders(dataDir);
     const activeProvider = providersStore.providers.find(p => p.id === providersStore.active);
-    const useApiStream = providersStore.active !== "claude" || (activeProvider?.apiKey && activeProvider.apiKey.length > 0);
+    // Use API path when: non-Claude provider, OR Claude with API key (settings or ANTHROPIC_API_KEY env)
+    const effectiveApiKey = activeProvider?.apiKey || (providersStore.active === "claude" ? process.env.ANTHROPIC_API_KEY : "") || "";
+    const useApiStream = providersStore.active !== "claude" || effectiveApiKey.length > 0;
+    // Ensure activeProvider has the key for runAgentTurn
+    if (useApiStream && activeProvider && !activeProvider.apiKey && effectiveApiKey) {
+      (activeProvider as { apiKey: string }).apiKey = effectiveApiKey;
+    }
 
     const stream = new ReadableStream({
       start(controller) {

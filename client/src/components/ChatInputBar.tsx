@@ -262,8 +262,21 @@ export default function ChatInputBar({
 
   const sendMessage = async () => {
     if ((!input.trim() && !attachedImage) || streaming) return;
+    const trimmed = input.trim();
+
+    // Shell mode: ! prefix sends command directly to terminal
+    if (trimmed.startsWith("!")) {
+      const cmd = trimmed.slice(1).trim();
+      if (cmd) {
+        window.dispatchEvent(new CustomEvent("studio:terminal-paste", { detail: cmd + "\n" }));
+        window.dispatchEvent(new CustomEvent("studio:toggle-terminal")); // ensure terminal is visible
+      }
+      clearInput();
+      return;
+    }
+
     retryCountRef.current = 0;
-    return sendMessageWithText(input.trim(), attachedImage);
+    return sendMessageWithText(trimmed, attachedImage);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

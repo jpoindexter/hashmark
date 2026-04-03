@@ -4,6 +4,7 @@ import ThinkingBlock from "./ThinkingBlock";
 import ToolCallSummary, { FileBadge, getReadFilePath, categorize } from "./ToolSummary";
 import { ASSISTANT_CONTENT_STYLE, fmtDuration } from "./MessageBubbles";
 import ToolResultCard from "./ToolResultCard";
+import ToolApprovalCard from "./ToolApprovalCard";
 import { EditPreview } from "./EditPreview";
 import { AssistantContent } from "./AssistantContent";
 import type { StreamingState, ContentBlock, ToolUseBlockData } from "../ChatMessages";
