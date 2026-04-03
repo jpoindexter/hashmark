@@ -127,7 +127,7 @@ export function SectionHeader({ label, count, expanded, onToggle, actions }: {
 
 export function ChangedFileRow({ f, isSelected, isStaged, busy, onClick, onStage, onUnstage, onDiscard }: {
   f: GitFile; isSelected: boolean; isStaged: boolean; busy: boolean;
-  onClick: () => void; onStage: (e: React.MouseEvent) => void; onUnstage: (e: React.MouseEvent) => void; onDiscard?: (e: React.MouseEvent) => void;
+  onClick: (e: React.MouseEvent) => void; onStage: (e: React.MouseEvent) => void; onUnstage: (e: React.MouseEvent) => void; onDiscard?: (e: React.MouseEvent) => void;
 }) {
   const actionsRef = useRef<HTMLDivElement>(null);
   const displayStatus = isStaged ? f.x : f.isUntracked ? "?" : f.y;

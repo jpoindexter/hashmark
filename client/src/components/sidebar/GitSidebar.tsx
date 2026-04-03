@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchApi } from "../../lib/api";
 import { toast } from "../../hooks/useToast";
+import { useMultiSelect } from "../../hooks/useMultiSelect";
 import type { GitData, OutgoingCommit } from "./git/types";
 import { HeaderIconBtn, SectionHeader, ChangedFileRow, OutgoingCommitRow, RefreshIcon, UndoIcon, PlusIcon } from "./git/GitComponents";
 import CreatePrDialog from "./git/CreatePrDialog";
@@ -8,7 +9,6 @@ import CreatePrDialog from "./git/CreatePrDialog";
 export default function GitSidebar() {
   const [data, setData] = useState<GitData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [commitMsg, setCommitMsg] = useState("");
   const [committing, setCommitting] = useState(false);
   const [pushing, setPushing] = useState(false);
@@ -52,10 +52,10 @@ export default function GitSidebar() {
       .catch(() => setGhAvailable(false));
   }, []);
 
-  const handleFileClick = useCallback((path: string) => {
-    setSelectedPath(path);
+  const handleFileClick = useCallback((path: string, e: React.MouseEvent) => {
+    sel.handleClick(path, e);
     window.dispatchEvent(new CustomEvent("studio:open-diff", { detail: { path } }));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const showStatus = (msg: string) => {
     setStatusMsg(msg);
@@ -158,6 +158,28 @@ export default function GitSidebar() {
   const untrackedFiles = files.filter((f) => f.isUntracked);
   const totalChanges = files.length;
   const isErr = statusMsg ? statusMsg.toLowerCase().includes("fail") || statusMsg.toLowerCase().includes("error") : false;
+  const allPaths = files.map(f => f.file);
+  const sel = useMultiSelect(allPaths);
+
+  const stageSelected = async () => {
+    const paths = Array.from(sel.selected);
+    if (paths.length === 0) return;
+    try {
+      await fetchApi("/api/files/stage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ paths }) });
+      sel.clear();
+      load();
+    } catch { showStatus("Stage failed."); }
+  };
+
+  const unstageSelected = async () => {
+    const paths = Array.from(sel.selected);
+    if (paths.length === 0) return;
+    try {
+      await fetchApi("/api/files/unstage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ paths }) });
+      sel.clear();
+      load();
+    } catch { showStatus("Unstage failed."); }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
@@ -191,8 +213,8 @@ export default function GitSidebar() {
                 <SectionHeader label="STAGED CHANGES" count={stagedFiles.length} expanded={stagedExpanded} onToggle={() => setStagedExpanded((v) => !v)}
                   actions={<HeaderIconBtn title="Unstage all" onClick={() => void unstageAll()}><span style={{ fontSize: 13, fontWeight: 600, lineHeight: 1 }}>{"\u2212"}</span></HeaderIconBtn>} />
                 {stagedExpanded && stagedFiles.map((f) => (
-                  <ChangedFileRow key={`staged-${f.file}`} f={f} isStaged isSelected={selectedPath === f.file} busy={fileLoading === f.file}
-                    onClick={() => handleFileClick(f.file)} onStage={(e) => void stageFile(e, f.file)} onUnstage={(e) => void unstageFile(e, f.file)} />
+                  <ChangedFileRow key={`staged-${f.file}`} f={f} isStaged isSelected={sel.selected.has(f.file)} busy={fileLoading === f.file}
+                    onClick={(e) => handleFileClick(f.file, e)} onStage={(e) => void stageFile(e, f.file)} onUnstage={(e) => void unstageFile(e, f.file)} />
                 ))}
               </div>
             )}
@@ -201,8 +223,8 @@ export default function GitSidebar() {
                 <SectionHeader label="CHANGES" count={unstagedFiles.length} expanded={unstagedExpanded} onToggle={() => setUnstagedExpanded((v) => !v)}
                   actions={<><HeaderIconBtn title="Discard all" onClick={() => void discardAll()}><UndoIcon /></HeaderIconBtn><HeaderIconBtn title="Stage all" onClick={() => void stageAll()}><PlusIcon /></HeaderIconBtn></>} />
                 {unstagedExpanded && unstagedFiles.map((f) => (
-                  <ChangedFileRow key={`unstaged-${f.file}`} f={f} isStaged={false} isSelected={selectedPath === f.file} busy={fileLoading === f.file}
-                    onClick={() => handleFileClick(f.file)} onStage={(e) => void stageFile(e, f.file)} onUnstage={(e) => void unstageFile(e, f.file)} onDiscard={(e) => void discardFile(e, f.file)} />
+                  <ChangedFileRow key={`unstaged-${f.file}`} f={f} isStaged={false} isSelected={sel.selected.has(f.file)} busy={fileLoading === f.file}
+                    onClick={(e) => handleFileClick(f.file, e)} onStage={(e) => void stageFile(e, f.file)} onUnstage={(e) => void unstageFile(e, f.file)} onDiscard={(e) => void discardFile(e, f.file)} />
                 ))}
               </div>
             )}
@@ -211,8 +233,8 @@ export default function GitSidebar() {
                 <SectionHeader label="UNTRACKED" count={untrackedFiles.length} expanded={untrackedExpanded} onToggle={() => setUntrackedExpanded((v) => !v)}
                   actions={<HeaderIconBtn title="Stage all untracked" onClick={() => { fetchApi("/api/files/stage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ paths: untrackedFiles.map((f) => f.file) }) }).then(() => load()).catch(() => {}); }}><PlusIcon /></HeaderIconBtn>} />
                 {untrackedExpanded && untrackedFiles.map((f) => (
-                  <ChangedFileRow key={`untracked-${f.file}`} f={f} isStaged={false} isSelected={selectedPath === f.file} busy={fileLoading === f.file}
-                    onClick={() => handleFileClick(f.file)} onStage={(e) => void stageFile(e, f.file)} onUnstage={(e) => void unstageFile(e, f.file)} />
+                  <ChangedFileRow key={`untracked-${f.file}`} f={f} isStaged={false} isSelected={sel.selected.has(f.file)} busy={fileLoading === f.file}
+                    onClick={(e) => handleFileClick(f.file, e)} onStage={(e) => void stageFile(e, f.file)} onUnstage={(e) => void unstageFile(e, f.file)} />
                 ))}
               </div>
             )}
@@ -225,6 +247,26 @@ export default function GitSidebar() {
           </>
         )}
       </div>
+
+      {/* Bulk actions */}
+      {sel.selected.size > 1 && (
+        <div style={{
+          padding: "4px 10px",
+          borderTop: "1px solid var(--border-dim)",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          fontSize: 10,
+          fontFamily: "var(--font)",
+          color: "var(--text-dimmer)",
+          flexShrink: 0,
+        }}>
+          <span>{sel.selected.size} selected</span>
+          <button className="btn btn-sm" onClick={() => void stageSelected()} style={{ fontSize: 10 }}>Stage</button>
+          <button className="btn btn-sm" onClick={() => void unstageSelected()} style={{ fontSize: 10 }}>Unstage</button>
+          <button className="btn btn-sm" onClick={() => sel.clear()} style={{ fontSize: 10 }}>Clear</button>
+        </div>
+      )}
 
       {/* Commit form + actions */}
       <div style={{ padding: "8px 10px", borderTop: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }}>
