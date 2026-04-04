@@ -108,10 +108,11 @@
   --font:    'Geist Mono', 'JetBrains Mono', 'Fira Code', Menlo, monospace;
   --font-ui: 'SF Pro', system-ui, -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
 
-  /* Type scale */
-  --font-size-2xs:  9px;
-  --font-size-xs:   10px;
-  --font-size-sm:   11px;
+  /* Type scale (Conductor: text-sm=14px base, custom 3xs/2xs) */
+  --font-size-3xs:  9px;
+  --font-size-2xs:  10px;
+  --font-size-xs:   11px;
+  --font-size-sm:   12px;
   --font-size-base: 14px;
   --font-size-lg:   15px;
   --font-size-xl:   18px;
@@ -178,12 +179,13 @@
   --avatar-fallback-bg:   hsl(0 0% 100% / 0.08);
   --avatar-fallback-text: hsl(0 0% 100% / 0.5);
 
-  /* === Z-INDEX === */
-  --z-dropdown: 100;
-  --z-sticky: 200;
-  --z-modal: 1000;
-  --z-toast: 2000;
-  --z-overlay: 3000;
+  /* === Z-INDEX (Conductor scale) === */
+  --z-sticky: 10;
+  --z-dropdown: 50;
+  --z-modal: 100;
+  --z-popover: 100;
+  --z-toast: 200;
+  --z-overlay: 300;
 
   /* === COLOR ON ACCENT === */
   --color-on-accent: hsl(24 10% 7%);

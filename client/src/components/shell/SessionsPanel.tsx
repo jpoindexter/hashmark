@@ -193,7 +193,7 @@ export default function SessionsPanel({
         </button>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto" }}>
+      <div style={{ flex: 1, overflowY: "auto", position: "relative" }}>
         {sessions.length === 0 && (
           <div style={{ padding: "9px 14px", borderBottom: "0.5px solid var(--border-dim)" }}>
             <div style={{ fontFamily: "var(--font)", fontSize: 12, color: "var(--text-dimmer)" }}>
@@ -215,6 +215,7 @@ export default function SessionsPanel({
               tabIndex={0}
               aria-current={active ? "true" : undefined}
               aria-label={s.title || `session ${i + 1}`}
+              className="group"
               onClick={(e) => {
                 if (isRenaming) return;
                 sel.handleClick(s.id, e);
@@ -230,16 +231,16 @@ export default function SessionsPanel({
               }}
               onContextMenu={(e) => handleContextMenu(e, s)}
               style={{
-                padding: "9px 14px",
-                paddingLeft: active ? 12 : 14,
+                padding: "8px 12px",
                 cursor: "pointer",
-                borderBottom: "0.5px solid var(--border-dim)",
-                borderLeft: active ? "2px solid var(--accent)" : sel.selected.has(s.id) ? "2px solid var(--blue)" : "2px solid transparent",
-                background: active ? "var(--bg-2)" : sel.selected.has(s.id) ? "var(--bg-3)" : "transparent",
+                borderRadius: "var(--radius)",
+                margin: "1px 6px",
+                background: active ? "var(--sidebar-accent)" : sel.selected.has(s.id) ? "var(--bg-3)" : "transparent",
                 display: "flex",
-                flexDirection: "column",
-                gap: 3,
+                alignItems: "center",
+                gap: 8,
                 transition: "background 0.1s",
+                position: "relative",
               }}
             >
               {isRenaming ? (
@@ -261,35 +262,25 @@ export default function SessionsPanel({
                   }}
                 />
               ) : (
-                <div style={{
-                  fontFamily: "var(--font)", fontSize: 12,
-                  color: active ? "var(--text)" : "var(--text-dim)",
-                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                }}>
-                  {s.title || `session ${i + 1}`}
-                </div>
+                <>
+                  {/* Green dot for active */}
+                  {isStreaming && (
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--green)", flexShrink: 0, animation: "pulse 1.5s ease-in-out infinite" }} />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: 13, fontWeight: active ? 500 : 400,
+                      color: active ? "var(--sidebar-foreground)" : "var(--sidebar-muted-foreground)",
+                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                    }}>
+                      {s.title || `Session ${i + 1}`}
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--text-dimmer)", marginTop: 1 }}>
+                      {isStreaming ? "Running..." : timeAgo(s.updated_at * 1000)}
+                    </div>
+                  </div>
+                </>
               )}
-
-              <div style={{
-                fontSize: 10, color: "var(--text-dimmer)",
-                display: "flex", alignItems: "center", gap: 6,
-                fontFamily: "var(--font)",
-              }}>
-                <div style={{ display: "flex", gap: 3 }}>
-                  {Array.from({ length: dotCount }).map((_, di) => (
-                    <div
-                      key={di}
-                      style={{
-                        width: 5, height: 5, borderRadius: "50%",
-                        background: AGENT_COLORS[di % AGENT_COLORS.length],
-                        opacity: isStreaming ? 1 : 0.5,
-                        animation: isStreaming && di === 0 ? "pdot 1.5s ease-in-out infinite" : "none",
-                      }}
-                    />
-                  ))}
-                </div>
-                {isStreaming ? "running" : timeAgo(s.updated_at * 1000)}
-              </div>
             </div>
           );
         })}

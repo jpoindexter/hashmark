@@ -546,6 +546,10 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 @keyframes text-shimmer    { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
 
 /* ---- Utility: animation classes ---- */
+/* Group hover: show child .group-hover-show on parent .group hover */
+.group .group-hover-show { opacity: 0; transition: opacity 0.1s; }
+.group:hover .group-hover-show { opacity: 1; }
+
 .fade-in  { animation: fadeIn .15s ease forwards; }
 .slide-in { animation: slideIn .12s ease forwards; }
 

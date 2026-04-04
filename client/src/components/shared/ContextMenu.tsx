@@ -94,7 +94,7 @@ export default function ContextMenu({ items, position, onClose }: ContextMenuPro
 
   return (
     <>
-      <div style={{ position: "fixed", inset: 0, zIndex: 99 }} onClick={onClose} />
+      <div style={{ position: "fixed", inset: 0, zIndex: 49 }} onClick={onClose} />
 
       <div
         ref={menuRef}

@@ -39,17 +39,18 @@ export default function SessionTabs({
             <div
               key={tab.id}
               onClick={() => onSelect(tab.id)}
+              className="group"
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
-                padding: "0 12px",
-                fontSize: 12,
+                padding: "0 8px 0 12px",
+                fontSize: 13,
                 cursor: "pointer",
                 color: active ? "var(--text)" : "var(--text-dim)",
                 background: active ? "var(--bg-2)" : "transparent",
                 borderRight: "1px solid var(--border-dim)",
-                maxWidth: 180,
+                maxWidth: 200,
                 minWidth: 0,
                 position: "relative",
                 userSelect: "none",
@@ -63,19 +64,22 @@ export default function SessionTabs({
                   flexShrink: 0,
                 }} />
               )}
+              {/* Name with gradient fade instead of hard ellipsis */}
               <span style={{
                 overflow: "hidden",
-                textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
                 flex: 1,
+                maskImage: "linear-gradient(to right, black 75%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to right, black 75%, transparent 100%)",
               }}>
                 {tab.title || "New Session"}
               </span>
+              {/* Close button: hidden until hover */}
               {tabs.length > 1 && (
                 <button
-                  className="btn-icon"
+                  className="btn-icon group-hover-show"
                   onClick={(e) => { e.stopPropagation(); onClose(tab.id); }}
-                  style={{ width: 16, height: 16, flexShrink: 0, opacity: active ? 1 : 0.5 }}
+                  style={{ width: 18, height: 18, flexShrink: 0 }}
                 >
                   <X size={10} />
                 </button>

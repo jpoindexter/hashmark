@@ -301,7 +301,7 @@ export default function ChatInputBar({
       <div style={{
         position: "relative",
         background: "var(--composer-background)",
-        borderTop: "1px solid var(--border-dim)",
+        borderTop: planMode ? "2px dashed var(--plan-border)" : "1px solid var(--border-dim)",
         borderRadius: "12px 12px 0 0",
       }}>
         {slashOpen && (
