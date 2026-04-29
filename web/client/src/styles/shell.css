@@ -1,0 +1,499 @@
+/* ── Root layout ─────────────────────────────────────────────────────────────── */
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* ── Session sidebar (nav + sessions) ───────────────────────────────────────── */
+
+.session-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.sidebar-header {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px 0 12px;
+  gap: 8px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  -webkit-app-region: drag;
+}
+
+.sidebar-header * { -webkit-app-region: no-drag; }
+
+.sidebar-new-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 2px 7px;
+  line-height: 1.5;
+  flex-shrink: 0;
+  font-family: var(--font-sans);
+  transition: border-color var(--transition), color var(--transition);
+}
+
+.sidebar-new-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.sidebar-logo {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-logo-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Sidebar nav items ── */
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 28px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-dim);
+  transition: background var(--transition), color var(--transition);
+  position: relative;
+}
+
+.sidebar-nav-item:hover { background: var(--bg-hover); color: var(--text); }
+
+.sidebar-nav-item.active {
+  background: var(--bg-elevated);
+  color: var(--accent);
+}
+
+.sidebar-nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 4px; bottom: 4px;
+  width: 2px;
+  background: var(--accent);
+  border-radius: 0 1px 1px 0;
+}
+
+.sidebar-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.sidebar-nav-item.active .sidebar-nav-icon { opacity: 1; }
+
+.sidebar-nav-label {
+  font-family: var(--font-sans);
+}
+
+/* ── Sessions section label ── */
+
+.sidebar-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 8px 12px 4px;
+  flex-shrink: 0;
+}
+
+/* ── Sessions list ── */
+
+.sidebar-sessions {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 0;
+}
+
+.sidebar-session {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px 0 12px;
+  height: 28px;
+  cursor: pointer;
+  position: relative;
+  font-size: 12px;
+  color: var(--text-dim);
+  user-select: none;
+  transition: background var(--transition), color var(--transition);
+}
+
+.sidebar-session:hover { background: var(--bg-hover); }
+
+.sidebar-session.active {
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+
+.sidebar-session.active::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 4px; bottom: 4px;
+  width: 2px;
+  background: var(--accent);
+  border-radius: 0 1px 1px 0;
+}
+
+.sidebar-session-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.sidebar-session-close {
+  opacity: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 13px;
+  flex-shrink: 0;
+  padding: 0;
+  line-height: 1;
+  transition: opacity var(--transition), background var(--transition), color var(--transition);
+}
+
+.sidebar-session:hover .sidebar-session-close { opacity: 1; }
+.sidebar-session-close:hover { background: var(--bg-hover); color: var(--text); }
+
+.sidebar-session-rename {
+  flex: 1;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-focus);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 11px;
+  color: var(--text);
+  outline: none;
+  font-family: var(--font-sans);
+  min-width: 0;
+}
+
+.sidebar-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.sidebar-footer {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding: 0 4px 0 8px;
+  gap: 1px;
+  flex-shrink: 0;
+  height: 38px;
+  overflow: hidden;
+}
+
+.sidebar-footer-project {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 0 4px;
+  border-radius: var(--radius-sm);
+  min-width: 0;
+  flex: 1;
+  transition: background var(--transition), color var(--transition);
+  overflow: hidden;
+}
+
+.sidebar-footer-project:hover { background: var(--bg-hover); color: var(--text-dim); }
+
+.sidebar-footer-project-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.sidebar-icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: background var(--transition), color var(--transition);
+  flex-shrink: 0;
+}
+
+.sidebar-icon-btn:hover { background: var(--bg-hover); color: var(--text-dim); }
+.sidebar-icon-btn.active { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+/* ── Status bar ──────────────────────────────────────────────────────────────── */
+
+.status-bar {
+  height: 22px;
+  display: flex;
+  align-items: center;
+  background: color-mix(in srgb, var(--accent) 15%, var(--bg-panel));
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.status-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.status-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 0;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  height: 22px;
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.status-item-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.status-item-btn:hover { background: var(--bg-hover); color: var(--text-dim); }
+.status-item-btn.active { color: var(--accent-text); }
+
+/* ── Main content ─────────────────────────────────────────────────────────────── */
+
+.shell-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+}
+
+/* ── Session dot (shared: tab bar + status bar) ──────────────────────────────── */
+
+.session-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.session-status-dot.running {
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+  animation: dot-pulse 1.4s ease-in-out infinite;
+}
+
+.session-status-dot.idle { background: var(--border); }
+
+/* ── Main content area ────────────────────────────────────────────────────────── */
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  min-width: 0;
+}
+
+/* Scrollbars handled globally in tokens.css */
+
+/* ── Icon button ─────────────────────────────────────────────────────────────── */
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  flex-shrink: 0;
+}
+
+.icon-btn:hover { background: var(--bg-hover); color: var(--text); }
+
+/* ── Utility ─────────────────────────────────────────────────────────────────── */
+
+select, button, input, textarea {
+  font-family: var(--font-sans);
+}
+
+/* ── Terminal panel ──────────────────────────────────────────────────────────── */
+
+.terminal-panel {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  background: #0e0e10; /* terminal always dark */
+  color-scheme: dark;
+}
+
+.terminal-header {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-3);
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.drag-handle {
+  height: 4px;
+  cursor: row-resize;
+  background: transparent;
+  border-top: 1px solid var(--border);
+  transition: background 100ms;
+}
+
+.drag-handle:hover { background: var(--accent-dim); }
+
+/* ── Side panel (Files, Issues, Agents, History, Skills, Templates) ─────────── */
+
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+  background: var(--bg-panel);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.side-panel-header {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  gap: var(--space-3);
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.side-panel-resize {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 5;
+}
+
+.side-panel-resize:hover,
+.side-panel-resize:active {
+  background: var(--accent-dim);
+}
+
+/* ── Overlay views (Settings, Workflows, Scan, Usage) ────────────────────────── */
+
+.overlay-view {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.overlay-header {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  gap: var(--space-3);
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}

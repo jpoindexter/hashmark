@@ -1,0 +1,71 @@
+name: Publish hashmark CLI to npm
+
+on:
+  push:
+    tags:
+      - "cli/v*.*.*"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (no publish)"
+        type: boolean
+        default: true
+
+jobs:
+  build-and-verify:
+    name: Build and verify CLI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/cli
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org/"
+          cache: "npm"
+          cache-dependency-path: packages/cli/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify CLI entry point exists
+        run: |
+          test -f dist/cli.js || (echo "ERROR: dist/cli.js not found after build" && exit 1)
+          head -1 dist/cli.js | grep -q "#!/usr/bin/env node" || (echo "ERROR: dist/cli.js missing shebang" && exit 1)
+          echo "CLI entry point verified"
+
+      - name: Verify package contents
+        run: |
+          npm pack --dry-run 2>&1 | tee pack-output.txt
+          grep "dist/cli.js" pack-output.txt || (echo "ERROR: dist/cli.js not in package" && exit 1)
+          echo "Package contents verified"
+
+      - name: Test CLI invocation
+        run: node dist/cli.js --help | head -5
+
+      - name: Publish to npm
+        if: ${{ !inputs.dry_run && github.event_name == 'push' }}
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Dry run publish
+        if: ${{ inputs.dry_run || github.event_name == 'workflow_dispatch' }}
+        run: npm publish --dry-run --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

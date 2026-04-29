@@ -1,0 +1,5 @@
+# === HASHMARK PRE-PUSH HOOKS ===
+
+# 1. Type check (web app)
+echo "[hook] Running type check..."
+cd web && npm run typecheck

@@ -1,0 +1,234 @@
+/* ── Button base ──────────────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background var(--transition), color var(--transition), border-color var(--transition), box-shadow var(--transition), opacity var(--transition);
+}
+
+.btn:disabled { opacity: 0.4; cursor: default; pointer-events: none; }
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-dim), 0 0 0 3px var(--accent);
+}
+
+/* sizes */
+.btn-xs { font-size: 10px; height: 20px; padding: 0 var(--space-2); }
+.btn-sm { font-size: 11px; height: 24px; padding: 0 var(--space-2); }
+.btn-md { font-size: 12px; height: 28px; padding: 0 var(--space-3); }
+.btn-lg { font-size: 13px; height: 32px; padding: 0 var(--space-4); }
+
+/* variants */
+.btn-primary {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-sm);
+}
+.btn-primary:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 82%, #fff); box-shadow: var(--shadow-md); }
+.btn-primary:active:not(:disabled) { box-shadow: none; }
+
+.btn-success {
+  background: var(--green);
+  color: var(--bg);
+  box-shadow: var(--shadow-sm);
+}
+.btn-success:hover:not(:disabled) { background: color-mix(in srgb, var(--green) 82%, #fff); }
+
+.btn-secondary {
+  background: var(--bg-elevated);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover:not(:disabled) { background: var(--bg-hover); color: var(--text); border-color: var(--border-focus); }
+
+.btn-ghost {
+  background: none;
+  color: var(--text-muted);
+  border: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+.btn-ghost:hover:not(:disabled) { color: var(--text); }
+
+.btn-ghost-accent {
+  background: none;
+  color: var(--accent);
+  border: none;
+  font-weight: 500;
+}
+.btn-ghost-accent:hover:not(:disabled) { color: color-mix(in srgb, var(--accent) 80%, #fff); }
+
+.btn-danger {
+  background: none;
+  color: var(--red);
+  border: 1px solid color-mix(in srgb, var(--red) 30%, transparent);
+}
+.btn-danger:hover:not(:disabled) { background: var(--bg-error); }
+
+.btn-warn {
+  background: none;
+  color: var(--yellow);
+  border: 1px solid var(--border);
+}
+.btn-warn:hover:not(:disabled) { background: var(--bg-warning); }
+
+/* ── Input base ───────────────────────────────────────────────────────────────── */
+
+.input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  height: 28px;
+  outline: none;
+  padding: 0 var(--space-2);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 2px var(--accent-dim); }
+.input::placeholder { color: var(--text-muted); }
+
+/* textarea variant — no fixed height */
+textarea.input { height: auto; padding: var(--space-1) var(--space-2); }
+
+.input-elevated {
+  background: var(--bg-elevated);
+}
+
+.input-mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+/* ── Toggle switch ────────────────────────────────────────────────────────────── */
+
+.toggle {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  border-radius: 9px;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition);
+  flex-shrink: 0;
+  background: var(--border);
+}
+
+.toggle.on { background: var(--accent); }
+.toggle:disabled { opacity: 0.4; cursor: default; }
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 150ms;
+  display: block;
+}
+
+.toggle .toggle-thumb       { left: 2px; }
+.toggle.on .toggle-thumb    { left: 16px; }
+
+/* ── Card ─────────────────────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.card-active { border-color: var(--accent-dim); }
+
+.card-body {
+  padding: var(--space-3);
+}
+
+.card-footer {
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+/* ── Status dot ───────────────────────────────────────────────────────────────── */
+
+.dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-green  { background: var(--green); }
+.dot-red    { background: var(--red); }
+.dot-yellow { background: var(--yellow); }
+.dot-muted  { background: var(--border); }
+
+/* ── Section label ────────────────────────────────────────────────────────────── */
+
+.section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: var(--space-2) 0 var(--space-1);
+}
+
+/* ── Code / mono block ────────────────────────────────────────────────────────── */
+
+.code-block {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Markdown prose wrapper ───────────────────────────────────────────────────── */
+
+.md-prose { font-size: 13px; color: var(--text); line-height: 1.65; }
+.md-prose > *:last-child { margin-bottom: 0; }
+
+/* Syntax highlight token overrides (rehype-highlight / highlight.js) */
+.hljs-keyword   { color: var(--accent); }
+.hljs-string    { color: var(--green); }
+.hljs-comment   { color: var(--text-muted); font-style: italic; }
+.hljs-number    { color: var(--orange); }
+.hljs-function  { color: var(--blue); }
+.hljs-title     { color: var(--blue); }
+.hljs-attr      { color: var(--yellow); }
+.hljs-literal   { color: var(--orange); }
+.hljs-built_in  { color: var(--accent); }
+.hljs-type      { color: var(--yellow); }
+.hljs-variable  { color: var(--text); }
+.hljs-name      { color: var(--blue); }
+.hljs-tag       { color: var(--red); }
+.hljs-params    { color: var(--text-dim); }
+.hljs-property  { color: var(--yellow); }
+.hljs-operator  { color: var(--text-dim); }

@@ -1,0 +1,7 @@
+{
+  "name": "hashmark",
+  "private": true,
+  "scripts": {
+    "app": "npm --prefix app run tauri dev"
+  }
+}

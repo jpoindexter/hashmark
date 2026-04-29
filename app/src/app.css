@@ -1,0 +1,287 @@
+/* ── Fonts ── */
+@font-face { font-family: 'Hack'; src: url('/fonts/hack/Hack-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; }
+@font-face { font-family: 'Hack'; src: url('/fonts/hack/Hack-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; }
+@font-face { font-family: 'Hack'; src: url('/fonts/hack/Hack-Italic.ttf') format('truetype'); font-weight: 400; font-style: italic; }
+@font-face { font-family: 'Hack'; src: url('/fonts/hack/Hack-BoldItalic.ttf') format('truetype'); font-weight: 700; font-style: italic; }
+@font-face { font-family: 'Roboto'; src: url('/fonts/roboto/Roboto-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; }
+@font-face { font-family: 'Roboto'; src: url('/fonts/roboto/Roboto-Medium.ttf') format('truetype'); font-weight: 500; font-style: normal; }
+@font-face { font-family: 'Roboto'; src: url('/fonts/roboto/Roboto-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; }
+@font-face { font-family: 'Roboto'; src: url('/fonts/roboto/Roboto-Italic.ttf') format('truetype'); font-weight: 400; font-style: italic; }
+@font-face { font-family: 'RobotoFlex'; src: url('/fonts/roboto/RobotoFlex-Semibold.ttf') format('truetype'); font-weight: 600; font-style: normal; }
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-font-smoothing: antialiased; }
+img, svg { display: block; max-width: 100%; }
+input, button, textarea, select { font: inherit; }
+
+/* ── Tokens ── */
+:root {
+  --font-ui:   'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Hack', 'SF Mono', ui-monospace, monospace;
+
+  --font-size-xs:    11px;
+  --font-size-sm:    12px;
+  --font-size-md:    13px;
+  --font-size-title: 16px;
+  --font-size-chip:  11px;
+
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-full: 999px;
+
+  --space-0-5: 2px;
+  --space-1:   4px;
+  --space-1-5: 6px;
+  --space-2:   8px;
+  --space-2-5: 10px;
+  --space-3:   12px;
+  --space-3-5: 14px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+
+  /* Layout */
+  --sidebar-width:     200px;
+  --titlebar-height:   34px;
+  --tab-bar-height:    34px;
+  --editor-margin:     16px;
+  --workspace-pad:     1px;
+  --panel-radius:      6px;
+
+  --transition:     100ms ease;
+  --transition-med: 150ms ease;
+  --transition-slide: 200ms cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+/* ── Dark theme ── */
+[data-theme="dark"] {
+  --bg:  #000000;
+  --fg:  #ffffff;
+  --accent: #19aad8;
+
+  --bg-panel:    color-mix(in srgb, var(--fg)  5%, var(--bg));
+  --bg-elevated: color-mix(in srgb, var(--fg) 10%, var(--bg));
+  --bg-hover:    color-mix(in srgb, var(--fg) 15%, var(--bg));
+  --bg-active:   color-mix(in srgb, var(--fg) 20%, var(--bg));
+
+  --border:        color-mix(in srgb, var(--fg) 10%, transparent);
+  --border-active: color-mix(in srgb, var(--fg) 15%, transparent);
+  --border-mid:    color-mix(in srgb, var(--fg) 10%, transparent);
+
+  --text:           color-mix(in srgb, var(--fg) 90%, transparent);
+  --text-dim:       color-mix(in srgb, var(--fg) 60%, transparent);
+  --text-secondary: color-mix(in srgb, var(--fg) 60%, transparent);
+  --text-tertiary:  color-mix(in srgb, var(--fg) 40%, transparent);
+  --text-muted:     color-mix(in srgb, var(--fg) 28%, transparent);
+
+  --accent-dim:    color-mix(in srgb, var(--accent) 15%, transparent);
+  --accent-subtle: color-mix(in srgb, var(--accent) 10%, transparent);
+
+  --glass-bg:     color-mix(in srgb, var(--bg-panel) 88%, transparent);
+  --glass-border: var(--border);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.5);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.6);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.7);
+  --shadow-overlay: 0 25px 50px -12px rgba(0,0,0,0.6);
+
+  --sidebar-bg: var(--bg);
+  --scrollbar:  color-mix(in srgb, var(--fg) 14%, transparent);
+
+  --green:  rgb(28,  160, 90);
+  --red:    rgb(188,  54, 42);
+  --yellow: rgb(229, 160, 26);
+  --blue:   var(--accent);
+
+  --bg-secondary: var(--bg-elevated);
+  --bg-card:      var(--bg-panel);
+  --bg-tag:       color-mix(in srgb, var(--accent) 12%, transparent);
+  --text-primary: var(--text);
+
+  --stroke-primary:   color-mix(in srgb, var(--fg) 20%, transparent);
+  --stroke-secondary: color-mix(in srgb, var(--fg) 12%, transparent);
+  --stroke-tertiary:  color-mix(in srgb, var(--fg)  6%, transparent);
+}
+
+/* ── Light theme ── */
+[data-theme="light"] {
+  --bg:  #ffffff;
+  --fg:  #000000;
+  --accent: #19aad8;
+
+  --bg-panel:    color-mix(in srgb, var(--fg)  5%, var(--bg));
+  --bg-elevated: color-mix(in srgb, var(--fg) 10%, var(--bg));
+  --bg-hover:    color-mix(in srgb, var(--fg) 15%, var(--bg));
+  --bg-active:   color-mix(in srgb, var(--fg) 20%, var(--bg));
+
+  --border:        color-mix(in srgb, var(--fg) 10%, transparent);
+  --border-active: color-mix(in srgb, var(--fg) 15%, transparent);
+  --border-mid:    color-mix(in srgb, var(--fg) 14%, transparent);
+
+  --text:           color-mix(in srgb, var(--fg) 90%, transparent);
+  --text-dim:       color-mix(in srgb, var(--fg) 60%, transparent);
+  --text-secondary: color-mix(in srgb, var(--fg) 60%, transparent);
+  --text-tertiary:  color-mix(in srgb, var(--fg) 40%, transparent);
+  --text-muted:     color-mix(in srgb, var(--fg) 28%, transparent);
+
+  --accent-dim:    color-mix(in srgb, var(--accent) 15%, transparent);
+  --accent-subtle: color-mix(in srgb, var(--accent) 10%, transparent);
+
+  --glass-bg:     color-mix(in srgb, var(--bg-panel) 88%, transparent);
+  --glass-border: var(--border);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.10);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  --shadow-overlay: 0 25px 50px -12px rgba(0,0,0,0.15);
+
+  --sidebar-bg: var(--bg-panel);
+  --scrollbar:  color-mix(in srgb, var(--fg) 12%, transparent);
+
+  --green:  #1c6b3a;
+  --red:    #bc362a;
+  --yellow: #b37a0a;
+  --blue:   var(--accent);
+
+  --bg-secondary: var(--bg-elevated);
+  --bg-card:      var(--bg-panel);
+  --bg-tag:       color-mix(in srgb, var(--accent) 12%, transparent);
+  --text-primary: var(--text);
+
+  --stroke-primary:   color-mix(in srgb, var(--fg) 20%, transparent);
+  --stroke-secondary: color-mix(in srgb, var(--fg) 12%, transparent);
+  --stroke-tertiary:  color-mix(in srgb, var(--fg)  6%, transparent);
+}
+
+/* ── Oxide theme ── */
+[data-theme="oxide"] {
+  --bg:  #13111a;
+  --fg:  #dcd8f0;
+  --accent: hsl(218,85%,65%);
+
+  --bg-panel:    color-mix(in srgb, var(--fg)  5%, var(--bg));
+  --bg-elevated: color-mix(in srgb, var(--fg) 10%, var(--bg));
+  --bg-hover:    color-mix(in srgb, var(--fg) 15%, var(--bg));
+  --bg-active:   color-mix(in srgb, var(--fg) 20%, var(--bg));
+
+  --border:        color-mix(in srgb, var(--fg)  8%, transparent);
+  --border-active: color-mix(in srgb, var(--fg) 14%, transparent);
+  --border-mid:    color-mix(in srgb, var(--fg) 14%, transparent);
+
+  --text:           color-mix(in srgb, var(--fg) 90%, transparent);
+  --text-dim:       color-mix(in srgb, var(--fg) 60%, transparent);
+  --text-secondary: color-mix(in srgb, var(--fg) 60%, transparent);
+  --text-tertiary:  color-mix(in srgb, var(--fg) 40%, transparent);
+  --text-muted:     color-mix(in srgb, var(--fg) 28%, transparent);
+
+  --accent-dim:    color-mix(in srgb, var(--accent) 15%, transparent);
+  --accent-subtle: color-mix(in srgb, var(--accent) 10%, transparent);
+
+  --glass-bg:     color-mix(in srgb, var(--bg-panel) 88%, transparent);
+  --glass-border: var(--stroke-tertiary);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.5);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.6);
+  --shadow-overlay: 0 25px 50px -12px rgba(0,0,0,0.5);
+
+  --sidebar-bg: #161424;
+  --scrollbar:  color-mix(in srgb, var(--fg) 14%, transparent);
+
+  --green:  #56c78a;
+  --red:    #e06c75;
+  --yellow: #e5c07b;
+  --blue:   #6fa8f5;
+
+  --bg-secondary: var(--bg-elevated);
+  --bg-card:      var(--bg-panel);
+  --bg-tag:       color-mix(in srgb, var(--accent) 12%, transparent);
+  --text-primary: var(--text);
+
+  --stroke-primary:   color-mix(in srgb, var(--fg) 20%, transparent);
+  --stroke-secondary: color-mix(in srgb, var(--fg) 12%, transparent);
+  --stroke-tertiary:  color-mix(in srgb, var(--fg)  6%, transparent);
+}
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+/* ── Base ── */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-size-md);
+  line-height: 1.6;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  padding: 0;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Shared utilities ── */
+.hm-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  padding: 12px 14px;
+}
+.hm-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 28px; padding: 0 10px;
+  border-radius: var(--radius-sm, 5px);
+  font-size: 12px; font-weight: 500;
+  border: none; cursor: pointer;
+  transition: background 100ms, color 100ms;
+  background: var(--bg-elevated); color: var(--text-dim);
+}
+.hm-btn:hover { background: var(--bg-hover); color: var(--text); }
+.hm-btn-primary { background: var(--accent); color: #fff; }
+.hm-btn-primary:hover { opacity: 0.88; }
+.hm-input {
+  height: 28px; padding: 0 8px;
+  border-radius: var(--radius-sm, 5px);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text); font-size: 12px;
+  outline: none; transition: border-color 100ms;
+}
+.hm-input:focus { border-color: var(--accent); }
+.hm-popover {
+  position: absolute; z-index: 200;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius, 8px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  padding: 6px;
+  min-width: 200px;
+}
+.hm-modal-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+}
+.hm-modal {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius, 8px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  padding: 20px;
+  min-width: 360px; max-width: 560px;
+}

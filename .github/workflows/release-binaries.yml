@@ -1,0 +1,98 @@
+name: Release hashmark binaries
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag/version to build (e.g. v2.0.0)"
+        required: true
+
+jobs:
+  build:
+    name: Build binaries
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/cli
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: packages/cli/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Bundle to single CJS file
+        run: npm run build:bundle
+
+      - name: Build platform binaries
+        run: npm run build:bin
+
+      - name: Rename Windows binary
+        run: mv dist-bin/hashmark-win-x64 dist-bin/hashmark-windows-x64.exe 2>/dev/null || true
+
+      - name: List binaries
+        run: ls -lh dist-bin/
+
+      - name: Generate checksums
+        run: |
+          cd dist-bin
+          sha256sum hashmark-* > checksums.txt 2>/dev/null || shasum -a 256 hashmark-* > checksums.txt
+          cat checksums.txt
+
+      - name: Determine release tag
+        id: tag
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "tag=${INPUT_TAG}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: hashmark ${{ steps.tag.outputs.tag }}
+          body: |
+            ## hashmark ${{ steps.tag.outputs.tag }}
+
+            Standalone binaries — no Node.js required.
+
+            ### Quick install
+
+            **macOS / Linux** — one-liner via curl:
+            ```bash
+            curl -fsSL https://hashmark.md/install.sh | sh
+            ```
+
+            **Or download directly from the assets below and add to your PATH.**
+
+            **Or via npm (requires Node.js >= 18):**
+            ```bash
+            npx hashmark scan
+            ```
+
+            Verify integrity with `checksums.txt`.
+          files: |
+            packages/cli/dist-bin/hashmark-macos-arm64
+            packages/cli/dist-bin/hashmark-macos-x64
+            packages/cli/dist-bin/hashmark-linux-x64
+            packages/cli/dist-bin/hashmark-windows-x64.exe
+            packages/cli/dist-bin/checksums.txt
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
