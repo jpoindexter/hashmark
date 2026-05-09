@@ -617,7 +617,7 @@ async fn run_gemini_tool_loop(
     max_tokens: Option<u32>,
 ) -> Result<(String, Option<i64>, Option<i64>), String> {
     let url = format!(
-        "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     );
 
     let mut contents: Vec<Value> = history
@@ -662,6 +662,7 @@ async fn run_gemini_tool_loop(
         let response = client
             .post(&url)
             .header("content-type", "application/json")
+            .header("x-goog-api-key", api_key)
             .json(&body)
             .send()
             .await
